@@ -1,6 +1,5 @@
 /* Checking of messages in PO files.
-   Copyright (C) 2005, 2008, 2010, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2005.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #ifndef _MSGL_CHECK_H
 #define _MSGL_CHECK_H 1
@@ -22,6 +23,7 @@
 #include "pos.h"
 #include "plural-eval.h"
 #include "plural-distrib.h"
+#include "xerror-handler.h"
 
 
 #ifdef __cplusplus
@@ -37,7 +39,8 @@ extern "C" {
 extern int check_plural_eval (const struct expression *plural_expr,
                               unsigned long nplurals_value,
                               const message_ty *header,
-                              struct plural_distribution *distribution);
+                              struct plural_distribution *distribution,
+                              xerror_handler_ty xeh);
 
 /* Perform all checks on a non-obsolete message.  */
 extern int check_message (const message_ty *mp,
@@ -47,22 +50,21 @@ extern int check_message (const message_ty *mp,
                           const struct plural_distribution *distribution,
                           int check_header,
                           int check_compatibility,
-                          int check_accelerators, char accelerator_char);
+                          int check_accelerators, char accelerator_char,
+                          xerror_handler_ty xeh);
 
 /* Perform all checks on a message list.
    Return the number of errors that were seen.  */
-extern int check_message_list (message_list_ty *mlp,
+extern int check_message_list (const message_list_ty *mlp,
                                int ignore_untranslated_messages,
                                int ignore_fuzzy_messages,
                                int check_newlines,
                                int check_format_strings,
                                int check_header,
                                int check_compatibility,
-                               int check_accelerators, char accelerator_char);
+                               int check_accelerators, char accelerator_char,
+                               xerror_handler_ty xeh);
 
-/* Perform all syntax checks on a message list.
-   Return the number of errors that were seen.  */
-extern int syntax_check_message_list (message_list_ty *mlp);
 
 #ifdef __cplusplus
 }

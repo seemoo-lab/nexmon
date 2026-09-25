@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_ROS_H
@@ -48,31 +36,31 @@
 # define ROS_OP_OPCODE_MASK (~ROS_OP_MASK)
 
 # define op_ros_bind   (-1) /* pseudo operation code for asn2wrs generated binds */
-# define err_ros_bind  (-1) /* pseudo eror code for asn2wrs generated binds */
+# define err_ros_bind  (-2) /* pseudo error code for asn2wrs generated binds */
 
 typedef struct _ros_opr_t {
-  gint32 opcode;
+  int32_t opcode;
   dissector_t arg_pdu;
   dissector_t res_pdu;
 } ros_opr_t;
 
 typedef struct _ros_err_t {
-  gint32 errcode;
+  int32_t errcode;
   dissector_t err_pdu;
 } ros_err_t;
 
 typedef struct _ros_info_t {
-  const gchar         *name;
+  const char          *name;
   int                 *proto;
-  gint                *ett_proto;
+  int                 *ett_proto;
   const value_string  *opr_code_strings;
   const ros_opr_t     *opr_code_dissectors;
   const value_string  *err_code_strings;
   const ros_err_t     *err_code_dissectors;
 } ros_info_t;
 
-void register_ros_oid_dissector_handle(const char *oid, dissector_handle_t dissector, int proto _U_, const char *name, gboolean uses_rtse);
-void register_ros_protocol_info(const char *oid, const ros_info_t *rinfo, int proto _U_, const char *name, gboolean uses_rtse);
+void register_ros_oid_dissector_handle(const char *oid, dissector_handle_t dissector, int proto _U_, const char *name, bool uses_rtse);
+void register_ros_protocol_info(const char *oid, const ros_info_t *rinfo, int proto _U_, const char *name, bool uses_rtse);
 int call_ros_oid_callback(const char *oid, tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, struct SESSION_DATA_STRUCTURE* session);
 
 #endif  /* PACKET_ROS_H */

@@ -5,7 +5,12 @@
 
 cat <<\EOF > mf.appdata.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<component type="desktop">
+<!DOCTYPE component PUBLIC "" "" [
+<!ENTITY author1 "Giovanni Campagna">
+<!ENTITY author2 "Daiki Ueno">
+<!ENTITY author3 "Bilal Elmoussaoui">
+]>
+<component type="desktop" xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0">
   <id>org.gnome.Characters.desktop</id>
   <name>GNOME Characters</name>
   <summary>Character map application</summary>
@@ -20,6 +25,15 @@ cat <<\EOF > mf.appdata.xml
       You can also browse characters by categories, such as
       Punctuation, Pictures, etc.
     </p>
+    <p gt:escape="yes">
+      Did you know that the copyright sign (&#xa9;, U+00A9) can be written in HTML
+      as &amp;#xa9;,
+      as &amp;#169;,
+      or as &amp;copy;?
+    </p>
+    <p>Written by &author1;, &author2;, and &author3;.</p>
+    <p gt:escape="no">Escape gallery: operator x&amp;y, standard XML entities &amp; &quot; &apos; &amp; &lt; &gt;, character reference &#xa9;, escaped character reference &amp;#xa9;, entity references &copy; &author1;</p>
+    <p gt:escape="yes">Escape gallery: operator x&amp;y, standard XML entities &amp; &quot; &apos; &amp; &lt; &gt;, character reference &#xa9;, escaped character reference &amp;#xa9;, entity references &copy; &author1;</p>
   </description>
   <url type="homepage">https://wiki.gnome.org/Design/Apps/CharacterMap</url>
   <updatecontact>dueno_at_src.gnome.org</updatecontact>
@@ -63,6 +77,24 @@ msgid ""
 msgstr ""
 "Vous pouvez aussi naviguer dans les caractères par catégories, comme par "
 "Ponctuation, Images, etc."
+
+msgid ""
+"Did you know that the copyright sign (©, U+00A9) can be written in HTML as "
+"&#xa9;, as &#169;, or as &copy;?"
+msgstr ""
+"Saviez-vous que le signe de copyright (©, U+00A9) peut être écrit en HTML "
+"comme &#xa9;, comme &#169; ou comme &copy; ?"
+
+msgid "Written by &author1;, &author2;, and &author3;."
+msgstr "Écrit par &author1;, &author2;, et &author3;."
+
+msgid ""
+"Escape gallery: operator x&y, standard XML entities & \" ' & < >, character "
+"reference ©, escaped character reference &#xa9;, entity references &copy; "
+"&author1;"
+msgstr ""
+"Exposition d'échappements: operateur x&y, entités XML standard & \" ' & < >, "
+"caractère ©, caractère échappé &#xa9;, entités &copy; &author1;"
 EOF
 
 cat <<\EOF > po/de.po
@@ -100,11 +132,35 @@ msgid ""
 msgstr ""
 "Sie können ebenfalls nach Kategorie suchen, wie z.B. nach Zeichensetzung oder "
 "Bildern."
+
+msgid ""
+"Did you know that the copyright sign (©, U+00A9) can be written in HTML as "
+"&#xa9;, as &#169;, or as &copy;?"
+msgstr ""
+"Wussten Sie, dass das Copyright-Zeichen (©, U+00A9) in HTML als "
+"&#xa9;, als &#169;, oder als &copy; "
+"geschrieben werden kann?"
+
+msgid "Written by &author1;, &author2;, and &author3;."
+msgstr "Geschrieben von &author1;, &author2; und &author3;."
+
+msgid ""
+"Escape gallery: operator x&y, standard XML entities & \" ' & < >, character "
+"reference ©, escaped character reference &#xa9;, entity references &copy; "
+"&author1;"
+msgstr ""
+"Escape-Beispiele: Operator x&y, Standard-XML Entitäten & \" ' & < >, Zeichen "
+"©, escaptes Zeichen &#xa9;, Entitäten &copy; &author1;"
 EOF
 
 cat <<\EOF > mf.appdata.xml.ok
 <?xml version="1.0" encoding="UTF-8"?>
-<component type="desktop">
+<!DOCTYPE component PUBLIC "" "" [
+<!ENTITY author1 "Giovanni Campagna">
+<!ENTITY author2 "Daiki Ueno">
+<!ENTITY author3 "Bilal Elmoussaoui">
+]>
+<component xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0" type="desktop">
   <id>org.gnome.Characters.desktop</id>
   <name>GNOME Characters</name>
   <summary>Character map application</summary>
@@ -123,6 +179,23 @@ cat <<\EOF > mf.appdata.xml.ok
     </p>
     <p xml:lang="fr">Vous pouvez aussi naviguer dans les caractères par catégories, comme par Ponctuation, Images, etc.</p>
     <p xml:lang="de">Sie können ebenfalls nach Kategorie suchen, wie z.B. nach Zeichensetzung oder Bildern.</p>
+    <p gt:escape="yes">
+      Did you know that the copyright sign (©, U+00A9) can be written in HTML
+      as &amp;#xa9;,
+      as &amp;#169;,
+      or as &amp;copy;?
+    </p>
+    <p gt:escape="yes" xml:lang="fr">Saviez-vous que le signe de copyright (©, U+00A9) peut être écrit en HTML comme &amp;#xa9;, comme &amp;#169; ou comme &amp;copy; ?</p>
+    <p gt:escape="yes" xml:lang="de">Wussten Sie, dass das Copyright-Zeichen (©, U+00A9) in HTML als &amp;#xa9;, als &amp;#169;, oder als &amp;copy; geschrieben werden kann?</p>
+    <p>Written by &author1;, &author2;, and &author3;.</p>
+    <p xml:lang="fr">Écrit par &author1;, &author2;, et &author3;.</p>
+    <p xml:lang="de">Geschrieben von &author1;, &author2; und &author3;.</p>
+    <p gt:escape="no">Escape gallery: operator x&amp;y, standard XML entities &amp; " ' &amp; &lt; &gt;, character reference ©, escaped character reference &amp;#xa9;, entity references &copy; &author1;</p>
+    <p gt:escape="no" xml:lang="fr">Exposition d'échappements: operateur x&y, entités XML standard & " ' & &lt; &gt;, caractère ©, caractère échappé &amp;#xa9;, entités &copy; &author1;</p>
+    <p gt:escape="no" xml:lang="de">Escape-Beispiele: Operator x&y, Standard-XML Entitäten & " ' & &lt; &gt;, Zeichen ©, escaptes Zeichen &amp;#xa9;, Entitäten &copy; &author1;</p>
+    <p gt:escape="yes">Escape gallery: operator x&amp;y, standard XML entities &amp; " ' &amp; &lt; &gt;, character reference ©, escaped character reference &amp;#xa9;, entity references &copy; &author1;</p>
+    <p gt:escape="yes" xml:lang="fr">Exposition d'échappements: operateur x&amp;y, entités XML standard &amp; " ' &amp; &lt; &gt;, caractère ©, caractère échappé &amp;#xa9;, entités &amp;copy; &amp;author1;</p>
+    <p gt:escape="yes" xml:lang="de">Escape-Beispiele: Operator x&amp;y, Standard-XML Entitäten &amp; " ' &amp; &lt; &gt;, Zeichen ©, escaptes Zeichen &amp;#xa9;, Entitäten &amp;copy; &amp;author1;</p>
   </description>
   <url type="homepage">https://wiki.gnome.org/Design/Apps/CharacterMap</url>
   <updatecontact>dueno_at_src.gnome.org</updatecontact>
@@ -131,7 +204,12 @@ EOF
 
 cat <<\EOF > mf.appdata.xml.desired.ok
 <?xml version="1.0" encoding="UTF-8"?>
-<component type="desktop">
+<!DOCTYPE component PUBLIC "" "" [
+<!ENTITY author1 "Giovanni Campagna">
+<!ENTITY author2 "Daiki Ueno">
+<!ENTITY author3 "Bilal Elmoussaoui">
+]>
+<component xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0" type="desktop">
   <id>org.gnome.Characters.desktop</id>
   <name>GNOME Characters</name>
   <summary>Character map application</summary>
@@ -148,6 +226,19 @@ cat <<\EOF > mf.appdata.xml.desired.ok
       Punctuation, Pictures, etc.
     </p>
     <p xml:lang="fr">Vous pouvez aussi naviguer dans les caractères par catégories, comme par Ponctuation, Images, etc.</p>
+    <p gt:escape="yes">
+      Did you know that the copyright sign (©, U+00A9) can be written in HTML
+      as &amp;#xa9;,
+      as &amp;#169;,
+      or as &amp;copy;?
+    </p>
+    <p gt:escape="yes" xml:lang="fr">Saviez-vous que le signe de copyright (©, U+00A9) peut être écrit en HTML comme &amp;#xa9;, comme &amp;#169; ou comme &amp;copy; ?</p>
+    <p>Written by &author1;, &author2;, and &author3;.</p>
+    <p xml:lang="fr">Écrit par &author1;, &author2;, et &author3;.</p>
+    <p gt:escape="no">Escape gallery: operator x&amp;y, standard XML entities &amp; " ' &amp; &lt; &gt;, character reference ©, escaped character reference &amp;#xa9;, entity references &copy; &author1;</p>
+    <p gt:escape="no" xml:lang="fr">Exposition d'échappements: operateur x&y, entités XML standard & " ' & &lt; &gt;, caractère ©, caractère échappé &amp;#xa9;, entités &copy; &author1;</p>
+    <p gt:escape="yes">Escape gallery: operator x&amp;y, standard XML entities &amp; " ' &amp; &lt; &gt;, character reference ©, escaped character reference &amp;#xa9;, entity references &copy; &author1;</p>
+    <p gt:escape="yes" xml:lang="fr">Exposition d'échappements: operateur x&amp;y, entités XML standard &amp; " ' &amp; &lt; &gt;, caractère ©, caractère échappé &amp;#xa9;, entités &amp;copy; &amp;author1;</p>
   </description>
   <url type="homepage">https://wiki.gnome.org/Design/Apps/CharacterMap</url>
   <updatecontact>dueno_at_src.gnome.org</updatecontact>
@@ -155,6 +246,8 @@ cat <<\EOF > mf.appdata.xml.desired.ok
 EOF
 
 unset LINGUAS
+
+: ${MSGFMT=msgfmt}
 
 # Sanity checks for contradicting options.
 
@@ -179,11 +272,11 @@ ${MSGFMT} --xml --template=mf.appdata.xml -d po \
           >/dev/null 2>/dev/null \
   && Exit 1
 
-${MSGFMG} --xml --template=mf.appdata.xml -d po -o mf.appdata.xml.out -l fr \
+${MSGFMT} --xml --template=mf.appdata.xml -d po -o mf.appdata.xml.out -l fr \
           >/dev/null 2>/dev/null \
   && Exit 1
 
-${MSGFMG} --xml --template=mf.appdata.xml -d po -o mf.appdata.xml.out po/fr.po \
+${MSGFMT} --xml --template=mf.appdata.xml -d po -o mf.appdata.xml.out po/fr.po \
           >/dev/null 2>/dev/null \
   && Exit 1
 

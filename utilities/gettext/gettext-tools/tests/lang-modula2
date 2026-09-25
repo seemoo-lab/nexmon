@@ -1,0 +1,199 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of gettext facilities in the Modula-2 language.
+# Assumes an fr_FR locale is installed.
+# Assumes the following packages are installed: gm2.
+
+# Test whether we can build and test Modula-2 programs.
+test "${MODULA2_CHOICE}" != no || {
+  echo "Skipping test: configured with --disable-modula2"
+  Exit 77
+}
+test "${BUILDMODULA2}" = yes || {
+  echo "Skipping test: Modula-2 compiler not found"
+  Exit 77
+}
+
+# On Ubuntu 22.04, with gm2 version 11, we see a compilation error
+# "error: the file containing the definition module 'Terminal' cannot be found",
+# apparently due to insufficient include paths in this version of gm2.
+cat <<\EOF > foo.mod
+MODULE Prog;
+FROM Terminal IMPORT WriteLn;
+BEGIN
+  WriteLn;
+END Prog.
+EOF
+${M2C} ${M2FLAGS} -o foo foo.mod || {
+  echo "Skipping test: Modula-2 compiler cannot find module 'Terminal'"
+  Exit 77
+}
+
+cat <<\EOF > prog.mod
+MODULE Prog;
+
+FROM Args IMPORT GetArg;
+FROM NumberIO IMPORT StrToCard;
+FROM Terminal IMPORT Write, WriteLn;
+FROM Libintl IMPORT SetLocale, LC_ALL, TextDomain, BindTextDomain, Gettext, NGettext;
+FROM DynamicStrings IMPORT String, Length, char;
+FROM FormatStrings IMPORT Sprintf1;
+
+(* Like Terminal.WriteString, except that it takes a String, not an ARRAY OF CHAR. *)
+PROCEDURE WriteString (s: String);
+VAR
+  l, i: CARDINAL;
+BEGIN
+  l := Length(s);
+  i := 0;
+  WHILE i < l DO
+    Write(char(s, i));
+    INC (i);
+  END;
+END WriteString;
+
+VAR
+  argument: ARRAY[0..1000] OF CHAR;
+  n: CARDINAL;
+
+BEGIN
+  SetLocale(LC_ALL, "");
+  TextDomain("prog");
+  BindTextDomain("prog", ".");
+
+  IF NOT GetArg(argument, 1) THEN HALT(1); END;
+  StrToCard(argument, n);
+
+  WriteString(Gettext("'Your command, please?', asked the waiter."));
+  WriteLn;
+
+  (* Put a space before %u, as a workaround against GCC bug
+     <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=119915>. *)
+  WriteString(Sprintf1(NGettext("a piece of cake", " %u pieces of cake", n), n));
+  WriteLn;
+
+END Prog.
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -o prog.tmp --omit-header --no-location prog.mod \
+  || Exit 1
+LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
+
+cat <<\EOF > prog.ok
+msgid "'Your command, please?', asked the waiter."
+msgstr ""
+
+#, modula2-format
+msgid "a piece of cake"
+msgid_plural " %u pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} prog.ok prog.pot || Exit 1
+
+cat <<\EOF > fr.po
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "'Your command, please?', asked the waiter."
+msgstr "«Votre commande, s'il vous plait», dit le garçon."
+
+# Les gateaux allemands sont les meilleurs du monde.
+#, modula2-format
+msgid "a piece of cake"
+msgid_plural " %u pieces of cake"
+msgstr[0] "un morceau de gateau"
+msgstr[1] " %u morceaux de gateau"
+EOF
+
+: ${MSGMERGE=msgmerge}
+${MSGMERGE} -q -o fr.po.tmp fr.po prog.pot || Exit 1
+LC_ALL=C tr -d '\r' < fr.po.tmp > fr.po.new || Exit 1
+
+: ${DIFF=diff}
+${DIFF} fr.po fr.po.new || Exit 1
+
+test -d fr || mkdir fr
+test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
+
+if false; then
+  # Separate compilation requires the option -fscaffold-main, that was not
+  # present in gm2 versions before GCC 13.
+  ${M2C} ${M2FLAGS} -I"$top_builddir"/../gettext-runtime/intl-modula2 \
+         -c -fscaffold-main prog.mod \
+    || Exit 1
+
+  : ${CONFIG_SHELL=${SHELL-/bin/sh}}
+  ${CONFIG_SHELL} "$top_builddir"/libtool --quiet --tag=CC --mode=link \
+    ${M2C} ${M2FLAGS} -o prog \
+                      prog.${OBJEXT} \
+                      "$top_builddir"/../gettext-runtime/intl-modula2/libintl_m2.la \
+                      ${LTLIBINTL} \
+    || Exit 1
+else
+  ${CONFIG_SHELL} "$top_builddir"/libtool --quiet --tag=CC --mode=link \
+    ${M2C} ${M2FLAGS} -I"$top_builddir"/../gettext-runtime/intl-modula2 \
+                      -o prog \
+                      prog.mod \
+                      "$top_builddir"/../gettext-runtime/intl-modula2/libintl_m2.la \
+                      ${LTLIBINTL} \
+    || Exit 1
+fi
+
+: ${DIFF=diff}
+cat <<\EOF > prog.ok
+«Votre commande, s'il vous plait», dit le garçon.
+ 2 morceaux de gateau
+EOF
+cat <<\EOF > prog.oku
+Â«Votre commande, s'il vous plaitÂ», dit le garÃ§on.
+ 2 morceaux de gateau
+EOF
+
+: ${LOCALE_FR=fr_FR}
+: ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+if test $LOCALE_FR != none; then
+  LC_ALL=$LOCALE_FR LANGUAGE= ./prog 2 > prog.tmp
+  case $? in
+    0) case "$host_os" in
+         mingw* | windows*)
+           LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1 ;;
+         *) cp prog.tmp prog.out || Exit 1 ;;
+       esac
+       ${DIFF} prog.ok prog.out || Exit 1;;
+    77) LOCALE_FR=none;;
+    *) Exit 1;;
+  esac
+fi
+if test $LOCALE_FR_UTF8 != none; then
+  LC_ALL=$LOCALE_FR_UTF8 LANGUAGE= ./prog 2 > prog.tmp
+  case $? in
+    0) case "$host_os" in
+         mingw* | windows*)
+           LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1 ;;
+         *) cp prog.tmp prog.out || Exit 1 ;;
+       esac
+       ${DIFF} prog.oku prog.out || Exit 1;;
+    77) LOCALE_FR_UTF8=none;;
+    *) Exit 1;;
+  esac
+fi
+if test $LOCALE_FR = none && test $LOCALE_FR_UTF8 = none; then
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: no french locale is installed"
+  else
+    echo "Skipping test: no french locale is supported"
+  fi
+  Exit 77
+fi
+
+Exit 0

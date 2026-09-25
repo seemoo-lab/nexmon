@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,23 +16,24 @@
 
 void proto_register_spp(void);
 void proto_reg_handoff_spp(void);
+static dissector_handle_t spp_handle;
 
-static int proto_spp = -1;
-static int hf_spp_connection_control = -1;
-static int hf_spp_connection_control_sys = -1;
-static int hf_spp_connection_control_send_ack = -1;
-static int hf_spp_connection_control_attn = -1;
-static int hf_spp_connection_control_eom = -1;
-static int hf_spp_datastream_type = -1;
-static int hf_spp_src_id = -1;
-static int hf_spp_dst_id = -1;
-static int hf_spp_seq_nr = -1;
-static int hf_spp_ack_nr = -1;
-static int hf_spp_all_nr = -1;
-/* static int hf_spp_rexmt_frame = -1; */
+static int proto_spp;
+static int hf_spp_connection_control;
+static int hf_spp_connection_control_sys;
+static int hf_spp_connection_control_send_ack;
+static int hf_spp_connection_control_attn;
+static int hf_spp_connection_control_eom;
+static int hf_spp_datastream_type;
+static int hf_spp_src_id;
+static int hf_spp_dst_id;
+static int hf_spp_seq_nr;
+static int hf_spp_ack_nr;
+static int hf_spp_all_nr;
+/* static int hf_spp_rexmt_frame; */
 
-static gint ett_spp = -1;
-static gint ett_spp_connctrl = -1;
+static int ett_spp;
+static int ett_spp_connctrl;
 
 static dissector_table_t spp_socket_dissector_table;
 
@@ -63,7 +52,7 @@ static dissector_table_t spp_socket_dissector_table;
 #define SPP_EOM		0x10
 
 static const char*
-spp_conn_ctrl(guint8 ctrl)
+spp_conn_ctrl(uint8_t ctrl)
 {
 	static const value_string conn_vals[] = {
 		{ 0x00,                        "Data, No Ack Required" },
@@ -80,7 +69,7 @@ spp_conn_ctrl(guint8 ctrl)
 }
 
 static const char*
-spp_datastream(guint8 type)
+spp_datastream(uint8_t type)
 {
 	switch (type) {
 		case 0xfe:
@@ -106,13 +95,13 @@ dissect_spp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	proto_tree *spp_tree;
 	proto_item *ti;
 	tvbuff_t   *next_tvb;
-	guint8	    conn_ctrl;
-	guint8	    datastream_type;
+	uint8_t	    conn_ctrl;
+	uint8_t	    datastream_type;
 	const char *datastream_type_string;
-	guint16     spp_seq;
+	uint16_t    spp_seq;
 	const char *spp_msg_string;
-	guint16	    low_socket, high_socket;
-	static const int * ctrl[] = {
+	uint16_t	    low_socket, high_socket;
+	static int * const ctrl[] = {
 		&hf_spp_connection_control_sys,
 		&hf_spp_connection_control_send_ack,
 		&hf_spp_connection_control_attn,
@@ -126,14 +115,14 @@ dissect_spp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	ti = proto_tree_add_item(tree, proto_spp, tvb, 0, SPP_HEADER_LEN, ENC_NA);
 	spp_tree = proto_item_add_subtree(ti, ett_spp);
 
-	conn_ctrl = tvb_get_guint8(tvb, 0);
+	conn_ctrl = tvb_get_uint8(tvb, 0);
 	spp_msg_string = spp_conn_ctrl(conn_ctrl);
 	col_append_fstr(pinfo->cinfo, COL_INFO, " %s", spp_msg_string);
 
 	proto_tree_add_bitmask_with_flags(spp_tree, tvb, 0, hf_spp_connection_control, ett_spp_connctrl,
 								ctrl, ENC_NA, BMT_NO_FALSE);
 
-	datastream_type = tvb_get_guint8(tvb, 1);
+	datastream_type = tvb_get_uint8(tvb, 1);
 	datastream_type_string = spp_datastream(datastream_type);
 	if (datastream_type_string != NULL) {
 		col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)", datastream_type_string);
@@ -250,7 +239,7 @@ proto_register_spp(void)
 #endif
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_spp,
 		&ett_spp_connctrl,
 	};
@@ -259,6 +248,7 @@ proto_register_spp(void)
 	    "SPP", "spp");
 	proto_register_field_array(proto_spp, hf_spp, array_length(hf_spp));
 	proto_register_subtree_array(ett, array_length(ett));
+	spp_handle = register_dissector("spp", dissect_spp, proto_spp);
 
 	spp_socket_dissector_table = register_dissector_table("spp.socket",
 	    "SPP socket", proto_spp, FT_UINT16, BASE_HEX);
@@ -267,14 +257,11 @@ proto_register_spp(void)
 void
 proto_reg_handoff_spp(void)
 {
-	dissector_handle_t spp_handle;
-
-	spp_handle = create_dissector_handle(dissect_spp, proto_spp);
 	dissector_add_uint("idp.packet_type", IDP_PACKET_TYPE_SPP, spp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

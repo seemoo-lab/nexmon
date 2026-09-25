@@ -1,29 +1,37 @@
-/*
+/** @file
+ *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2001 Gerald Combs
  *
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef SEMCHECK_H
 #define SEMCHECK_H
 
-gboolean
-dfw_semcheck(dfwork_t *dfw, GPtrArray *deprecated);
+#include "dfilter-int.h"
 
+bool
+dfw_semcheck(dfwork_t *dfw);
+
+ftenum_t
+check_arithmetic(dfwork_t *dfw, stnode_t *st_node, ftenum_t logical_ftype);
+
+ftenum_t
+check_function(dfwork_t *dfw, stnode_t *st_node, ftenum_t logical_ftype);
+
+ftenum_t
+check_slice(dfwork_t *dfw, stnode_t *st, ftenum_t logical_ftype);
+
+void
+resolve_unparsed(dfwork_t *dfw, stnode_t *st, bool strict);
+
+ftenum_t
+get_logical_ftype(dfwork_t *dfw, stnode_t *st_node);
+
+bool
+compatible_ftypes(ftenum_t a, ftenum_t b);
 
 #endif

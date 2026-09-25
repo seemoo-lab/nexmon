@@ -295,13 +295,31 @@ AsymmetricTokenData/name/recipient-name			token-recipient-name
 
 TokenData/type						token-data-type
 CertificateSelectors/content-integrity-check		selectors-content-integrity-check
+PerMessageTransferFields/originator-name			perMessageTransferFields_originator-name
+PerProbeTransferFields/originator-name				perProbeTransferFields_originator-name
+PerMessageSubmissionFields/originator-name			perMessageSubmissionFields_originator-name
+PerProbeSubmissionFields/originator-name			perProbeSubmissionFields_originator-name
 
-# This table creates the value_sting to name P3 operation codes and errors
+#.FIELD_ATTR
+PerMessageTransferFields/originator-name			ABBREV=perMessageTransferFields.originator-name
+PerProbeTransferFields/originator-name				ABBREV=perProbeTransferFields.originator-name
+PerMessageSubmissionFields/originator-name			ABBREV=perMessageSubmissionFields.originator-name
+PerProbeSubmissionFields/originator-name			ABBREV=perProbeSubmissionFields.originator-name
+MTABindArgument/authenticated/initiator-name		ABBREV=authenticated.initiator-name
+MTABindResult/authenticated/responder-name			ABBREV=authenticated.responder-name
+DeliveryQueue/octets								ABBREV=delivery-queue.octets
+BuiltInDomainDefinedAttribute/type					ABBREV=printable.type
+UniversalDomainDefinedAttribute/type				ABBREV=universal.type
+SecurityCategory/type								ABBREV=category.type
+ExtensionField/type									ABBREV=extension.type
+TokenData/type										ABBREV=token-data-type
+
+# This table creates the value_string to name P3 operation codes and errors
 # in file packet-p3-table.c which is included in the template file
 #
 #.TABLE_HDR
 /* P3 ABSTRACT-OPERATIONS */
-const value_string p3_opr_code_string_vals[] = {
+static const value_string p3_opr_code_string_vals[] = {
 #.TABLE_BODY OPERATION
 	{ %(&operationCode)s, "%(_ident)s" },
 #.TABLE_FTR
@@ -523,7 +541,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 #.FN_BODY AdditionalInformation
    proto_item *item = NULL;
    int         loffset = 0;
-   guint32     len = 0;
+   uint32_t    len = 0;
 
    /* work out the length */
    loffset = dissect_ber_identifier(actx->pinfo, tree, tvb, offset, NULL, NULL, NULL);
@@ -542,7 +560,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	const char *name;
 
 	if(actx->external.indirect_ref_present) {
-		proto_item_append_text(tree, " (%%s)", val_to_str(actx->external.indirect_reference, p1_StandardExtension_vals, "standard-extension %%d"));
+		proto_item_append_text(tree, " (%%s)", val_to_str(actx->pinfo->pool, actx->external.indirect_reference, p1_StandardExtension_vals, "standard-extension %%d"));
 		if (dissector_try_uint(p1_extension_dissector_table, actx->external.indirect_reference, tvb, actx->pinfo, tree)) {
 			offset = tvb_reported_length(tvb);
 		} else {
@@ -556,7 +574,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 		}
 	} else if (actx->external.direct_ref_present) {
 		offset = call_ber_oid_callback(actx->external.direct_reference, tvb, offset, actx->pinfo, tree, actx->private_data);
-		name = oid_resolved_from_string(wmem_packet_scope(), actx->external.direct_reference);
+		name = oid_resolved_from_string(actx->pinfo->pool, actx->external.direct_reference);
 		proto_item_append_text(tree, " (%%s)", name ? name : actx->external.direct_reference);
 	}
 
@@ -569,7 +587,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 
 	if (actx->external.direct_reference) {
 		offset = call_ber_oid_callback(actx->external.direct_reference, tvb, offset, actx->pinfo, tree, actx->private_data);
-		name = oid_resolved_from_string(wmem_packet_scope(), actx->external.direct_reference);
+		name = oid_resolved_from_string(actx->pinfo->pool, actx->external.direct_reference);
 		proto_item_append_text(tree, " (%%s)", name ? name : actx->external.direct_reference);
 	} else {
 		offset = dissect_unknown_ber(actx->pinfo, tvb, offset, tree);
@@ -580,11 +598,8 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 
 #.FN_BODY ExtensionAttribute/extension-attribute-value
 
-	proto_item_append_text(tree, " (%%s)", val_to_str(actx->external.indirect_reference, p1_ExtensionAttributeType_vals, "extension-attribute-type %%d"));
-	if (!actx->pinfo->private_table) {
-		actx->pinfo->private_table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-	}
-	g_hash_table_insert(actx->pinfo->private_table, (gpointer)P1_ADDRESS_CTX, actx->subtree.tree_ctx);
+	proto_item_append_text(tree, " (%%s)", val_to_str(actx->pinfo->pool, actx->external.indirect_reference, p1_ExtensionAttributeType_vals, "extension-attribute-type %%d"));
+	p_add_proto_data(actx->pinfo->pool, actx->pinfo, proto_p1, 0, actx->subtree.tree_ctx);
 	if (dissector_try_uint(p1_extension_attribute_dissector_table, actx->external.indirect_reference, tvb, actx->pinfo, tree)) {
 		offset =tvb_reported_length(tvb);
 	} else {
@@ -596,7 +611,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 		offset = dissect_unknown_ber(actx->pinfo, tvb, offset, next_tree);
 		expert_add_info(actx->pinfo, item, &ei_p1_unknown_extension_attribute_type);
 	}
-	g_hash_table_steal(actx->pinfo->private_table, (gpointer)P1_ADDRESS_CTX);
+	p_remove_proto_data(actx->pinfo->pool, actx->pinfo, proto_p1, 0);
 
 
 #.FN_BODY RefusedOperation/refused-argument/refused-extension
@@ -615,15 +630,15 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 #.FN_PARS StandardExtension VAL_PTR = &actx->external.indirect_reference
 
 #.FN_BODY StandardExtension
-	actx->external.indirect_ref_present = TRUE;
-	actx->external.direct_ref_present = FALSE;
+	actx->external.indirect_ref_present = true;
+	actx->external.direct_ref_present = false;
 	%(DEFAULT_BODY)s
 
 #.FN_BODY ExtensionType/private-extension  FN_VARIANT = _str  VAL_PTR = &actx->external.direct_reference
-	actx->external.indirect_ref_present = FALSE;
+	actx->external.indirect_ref_present = false;
 	actx->external.direct_reference = NULL;
 	%(DEFAULT_BODY)s
-	actx->external.direct_ref_present = (actx->external.direct_reference != NULL) ? TRUE : FALSE;
+	actx->external.direct_ref_present = (actx->external.direct_reference != NULL) ? true : false;
 
 #.FN_PARS ExtendedContentType
 	FN_VARIANT = _str  VAL_PTR = &ctx->content_type_id
@@ -633,14 +648,14 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	p1_address_ctx_t* ctx;
 
 	if (actx->subtree.tree_ctx == NULL)
-		actx->subtree.tree_ctx = wmem_new0(wmem_packet_scope(), p1_address_ctx_t);
+		actx->subtree.tree_ctx = wmem_new0(actx->pinfo->pool, p1_address_ctx_t);
 
 	ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
 
 	%(DEFAULT_BODY)s
 
 	if(ctx->content_type_id) {
-		name = oid_resolved_from_string(wmem_packet_scope(), ctx->content_type_id);
+		name = oid_resolved_from_string(actx->pinfo->pool, ctx->content_type_id);
 
 		if(!name) name = ctx->content_type_id;
 
@@ -650,11 +665,11 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 #.FN_PARS BuiltInContentType/_untag VAL_PTR = &ict
 
 #.FN_BODY BuiltInContentType/_untag
-	static guint32	ict = -1;
+	static uint32_t	ict = -1;
 	p1_address_ctx_t* ctx;
 
 	if (actx->subtree.tree_ctx == NULL)
-		actx->subtree.tree_ctx = wmem_new0(wmem_packet_scope(), p1_address_ctx_t);
+		actx->subtree.tree_ctx = wmem_new0(actx->pinfo->pool, p1_address_ctx_t);
 
 	ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
 
@@ -663,10 +678,10 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	/* convert integer content type to oid for dispatch when the content is found */
 	switch(ict) {
 	case 2:
-		ctx->content_type_id = wmem_strdup(wmem_packet_scope(), "2.6.1.10.0");
+		ctx->content_type_id = wmem_strdup(actx->pinfo->pool, "2.6.1.10.0");
 		break;
 	case 22:
-		ctx->content_type_id = wmem_strdup(wmem_packet_scope(), "2.6.1.10.1");
+		ctx->content_type_id = wmem_strdup(actx->pinfo->pool, "2.6.1.10.1");
 		break;
 	default:
 		ctx->content_type_id = NULL;
@@ -707,10 +722,10 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	%(DEFAULT_BODY)s
 
 	if (ctx && ctx->do_address) {
-		proto_item_append_text(actx->subtree.tree, " %%s", tvb_format_text(mtaname, 0, tvb_reported_length(mtaname)));
+		proto_item_append_text(actx->subtree.tree, " %%s", tvb_format_text(actx->pinfo->pool, mtaname, 0, tvb_reported_length(mtaname)));
 	} else {
 		if (mtaname) {
-			col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", tvb_format_text(mtaname, 0, tvb_reported_length(mtaname)));
+			col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", tvb_format_text(actx->pinfo->pool, mtaname, 0, tvb_reported_length(mtaname)));
 		}
 	}
 
@@ -906,7 +921,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	do_address_str_tree("=", tstring, actx, tree);
 
 #.FN_BODY TeletexDomainDefinedAttribute
-	actx->value_ptr = wmem_strbuf_new(wmem_packet_scope(), "");
+	actx->value_ptr = wmem_strbuf_new(actx->pinfo->pool, "");
 
 	%(DEFAULT_BODY)s
 
@@ -981,7 +996,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	do_address_str_tree("=", pstring, actx, tree);
 
 #.FN_BODY BuiltInDomainDefinedAttribute
-	actx->value_ptr = wmem_strbuf_new(wmem_packet_scope(), "");
+	actx->value_ptr = wmem_strbuf_new(actx->pinfo->pool, "");
 
 	%(DEFAULT_BODY)s
 
@@ -989,14 +1004,14 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	p1_address_ctx_t* ctx;
 
 	if (actx->subtree.tree_ctx == NULL) {
-		actx->subtree.tree_ctx = wmem_new0(wmem_packet_scope(), p1_address_ctx_t);
+		actx->subtree.tree_ctx = wmem_new0(actx->pinfo->pool, p1_address_ctx_t);
 	}
 
 	ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
-	ctx->oraddress = wmem_strbuf_new(wmem_packet_scope(), "");
+	ctx->oraddress = wmem_strbuf_new(actx->pinfo->pool, "");
 
 	actx->subtree.tree = NULL;
-	set_do_address(actx, TRUE);
+	set_do_address(actx, true);
 
 	%(DEFAULT_BODY)s
 
@@ -1004,27 +1019,27 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	if (ctx->oraddress && (wmem_strbuf_get_len(ctx->oraddress) > 0) && actx->subtree.tree)
 		proto_item_append_text(actx->subtree.tree, " (%%s/)", wmem_strbuf_get_str(ctx->oraddress));
 
-	set_do_address(actx, FALSE);
+	set_do_address(actx, false);
 
 #.FN_BODY ORName
 	p1_address_ctx_t* ctx;
 
 	if (actx->subtree.tree_ctx == NULL) {
-		actx->subtree.tree_ctx = wmem_new0(wmem_packet_scope(), p1_address_ctx_t);
+		actx->subtree.tree_ctx = wmem_new0(actx->pinfo->pool, p1_address_ctx_t);
 	}
 
 	ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
-	ctx->oraddress = wmem_strbuf_new(wmem_packet_scope(), "");
+	ctx->oraddress = wmem_strbuf_new(actx->pinfo->pool, "");
 
 	actx->subtree.tree = NULL;
-	set_do_address(actx, TRUE);
+	set_do_address(actx, true);
 
 	%(DEFAULT_BODY)s
 
 	if (ctx->oraddress && (wmem_strbuf_get_len(ctx->oraddress) > 0) && actx->subtree.tree)
 		proto_item_append_text(actx->subtree.tree, " (%%s/)", wmem_strbuf_get_str(ctx->oraddress));
 
-	set_do_address(actx, FALSE);
+	set_do_address(actx, false);
 #.FN_BODY MessageIdentifier
 	actx->subtree.tree = NULL;
 
@@ -1034,11 +1049,11 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	p1_address_ctx_t* ctx;
 
 	if (actx->subtree.tree_ctx == NULL) {
-		actx->subtree.tree_ctx = wmem_new0(wmem_packet_scope(), p1_address_ctx_t);
+		actx->subtree.tree_ctx = wmem_new0(actx->pinfo->pool, p1_address_ctx_t);
 	}
 
 	ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
-	ctx->oraddress = wmem_strbuf_new(wmem_packet_scope(), "");
+	ctx->oraddress = wmem_strbuf_new(actx->pinfo->pool, "");
 
 	actx->subtree.tree = tree;
 
@@ -1064,27 +1079,27 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 
 	if(id) {
 		if (ctx && ctx->do_address)
-			proto_item_append_text(actx->subtree.tree, " $ %%s)", tvb_format_text(id, 0, tvb_reported_length(id)));
+			proto_item_append_text(actx->subtree.tree, " $ %%s)", tvb_format_text(actx->pinfo->pool, id, 0, tvb_reported_length(id)));
 
 		if (hf_index == hf_p1_subject_identifier)
-			col_append_fstr(actx->pinfo->cinfo, COL_INFO, " $ %%s)", tvb_format_text(id, 0, tvb_reported_length(id)));
+			col_append_fstr(actx->pinfo->cinfo, COL_INFO, " $ %%s)", tvb_format_text(actx->pinfo->pool, id, 0, tvb_reported_length(id)));
 	}
 
 #.FN_BODY MTSIdentifier
 
-	set_do_address(actx, TRUE);
+	set_do_address(actx, true);
 
 	%(DEFAULT_BODY)s
 
-	set_do_address(actx, FALSE);
+	set_do_address(actx, false);
 
 #.FN_BODY MTANameAndOptionalGDI
 
-	set_do_address(actx, TRUE);
+	set_do_address(actx, true);
 
 	%(DEFAULT_BODY)s
 
-	set_do_address(actx, FALSE);
+	set_do_address(actx, false);
 	proto_item_append_text(tree, ")");
 
 #.FN_BODY BuiltInStandardAttributes
@@ -1094,49 +1109,49 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 
 #.FN_BODY TraceInformationElement
 
-	set_do_address(actx, TRUE);
+	set_do_address(actx, true);
 
 	%(DEFAULT_BODY)s
 
-	set_do_address(actx, FALSE);
+	set_do_address(actx, false);
 
 #.FN_BODY InternalTraceInformationElement
 
-	set_do_address(actx, TRUE);
+	set_do_address(actx, true);
 
 	%(DEFAULT_BODY)s
 
-	set_do_address(actx, FALSE);
+	set_do_address(actx, false);
 
 #.FN_BODY DomainSuppliedInformation
 
-	set_do_address(actx, FALSE);
+	set_do_address(actx, false);
 
 	%(DEFAULT_BODY)s
 
-	set_do_address(actx, TRUE);
+	set_do_address(actx, true);
 	proto_item_append_text(tree, ")");
 
 #.FN_BODY MTASuppliedInformation
 
-	set_do_address(actx, FALSE);
+	set_do_address(actx, false);
 
 	%(DEFAULT_BODY)s
 
-	set_do_address(actx, TRUE);
+	set_do_address(actx, true);
 	proto_item_append_text(tree, ")");
 
 #.FN_PARS Time
 	VAL_PTR = &arrival
 
 #.FN_BODY Time
-	tvbuff_t *arrival = NULL;
+	char *arrival = NULL;
 	p1_address_ctx_t* ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
 
 	%(DEFAULT_BODY)s
 
 	if(arrival && ctx && ctx->do_address)
-		proto_item_append_text(actx->subtree.tree, " %%s", tvb_format_text(arrival, 0, tvb_reported_length(arrival)));
+		proto_item_append_text(actx->subtree.tree, " %%s", arrival);
 
 #.FN_PARS RoutingAction
 	VAL_PTR = &action
@@ -1146,7 +1161,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 
 	%(DEFAULT_BODY)s
 
-	proto_item_append_text(actx->subtree.tree, " %%s", val_to_str(action, p1_RoutingAction_vals, "action(%%d)"));
+	proto_item_append_text(actx->subtree.tree, " %%s", val_to_str(actx->pinfo->pool, action, p1_RoutingAction_vals, "action(%%d)"));
 
 #.FN_PARS MTABindError
   VAL_PTR=&error
@@ -1155,7 +1170,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
   int error = -1;
   %(DEFAULT_BODY)s
   if((error != -1))
-    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(error, p1_MTABindError_vals, "error(%%d)"));
+    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(actx->pinfo->pool, error, p1_MTABindError_vals, "error(%%d)"));
 
 #.FN_PARS TokenTypeIdentifier
 	FN_VARIANT = _str  VAL_PTR = &actx->external.direct_reference
@@ -1169,7 +1184,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	VAL_PTR = &credentials
 
 #.FN_BODY Credentials
-  gint credentials = -1;
+  int credentials = -1;
 
   %(DEFAULT_BODY)s
 
@@ -1182,7 +1197,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 
 #.FN_BODY TokenData/value
 
-	proto_item_append_text(tree, " (%%s)", val_to_str(actx->external.indirect_reference, p1_TokenDataType_vals, "tokendata-type %%d"));
+	proto_item_append_text(tree, " (%%s)", val_to_str(actx->pinfo->pool, actx->external.indirect_reference, p1_TokenDataType_vals, "tokendata-type %%d"));
 	if (dissector_try_uint(p1_tokendata_dissector_table, actx->external.indirect_reference, tvb, actx->pinfo, tree)) {
 		offset = tvb_reported_length(tvb);
 	} else {
@@ -1198,7 +1213,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 #.FN_BODY PerDomainBilateralInformation/bilateral-information
 	proto_item *item = NULL;
 	int	    loffset = 0;
-	guint32	    len = 0;
+	uint32_t	    len = 0;
 
 	/* work out the length */
 	loffset = dissect_ber_identifier(actx->pinfo, tree, tvb, offset, NULL, NULL, NULL);
@@ -1214,7 +1229,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	VAL_PTR = &apdu
 
 #.FN_BODY MTS-APDU
-	gint apdu = -1;
+	int apdu = -1;
 
 	%(DEFAULT_BODY)s
 
@@ -1228,7 +1243,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	VAL_PTR = &report
 
 #.FN_BODY ReportType
-	gint report = -1;
+	int report = -1;
 
 	%(DEFAULT_BODY)s
 
@@ -1237,22 +1252,40 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	}
 
 #.FN_BODY MessageSubmissionArgument
-	p1_initialize_content_globals(actx, tree, TRUE);
+	p1_initialize_content_globals(actx, tree, true);
 	%(DEFAULT_BODY)s
-	p1_initialize_content_globals(actx, NULL, FALSE);
+	p1_initialize_content_globals(actx, NULL, false);
 
 #.FN_BODY MessageDeliveryArgument
-	p1_initialize_content_globals(actx, tree, TRUE);
+	p1_initialize_content_globals(actx, tree, true);
 	%(DEFAULT_BODY)s
-	p1_initialize_content_globals(actx, NULL, FALSE);
+	p1_initialize_content_globals(actx, NULL, false);
 
 #.FN_BODY ReportDeliveryArgument
-	p1_initialize_content_globals(actx, tree, TRUE);
+	p1_initialize_content_globals(actx, tree, true);
 	%(DEFAULT_BODY)s
-	p1_initialize_content_globals(actx, NULL, FALSE);
+	p1_initialize_content_globals(actx, NULL, false);
 
 #.FN_HDR MTSBindResult
 	/* TODO: there may be other entry points where this global should be initialized... */
 	actx->subtree.tree = NULL;
+
+#.TYPE_ATTR
+RecipientNumberForAdvice DISPLAY = BASE_NONE
+TeletexCommonName DISPLAY = BASE_NONE
+TeletexOrganizationName DISPLAY = BASE_NONE
+TeletexPersonalName/surname DISPLAY = BASE_NONE
+TeletexPersonalName/given-name DISPLAY = BASE_NONE
+TeletexPersonalName/initials DISPLAY = BASE_NONE
+TeletexPersonalName/generation-qualifier DISPLAY = BASE_NONE
+TeletexOrganizationalUnitName DISPLAY = BASE_NONE
+UnformattedPostalAddress/teletex-string DISPLAY = BASE_NONE
+PDSParameter/teletex-string DISPLAY = BASE_NONE
+TeletexDomainDefinedAttribute/type DISPLAY = BASE_NONE
+TeletexDomainDefinedAttribute/value DISPLAY = BASE_NONE
+TeletexNonBasicParameters/graphic-character-sets DISPLAY = BASE_NONE
+TeletexNonBasicParameters/control-character-sets DISPLAY = BASE_NONE
+TeletexNonBasicParameters/miscellaneous-terminal-capabilities DISPLAY = BASE_NONE
+
 #.END
 

@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,12 +17,12 @@
 void proto_register_mesh(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_mesh = -1;
-static int hf_mesh_ttl = -1;
-static int hf_mesh_e2eseq = -1;
+static int proto_mesh;
+static int hf_mesh_ttl;
+static int hf_mesh_e2eseq;
 
 /* Initialize the subtree pointers */
-static gint ett_mesh = -1;
+static int ett_mesh;
 
 /* Code to actually dissect the packets */
 static int
@@ -43,8 +31,8 @@ dissect_mesh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
   /* Set up structures needed to add the protocol subtree and manage it */
   proto_item *ti;
   proto_tree *mesh_tree;
-  guint8 mesh_ttl;
-  guint16 mesh_e2eseq;
+  uint8_t mesh_ttl;
+  uint16_t mesh_e2eseq;
 
   /* Make entries in Protocol column and Info column on summary display */
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "Mesh");
@@ -54,7 +42,7 @@ dissect_mesh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     mesh_tree = proto_item_add_subtree(ti, ett_mesh);
 
     /* add an item to the subtree, see section 1.6 for more information */
-    mesh_ttl = tvb_get_guint8(tvb, 2);
+    mesh_ttl = tvb_get_uint8(tvb, 2);
     proto_tree_add_uint(mesh_tree, hf_mesh_ttl, tvb, 2, 1, mesh_ttl);
 
     mesh_e2eseq = tvb_get_ntohs(tvb, 3);
@@ -87,7 +75,7 @@ proto_register_mesh(void)
   };
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_mesh
   };
 
@@ -102,7 +90,7 @@ proto_register_mesh(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

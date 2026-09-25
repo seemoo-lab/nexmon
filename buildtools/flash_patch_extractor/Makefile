@@ -7,9 +7,9 @@ endif
 
 fpext.o : fpext.c
 ifeq ($(HOSTUNAME),Darwin)
-	gcc-mp-5 -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+	gcc-mp-5 -std=c99 -Wall -Wno-unused-result -O0 -D_DEFAULT_SOURCE -o $@ -c $<
 else
-	gcc -rdynamic -std=c99 -Wall -Wno-unused-result -O0 -D_BSD_SOURCE -o $@ -c $<
+	gcc -rdynamic -std=c99 -Wall -Wno-unused-result -O0 -D_DEFAULT_SOURCE -o $@ -c $<
 endif
 
 darm/%.o: darm/%.c

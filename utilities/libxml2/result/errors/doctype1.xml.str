@@ -1,0 +1,4 @@
+./test/errors/doctype1.xml:1: parser error : Start tag expected, '<' not found
+<!DOCTYPE doc>[]>
+              ^
+./test/errors/doctype1.xml : failed to parse

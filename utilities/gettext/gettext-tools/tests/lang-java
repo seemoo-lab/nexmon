@@ -5,9 +5,6 @@
 # Assumes an fr_FR locale is installed.
 # Assumes the following packages are installed: java.
 
-# Note: This test fails when using gcj from GCC 3.1 and GCC 3.2, due to a bug
-# (libgcj/6576). It is fixed in GCC 3.3.
-
 # Test whether we can build and test Java programs.
 test "${JAVA_CHOICE}" != no || {
   echo "Skipping test: configured with --disable-java"
@@ -55,6 +52,8 @@ cat <<\EOF >> Program.java
     System.out.println(MessageFormat.format(GettextResource.gettext(catalog,"{0} is replaced by {1}."), new Object[] { "FF", "EUR" }));
     System.out.println(MessageFormat.format(GettextResource.npgettext(catalog,"++","a piece of cake","{0,number} pieces of cake",n), new Object[] { new Integer(n) }));
     System.out.println(MessageFormat.format(GettextResource.pgettext(catalog,"++","{0} is replaced by {1}."), new Object[] { "FF", "EUR" }));
+    System.out.println(String.format(GettextResource.ngettext(catalog,"She has one child","She has %d children",n), n));
+    System.out.println(String.format(GettextResource.gettext(catalog,"%d left-wing deputees and %d right-wing deputees"), 75, 64));
   }
 }
 EOF
@@ -67,7 +66,7 @@ CLASSPATH=../../../gettext-runtime/intl-java/libintl.jar ${JAVACOMP} -d . Progra
 ${XGETTEXT} -o prog.tmp --omit-header --no-location Program.java || Exit 1
 LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
 
-cat <<EOF > prog.ok
+cat <<\EOF > prog.ok
 msgid "'Your command, please?', asked the waiter."
 msgstr ""
 
@@ -91,6 +90,16 @@ msgstr[1] ""
 #, java-format
 msgctxt "++"
 msgid "{0} is replaced by {1}."
+msgstr ""
+
+#, java-printf-format
+msgid "She has one child"
+msgid_plural "She has %d children"
+msgstr[0] ""
+msgstr[1] ""
+
+#, java-printf-format
+msgid "%d left-wing deputees and %d right-wing deputees"
 msgstr ""
 EOF
 
@@ -131,6 +140,16 @@ msgstr[1] "{0,number} morceaux de gateau succulent"
 msgctxt "++"
 msgid "{0} is replaced by {1}."
 msgstr "Le nouveau {1} remplace le vieux {0}."
+
+#, java-printf-format
+msgid "She has one child"
+msgid_plural "She has %d children"
+msgstr[0] "Elle a un enfant"
+msgstr[1] "Elle a %d enfants"
+
+#, java-printf-format
+msgid "%d left-wing deputees and %d right-wing deputees"
+msgstr "%2$d députés de droite et %d députés de gauche"
 EOF
 
 : ${MSGMERGE=msgmerge}
@@ -141,7 +160,7 @@ LC_ALL=C tr -d '\r' < fr.po.tmp > fr.po.new || Exit 1
 ${DIFF} fr.po fr.po.new || Exit 1
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} -j -d . -r prog -l fr fr.po || Exit 1
+${MSGFMT} -c -j -d . -r prog -l fr fr.po || Exit 1
 
 # Test which of the fr_FR locales are installed.
 : ${LOCALE_FR=fr_FR}
@@ -178,6 +197,8 @@ cat <<\EOF > prog.ok
 EUR remplace FF.
 2 morceaux de gateau succulent
 Le nouveau EUR remplace le vieux FF.
+Elle a 2 enfants
+64 députés de droite et 75 députés de gauche
 EOF
 cat <<\EOF > prog.oku
 Â«Votre commande, s'il vous plaitÂ», dit le garÃ§on.
@@ -185,19 +206,35 @@ cat <<\EOF > prog.oku
 EUR remplace FF.
 2 morceaux de gateau succulent
 Le nouveau EUR remplace le vieux FF.
+Elle a 2 enfants
+64 dÃ©putÃ©s de droite et 75 dÃ©putÃ©s de gauche
 EOF
 
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+# Java on Windows (a native Windows program) does not support the native Windows
+# locale name French_France.65001. It produces ISO-8859-1 encoded output
+# nevertheless.
+case "$host_os" in
+  mingw* | windows*) LOCALE_FR_UTF8=none ;;
+esac
 : ${JAVAEXEC="/bin/sh ../../javaexec.sh"}
 if test $LOCALE_FR != none; then
-  prepare_locale_ fr $LOCALE_FR
-  LANGUAGE= LC_ALL=$LOCALE_FR CLASSPATH=.:../../../gettext-runtime/intl-java/libintl.jar ${JAVAEXEC} Program 2 ISO-8859-1 > prog.out || Exit 1
+  LANGUAGE= LC_ALL=$LOCALE_FR CLASSPATH=".${CLASSPATH_SEPARATOR}../../../gettext-runtime/intl-java/libintl.jar" ${JAVAEXEC} Program 2 ISO-8859-1 > prog.tmp || Exit 1
+  case "$host_os" in
+    mingw* | windows*)
+      LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1 ;;
+    *) cp prog.tmp prog.out || Exit 1 ;;
+  esac
   ${DIFF} prog.ok prog.out || Exit 1
 fi
 if test $LOCALE_FR_UTF8 != none; then
-  prepare_locale_ fr $LOCALE_FR_UTF8
-  LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 CLASSPATH=.:../../../gettext-runtime/intl-java/libintl.jar ${JAVAEXEC} Program 2 UTF-8 > prog.out || Exit 1
+  LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 CLASSPATH=".${CLASSPATH_SEPARATOR}../../../gettext-runtime/intl-java/libintl.jar" ${JAVAEXEC} Program 2 UTF-8 > prog.tmp || Exit 1
+  case "$host_os" in
+    mingw* | windows*)
+      LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1 ;;
+    *) cp prog.tmp prog.out || Exit 1 ;;
+  esac
   ${DIFF} prog.oku prog.out || Exit 1
 fi
 

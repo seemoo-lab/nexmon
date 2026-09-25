@@ -5,51 +5,41 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include <config.h>
+#define WS_LOG_DOMAIN  LOG_DOMAIN_MAIN
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
 
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
+#include <ws_exit_codes.h>
+#include <wsutil/ws_getopt.h>
 
 #include <wiretap/wtap.h>
 
-#ifndef HAVE_GETOPT_LONG
-#include "wsutil/wsgetopt.h"
-#endif
-
-#include <wsutil/crash_info.h>
+#include <wsutil/cmdarg_err.h>
 #include <wsutil/filesystem.h>
 #include <wsutil/file_util.h>
 #include <wsutil/privileges.h>
-#include <ws_version_info.h>
+#include <cli_main.h>
+#include <wsutil/version_info.h>
 #include <wiretap/wtap_opttypes.h>
 
 #ifdef HAVE_PLUGINS
 #include <wsutil/plugins.h>
 #endif
 
-#include <wsutil/report_err.h>
+#include <wsutil/clopts_common.h>
+#include <wsutil/wslog.h>
+
+#include "ui/failure_message.h"
+
+/* Additional exit codes */
+#define OUTPUT_FILE_ERROR 1
 
 /* Show command-line usage */
 static void
@@ -59,14 +49,15 @@ print_usage(FILE *output)
     fprintf(output, "Usage: reordercap [options] <infile> <outfile>\n");
     fprintf(output, "\n");
     fprintf(output, "Options:\n");
-    fprintf(output, "  -n        don't write to output file if the input file is ordered.\n");
-    fprintf(output, "  -h        display this help and exit.\n");
+    fprintf(output, "  -n                don't write to output file if the input file is ordered.\n");
+    fprintf(output, "  -h, --help        display this help and exit.\n");
+    fprintf(output, "  -v, --version     print version information and exit.\n");
 }
 
 /* Remember where this frame was in the file */
 typedef struct FrameRecord_t {
-    gint64       offset;
-    guint        num;
+    int64_t      offset;
+    unsigned     num;
 
     nstime_t     frame_time;
 } FrameRecord_t;
@@ -86,47 +77,43 @@ typedef struct FrameRecord_t {
 /**************************************************/
 
 
-static void
+static bool
 frame_write(FrameRecord_t *frame, wtap *wth, wtap_dumper *pdh,
-            struct wtap_pkthdr *phdr, Buffer *buf, const char *infile)
+            wtap_rec *rec, const char *infile, const char *outfile)
 {
     int    err;
-    gchar  *err_info;
+    char   *err_info;
 
-    DEBUG_PRINT("\nDumping frame (offset=%" G_GINT64_MODIFIER "u)\n",
+    DEBUG_PRINT("\nDumping frame (offset=%" PRIu64 ")\n",
                 frame->offset);
 
 
     /* Re-read the frame from the stored location */
-    if (!wtap_seek_read(wth, frame->offset, phdr, buf, &err, &err_info)) {
+    if (!wtap_seek_read(wth, frame->offset, rec, &err, &err_info)) {
         if (err != 0) {
             /* Print a message noting that the read failed somewhere along the line. */
             fprintf(stderr,
-                    "reordercap: An error occurred while re-reading \"%s\": %s.\n",
-                    infile, wtap_strerror(err));
-            if (err_info != NULL) {
-                fprintf(stderr, "(%s)\n", err_info);
-                g_free(err_info);
-            }
-            exit(1);
+                    "reordercap: An error occurred while re-reading \"%s\".\n",
+                    infile);
+            cfile_read_failure_message(infile, err, err_info);
+            return false;
         }
     }
 
     /* Copy, and set length and timestamp from item. */
-    /* TODO: remove when wtap_seek_read() fills in phdr,
+    /* TODO: remove when wtap_seek_read() fills in rec,
        including time stamps, for all file types  */
-    phdr->ts = frame->frame_time;
+    rec->ts = frame->frame_time;
 
     /* Dump frame to outfile */
-    if (!wtap_dump(pdh, phdr, ws_buffer_start_ptr(buf), &err, &err_info)) {
-        fprintf(stderr, "reordercap: Error (%s) writing frame to outfile\n",
-                wtap_strerror(err));
-        if (err_info != NULL) {
-            fprintf(stderr, "(%s)\n", err_info);
-            g_free(err_info);
-        }
-        exit(1);
+    if (!wtap_dump(pdh, rec, &err, &err_info)) {
+        cfile_write_failure_message(infile, outfile, err, err_info, frame->num,
+                                    wtap_file_type_subtype(wth));
+        return false;
     }
+    wtap_rec_reset(rec);
+
+    return true;
 }
 
 /* Comparing timestamps between 2 frames.
@@ -135,7 +122,7 @@ frame_write(FrameRecord_t *frame, wtap *wth, wtap_dumper *pdh,
    positive if (t1 > t2)
 */
 static int
-frames_compare(gconstpointer a, gconstpointer b)
+frames_compare(const void *a, const void *b)
 {
     const FrameRecord_t *frame1 = *(const FrameRecord_t *const *) a;
     const FrameRecord_t *frame2 = *(const FrameRecord_t *const *) b;
@@ -146,187 +133,139 @@ frames_compare(gconstpointer a, gconstpointer b)
     return nstime_cmp(time1, time2);
 }
 
-#ifdef HAVE_PLUGINS
-/*
- *  Don't report failures to load plugins because most (non-wiretap) plugins
- *  *should* fail to load (because we're not linked against libwireshark and
- *  dissector plugins need libwireshark).
- */
-static void
-failure_message(const char *msg_format _U_, va_list ap _U_)
-{
-    return;
-}
-#endif
-
 /********************************************************************/
 /* Main function.                                                   */
 /********************************************************************/
 int
 main(int argc, char *argv[])
 {
-    GString *comp_info_str;
-    GString *runtime_info_str;
+    char *configuration_init_error;
     wtap *wth = NULL;
     wtap_dumper *pdh = NULL;
-    struct wtap_pkthdr dump_phdr;
-    Buffer buf;
+    wtap_rec rec;
     int err;
-    gchar *err_info;
-    gint64 data_offset;
-    const struct wtap_pkthdr *phdr;
-    guint wrong_order_count = 0;
-    gboolean write_output_regardless = TRUE;
-    guint i;
-    GArray                      *shb_hdrs = NULL;
-    wtapng_iface_descriptions_t *idb_inf = NULL;
-    GArray                      *nrb_hdrs = NULL;
+    char *err_info;
+    int64_t data_offset;
+    unsigned wrong_order_count = 0;
+    bool write_output_regardless = true;
+    unsigned i;
+    wtap_dump_params params;
+    int                          ret = EXIT_SUCCESS;
 
     GPtrArray *frames;
     FrameRecord_t *prevFrame = NULL;
 
     int opt;
-    static const struct option long_options[] = {
-        {"help", no_argument, NULL, 'h'},
-        {"version", no_argument, NULL, 'v'},
+    static const struct ws_option long_options[] = {
+        {"help", ws_no_argument, NULL, 'h'},
+        {"version", ws_no_argument, NULL, 'v'},
+        LONGOPT_WSLOG
         {0, 0, 0, 0 }
     };
+#define OPTSTRING "hnv"
+    static const char optstring[] = OPTSTRING;
     int file_count;
     char *infile;
     const char *outfile;
 
-#ifdef HAVE_PLUGINS
-    char  *init_progfile_dir_error;
-#endif
+    /* Set the program name. */
+    g_set_prgname("reordercap");
 
-    /* Get the compile-time version information string */
-    comp_info_str = get_compiled_version_info(NULL, NULL);
+    cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
-    /* Get the run-time version information string */
-    runtime_info_str = get_runtime_version_info(NULL);
+    /* Initialize log handler early so we can have proper logging during startup. */
+    ws_log_init(vcmdarg_err);
 
-    /* Add it to the information to be reported on a crash. */
-    ws_add_crash_info("Reordercap (Wireshark) %s\n"
-         "\n"
-         "%s"
-         "\n"
-         "%s",
-      get_ws_vcs_version_info(), comp_info_str->str, runtime_info_str->str);
+    /* Early logging command-line initialization. */
+    ws_log_parse_args(&argc, argv, optstring, long_options, vcmdarg_err, WS_EXIT_INVALID_OPTION);
 
-  /*
-   * Get credential information for later use.
-   */
-  init_process_policies();
-  init_open_routines();
+    ws_noisy("Finished log init and parsing command line log arguments");
 
-#ifdef HAVE_PLUGINS
-    /* Register wiretap plugins */
-    if ((init_progfile_dir_error = init_progfile_dir(argv[0], main))) {
-        g_warning("reordercap: init_progfile_dir(): %s", init_progfile_dir_error);
-        g_free(init_progfile_dir_error);
-    } else {
-        /* Register all the plugin types we have. */
-        wtap_register_plugin_types(); /* Types known to libwiretap */
+    /*
+     * Get credential information for later use.
+     */
+    init_process_policies();
 
-        init_report_err(failure_message,NULL,NULL,NULL);
-
-        /* Scan for plugins.  This does *not* call their registration routines;
-           that's done later. */
-        scan_plugins();
-
-        /* Register all libwiretap plugin modules. */
-        register_all_wiretap_modules();
+    /*
+     * Attempt to get the pathname of the directory containing the
+     * executable file.
+     */
+    configuration_init_error = configuration_init(argv[0]);
+    if (configuration_init_error != NULL) {
+        fprintf(stderr,
+                "reordercap: Can't get pathname of directory containing the reordercap program: %s.\n",
+                configuration_init_error);
+        g_free(configuration_init_error);
     }
-#endif
+
+    /* Initialize the version information. */
+    ws_init_version_info("Reordercap", NULL, NULL);
+
+    init_report_failure_message("reordercap");
+
+    wtap_init(true);
 
     /* Process the options first */
-    while ((opt = getopt_long(argc, argv, "hnv", long_options, NULL)) != -1) {
+    while ((opt = ws_getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
             case 'n':
-                write_output_regardless = FALSE;
+                write_output_regardless = false;
                 break;
             case 'h':
-                printf("Reordercap (Wireshark) %s\n"
-                       "Reorder timestamps of input file frames into output file.\n"
-                       "See https://www.wireshark.org for more information.\n",
-                       get_ws_vcs_version_info());
+                show_help_header("Reorder timestamps of input file frames into output file.");
                 print_usage(stdout);
-                exit(0);
+                goto clean_exit;
             case 'v':
-                show_version("Reordercap (Wireshark)", comp_info_str, runtime_info_str);
-                g_string_free(comp_info_str, TRUE);
-                g_string_free(runtime_info_str, TRUE);
-                exit(0);
+                show_version();
+                goto clean_exit;
             case '?':
+            default:
+                /* wslog arguments are okay */
+                if (ws_log_is_wslog_arg(opt))
+                    break;
+
                 print_usage(stderr);
-                exit(1);
+                ret = WS_EXIT_INVALID_OPTION;
+                goto clean_exit;
         }
     }
 
     /* Remaining args are file names */
-    file_count = argc - optind;
+    file_count = argc - ws_optind;
     if (file_count == 2) {
-        infile  = argv[optind];
-        outfile = argv[optind+1];
+        infile  = argv[ws_optind];
+        outfile = argv[ws_optind+1];
     }
     else {
         print_usage(stderr);
-        exit(1);
+        ret = WS_EXIT_INVALID_OPTION;
+        goto clean_exit;
     }
 
     /* Open infile */
     /* TODO: if reordercap is ever changed to give the user a choice of which
        open_routine reader to use, then the following needs to change. */
-    wth = wtap_open_offline(infile, WTAP_TYPE_AUTO, &err, &err_info, TRUE);
+    wth = wtap_open_offline(infile, WTAP_TYPE_AUTO, &err, &err_info, true);
     if (wth == NULL) {
-        fprintf(stderr, "reordercap: Can't open %s: %s\n", infile,
-                wtap_strerror(err));
-        if (err_info != NULL) {
-            fprintf(stderr, "(%s)\n", err_info);
-            g_free(err_info);
-        }
-        exit(1);
+        cfile_open_failure_message(infile, err, err_info);
+        ret = WS_EXIT_OPEN_ERROR;
+        goto clean_exit;
     }
     DEBUG_PRINT("file_type_subtype is %d\n", wtap_file_type_subtype(wth));
-
-    shb_hdrs = wtap_file_get_shb_for_new_file(wth);
-    idb_inf = wtap_file_get_idb_info(wth);
-    nrb_hdrs = wtap_file_get_nrb_for_new_file(wth);
-
-    /* Open outfile (same filetype/encap as input file) */
-    if (strcmp(outfile, "-") == 0) {
-      pdh = wtap_dump_open_stdout_ng(wtap_file_type_subtype(wth), wtap_file_encap(wth),
-                                     65535, FALSE, shb_hdrs, idb_inf, nrb_hdrs, &err);
-      outfile = "standard output";
-    } else {
-      pdh = wtap_dump_open_ng(outfile, wtap_file_type_subtype(wth), wtap_file_encap(wth),
-                              65535, FALSE, shb_hdrs, idb_inf, nrb_hdrs, &err);
-    }
-    g_free(idb_inf);
-    idb_inf = NULL;
-
-    if (pdh == NULL) {
-        fprintf(stderr, "reordercap: Failed to open output file: (%s) - error %s\n",
-                outfile, wtap_strerror(err));
-        wtap_block_array_free(shb_hdrs);
-        wtap_block_array_free(nrb_hdrs);
-        exit(1);
-    }
 
     /* Allocate the array of frame pointers. */
     frames = g_ptr_array_new();
 
     /* Read each frame from infile */
-    while (wtap_read(wth, &err, &err_info, &data_offset)) {
+    wtap_rec_init(&rec, 1514);
+    while (wtap_read(wth, &rec, &err, &err_info, &data_offset)) {
         FrameRecord_t *newFrameRecord;
-
-        phdr = wtap_phdr(wth);
 
         newFrameRecord = g_slice_new(FrameRecord_t);
         newFrameRecord->num = frames->len + 1;
         newFrameRecord->offset = data_offset;
-        if (phdr->presence_flags & WTAP_HAS_TS) {
-            newFrameRecord->frame_time = phdr->ts;
+        if (rec.presence_flags & WTAP_HAS_TS) {
+            newFrameRecord->frame_time = rec.ts;
         } else {
             nstime_set_unset(&newFrameRecord->frame_time);
         }
@@ -337,66 +276,97 @@ main(int argc, char *argv[])
 
         g_ptr_array_add(frames, newFrameRecord);
         prevFrame = newFrameRecord;
+        wtap_rec_reset(&rec);
     }
+    wtap_rec_cleanup(&rec);
     if (err != 0) {
       /* Print a message noting that the read failed somewhere along the line. */
-      fprintf(stderr,
-              "reordercap: An error occurred while reading \"%s\": %s.\n",
-              infile, wtap_strerror(err));
-      if (err_info != NULL) {
-          fprintf(stderr, "(%s)\n", err_info);
-          g_free(err_info);
-      }
+      cfile_read_failure_message(infile, err, err_info);
     }
 
     printf("%u frames, %u out of order\n", frames->len, wrong_order_count);
 
+    wtap_dump_params_init(&params, wth);
+
     /* Sort the frames */
+    /* XXX - Does this handle multiple SHBs correctly? */
     if (wrong_order_count > 0) {
         g_ptr_array_sort(frames, frames_compare);
     }
 
-    /* Write out each sorted frame in turn */
-    wtap_phdr_init(&dump_phdr);
-    ws_buffer_init(&buf, 1500);
-    for (i = 0; i < frames->len; i++) {
-        FrameRecord_t *frame = (FrameRecord_t *)frames->pdata[i];
 
-        /* Avoid writing if already sorted and configured to */
-        if (write_output_regardless || (wrong_order_count > 0)) {
-            frame_write(frame, wth, pdh, &dump_phdr, &buf, infile);
+    /* Avoid writing if already sorted and configured to */
+    if (write_output_regardless || (wrong_order_count > 0)) {
+        /* Open outfile (same filetype/encap as input file) */
+        if (strcmp(outfile, "-") == 0) {
+          pdh = wtap_dump_open_stdout(wtap_file_type_subtype(wth),
+                                      WTAP_UNCOMPRESSED, &params, &err, &err_info);
+        } else {
+          pdh = wtap_dump_open(outfile, wtap_file_type_subtype(wth),
+                               WTAP_UNCOMPRESSED, &params, &err, &err_info);
         }
-        g_slice_free(FrameRecord_t, frame);
-    }
-    wtap_phdr_cleanup(&dump_phdr);
-    ws_buffer_free(&buf);
+        g_free(params.idb_inf);
+        params.idb_inf = NULL;
 
-    if (!write_output_regardless && (wrong_order_count == 0)) {
-        printf("Not writing output file because input file is already in order!\n");
+        if (pdh == NULL) {
+            cfile_dump_open_failure_message(outfile, err, err_info,
+                                            wtap_file_type_subtype(wth));
+            wtap_dump_params_cleanup(&params);
+            ret = OUTPUT_FILE_ERROR;
+            goto clean_exit;
+        }
+
+
+        /* Write out each sorted frame in turn */
+        wtap_rec_init(&rec, 1514);
+        for (i = 0; i < frames->len; i++) {
+            FrameRecord_t *frame = (FrameRecord_t *)frames->pdata[i];
+
+            if (!frame_write(frame, wth, pdh, &rec, infile, outfile))
+                return EXIT_FAILURE;
+
+            g_slice_free(FrameRecord_t, frame);
+        }
+
+        wtap_rec_cleanup(&rec);
+
+
+
+        /* Close outfile */
+        if (!wtap_dump_close(pdh, NULL, &err, &err_info)) {
+            cfile_close_failure_message(outfile, err, err_info);
+            wtap_dump_params_cleanup(&params);
+            ret = OUTPUT_FILE_ERROR;
+            goto clean_exit;
+        }
+    } else {
+        printf("Not writing output file because input file is already in order.\n");
+
+        /* Free frame memory */
+        for (i = 0; i < frames->len; i++) {
+            FrameRecord_t *frame = (FrameRecord_t *)frames->pdata[i];
+
+            g_slice_free(FrameRecord_t, frame);
+        }
     }
+
 
     /* Free the whole array */
     g_ptr_array_free(frames, TRUE);
 
-    /* Close outfile */
-    if (!wtap_dump_close(pdh, &err)) {
-        fprintf(stderr, "reordercap: Error closing %s: %s\n", outfile,
-                wtap_strerror(err));
-        wtap_block_array_free(shb_hdrs);
-        wtap_block_array_free(nrb_hdrs);
-        exit(1);
-    }
-    wtap_block_array_free(shb_hdrs);
-    wtap_block_array_free(nrb_hdrs);
+    wtap_dump_params_cleanup(&params);
 
-    /* Finally, close infile */
-    wtap_fdclose(wth);
+    /* Finally, close infile and release resources. */
+    wtap_close(wth);
 
-    return 0;
+clean_exit:
+    wtap_cleanup();
+    free_progdirs();
+    return ret;
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

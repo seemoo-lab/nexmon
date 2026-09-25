@@ -172,7 +172,7 @@ format_256(const u_char *data)
     static char buf[4][64+5];
     static int i = 0;
     i = (i + 1) % 4;
-    snprintf(buf[i], 28, "%016" PRIx64 "%016" PRIx64 "%016" PRIx64 "%016" PRIx64,
+	snprintf(buf[i], sizeof(buf[i]), "%016" PRIx64 "%016" PRIx64 "%016" PRIx64 "%016" PRIx64,
          EXTRACT_64BITS(data),
          EXTRACT_64BITS(data + 8),
          EXTRACT_64BITS(data + 16),

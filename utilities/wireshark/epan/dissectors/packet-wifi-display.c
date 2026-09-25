@@ -4,19 +4,7 @@
  *
  * Copyright 2011-2013 Qualcomm Atheros, Inc.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 # include "config.h"
@@ -24,77 +12,82 @@
 #include <epan/packet.h>
 #include <epan/to_str.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #include "packet-ieee80211.h"
 
 void proto_register_wifi_display(void);
+void proto_reg_handoff_wifi_display(void);
 
-static int proto_wifi_display = -1;
+static int proto_wifi_display;
 
-static int hf_wfd_subelem_id = -1;
-static int hf_wfd_subelem_len = -1;
+static int hf_wfd_subelem_id;
+static int hf_wfd_subelem_len;
 
-static int hf_wfd_subelem_dev_info_type = -1;
-static int hf_wfd_subelem_dev_info_coupled_sink_source = -1;
-static int hf_wfd_subelem_dev_info_coupled_sink_sink = -1;
-static int hf_wfd_subelem_dev_info_available = -1;
-static int hf_wfd_subelem_dev_info_wsd = -1;
-static int hf_wfd_subelem_dev_info_pc = -1;
-static int hf_wfd_subelem_dev_info_content_protection = -1;
-static int hf_wfd_subelem_dev_info_time_sync = -1;
-static int hf_wfd_subelem_dev_info_control_port = -1;
-static int hf_wfd_subelem_dev_info_max_throughput = -1;
-static int hf_wfd_subelem_dev_info_audio_unsupp_pri_sink = -1;
-static int hf_wfd_subelem_dev_info_audio_only_supp_source = -1;
-static int hf_wfd_subelem_dev_info_tdls_persistent_group = -1;
-static int hf_wfd_subelem_dev_info_tdls_persistent_group_reinvoke = -1;
-static int hf_wfd_subelem_dev_info_reserved = -1;
+static int hf_wfd_subelem_dev_info_type;
+static int hf_wfd_subelem_dev_info_coupled_sink_source;
+static int hf_wfd_subelem_dev_info_coupled_sink_sink;
+static int hf_wfd_subelem_dev_info_available;
+static int hf_wfd_subelem_dev_info_wsd;
+static int hf_wfd_subelem_dev_info_pc;
+static int hf_wfd_subelem_dev_info_content_protection;
+static int hf_wfd_subelem_dev_info_time_sync;
+static int hf_wfd_subelem_dev_info_control_port;
+static int hf_wfd_subelem_dev_info_max_throughput;
+static int hf_wfd_subelem_dev_info_audio_unsupp_pri_sink;
+static int hf_wfd_subelem_dev_info_audio_only_supp_source;
+static int hf_wfd_subelem_dev_info_tdls_persistent_group;
+static int hf_wfd_subelem_dev_info_tdls_persistent_group_reinvoke;
+static int hf_wfd_subelem_dev_info_reserved;
 
-static int hf_wfd_subelem_assoc_bssid = -1;
+static int hf_wfd_subelem_assoc_bssid;
 
-static int hf_wfd_subelem_coupled_sink_status_bitmap = -1;
-static int hf_wfd_subelem_coupled_sink_reserved = -1;
-static int hf_wfd_subelem_coupled_sink_mac_addr = -1;
+static int hf_wfd_subelem_coupled_sink_status_bitmap;
+static int hf_wfd_subelem_coupled_sink_reserved;
+static int hf_wfd_subelem_coupled_sink_mac_addr;
 
-static int hf_wfd_subelem_session_descr_len = -1;
-static int hf_wfd_subelem_session_dev_addr = -1;
-static int hf_wfd_subelem_session_assoc_bssid = -1;
-static int hf_wfd_subelem_session_dev_info_type = -1;
-static int hf_wfd_subelem_session_dev_info_coupled_sink_source = -1;
-static int hf_wfd_subelem_session_dev_info_coupled_sink_sink = -1;
-static int hf_wfd_subelem_session_dev_info_available = -1;
-static int hf_wfd_subelem_session_dev_info_wsd = -1;
-static int hf_wfd_subelem_session_dev_info_pc = -1;
-static int hf_wfd_subelem_session_dev_info_content_protection = -1;
-static int hf_wfd_subelem_session_dev_info_time_sync = -1;
-static int hf_wfd_subelem_session_dev_info_audio_unsupp_pri_sink = -1;
-static int hf_wfd_subelem_session_dev_info_audio_only_supp_source = -1;
-static int hf_wfd_subelem_session_dev_info_tdls_persistent_group = -1;
-static int hf_wfd_subelem_session_dev_info_tdls_persistent_group_reinvoke = -1;
-static int hf_wfd_subelem_session_dev_info_reserved = -1;
-static int hf_wfd_subelem_session_dev_info_max_throughput = -1;
-static int hf_wfd_subelem_session_coupled_sink_status_bitmap = -1;
-static int hf_wfd_subelem_session_coupled_sink_reserved = -1;
-static int hf_wfd_subelem_session_coupled_sink_addr = -1;
-static int hf_wfd_subelem_session_extra_info = -1;
+static int hf_wfd_subelem_session_descr_len;
+static int hf_wfd_subelem_session_dev_addr;
+static int hf_wfd_subelem_session_assoc_bssid;
+static int hf_wfd_subelem_session_dev_info_type;
+static int hf_wfd_subelem_session_dev_info_coupled_sink_source;
+static int hf_wfd_subelem_session_dev_info_coupled_sink_sink;
+static int hf_wfd_subelem_session_dev_info_available;
+static int hf_wfd_subelem_session_dev_info_wsd;
+static int hf_wfd_subelem_session_dev_info_pc;
+static int hf_wfd_subelem_session_dev_info_content_protection;
+static int hf_wfd_subelem_session_dev_info_time_sync;
+static int hf_wfd_subelem_session_dev_info_audio_unsupp_pri_sink;
+static int hf_wfd_subelem_session_dev_info_audio_only_supp_source;
+static int hf_wfd_subelem_session_dev_info_tdls_persistent_group;
+static int hf_wfd_subelem_session_dev_info_tdls_persistent_group_reinvoke;
+static int hf_wfd_subelem_session_dev_info_reserved;
+static int hf_wfd_subelem_session_dev_info_max_throughput;
+static int hf_wfd_subelem_session_coupled_sink_status_bitmap;
+static int hf_wfd_subelem_session_coupled_sink_reserved;
+static int hf_wfd_subelem_session_coupled_sink_addr;
+static int hf_wfd_subelem_session_extra_info;
 
-static int hf_wfd_subelem_ext_capab = -1;
-static int hf_wfd_subelem_ext_capab_uibc = -1;
-static int hf_wfd_subelem_ext_capab_i2c_read_write = -1;
-static int hf_wfd_subelem_ext_capab_preferred_display_mode = -1;
-static int hf_wfd_subelem_ext_capab_standby_resume_control = -1;
-static int hf_wfd_subelem_ext_capab_tdls_persistent = -1;
-static int hf_wfd_subelem_ext_capab_tdls_persistent_bssid = -1;
-static int hf_wfd_subelem_ext_capab_reserved = -1;
+static int hf_wfd_subelem_ext_capab;
+static int hf_wfd_subelem_ext_capab_uibc;
+static int hf_wfd_subelem_ext_capab_i2c_read_write;
+static int hf_wfd_subelem_ext_capab_preferred_display_mode;
+static int hf_wfd_subelem_ext_capab_standby_resume_control;
+static int hf_wfd_subelem_ext_capab_tdls_persistent;
+static int hf_wfd_subelem_ext_capab_tdls_persistent_bssid;
+static int hf_wfd_subelem_ext_capab_reserved;
 
-static int hf_wfd_subelem_alt_mac_addr = -1;
+static int hf_wfd_subelem_alt_mac_addr;
 
-static gint ett_wfd_subelem = -1;
-static gint ett_wfd_dev_info_descr = -1;
+static int ett_wfd_subelem;
+static int ett_wfd_dev_info_descr;
 
-static expert_field ei_wfd_subelem_len_invalid = EI_INIT;
-static expert_field ei_wfd_subelem_session_descr_invalid = EI_INIT;
-static expert_field ei_wfd_subelem_id = EI_INIT;
+static expert_field ei_wfd_subelem_len_invalid;
+static expert_field ei_wfd_subelem_session_descr_invalid;
+static expert_field ei_wfd_subelem_id;
+
+static dissector_handle_t wifi_display_ie_handle;
 
 enum wifi_display_subelem {
   WFD_SUBELEM_DEVICE_INFO = 0,
@@ -227,14 +220,14 @@ dissect_wfd_subelem_coupled_sink(packet_info *pinfo, proto_tree *tree,
 
 static void
 dissect_wfd_subelem_session_info(packet_info *pinfo, proto_tree *tree,
-                                 tvbuff_t *tvb, int offset, guint16 len)
+                                 tvbuff_t *tvb, int offset, uint16_t len)
 {
   int end = offset + len, next;
   proto_item *item;
   proto_tree *descr;
 
   while (offset < end) {
-    guint8 dlen = tvb_get_guint8(tvb, offset);
+    uint8_t dlen = tvb_get_uint8(tvb, offset);
     next = offset + 1 + dlen;
 
     descr = proto_tree_add_subtree(tree, tvb, offset, 1 + dlen,
@@ -250,7 +243,7 @@ dissect_wfd_subelem_session_info(packet_info *pinfo, proto_tree *tree,
 
     proto_tree_add_item(descr, hf_wfd_subelem_session_dev_addr, tvb, offset, 6,
                         ENC_NA);
-    proto_item_append_text(descr, ": %s", tvb_ether_to_str(tvb, offset));
+    proto_item_append_text(descr, ": %s", tvb_ether_to_str(pinfo->pool, tvb, offset));
     offset += 6;
 
     proto_tree_add_item(descr, hf_wfd_subelem_session_assoc_bssid,
@@ -357,12 +350,13 @@ dissect_wfd_subelem_alt_mac_addr(packet_info *pinfo, proto_tree *tree,
                       tvb, offset, 6, ENC_NA);
 }
 
-void dissect_wifi_display_ie(packet_info *pinfo, proto_tree *tree,
-                             tvbuff_t *tvb, int offset, gint size)
+static int
+dissect_wifi_display_ie(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-  int end = offset + size;
-  guint8 id;
-  guint16 len;
+  int end = tvb_reported_length(tvb);
+  int offset = 0;
+  uint8_t id;
+  uint16_t len;
   proto_tree *wfd_tree;
   proto_item *subelem;
 
@@ -372,11 +366,11 @@ void dissect_wifi_display_ie(packet_info *pinfo, proto_tree *tree,
       break;
     }
 
-    id = tvb_get_guint8(tvb, offset);
+    id = tvb_get_uint8(tvb, offset);
     len = tvb_get_ntohs(tvb, offset + 1);
     wfd_tree = proto_tree_add_subtree(tree, tvb, offset, 3 + len,
                                   ett_wfd_subelem, &subelem,
-                                  val_to_str(id, wfd_subelem_ids,
+                                  val_to_str(pinfo->pool, id, wfd_subelem_ids,
                                              "Unknown subelement ID (%u)"));
     if (offset + 3 + len > end) {
       expert_add_info_format(pinfo, subelem, &ei_wfd_subelem_len_invalid, "Packet too short for Wi-Fi Display subelement payload");
@@ -415,6 +409,8 @@ void dissect_wifi_display_ie(packet_info *pinfo, proto_tree *tree,
 
     offset += len;
   }
+
+  return tvb_captured_length(tvb);
 }
 
 void
@@ -595,7 +591,7 @@ proto_register_wifi_display(void)
     { &hf_wfd_subelem_ext_capab_standby_resume_control,
       { "Standby and Resume Control",
         "wifi_display.subelem.ext_capab.standby_resume_control",
-        FT_BOOLEAN, 16, TFS (&tfs_supported_not_supported), 0x008, NULL, HFILL }},
+        FT_BOOLEAN, 16, TFS (&tfs_supported_not_supported), 0x0008, NULL, HFILL }},
     { &hf_wfd_subelem_ext_capab_tdls_persistent,
       { "TDLS Persistent",
         "wifi_display.subelem.ext_capab.tdls_persistent",
@@ -611,7 +607,7 @@ proto_register_wifi_display(void)
       { "Alternative MAC Address", "wifi_display.subelem.alt_mac_addr",
         FT_ETHER, BASE_NONE, NULL, 0, NULL, HFILL }},
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_wfd_subelem,
     &ett_wfd_dev_info_descr
   };
@@ -630,6 +626,15 @@ proto_register_wifi_display(void)
 
   expert_wifi_display = expert_register_protocol(proto_wifi_display);
   expert_register_field_array(expert_wifi_display, ei, array_length(ei));
+
+  wifi_display_ie_handle = register_dissector("wifi_display_ie", dissect_wifi_display_ie, proto_wifi_display);
+
+}
+
+void
+proto_reg_handoff_wifi_display(void)
+{
+  dissector_add_uint("wlan.ie.wifi_alliance.subtype", WFA_SUBTYPE_WIFI_DISPLAY, wifi_display_ie_handle);
 }
 
 /*

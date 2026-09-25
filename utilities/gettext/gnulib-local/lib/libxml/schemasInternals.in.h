@@ -1,15 +1,43 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * Author: Daniel Veillard
+ */
+
 /*
  * Summary: internal interfaces for XML Schemas
  * Description: internal interfaces for the XML Schemas handling
  *              and schema validity checking
  *		The Schemas development is a Work In Progress.
- *              Some of those interfaces are not garanteed to be API or ABI stable !
- *
- * Copy: See Copyright for the status of this software.
- *
- * Author: Daniel Veillard
+ *              Some of those interfaces are not guaranteed to be API or ABI stable !
  */
-
 
 #ifndef __XML_SCHEMA_INTERNALS_H__
 #define __XML_SCHEMA_INTERNALS_H__
@@ -28,52 +56,52 @@ extern "C" {
 
 typedef enum {
     XML_SCHEMAS_UNKNOWN = 0,
-    XML_SCHEMAS_STRING,
-    XML_SCHEMAS_NORMSTRING,
-    XML_SCHEMAS_DECIMAL,
-    XML_SCHEMAS_TIME,
-    XML_SCHEMAS_GDAY,
-    XML_SCHEMAS_GMONTH,
-    XML_SCHEMAS_GMONTHDAY,
-    XML_SCHEMAS_GYEAR,
-    XML_SCHEMAS_GYEARMONTH,
-    XML_SCHEMAS_DATE,
-    XML_SCHEMAS_DATETIME,
-    XML_SCHEMAS_DURATION,
-    XML_SCHEMAS_FLOAT,
-    XML_SCHEMAS_DOUBLE,
-    XML_SCHEMAS_BOOLEAN,
-    XML_SCHEMAS_TOKEN,
-    XML_SCHEMAS_LANGUAGE,
-    XML_SCHEMAS_NMTOKEN,
-    XML_SCHEMAS_NMTOKENS,
-    XML_SCHEMAS_NAME,
-    XML_SCHEMAS_QNAME,
-    XML_SCHEMAS_NCNAME,
-    XML_SCHEMAS_ID,
-    XML_SCHEMAS_IDREF,
-    XML_SCHEMAS_IDREFS,
-    XML_SCHEMAS_ENTITY,
-    XML_SCHEMAS_ENTITIES,
-    XML_SCHEMAS_NOTATION,
-    XML_SCHEMAS_ANYURI,
-    XML_SCHEMAS_INTEGER,
-    XML_SCHEMAS_NPINTEGER,
-    XML_SCHEMAS_NINTEGER,
-    XML_SCHEMAS_NNINTEGER,
-    XML_SCHEMAS_PINTEGER,
-    XML_SCHEMAS_INT,
-    XML_SCHEMAS_UINT,
-    XML_SCHEMAS_LONG,
-    XML_SCHEMAS_ULONG,
-    XML_SCHEMAS_SHORT,
-    XML_SCHEMAS_USHORT,
-    XML_SCHEMAS_BYTE,
-    XML_SCHEMAS_UBYTE,
-    XML_SCHEMAS_HEXBINARY,
-    XML_SCHEMAS_BASE64BINARY,
-    XML_SCHEMAS_ANYTYPE,
-    XML_SCHEMAS_ANYSIMPLETYPE
+    XML_SCHEMAS_STRING = 1,
+    XML_SCHEMAS_NORMSTRING = 2,
+    XML_SCHEMAS_DECIMAL = 3,
+    XML_SCHEMAS_TIME = 4,
+    XML_SCHEMAS_GDAY = 5,
+    XML_SCHEMAS_GMONTH = 6,
+    XML_SCHEMAS_GMONTHDAY = 7,
+    XML_SCHEMAS_GYEAR = 8,
+    XML_SCHEMAS_GYEARMONTH = 9,
+    XML_SCHEMAS_DATE = 10,
+    XML_SCHEMAS_DATETIME = 11,
+    XML_SCHEMAS_DURATION = 12,
+    XML_SCHEMAS_FLOAT = 13,
+    XML_SCHEMAS_DOUBLE = 14,
+    XML_SCHEMAS_BOOLEAN = 15,
+    XML_SCHEMAS_TOKEN = 16,
+    XML_SCHEMAS_LANGUAGE = 17,
+    XML_SCHEMAS_NMTOKEN = 18,
+    XML_SCHEMAS_NMTOKENS = 19,
+    XML_SCHEMAS_NAME = 20,
+    XML_SCHEMAS_QNAME = 21,
+    XML_SCHEMAS_NCNAME = 22,
+    XML_SCHEMAS_ID = 23,
+    XML_SCHEMAS_IDREF = 24,
+    XML_SCHEMAS_IDREFS = 25,
+    XML_SCHEMAS_ENTITY = 26,
+    XML_SCHEMAS_ENTITIES = 27,
+    XML_SCHEMAS_NOTATION = 28,
+    XML_SCHEMAS_ANYURI = 29,
+    XML_SCHEMAS_INTEGER = 30,
+    XML_SCHEMAS_NPINTEGER = 31,
+    XML_SCHEMAS_NINTEGER = 32,
+    XML_SCHEMAS_NNINTEGER = 33,
+    XML_SCHEMAS_PINTEGER = 34,
+    XML_SCHEMAS_INT = 35,
+    XML_SCHEMAS_UINT = 36,
+    XML_SCHEMAS_LONG = 37,
+    XML_SCHEMAS_ULONG = 38,
+    XML_SCHEMAS_SHORT = 39,
+    XML_SCHEMAS_USHORT = 40,
+    XML_SCHEMAS_BYTE = 41,
+    XML_SCHEMAS_UBYTE = 42,
+    XML_SCHEMAS_HEXBINARY = 43,
+    XML_SCHEMAS_BASE64BINARY = 44,
+    XML_SCHEMAS_ANYTYPE = 45,
+    XML_SCHEMAS_ANYSIMPLETYPE = 46
 } xmlSchemaValType;
 
 /*

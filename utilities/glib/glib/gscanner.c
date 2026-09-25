@@ -4,10 +4,12 @@
  * GScanner: Flexible lexical scanner for general purpose.
  * Copyright (C) 1997, 1998 Tim Janik
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -51,15 +53,6 @@
 #include <io.h>
 #endif
 
-
-/**
- * SECTION:scanner
- * @title: Lexical Scanner
- * @short_description: a general purpose lexical scanner
- *
- * The #GScanner and its associated functions provide a
- * general purpose lexical scanner.
- */
 
 /**
  * GScannerMsgFunc:
@@ -194,7 +187,7 @@
  * @next_position: char number of the last token from g_scanner_peek_next_token()
  * @msg_handler: handler function for _warn and _error
  *
- * The data structure representing a lexical scanner.
+ * `GScanner` provides a general-purpose lexical scanner.
  *
  * You should set @input_name after creating the scanner, since
  * it is used by the default message handler when displaying
@@ -216,11 +209,11 @@
  *     by the scanner (the default is the whitespace characters: space,
  *     tab, carriage-return and line-feed).
  * @cset_identifier_first: specifies the characters which can start
- *     identifiers (the default is #G_CSET_a_2_z, "_", and #G_CSET_A_2_Z).
+ *     identifiers (the default is %G_CSET_a_2_z, "_", and %G_CSET_A_2_Z).
  * @cset_identifier_nth: specifies the characters which can be used
  *     in identifiers, after the first character (the default is
- *     #G_CSET_a_2_z, "_0123456789", #G_CSET_A_2_Z, #G_CSET_LATINS,
- *     #G_CSET_LATINC).
+ *     %G_CSET_a_2_z, "_0123456789", %G_CSET_A_2_Z, %G_CSET_LATINS,
+ *     %G_CSET_LATINC).
  * @cpair_comment_single: specifies the characters at the start and
  *     end of single-line comments. The default is "#\n" which means
  *     that single-line comments start with a '#' and continue until
@@ -256,7 +249,7 @@
  * @scan_string_dq: specifies if strings can be enclosed in double
  *     quotes (the default is %TRUE).
  * @numbers_2_int: specifies if binary, octal and hexadecimal numbers
- *     are reported as #G_TOKEN_INT (the default is %TRUE).
+ *     are reported as %G_TOKEN_INT (the default is %TRUE).
  * @int_2_float: specifies if all numbers are reported as %G_TOKEN_FLOAT
  *     (the default is %FALSE).
  * @identifier_2_string: specifies if identifiers are reported as strings
@@ -341,6 +334,7 @@ static const GScannerConfig g_scanner_config_template =
   FALSE			/* symbol_2_token */,
   FALSE			/* scope_0_fallback */,
   FALSE			/* store_int64 */,
+  0    			/* padding_dummy */
 };
 
 
@@ -712,7 +706,7 @@ g_scanner_scope_add_symbol (GScanner	*scanner,
 	      c++;
 	    }
 	}
-      g_hash_table_insert (scanner->symbol_table, key, key);
+      g_hash_table_add (scanner->symbol_table, key);
     }
   else
     key->value = value;
@@ -901,7 +895,7 @@ g_scanner_foreach_internal (gpointer  _key,
  * g_scanner_scope_foreach_symbol:
  * @scanner: a #GScanner
  * @scope_id: the scope id
- * @func: the function to call for each symbol/value pair
+ * @func: (scope call): the function to call for each symbol/value pair
  * @user_data: user data to pass to the function
  *
  * Calls the given function for each of the symbol/value pairs
@@ -1174,7 +1168,7 @@ g_scanner_peek_next_char (GScanner *scanner)
     }
   else if (scanner->input_fd >= 0)
     {
-      gint count;
+      gssize count;
       gchar *buffer;
 
       buffer = scanner->buffer;
@@ -1224,7 +1218,7 @@ g_scanner_sync_file_offset (GScanner *scanner)
 
   if (scanner->input_fd >= 0 && scanner->text_end > scanner->text)
     {
-      gint buffered;
+      goffset buffered;
 
       buffered = scanner->text_end - scanner->text;
       if (lseek (scanner->input_fd, - buffered, SEEK_CUR) >= 0)
@@ -1249,7 +1243,7 @@ g_scanner_get_char (GScanner	*scanner,
     fchar = *(scanner->text++);
   else if (scanner->input_fd >= 0)
     {
-      gint count;
+      gssize count;
       gchar *buffer;
 
       buffer = scanner->buffer;
@@ -1377,7 +1371,7 @@ g_scanner_unexp_token (GScanner		*scanner,
 	  _g_snprintf (token_string, token_string_len, "(unknown) token <%d>", scanner->token);
 	  break;
 	}
-      /* fall through */
+      G_GNUC_FALLTHROUGH;
     case G_TOKEN_SYMBOL:
       if (expected_token == G_TOKEN_SYMBOL ||
 	  (scanner->config->symbol_2_token &&
@@ -1522,7 +1516,7 @@ g_scanner_unexp_token (GScanner		*scanner,
 	  _g_snprintf (expected_string, expected_string_len, "(unknown) token <%d>", expected_token);
 	  break;
 	}
-      /* fall through */
+      G_GNUC_FALLTHROUGH;
     case G_TOKEN_SYMBOL:
       need_valid = (scanner->token == G_TOKEN_SYMBOL ||
 		    (scanner->config->symbol_2_token &&
@@ -1532,7 +1526,7 @@ g_scanner_unexp_token (GScanner		*scanner,
 		   "%s%s",
 		   need_valid ? "valid " : "",
 		   symbol_spec);
-      /* FIXME: should we attempt to lookup the symbol_name for symbol_2_token? */
+      /* FIXME: should we attempt to look up the symbol_name for symbol_2_token? */
       break;
     case G_TOKEN_CHAR:
       _g_snprintf (expected_string, expected_string_len, "%scharacter",
@@ -1677,7 +1671,7 @@ g_scanner_get_token_i (GScanner	*scanner,
       
     case G_TOKEN_SYMBOL:
       if (scanner->config->symbol_2_token)
-	*token_p = (GTokenType) value_p->v_symbol;
+        *token_p = (GTokenType) ((size_t) value_p->v_symbol);
       break;
       
     case G_TOKEN_BINARY:
@@ -1695,17 +1689,19 @@ g_scanner_get_token_i (GScanner	*scanner,
       scanner->config->int_2_float)
     {
       *token_p = G_TOKEN_FLOAT;
+
+      /* Have to assign through a temporary variable to avoid undefined behaviour
+       * by copying between potentially-overlapping union members. */
       if (scanner->config->store_int64)
         {
-#ifdef _MSC_VER
-          /* work around error C2520, see gvaluetransform.c */
-          value_p->v_float = (__int64)value_p->v_int64;
-#else
-          value_p->v_float = value_p->v_int64;
-#endif
+          guint64 temp = value_p->v_int64;
+          value_p->v_float = temp;
         }
       else
-	value_p->v_float = value_p->v_int;
+        {
+          gulong temp = value_p->v_int;
+          value_p->v_float = temp;
+        }
     }
   
   errno = 0;
@@ -1959,7 +1955,7 @@ g_scanner_get_token_ll	(GScanner	*scanner,
 	    }
 	  else
 	    ch = '0';
-	  /* fall through */
+          G_GNUC_FALLTHROUGH;
 	case '1':
 	case '2':
 	case '3':

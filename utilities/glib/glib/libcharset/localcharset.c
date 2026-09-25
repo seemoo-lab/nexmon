@@ -65,9 +65,9 @@
 # define relocate(pathname) (pathname)
 #endif
 
-/* Get LIBDIR.  */
-#ifndef LIBDIR
-# include "configmake.h"
+/* Get GLIB_CHARSETALIAS_DIR.  */
+#ifndef GLIB_CHARSETALIAS_DIR
+# define GLIB_CHARSETALIAS_DIR LIBDIR
 #endif
 
 #if defined _WIN32 || defined __WIN32__ || defined __CYGWIN__ || defined __EMX__ || defined __DJGPP__
@@ -117,11 +117,7 @@ _g_locale_get_charset_aliases (void)
       const char *base = "charset.alias";
       char *file_name;
 
-      /* Make it possible to override the charset.alias location.  This is
-	 necessary for running the testsuite before "make install".  */
-      dir = getenv ("CHARSETALIASDIR");
-      if (dir == NULL || dir[0] == '\0')
-	dir = relocate (LIBDIR);
+      dir = relocate (GLIB_CHARSETALIAS_DIR);
 
       /* Concatenate dir and base into freshly allocated file_name.  */
       {

@@ -3,7 +3,7 @@
 
 # Test handling of obsolete/untranslated messages with Java .properties syntax.
 
-cat <<EOF > mm-p-1.in1
+cat <<\EOF > mm-p-1.in1
 #
 # def.po
 #
@@ -20,7 +20,7 @@ still\ existing=translation
 # trailing comments should be removed
 EOF
 
-cat <<EOF > mm-p-1.in2
+cat <<\EOF > mm-p-1.in2
 #
 # ref.po
 #

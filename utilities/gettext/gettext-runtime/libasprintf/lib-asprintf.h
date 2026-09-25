@@ -1,6 +1,5 @@
 /* Library functions for class autosprintf.
-   Copyright (C) 2002-2003, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2002.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -13,11 +12,11 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 #if HAVE_VASPRINTF && HAVE_POSIX_PRINTF
 
@@ -25,6 +24,11 @@
 #include <stdio.h>
 
 #else
+
+/* Define to symbols that are guaranteed to not be defined by the system
+   header files.  */
+#define asprintf libasprintf_asprintf
+#define vasprintf libasprintf_vasprintf
 
 /* Get asprintf(), vasprintf() declarations.  */
 #include "vasprintf.h"

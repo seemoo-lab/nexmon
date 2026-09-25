@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * To quote the author of the previous H323/H225/H245 dissector:
  *   "This is a complete replacement of the previous limitied dissector
@@ -44,6 +32,10 @@
 #include <epan/tap.h>
 #include <epan/stat_tap_ui.h>
 #include <epan/rtd_table.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+
+#include "packet-frame.h"
 #include "packet-tpkt.h"
 #include "packet-per.h"
 #include "packet-h225.h"
@@ -51,43 +43,41 @@
 #include "packet-h245.h"
 #include "packet-h323.h"
 #include "packet-q931.h"
-#include "packet-ssl.h"
+#include "packet-tls.h"
 
 #define PNAME  "H323-MESSAGES"
 #define PSNAME "H.225.0"
 #define PFNAME "h225"
 
-#define UDP_PORT_RAS1 1718
-#define UDP_PORT_RAS2 1719
+#define UDP_PORT_RAS_RANGE "1718-1719"
 #define TCP_PORT_CS   1720
 #define TLS_PORT_CS   1300
 
 void proto_register_h225(void);
 static h225_packet_info* create_h225_packet_info(packet_info *pinfo);
-static void h225_init_routine(void);
 static void ras_call_matching(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, h225_packet_info *pi);
 
 /* Item of ras request list*/
 typedef struct _h225ras_call_t {
-  guint32 requestSeqNum;
+  uint32_t requestSeqNum;
   e_guid_t guid;
-  guint32 req_num;  /* frame number request seen */
-  guint32 rsp_num;  /* frame number response seen */
+  uint32_t req_num;  /* frame number request seen */
+  uint32_t rsp_num;  /* frame number response seen */
   nstime_t req_time;  /* arrival time of request */
-  gboolean responded; /* true, if request has been responded */
+  bool responded; /* true, if request has been responded */
   struct _h225ras_call_t *next_call; /* pointer to next ras request with same SequenceNumber and conversation handle */
 } h225ras_call_t;
 
 
 /* Item of ras-request key list*/
 typedef struct _h225ras_call_info_key {
-  guint reqSeqNum;
+  unsigned reqSeqNum;
   conversation_t *conversation;
 } h225ras_call_info_key;
 
 /* Global Memory Chunks for lists and Global hash tables*/
 
-static GHashTable *ras_calls[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static wmem_map_t *ras_calls[7];
 
 /* functions, needed using ras-request and halfcall matching*/
 static h225ras_call_t * find_h225ras_call(h225ras_call_info_key *h225ras_call_key ,int category);
@@ -105,53 +95,53 @@ static dissector_table_t gef_name_dissector_table;
 static dissector_table_t gef_content_dissector_table;
 
 
-static dissector_handle_t h245_handle=NULL;
-static dissector_handle_t h245dg_handle=NULL;
-static dissector_handle_t h4501_handle=NULL;
+static dissector_handle_t h245_handle;
+static dissector_handle_t h245dg_handle;
+static dissector_handle_t h4501_handle;
 
 static dissector_handle_t nsp_handle;
 static dissector_handle_t tp_handle;
 
-static next_tvb_list_t h245_list;
-static next_tvb_list_t tp_list;
+static next_tvb_list_t *h245_list;
+static next_tvb_list_t *tp_list;
 
 /* Initialize the protocol and registered fields */
-static int h225_tap = -1;
-static int proto_h225 = -1;
+static int h225_tap;
+static int proto_h225;
 
-static int hf_h221Manufacturer = -1;
-static int hf_h225_ras_req_frame = -1;
-static int hf_h225_ras_rsp_frame = -1;
-static int hf_h225_ras_dup = -1;
-static int hf_h225_ras_deltatime = -1;
-static int hf_h225_debug_dissector_try_string = -1;
+static int hf_h221Manufacturer;
+static int hf_h225_ras_req_frame;
+static int hf_h225_ras_rsp_frame;
+static int hf_h225_ras_dup;
+static int hf_h225_ras_deltatime;
+static int hf_h225_debug_dissector_try_string;
 
 #include "packet-h225-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_h225 = -1;
+static int ett_h225;
 #include "packet-h225-ett.c"
 
 /* Preferences */
-static guint h225_tls_port = TLS_PORT_CS;
-static gboolean h225_reassembly = TRUE;
-static gboolean h225_h245_in_tree = TRUE;
-static gboolean h225_tp_in_tree = TRUE;
+static unsigned h225_tls_port = TLS_PORT_CS;
+static bool h225_reassembly = true;
+static bool h225_h245_in_tree = true;
+static bool h225_tp_in_tree = true;
 
 /* Global variables */
-static guint32 ipv4_address;
-static struct e_in6_addr ipv6_address;
-static struct e_in6_addr ipv6_address_zeros = {{0}};
-static guint32 ip_port;
-static gboolean contains_faststart = FALSE;
+static uint32_t ipv4_address;
+static ws_in6_addr ipv6_address;
+static ws_in6_addr ipv6_address_zeros = {{0}};
+static uint32_t ip_port;
+static bool contains_faststart;
 static e_guid_t *call_id_guid;
 
 /* NonStandardParameter */
 static const char *nsiOID;
-static guint32 h221NonStandard;
-static guint32 t35CountryCode;
-static guint32 t35Extension;
-static guint32 manufacturerCode;
+static uint32_t h221NonStandard;
+static uint32_t t35CountryCode;
+static uint32_t t35Extension;
+static uint32_t manufacturerCode;
 
 /* TunnelledProtocol */
 static const char *tpOID;
@@ -187,8 +177,8 @@ typedef enum _ras_category {
 
 #define NUM_RAS_STATS 7
 
-static gboolean
-h225rassrt_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *phi)
+static tap_packet_status
+h225rassrt_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *phi, tap_flags_t flags _U_)
 {
   rtd_data_t* rtd_data = (rtd_data_t*)phs;
   rtd_stat_table* rs = &rtd_data->stat_table;
@@ -199,7 +189,7 @@ h225rassrt_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_, co
 
   if (pi->msg_type != H225_RAS || pi->msg_tag == -1) {
     /* No RAS Message or uninitialized msg_tag -> return */
-    return FALSE;
+    return TAP_PACKET_DONT_REDRAW;
   }
 
   if (pi->msg_tag < 21) {
@@ -209,7 +199,7 @@ h225rassrt_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_, co
   }
   else {
     /* No SRT yet (ToDo) */
-    return FALSE;
+    return TAP_PACKET_DONT_REDRAW;
   }
 
   switch(rasmsg_type) {
@@ -241,9 +231,27 @@ h225rassrt_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_, co
     break;
 
   default:
-    return FALSE;
+    return TAP_PACKET_DONT_REDRAW;
   }
-  return TRUE;
+  return TAP_PACKET_REDRAW;
+}
+
+static void h225_set_cs_type(packet_info *pinfo, h225_packet_info* h225_pi, h225_cs_type cs_type, bool faststart)
+{
+  if (h225_pi == NULL)
+    return;
+
+  h225_pi->cs_type = cs_type;
+  /* XXX - Why not always use contains_faststart or h225_pi->is_faststart
+   * There are some UUIEs (e.g., Facility-UUIE) where a fastStart can be
+   * included but the path adding extra to the label has never been used.
+   * Is that an oversight or intentional?
+   */
+  if (faststart) {
+    h225_pi->frame_label = wmem_strdup_printf(pinfo->pool, "%s OLC (%s)", val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
+  } else {
+    h225_pi->frame_label = wmem_strdup(pinfo->pool, val_to_str_const(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
+  }
 }
 
 #include "packet-h225-fn.c"
@@ -256,7 +264,7 @@ void proto_reg_handoff_h225(void);
  */
 
 /* compare 2 keys */
-static gint h225ras_call_equal(gconstpointer k1, gconstpointer k2)
+static int h225ras_call_equal(const void *k1, const void *k2)
 {
   const h225ras_call_info_key* key1 = (const h225ras_call_info_key*) k1;
   const h225ras_call_info_key* key2 = (const h225ras_call_info_key*) k2;
@@ -266,7 +274,7 @@ static gint h225ras_call_equal(gconstpointer k1, gconstpointer k2)
 }
 
 /* calculate a hash key */
-static guint h225ras_call_hash(gconstpointer k)
+static unsigned h225ras_call_hash(const void *k)
 {
   const h225ras_call_info_key* key = (const h225ras_call_info_key*) k;
 
@@ -276,8 +284,7 @@ static guint h225ras_call_hash(gconstpointer k)
 
 h225ras_call_t * find_h225ras_call(h225ras_call_info_key *h225ras_call_key ,int category)
 {
-  h225ras_call_t *h225ras_call = NULL;
-  h225ras_call = (h225ras_call_t *)g_hash_table_lookup(ras_calls[category], h225ras_call_key);
+  h225ras_call_t *h225ras_call = (h225ras_call_t *)wmem_map_lookup(ras_calls[category], h225ras_call_key);
 
   return h225ras_call;
 }
@@ -300,12 +307,12 @@ h225ras_call_t * new_h225ras_call(h225ras_call_info_key *h225ras_call_key, packe
   h225ras_call->req_num = pinfo->num;
   h225ras_call->rsp_num = 0;
   h225ras_call->requestSeqNum = h225ras_call_key->reqSeqNum;
-  h225ras_call->responded = FALSE;
+  h225ras_call->responded = false;
   h225ras_call->next_call = NULL;
   h225ras_call->req_time=pinfo->abs_ts;
   h225ras_call->guid=*guid;
   /* store it */
-  g_hash_table_insert(ras_calls[category], new_h225ras_call_key, h225ras_call);
+  wmem_map_insert(ras_calls[category], new_h225ras_call_key, h225ras_call);
 
   return h225ras_call;
 }
@@ -323,7 +330,7 @@ h225ras_call_t * append_h225ras_call(h225ras_call_t *prev_call, packet_info *pin
   h225ras_call->req_num = pinfo->num;
   h225ras_call->rsp_num = 0;
   h225ras_call->requestSeqNum = prev_call->requestSeqNum;
-  h225ras_call->responded = FALSE;
+  h225ras_call->responded = false;
   h225ras_call->next_call = NULL;
   h225ras_call->req_time=pinfo->abs_ts;
   h225ras_call->guid=*guid;
@@ -332,32 +339,12 @@ h225ras_call_t * append_h225ras_call(h225ras_call_t *prev_call, packet_info *pin
   return h225ras_call;
 }
 
-/* Init routine for hash tables and delay calculation
-   This routine will be called by Wireshark, before it
-   is (re-)dissecting a trace file from beginning.
-   We need to discard and init any state we've saved */
-
 static void
-h225_init_routine(void)
+h225_frame_end(void)
 {
-  int i;
-  /* create new hash-tables for RAS SRT */
-
-  for(i=0;i<7;i++) {
-    ras_calls[i] = g_hash_table_new(h225ras_call_hash, h225ras_call_equal);
-  }
-
-}
-
-static void
-h225_cleanup_routine(void)
-{
-  int i;
-
-  /* free hash-tables for RAS SRT */
-  for(i=0;i<7;i++) {
-    g_hash_table_destroy(ras_calls[i]);
-  }
+  /* next_tvb pointers are allocated in packet scope, clear it. */
+  h245_list = NULL;
+  tp_list = NULL;
 }
 
 static int
@@ -371,10 +358,11 @@ dissect_h225_H323UserInformation(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
   /* Init struct for collecting h225_packet_info */
   h225_pi = create_h225_packet_info(pinfo);
   h225_pi->msg_type = H225_CS;
-  p_add_proto_data(wmem_packet_scope(), pinfo, proto_h225, 0, h225_pi);
+  p_add_proto_data(pinfo->pool, pinfo, proto_h225, 0, h225_pi);
 
-  next_tvb_init(&h245_list);
-  next_tvb_init(&tp_list);
+  register_frame_end_routine(pinfo, h225_frame_end);
+  h245_list = next_tvb_list_new(pinfo->pool);
+  tp_list = next_tvb_list_new(pinfo->pool);
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, PSNAME);
   col_clear(pinfo->cinfo, COL_INFO);
@@ -384,13 +372,13 @@ dissect_h225_H323UserInformation(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
 
   offset = dissect_H323_UserInformation_PDU(tvb, pinfo, tr, NULL);
 
-  if (h245_list.count){
+  if (h245_list->count){
     col_append_str(pinfo->cinfo, COL_PROTOCOL, "/");
     col_set_fence(pinfo->cinfo, COL_PROTOCOL);
   }
 
-  next_tvb_call(&h245_list, pinfo, tree, h245dg_handle, data_handle);
-  next_tvb_call(&tp_list, pinfo, tree, NULL, data_handle);
+  next_tvb_call(h245_list, pinfo, tree, h245dg_handle, data_handle);
+  next_tvb_call(tp_list, pinfo, tree, NULL, data_handle);
 
   tap_queue_packet(h225_tap, pinfo, h225_pi);
 
@@ -400,13 +388,17 @@ static int
 dissect_h225_h225_RasMessage(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_){
   proto_item *it;
   proto_tree *tr;
-  guint32 offset=0;
+  uint32_t offset=0;
   h225_packet_info* h225_pi;
 
   /* Init struct for collecting h225_packet_info */
   h225_pi = create_h225_packet_info(pinfo);
   h225_pi->msg_type = H225_RAS;
-  p_add_proto_data(wmem_packet_scope(), pinfo, proto_h225, 0, h225_pi);
+  p_add_proto_data(pinfo->pool, pinfo, proto_h225, 0, h225_pi);
+
+  register_frame_end_routine(pinfo, h225_frame_end);
+  h245_list = next_tvb_list_new(pinfo->pool);
+  tp_list = next_tvb_list_new(pinfo->pool);
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, PSNAME);
 
@@ -417,6 +409,9 @@ dissect_h225_h225_RasMessage(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
   ras_call_matching(tvb, pinfo, tr, h225_pi);
 
+  next_tvb_call(h245_list, pinfo, tree, h245dg_handle, data_handle);
+  next_tvb_call(tp_list, pinfo, tree, NULL, data_handle);
+
   tap_queue_packet(h225_tap, pinfo, h225_pi);
 
   return offset;
@@ -425,21 +420,21 @@ dissect_h225_h225_RasMessage(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
 /* The following values represent the size of their valuestring arrays */
 
-#define RAS_MSG_TYPES (sizeof(h225_RasMessage_vals) / sizeof(value_string))
-#define CS_MSG_TYPES (sizeof(T_h323_message_body_vals) / sizeof(value_string))
+#define RAS_MSG_TYPES array_length(h225_RasMessage_vals)
+#define CS_MSG_TYPES array_length(T_h323_message_body_vals)
 
-#define GRJ_REASONS (sizeof(GatekeeperRejectReason_vals) / sizeof(value_string))
-#define RRJ_REASONS (sizeof(RegistrationRejectReason_vals) / sizeof(value_string))
-#define URQ_REASONS (sizeof(UnregRequestReason_vals) / sizeof(value_string))
-#define URJ_REASONS (sizeof(UnregRejectReason_vals) / sizeof(value_string))
-#define ARJ_REASONS (sizeof(AdmissionRejectReason_vals) / sizeof(value_string))
-#define BRJ_REASONS (sizeof(BandRejectReason_vals) / sizeof(value_string))
-#define DRQ_REASONS (sizeof(DisengageReason_vals) / sizeof(value_string))
-#define DRJ_REASONS (sizeof(DisengageRejectReason_vals) / sizeof(value_string))
-#define LRJ_REASONS (sizeof(LocationRejectReason_vals) / sizeof(value_string))
-#define IRQNAK_REASONS (sizeof(InfoRequestNakReason_vals) / sizeof(value_string))
-#define REL_CMP_REASONS (sizeof(h225_ReleaseCompleteReason_vals) / sizeof(value_string))
-#define FACILITY_REASONS (sizeof(FacilityReason_vals) / sizeof(value_string))
+#define GRJ_REASONS array_length(GatekeeperRejectReason_vals)
+#define RRJ_REASONS array_length(RegistrationRejectReason_vals)
+#define URQ_REASONS array_length(UnregRequestReason_vals)
+#define URJ_REASONS array_length(UnregRejectReason_vals)
+#define ARJ_REASONS array_length(AdmissionRejectReason_vals)
+#define BRJ_REASONS array_length(BandRejectReason_vals)
+#define DRQ_REASONS array_length(DisengageReason_vals)
+#define DRJ_REASONS array_length(DisengageRejectReason_vals)
+#define LRJ_REASONS array_length(LocationRejectReason_vals)
+#define IRQNAK_REASONS array_length(InfoRequestNakReason_vals)
+#define REL_CMP_REASONS array_length(h225_ReleaseCompleteReason_vals)
+#define FACILITY_REASONS array_length(FacilityReason_vals)
 
 /* TAP STAT INFO */
 typedef enum
@@ -449,38 +444,49 @@ typedef enum
 } h225_stat_columns;
 
 typedef struct _h225_table_item {
-  guint count;     /* Message count */
-  guint table_idx; /* stat_table index */
+  unsigned count;     /* Message count */
+  unsigned table_idx; /* stat_table index */
 } h225_table_item_t;
 
 static stat_tap_table_item h225_stat_fields[] = {{TABLE_ITEM_STRING, TAP_ALIGN_LEFT, "Message Type or Reason", "%-25s"}, {TABLE_ITEM_UINT, TAP_ALIGN_RIGHT, "Count", "%d"}};
 
-static guint ras_msg_idx[RAS_MSG_TYPES];
-static guint cs_msg_idx[CS_MSG_TYPES];
+static unsigned ras_msg_idx[RAS_MSG_TYPES];
+static unsigned cs_msg_idx[CS_MSG_TYPES];
 
-static guint grj_reason_idx[GRJ_REASONS];
-static guint rrj_reason_idx[RRJ_REASONS];
-static guint urq_reason_idx[URQ_REASONS];
-static guint urj_reason_idx[URJ_REASONS];
-static guint arj_reason_idx[ARJ_REASONS];
-static guint brj_reason_idx[BRJ_REASONS];
-static guint drq_reason_idx[DRQ_REASONS];
-static guint drj_reason_idx[DRJ_REASONS];
-static guint lrj_reason_idx[LRJ_REASONS];
-static guint irqnak_reason_idx[IRQNAK_REASONS];
-static guint rel_cmp_reason_idx[REL_CMP_REASONS];
-static guint facility_reason_idx[FACILITY_REASONS];
+static unsigned grj_reason_idx[GRJ_REASONS];
+static unsigned rrj_reason_idx[RRJ_REASONS];
+static unsigned urq_reason_idx[URQ_REASONS];
+static unsigned urj_reason_idx[URJ_REASONS];
+static unsigned arj_reason_idx[ARJ_REASONS];
+static unsigned brj_reason_idx[BRJ_REASONS];
+static unsigned drq_reason_idx[DRQ_REASONS];
+static unsigned drj_reason_idx[DRJ_REASONS];
+static unsigned lrj_reason_idx[LRJ_REASONS];
+static unsigned irqnak_reason_idx[IRQNAK_REASONS];
+static unsigned rel_cmp_reason_idx[REL_CMP_REASONS];
+static unsigned facility_reason_idx[FACILITY_REASONS];
 
-static guint other_idx;
+static unsigned other_idx;
 
-static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb gui_callback, void* gui_data)
+static void h225_stat_init(stat_tap_table_ui* new_stat)
 {
-  int num_fields = sizeof(h225_stat_fields)/sizeof(stat_tap_table_item);
-  stat_tap_table* table = new_stat_tap_init_table("H.225 Messages and Message Reasons", num_fields, 0, NULL, gui_callback, gui_data);
+  const char *table_name = "H.225 Messages and Message Reasons";
+  int num_fields = array_length(h225_stat_fields);
+  stat_tap_table *table;
   int row_idx = 0, msg_idx;
-  stat_tap_table_item_type items[sizeof(h225_stat_fields)/sizeof(stat_tap_table_item)];
+  stat_tap_table_item_type items[array_length(h225_stat_fields)];
 
-  new_stat_tap_add_table(new_stat, table);
+  table = stat_tap_find_table(new_stat, table_name);
+  if (table) {
+    if (new_stat->stat_tap_reset_table_cb) {
+      new_stat->stat_tap_reset_table_cb(table);
+    }
+    return;
+  }
+
+  memset(items, 0x0, sizeof(items));
+  table = stat_tap_init_table(table_name, num_fields, 0, NULL);
+  stat_tap_add_table(new_stat, table);
 
   items[MESSAGE_TYPE_COLUMN].type = TABLE_ITEM_STRING;
   items[COUNT_COLUMN].type = TABLE_ITEM_UINT;
@@ -497,7 +503,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown RAS message";
     ras_msg_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (h225_RasMessage_vals[msg_idx].strptr);
@@ -511,7 +517,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown CS message";
     cs_msg_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (T_h323_message_body_vals[msg_idx].strptr);
@@ -525,7 +531,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown gatekeeper reject reason";
     grj_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (GatekeeperRejectReason_vals[msg_idx].strptr);
@@ -539,7 +545,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown registration reject reason";
     rrj_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (RegistrationRejectReason_vals[msg_idx].strptr);
@@ -553,7 +559,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown unregistration request reason";
     urq_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (UnregRequestReason_vals[msg_idx].strptr);
@@ -567,7 +573,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown unregistration reject reason";
     urj_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (UnregRejectReason_vals[msg_idx].strptr);
@@ -581,7 +587,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown admission reject reason";
     arj_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (AdmissionRejectReason_vals[msg_idx].strptr);
@@ -595,7 +601,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown band reject reason";
     brj_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (BandRejectReason_vals[msg_idx].strptr);
@@ -609,7 +615,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown disengage reason";
     drq_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (DisengageReason_vals[msg_idx].strptr);
@@ -623,7 +629,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown disengage reject reason";
     drj_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (DisengageRejectReason_vals[msg_idx].strptr);
@@ -637,7 +643,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown location reject reason";
     lrj_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (LocationRejectReason_vals[msg_idx].strptr);
@@ -651,7 +657,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown info request nak reason";
     irqnak_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (InfoRequestNakReason_vals[msg_idx].strptr);
@@ -665,7 +671,7 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown release complete reason";
     rel_cmp_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (h225_ReleaseCompleteReason_vals[msg_idx].strptr);
@@ -679,27 +685,27 @@ static void h225_stat_init(stat_tap_table_ui* new_stat, new_stat_tap_gui_init_cb
       : "Unknown facility reason";
     facility_reason_idx[msg_idx] = row_idx;
 
-    new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+    stat_tap_init_table_row(table, row_idx, num_fields, items);
     row_idx++;
     msg_idx++;
   } while (FacilityReason_vals[msg_idx].strptr);
 
 
   items[MESSAGE_TYPE_COLUMN].value.string_value = "Unknown H.225 message";
-  new_stat_tap_init_table_row(table, row_idx, num_fields, items);
+  stat_tap_init_table_row(table, row_idx, num_fields, items);
   other_idx = row_idx;
 }
 
-static gboolean
-h225_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *hpi_ptr)
+static tap_packet_status
+h225_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *hpi_ptr, tap_flags_t flags _U_)
 {
-  new_stat_data_t* stat_data = (new_stat_data_t*)tapdata;
+  stat_data_t* stat_data = (stat_data_t*)tapdata;
   const h225_packet_info *hpi = (const h225_packet_info *)hpi_ptr;
   int tag_idx = -1;
   int reason_idx = -1;
 
   if(hpi->msg_tag < 0) { /* uninitialized */
-    return FALSE;
+    return TAP_PACKET_DONT_REDRAW;
   }
 
   switch (hpi->msg_type) {
@@ -781,32 +787,32 @@ h225_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U_,
 
   if (tag_idx >= 0) {
     stat_tap_table*table = g_array_index(stat_data->stat_tap_data->tables, stat_tap_table*, 0);
-    stat_tap_table_item_type* msg_data = new_stat_tap_get_field_data(table, tag_idx, COUNT_COLUMN);;
+    stat_tap_table_item_type* msg_data = stat_tap_get_field_data(table, tag_idx, COUNT_COLUMN);
     msg_data->value.uint_value++;
-    new_stat_tap_set_field_data(table, tag_idx, COUNT_COLUMN, msg_data);
+    stat_tap_set_field_data(table, tag_idx, COUNT_COLUMN, msg_data);
 
     if (reason_idx >= 0) {
-      msg_data = new_stat_tap_get_field_data(table, reason_idx, COUNT_COLUMN);;
+      msg_data = stat_tap_get_field_data(table, reason_idx, COUNT_COLUMN);
       msg_data->value.uint_value++;
-      new_stat_tap_set_field_data(table, reason_idx, COUNT_COLUMN, msg_data);
+      stat_tap_set_field_data(table, reason_idx, COUNT_COLUMN, msg_data);
     }
 
-    return TRUE;
+    return TAP_PACKET_REDRAW;
   }
-  return FALSE;
+  return TAP_PACKET_DONT_REDRAW;
 }
 
 static void
 h225_stat_reset(stat_tap_table* table)
 {
-  guint element;
+  unsigned element;
   stat_tap_table_item_type* item_data;
 
   for (element = 0; element < table->num_elements; element++)
   {
-    item_data = new_stat_tap_get_field_data(table, element, COUNT_COLUMN);
+    item_data = stat_tap_get_field_data(table, element, COUNT_COLUMN);
     item_data->value.uint_value = 0;
-    new_stat_tap_set_field_data(table, element, COUNT_COLUMN, item_data);
+    stat_tap_set_field_data(table, element, COUNT_COLUMN, item_data);
   }
 }
 
@@ -821,11 +827,11 @@ void proto_register_h225(void) {
 
   { &hf_h225_ras_req_frame,
     { "RAS Request Frame", "h225.ras.reqframe", FT_FRAMENUM, BASE_NONE,
-    NULL, 0, NULL, HFILL }},
+    FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0, NULL, HFILL }},
 
   { &hf_h225_ras_rsp_frame,
     { "RAS Response Frame", "h225.ras.rspframe", FT_FRAMENUM, BASE_NONE,
-    NULL, 0, NULL, HFILL }},
+    FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0, NULL, HFILL }},
 
   { &hf_h225_ras_dup,
     { "Duplicate RAS Message", "h225.ras.dup", FT_UINT32, BASE_DEC,
@@ -843,17 +849,17 @@ void proto_register_h225(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_h225,
 #include "packet-h225-ettarr.c"
   };
 
   static tap_param h225_stat_params[] = {
-    { PARAM_FILTER, "filter", "Filter", NULL, TRUE }
+    { PARAM_FILTER, "filter", "Filter", NULL, true }
   };
 
   static stat_tap_table_ui h225_stat_table = {
-    REGISTER_STAT_GROUP_TELEPHONY,
+    REGISTER_TELEPHONY_GROUP_UNSORTED,
     "H.225",
     PFNAME,
     "h225,counter",
@@ -862,14 +868,14 @@ void proto_register_h225(void) {
     h225_stat_reset,
     NULL,
     NULL,
-    sizeof(h225_stat_fields)/sizeof(stat_tap_table_item), h225_stat_fields,
-    sizeof(h225_stat_params)/sizeof(tap_param), h225_stat_params,
+    array_length(h225_stat_fields), h225_stat_fields,
+    array_length(h225_stat_params), h225_stat_params,
     NULL,
     0
   };
 
   module_t *h225_module;
-  int proto_h225_ras;
+  int i, proto_h225_ras;
 
   /* Register protocol */
   proto_h225 = proto_register_protocol(PNAME, PSNAME, PFNAME);
@@ -904,14 +910,16 @@ void proto_register_h225(void) {
   register_dissector("h323ui",dissect_h225_H323UserInformation, proto_h225);
   h225ras_handle = register_dissector("h225.ras", dissect_h225_h225_RasMessage, proto_h225);
 
-  nsp_object_dissector_table = register_dissector_table("h225.nsp.object", "H.225 NonStandardParameter (object)", proto_h225, FT_STRING, BASE_NONE);
-  nsp_h221_dissector_table = register_dissector_table("h225.nsp.h221", "H.225 NonStandardParameter (h221)", proto_h225, FT_UINT32, BASE_HEX);
-  tp_dissector_table = register_dissector_table("h225.tp", "H.225 TunnelledProtocol", proto_h225, FT_STRING, BASE_NONE);
-  gef_name_dissector_table = register_dissector_table("h225.gef.name", "H.225 Generic Extensible Framework (names)", proto_h225, FT_STRING, BASE_NONE);
-  gef_content_dissector_table = register_dissector_table("h225.gef.content", "H.225 Generic Extensible Framework", proto_h225, FT_STRING, BASE_NONE);
+  nsp_object_dissector_table = register_dissector_table("h225.nsp.object", "H.225 NonStandardParameter Object", proto_h225, FT_STRING, STRING_CASE_SENSITIVE);
+  nsp_h221_dissector_table = register_dissector_table("h225.nsp.h221", "H.225 NonStandardParameter h221", proto_h225, FT_UINT32, BASE_HEX);
+  tp_dissector_table = register_dissector_table("h225.tp", "H.225 Tunnelled Protocol", proto_h225, FT_STRING, STRING_CASE_SENSITIVE);
+  gef_name_dissector_table = register_dissector_table("h225.gef.name", "H.225 Generic Extensible Framework Name", proto_h225, FT_STRING, STRING_CASE_SENSITIVE);
+  gef_content_dissector_table = register_dissector_table("h225.gef.content", "H.225 Generic Extensible Framework Content", proto_h225, FT_STRING, STRING_CASE_SENSITIVE);
 
-  register_init_routine(&h225_init_routine);
-  register_cleanup_routine(&h225_cleanup_routine);
+  for(i=0;i<7;i++) {
+    ras_calls[i] = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), h225ras_call_hash, h225ras_call_equal);
+  }
+
   h225_tap = register_tap(PFNAME);
 
   register_rtd_table(proto_h225_ras, PFNAME, NUM_RAS_STATS, 1, ras_message_category, h225rassrt_packet, NULL);
@@ -924,6 +932,8 @@ void proto_register_h225(void) {
   oid_add_from_string("Version 4","0.0.8.2250.0.4");
   oid_add_from_string("Version 5","0.0.8.2250.0.5");
   oid_add_from_string("Version 6","0.0.8.2250.0.6");
+
+#include "packet-h225-reg_vs.c"
 }
 
 
@@ -931,19 +941,18 @@ void proto_register_h225(void) {
 void
 proto_reg_handoff_h225(void)
 {
-  static gboolean h225_prefs_initialized = FALSE;
+  static bool h225_prefs_initialized = false;
   static dissector_handle_t q931_tpkt_handle;
-  static guint saved_h225_tls_port;
+  static unsigned saved_h225_tls_port;
 
   if (!h225_prefs_initialized) {
-    dissector_add_uint("udp.port", UDP_PORT_RAS1, h225ras_handle);
-    dissector_add_uint("udp.port", UDP_PORT_RAS2, h225ras_handle);
+    dissector_add_uint_range_with_preference("udp.port", UDP_PORT_RAS_RANGE, h225ras_handle);
 
     h245_handle = find_dissector("h245");
     h245dg_handle = find_dissector("h245dg");
-    h4501_handle = find_dissector("h4501");
+    h4501_handle = find_dissector_add_dependency("h4501", proto_h225);
     data_handle = find_dissector("data");
-    h225_prefs_initialized = TRUE;
+    h225_prefs_initialized = true;
     q931_tpkt_handle = find_dissector("q931.tpkt");
   } else {
     ssl_dissector_delete(saved_h225_tls_port, q931_tpkt_handle);
@@ -961,6 +970,7 @@ static h225_packet_info* create_h225_packet_info(packet_info *pinfo)
   pi->cs_type = H225_OTHER;
   pi->msg_tag = -1;
   pi->reason = -1;
+  pi->frame_label = wmem_strdup(pinfo->pool, "");
 
   return pi;
 }
@@ -1000,7 +1010,7 @@ static void ras_call_matching(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
   h225ras_call_info_key h225ras_call_key;
   h225ras_call_t *h225ras_call = NULL;
   nstime_t delta;
-  guint msg_category;
+  unsigned msg_category;
 
   if(pi->msg_type == H225_RAS && pi->msg_tag < 21) {
     /* make RAS request/response matching only for tags from 0 to 20 for now */
@@ -1046,9 +1056,9 @@ static void ras_call_matching(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
             } else {
               /* No, so it's a duplicate request.
                  Mark it as such. */
-              pi->is_duplicate = TRUE;
+              pi->is_duplicate = true;
               hidden_item = proto_tree_add_uint(tree, hf_h225_ras_dup, tvb, 0,0, pi->requestSeqNum);
-              PROTO_ITEM_SET_HIDDEN(hidden_item);
+              proto_item_set_hidden(hidden_item);
             }
             break;
           }
@@ -1065,15 +1075,13 @@ static void ras_call_matching(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
         proto_tree_add_uint_format(tree, hf_h225_ras_rsp_frame, tvb, 0, 0, h225ras_call->rsp_num,
                                      "The response to this request is in frame %u",
                                      h225ras_call->rsp_num);
-        PROTO_ITEM_SET_GENERATED(ti);
+        proto_item_set_generated(ti);
       }
 
     /* end of request message handling*/
     }
     else {          /* Confirm or Reject Message */
-      conversation = find_conversation(pinfo->num, &pinfo->src,
-        &pinfo->dst, pinfo->ptype, pinfo->srcport,
-        pinfo->destport, 0);
+      conversation = find_conversation_pinfo(pinfo, 0);
       if (conversation != NULL) {
         /* look only for matching request, if
            matching conversation is available. */
@@ -1103,7 +1111,7 @@ static void ras_call_matching(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
           if (msg_category == 3 || msg_category == 5) {
             pi->guid = h225ras_call->guid;
             hidden_item = proto_tree_add_guid(tree, hf_h225_guid, tvb, 0, GUID_LEN, &pi->guid);
-            PROTO_ITEM_SET_HIDDEN(hidden_item);
+            proto_item_set_hidden(hidden_item);
           }
 
           if (h225ras_call->rsp_num == 0) {
@@ -1118,21 +1126,21 @@ static void ras_call_matching(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
             if (h225ras_call->rsp_num != pinfo->num) {
               /* No, so it's a duplicate response.
                  Mark it as such. */
-              pi->is_duplicate = TRUE;
+              pi->is_duplicate = true;
               hidden_item = proto_tree_add_uint(tree, hf_h225_ras_dup, tvb, 0,0, pi->requestSeqNum);
-              PROTO_ITEM_SET_HIDDEN(hidden_item);
+              proto_item_set_hidden(hidden_item);
             }
           }
 
           if(h225ras_call->req_num != 0){
             proto_item *ti;
-            h225ras_call->responded = TRUE;
-            pi->request_available = TRUE;
+            h225ras_call->responded = true;
+            pi->request_available = true;
 
             /* Indicate the frame to which this is a reply. */
             ti = proto_tree_add_uint_format(tree, hf_h225_ras_req_frame, tvb, 0, 0, h225ras_call->req_num,
               "This is a response to a request in frame %u", h225ras_call->req_num);
-            PROTO_ITEM_SET_GENERATED(ti);
+            proto_item_set_generated(ti);
 
             /* Calculate RAS Service Response Time */
             nstime_delta(&delta, &pinfo->abs_ts, &h225ras_call->req_time);
@@ -1140,7 +1148,7 @@ static void ras_call_matching(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 
             /* display Ras Service Response Time and make it filterable */
             ti = proto_tree_add_time(tree, hf_h225_ras_deltatime, tvb, 0, 0, &(pi->delta_time));
-            PROTO_ITEM_SET_GENERATED(ti);
+            proto_item_set_generated(ti);
           }
         }
       }
@@ -1149,7 +1157,7 @@ static void ras_call_matching(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

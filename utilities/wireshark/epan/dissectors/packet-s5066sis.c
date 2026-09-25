@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1999 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -37,71 +25,72 @@
 # define SAPID_UDOP	7
 
 /* Forward reference */
+static dissector_handle_t s5066_tcp_handle;
 /* Register functions */
 void proto_register_s5066(void);
 void proto_reg_handoff_s5066(void);
 /* Main dissectors */
 static int dissect_s5066_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data);
-static guint get_s5066_pdu_len(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data);
+static unsigned get_s5066_pdu_len(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data);
 static int dissect_s5066_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_);
-/* Client transport layer header dissctor */
-static guint dissect_s5066_client_transport_header(tvbuff_t *tvb, guint offset, proto_tree *tree, guint8 sapid, guint *client_app_id);
+/* Client transport layer header dissector */
+static unsigned dissect_s5066_client_transport_header(tvbuff_t *tvb, unsigned offset, proto_tree *tree, uint8_t sapid, unsigned *client_app_id);
 /* Service type and address dissectors */
-static guint dissect_s5066_servicetype(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_address(tvbuff_t *tvb, guint offset, proto_tree *tree, gint source);
+static unsigned dissect_s5066_servicetype(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_address(tvbuff_t *tvb, unsigned offset, proto_tree *tree, int source);
 /* S-Primitive dissectors */
-static guint dissect_s5066_01(tvbuff_t *tvb, guint offset, proto_tree *tree);
-/* static guint dissect_s5066_02(tvbuff_t *tvb, guint offset, proto_tree *tree); */
-static guint dissect_s5066_03(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_04(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_05(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_06(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_07(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_08(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_09(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_10(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_11(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_12(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_13(tvbuff_t *tvb, guint offset, proto_tree *tree);
-static guint dissect_s5066_14(tvbuff_t *tvb, guint offset, proto_tree *tree);
-/* static guint dissect_s5066_15(tvbuff_t *tvb, guint offset, proto_tree *tree); */
-/* static guint dissect_s5066_16(tvbuff_t *tvb, guint offset, proto_tree *tree); */
-/* static guint dissect_s5066_17(tvbuff_t *tvb, guint offset, proto_tree *tree); */
-static guint dissect_s5066_18(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size);
-static guint dissect_s5066_19(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size);
-static guint dissect_s5066_20(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id);
-static guint dissect_s5066_21(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size, guint *client_app_id);
-static guint dissect_s5066_22(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id);
-static guint dissect_s5066_23(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id);
-static guint dissect_s5066_24(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id);
-static guint dissect_s5066_25(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size, guint *client_app_id);
-static guint dissect_s5066_26(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id);
-static guint dissect_s5066_27(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id);
+static unsigned dissect_s5066_01(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+/* static unsigned dissect_s5066_02(tvbuff_t *tvb, unsigned offset, proto_tree *tree); */
+static unsigned dissect_s5066_03(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_04(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_05(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_06(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_07(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_08(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_09(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_10(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_11(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_12(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_13(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+static unsigned dissect_s5066_14(tvbuff_t *tvb, unsigned offset, proto_tree *tree);
+/* static unsigned dissect_s5066_15(tvbuff_t *tvb, unsigned offset, proto_tree *tree); */
+/* static unsigned dissect_s5066_16(tvbuff_t *tvb, unsigned offset, proto_tree *tree); */
+/* static unsigned dissect_s5066_17(tvbuff_t *tvb, unsigned offset, proto_tree *tree); */
+static unsigned dissect_s5066_18(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned pdu_size);
+static unsigned dissect_s5066_19(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned pdu_size);
+static unsigned dissect_s5066_20(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id);
+static unsigned dissect_s5066_21(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned pdu_size, unsigned *client_app_id);
+static unsigned dissect_s5066_22(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id);
+static unsigned dissect_s5066_23(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id);
+static unsigned dissect_s5066_24(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id);
+static unsigned dissect_s5066_25(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned pdu_size, unsigned *client_app_id);
+static unsigned dissect_s5066_26(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id);
+static unsigned dissect_s5066_27(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id);
 
-static gint proto_s5066 = -1;
+static int proto_s5066;
 
 static dissector_table_t s5066sis_dissector_table;
 
 /* Enable desegmentation of S5066 over TCP */
-static gboolean s5066_desegment = TRUE;
+static bool s5066_desegment = true;
 /* Dissect old 'edition 1' of STANAG 5066 (It lacks the 'version' field.) */
-static gboolean s5066_edition_one = FALSE;
+static bool s5066_edition_one;
 /* This port is registered with IANA */
-static guint global_s5066_port = 5066;
+#define S5066_PORT 5066
 /* Size of header outside 'size' field */
-static gint s5066_header_size = 5;
+static int s5066_header_size = 5;
 /* Offset of 'size' field */
-static gint s5066_size_offset = 3;
+static int s5066_size_offset = 3;
 
 /* Sync should be 0x90EB */
-static gint hf_s5066_sync_word = -1;
+static int hf_s5066_sync_word;
 /* Version should be 0x00 */
-static gint hf_s5066_version = -1;
+static int hf_s5066_version;
 /* Total size of the PDU, excluding this size and previous fields */
 /* So total size is this + 5 bytes (s5066_header_size) */
-static gint hf_s5066_size = -1;
+static int hf_s5066_size;
 /* Th type of PDU */
-static gint hf_s5066_type = -1;
+static int hf_s5066_type;
 static const value_string s5066_pdu_type[] = {
 	{ 1, "S_BIND_REQUEST"},
 	{ 2, "S_UNBIND_REQUEST"},
@@ -135,15 +124,15 @@ static const value_string s5066_pdu_type[] = {
 
 /* STANAG 5066 Address */
 /* Size is defined in nibbles (4 bits) */
-static gint hf_s5066_ad_size = -1;
+static int hf_s5066_ad_size;
 /* Group flag: 0 = false, 1 = true */
-static gint hf_s5066_ad_group = -1;
+static int hf_s5066_ad_group;
 /* The remainder of the 4 bytes form the address */
-static gint hf_s5066_ad_address = -1;
+static int hf_s5066_ad_address;
 
 /* Service type */
 /* Transmission mode: */
-static gint hf_s5066_st_txmode = -1;
+static int hf_s5066_st_txmode;
 static const value_string s5066_st_txmode[] = {
 	{ 0, "Ignore service type field"},
 	{ 1, "ARQ"},
@@ -164,7 +153,7 @@ static const value_string s5066_st_txmode[] = {
 	{ 0, NULL },
 };
 /* Delivery confirmation: */
-static gint hf_s5066_st_delivery_confirmation = -1;
+static int hf_s5066_st_delivery_confirmation;
 static const value_string s5066_st_delivery_confirmation[] = {
 	{ 0, "No confirmation"},
 	{ 1, "Node delivery confirmation"},
@@ -173,28 +162,28 @@ static const value_string s5066_st_delivery_confirmation[] = {
 	{ 0, NULL },
 };
 /* Delivery order: */
-static gint hf_s5066_st_delivery_order = -1;
+static int hf_s5066_st_delivery_order;
 static const value_string s5066_st_delivery_order[] = {
 	{ 0, "In-order delivery"},
 	{ 1, "As-they-arrive"},
 	{ 0, NULL },
 };
 /* Extended field present: (Never in the current version.) */
-static gint hf_s5066_st_extended = -1;
+static int hf_s5066_st_extended;
 static const value_string s5066_st_extended[] = {
 	{ 0, "No extended field"},
 	{ 1, "Extended field follows"},
 	{ 0, NULL },
 };
 /* Number of retransmissions when in Non-ARQ: */
-static gint hf_s5066_st_retries = -1;
+static int hf_s5066_st_retries;
 
 /* Client transport layer header */
-static gint hf_s5066_ctl_conn_id = -1;
-static gint hf_s5066_ctl_reserved = -1;
-static gint hf_s5066_ctl_updu_id = -1;
-static gint hf_s5066_ctl_updu_segment = -1;
-static gint hf_s5066_ctl_app_id = -1;
+static int hf_s5066_ctl_conn_id;
+static int hf_s5066_ctl_reserved;
+static int hf_s5066_ctl_updu_id;
+static int hf_s5066_ctl_updu_segment;
+static int hf_s5066_ctl_app_id;
 static const value_string s5066_client_application_ids[] = {
 	{ S5066_CLIENT_BFTP,			    "Basic File Transfer Protocol (BFTP) File Transfer Service"},
 	{ S5066_CLIENT_FRAP,			    "File-Receipt/Acknowledgement Protocol"},
@@ -229,20 +218,20 @@ static const value_string s5066_sapid_assignments[] = {
 };
 
 /* Type  1: S_BIND_REQUEST */
-static gint hf_s5066_01_sapid = -1;
-static gint hf_s5066_01_rank = -1;
-static gint hf_s5066_01_unused = -1;
+static int hf_s5066_01_sapid;
+static int hf_s5066_01_rank;
+static int hf_s5066_01_unused;
 
 /* Type  2: S_UNBIND_REQUEST */
 /*   --- no subfields ---   */
 
 /* Type  3: S_BIND_ACCEPTED */
-static gint hf_s5066_03_sapid = -1;
-static gint hf_s5066_03_unused = -1;
-static gint hf_s5066_03_mtu = -1;
+static int hf_s5066_03_sapid;
+static int hf_s5066_03_unused;
+static int hf_s5066_03_mtu;
 
 /* Type  4: S_BIND_REJECTED */
-static gint hf_s5066_04_reason = -1;
+static int hf_s5066_04_reason;
 static const value_string s5066_04_reason[] = {
 	{ 0, "Unknown reason"},
 	{ 1, "Not enough resources"},
@@ -253,7 +242,7 @@ static const value_string s5066_04_reason[] = {
 };
 
 /* Type  5: S_UNBIND_INDICATION */
-static gint hf_s5066_05_reason = -1;
+static int hf_s5066_05_reason;
 static const value_string s5066_05_reason[] = {
 	{ 0, "Unknown reason"},
 	{ 1, "Connection pre-empted by higher ranking client"},
@@ -274,26 +263,26 @@ static const value_string s5066_hard_link_type[] = {
 };
 
 /* Type  6: S_HARD_LINK_ESTABLISH */
-static gint hf_s5066_06_link_type = -1;
-static gint hf_s5066_06_link_priority = -1;
-static gint hf_s5066_06_sapid = -1;
+static int hf_s5066_06_link_type;
+static int hf_s5066_06_link_priority;
+static int hf_s5066_06_sapid;
 
 /* Type  7: S_HARD_LINK_TERMINATE */
 /* Only  remote node address */
 
 /* Type  8: S_HARD_LINK_ESTABLISHED */
-static gint hf_s5066_08_remote_status = -1;
+static int hf_s5066_08_remote_status;
 static const value_string s5066_08_remote_status[] = {
 	{ 0, "ERROR"},
 	{ 1, "OK"},
 	{ 0, NULL },
 };
-static gint hf_s5066_08_link_type = -1;
-static gint hf_s5066_08_link_priority = -1;
-static gint hf_s5066_08_sapid = -1;
+static int hf_s5066_08_link_type;
+static int hf_s5066_08_link_priority;
+static int hf_s5066_08_sapid;
 
 /* Type  9: S_HARD_LINK_REJECTED */
-static gint hf_s5066_09_reason = -1;
+static int hf_s5066_09_reason;
 static const value_string s5066_09_reason[] = {
 	{ 0, "--- undefined ---"},
 	{ 1, "Remote node busy"},
@@ -303,12 +292,12 @@ static const value_string s5066_09_reason[] = {
 	{ 5, "Requested Type-0 link exists"},
 	{ 0, NULL },
 };
-static gint hf_s5066_09_link_type = -1;
-static gint hf_s5066_09_link_priority = -1;
-static gint hf_s5066_09_sapid = -1;
+static int hf_s5066_09_link_type;
+static int hf_s5066_09_link_priority;
+static int hf_s5066_09_sapid;
 
 /* Type 10: S_HARD_LINK_TERMINATED */
-static gint hf_s5066_10_reason = -1;
+static int hf_s5066_10_reason;
 static const value_string s5066_10_reason[] = {
 	{ 0, "--- undefined ---"},
 	{ 1, "Link terminated by remote node"},
@@ -318,38 +307,38 @@ static const value_string s5066_10_reason[] = {
 	{ 5, "Physical link broken"},
 	{ 0, NULL },
 };
-static gint hf_s5066_10_link_type = -1;
-static gint hf_s5066_10_link_priority = -1;
-static gint hf_s5066_10_sapid = -1;
+static int hf_s5066_10_link_type;
+static int hf_s5066_10_link_priority;
+static int hf_s5066_10_sapid;
 
 /* Type 11: S_HARD_LINK_INDICATION */
-static gint hf_s5066_11_remote_status = -1;
+static int hf_s5066_11_remote_status;
 static const value_string s5066_11_remote_status[] = {
 	{ 0, "ERROR"},
 	{ 1, "OK"},
 	{ 0, NULL },
 };
-static gint hf_s5066_11_link_type = -1;
-static gint hf_s5066_11_link_priority = -1;
-static gint hf_s5066_11_sapid = -1;
+static int hf_s5066_11_link_type;
+static int hf_s5066_11_link_priority;
+static int hf_s5066_11_sapid;
 
 /* Type 12: S_HARD_LINK_ACCEPT */
-static gint hf_s5066_12_link_type = -1;
-static gint hf_s5066_12_link_priority = -1;
-static gint hf_s5066_12_sapid = -1;
+static int hf_s5066_12_link_type;
+static int hf_s5066_12_link_priority;
+static int hf_s5066_12_sapid;
 
 /* Type 13: S_HARD_LINK_REJECT */
-static gint hf_s5066_13_reason = -1;
+static int hf_s5066_13_reason;
 static const value_string s5066_13_reason[] = {
 	{ 0, "--- undefined ---"},
 	{ 0, NULL },
 };
-static gint hf_s5066_13_link_type = -1;
-static gint hf_s5066_13_link_priority = -1;
-static gint hf_s5066_13_sapid = -1;
+static int hf_s5066_13_link_type;
+static int hf_s5066_13_link_priority;
+static int hf_s5066_13_sapid;
 
 /* Type 14: S_SUBNET_AVAILABILITY */
-static gint hf_s5066_14_status= -1;
+static int hf_s5066_14_status;
 static const value_string s5066_14_status[] = {
 	{ 0, "Off"},
 	{ 1, "On"},
@@ -358,7 +347,7 @@ static const value_string s5066_14_status[] = {
 	{ 4, "Full-duplex"},
 	{ 0, NULL },
 };
-static gint hf_s5066_14_reason= -1;
+static int hf_s5066_14_reason;
 static const value_string s5066_14_reason[] = {
 	{ 0, "Unknown reason"},
 	{ 1, "Local node in EMCON"},
@@ -376,41 +365,41 @@ static const value_string s5066_14_reason[] = {
 /*   --- no subfields ---   */
 
 /* Type 18: S_MANAGEMENT_MESSAGE_REQUEST */
-static gint hf_s5066_18_type = -1;
-static gint hf_s5066_18_body = -1;
+static int hf_s5066_18_type;
+static int hf_s5066_18_body;
 
 /* Type 19: S_MANAGEMENT_MESSAGE_INDICATION */
-static gint hf_s5066_19_type = -1;
-static gint hf_s5066_19_body = -1;
+static int hf_s5066_19_type;
+static int hf_s5066_19_body;
 
 /* Type 20: S_UNIDATA_REQUEST */
-static gint hf_s5066_20_priority = -1;
-static gint hf_s5066_20_sapid = -1;
-static gint hf_s5066_20_ttl = -1;
-static gint hf_s5066_20_size = -1;
+static int hf_s5066_20_priority;
+static int hf_s5066_20_sapid;
+static int hf_s5066_20_ttl;
+static int hf_s5066_20_size;
 
 /* Type 21: S_UNIDATA_INDICATION */
-static gint hf_s5066_21_priority = -1;
-static gint hf_s5066_21_dest_sapid = -1;
-static gint hf_s5066_21_tx_mode = -1;
-static gint hf_s5066_21_src_sapid = -1;
-static gint hf_s5066_21_size = -1;
-static gint hf_s5066_21_err_blocks = -1;
-static gint hf_s5066_21_err_ptr = -1;
-static gint hf_s5066_21_err_size = -1;
-static gint hf_s5066_21_nrx_blocks = -1;
-static gint hf_s5066_21_nrx_ptr = -1;
-static gint hf_s5066_21_nrx_size = -1;
+static int hf_s5066_21_priority;
+static int hf_s5066_21_dest_sapid;
+static int hf_s5066_21_tx_mode;
+static int hf_s5066_21_src_sapid;
+static int hf_s5066_21_size;
+static int hf_s5066_21_err_blocks;
+static int hf_s5066_21_err_ptr;
+static int hf_s5066_21_err_size;
+static int hf_s5066_21_nrx_blocks;
+static int hf_s5066_21_nrx_ptr;
+static int hf_s5066_21_nrx_size;
 
 
 /* Type 22: S_UNIDATA_REQUEST_CONFIRM */
-static gint hf_s5066_22_unused = -1;
-static gint hf_s5066_22_sapid = -1;
-static gint hf_s5066_22_size = -1;
-static gint hf_s5066_22_data = -1;
+static int hf_s5066_22_unused;
+static int hf_s5066_22_sapid;
+static int hf_s5066_22_size;
+static int hf_s5066_22_data;
 
 /* Type 23: S_UNIDATA_REQUEST_REJECTED */
-static gint hf_s5066_23_reason = -1;
+static int hf_s5066_23_reason;
 static const value_string s5066_23_reason[] = {
 	{ 0, "Unknown reason"},
 	{ 1, "Time-To-Live expired"},
@@ -420,37 +409,37 @@ static const value_string s5066_23_reason[] = {
 	{ 5, "Transmission Mode not specified"},
 	{ 0, NULL },
 };
-static gint hf_s5066_23_sapid = -1;
-static gint hf_s5066_23_size = -1;
-static gint hf_s5066_23_data = -1;
+static int hf_s5066_23_sapid;
+static int hf_s5066_23_size;
+static int hf_s5066_23_data;
 
 /* Type 24: S_EXPEDITED_UNIDATA_REQUEST */
-static gint hf_s5066_24_unused = -1;
-static gint hf_s5066_24_sapid = -1;
-static gint hf_s5066_24_ttl = -1;
-static gint hf_s5066_24_size = -1;
+static int hf_s5066_24_unused;
+static int hf_s5066_24_sapid;
+static int hf_s5066_24_ttl;
+static int hf_s5066_24_size;
 
 /* Type 25: S_EXPEDITED_UNIDATA_INDICATION */
-static gint hf_s5066_25_unused = -1;
-static gint hf_s5066_25_dest_sapid = -1;
-static gint hf_s5066_25_tx_mode = -1;
-static gint hf_s5066_25_src_sapid = -1;
-static gint hf_s5066_25_size = -1;
-static gint hf_s5066_25_err_blocks = -1;
-static gint hf_s5066_25_err_ptr = -1;
-static gint hf_s5066_25_err_size = -1;
-static gint hf_s5066_25_nrx_blocks = -1;
-static gint hf_s5066_25_nrx_ptr = -1;
-static gint hf_s5066_25_nrx_size = -1;
+static int hf_s5066_25_unused;
+static int hf_s5066_25_dest_sapid;
+static int hf_s5066_25_tx_mode;
+static int hf_s5066_25_src_sapid;
+static int hf_s5066_25_size;
+static int hf_s5066_25_err_blocks;
+static int hf_s5066_25_err_ptr;
+static int hf_s5066_25_err_size;
+static int hf_s5066_25_nrx_blocks;
+static int hf_s5066_25_nrx_ptr;
+static int hf_s5066_25_nrx_size;
 
 /* Type 26: S_EXPEDITED_UNIDATA_REQUEST_CONFIRM */
-static gint hf_s5066_26_unused = -1;
-static gint hf_s5066_26_sapid = -1;
-static gint hf_s5066_26_size = -1;
-static gint hf_s5066_26_data = -1;
+static int hf_s5066_26_unused;
+static int hf_s5066_26_sapid;
+static int hf_s5066_26_size;
+static int hf_s5066_26_data;
 
 /* Type 27: S_EXPEDITED_UNIDATA_REQUEST_REJECTED */
-static gint hf_s5066_27_reason = -1;
+static int hf_s5066_27_reason;
 static const value_string s5066_27_reason[] = {
 	{ 0, "Unknown reason"},
 	{ 1, "Time-To-Live expired"},
@@ -460,22 +449,22 @@ static const value_string s5066_27_reason[] = {
 	{ 5, "Transmission Mode not specified"},
 	{ 0, NULL },
 };
-static gint hf_s5066_27_sapid = -1;
-static gint hf_s5066_27_size = -1;
-static gint hf_s5066_27_data = -1;
+static int hf_s5066_27_sapid;
+static int hf_s5066_27_size;
+static int hf_s5066_27_data;
 
 
-static gint ett_s5066 = -1;
-static gint ett_s5066_pdu = -1;
-static gint ett_s5066_servicetype = -1;
-static gint ett_s5066_client_transport_header = -1;
-static gint ett_s5066_address = -1;
+static int ett_s5066;
+static int ett_s5066_pdu;
+static int ett_s5066_servicetype;
+static int ett_s5066_client_transport_header;
+static int ett_s5066_address;
 
-static guint
-dissect_s5066_address(tvbuff_t *tvb, guint offset, proto_tree *tree, gint source)
+static unsigned
+dissect_s5066_address(tvbuff_t *tvb, unsigned offset, proto_tree *tree, int source)
 {
 	proto_tree *s5066_tree_address;
-	guint32 addr;
+	uint32_t addr;
 
 	if (source) {
 		s5066_tree_address = proto_tree_add_subtree(tree, tvb, offset, 4, ett_s5066_address, NULL, "Source Address");
@@ -493,8 +482,8 @@ dissect_s5066_address(tvbuff_t *tvb, guint offset, proto_tree *tree, gint source
 	return offset + 4;
 }
 
-static guint
-dissect_s5066_servicetype(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_servicetype(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree *s5066_tree_servicetype;
 
@@ -509,8 +498,8 @@ dissect_s5066_servicetype(tvbuff_t *tvb, guint offset, proto_tree *tree)
 	return offset;
 }
 
-static guint
-dissect_s5066_client_transport_header(tvbuff_t *tvb, guint offset, proto_tree *tree, guint8 sapid, guint *client_app_id)
+static unsigned
+dissect_s5066_client_transport_header(tvbuff_t *tvb, unsigned offset, proto_tree *tree, uint8_t sapid, unsigned *client_app_id)
 {
 	proto_tree *s5066_tree_client_transport_header;
 
@@ -535,8 +524,8 @@ dissect_s5066_client_transport_header(tvbuff_t *tvb, guint offset, proto_tree *t
 }
 
 /* S_BIND_REQUEST */
-static guint
-dissect_s5066_01(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_01(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_01_sapid, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_01_rank, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
@@ -549,16 +538,16 @@ dissect_s5066_01(tvbuff_t *tvb, guint offset, proto_tree *tree)
 
 /* S_UNBIND_REQUEST */
 /* Commented out: does nothing and causes <variable not used> messages.
-static guint
-dissect_s5066_02(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_02(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	return offset;
 }
 */
 
 /* S_BIND_ACCEPTED */
-static guint
-dissect_s5066_03(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_03(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_03_sapid, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_03_unused, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
@@ -567,114 +556,114 @@ dissect_s5066_03(tvbuff_t *tvb, guint offset, proto_tree *tree)
 }
 
 /* S_BIND_REJECTED */
-static guint
-dissect_s5066_04(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_04(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_04_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	return offset;
 }
 
 /* S_UNBIND_INDICATION */
-static guint
-dissect_s5066_05(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_05(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_05_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	return offset;
 }
 
 /* S_HARD_LINK_ESTABLISH */
-static guint
-dissect_s5066_06(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_06(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_06_link_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_06_link_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_06_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	return offset;
 }
 
 /* S_HARD_LINK_TERMINATE */
-static guint
-dissect_s5066_07(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_07(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	return offset;
 }
 
 /* S_HARD_LINK_ESTABLISHED */
-static guint
-dissect_s5066_08(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_08(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_08_remote_status, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	proto_tree_add_item(tree, hf_s5066_08_link_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_08_link_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_08_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	return offset;
 }
 
 /* S_HARD_LINK_REJECTED */
-static guint
-dissect_s5066_09(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_09(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_09_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	proto_tree_add_item(tree, hf_s5066_09_link_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_09_link_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_09_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	return offset;
 }
 
 /* S_HARD_LINK_TERMINATED */
-static guint
-dissect_s5066_10(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_10(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_10_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	proto_tree_add_item(tree, hf_s5066_10_link_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_10_link_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_10_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	return offset;
 }
 
 /* S_HARD_LINK_INDICATION */
-static guint
-dissect_s5066_11(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_11(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_11_remote_status, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	proto_tree_add_item(tree, hf_s5066_11_link_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_11_link_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_11_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	return offset;
 }
 
 /* S_HARD_LINK_ACCEPT */
-static guint
-dissect_s5066_12(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_12(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_12_link_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_12_link_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_12_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	return offset;
 }
 
 /* S_HARD_LINK_REJECT */
-static guint
-dissect_s5066_13(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_13(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_13_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	proto_tree_add_item(tree, hf_s5066_13_link_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_13_link_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_13_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	return offset;
 }
 
 /* S_SUBNET_AVAILABILITY */
-static guint
-dissect_s5066_14(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_14(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_s5066_14_status, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	proto_tree_add_item(tree, hf_s5066_14_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
@@ -684,8 +673,8 @@ dissect_s5066_14(tvbuff_t *tvb, guint offset, proto_tree *tree)
 /* Following three commented out: do nothing and cause <variable not used> messages. */
 /* S_DATA_FLOW_ON */
 /*
-static guint
-dissect_s5066_15(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_15(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	return offset;
 }
@@ -693,8 +682,8 @@ dissect_s5066_15(tvbuff_t *tvb, guint offset, proto_tree *tree)
 
 /* S_DATA_FLOW_OFF */
 /*
-static guint
-dissect_s5066_16(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_16(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	return offset;
 }
@@ -702,18 +691,18 @@ dissect_s5066_16(tvbuff_t *tvb, guint offset, proto_tree *tree)
 
 /* S_KEEP_ALIVE */
 /*
-static guint
-dissect_s5066_17(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_s5066_17(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
 	return offset;
 }
 */
 
 /* S_MANAGEMENT_MESSAGE_REQUEST */
-static guint
-dissect_s5066_18(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size)
+static unsigned
+dissect_s5066_18(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned pdu_size)
 {
-	guint body_size = 0;
+	unsigned body_size = 0;
 	proto_tree_add_item(tree, hf_s5066_18_type, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	body_size = pdu_size - offset;
 	proto_tree_add_item(tree, hf_s5066_18_body, tvb, offset, body_size, ENC_NA); offset += body_size;
@@ -721,10 +710,10 @@ dissect_s5066_18(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size)
 }
 
 /* S_MANAGEMENT_MESSAGE_INDICATION */
-static guint
-dissect_s5066_19(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size)
+static unsigned
+dissect_s5066_19(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned pdu_size)
 {
-	guint body_size = 0;
+	unsigned body_size = 0;
 	proto_tree_add_item(tree, hf_s5066_19_type, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 	body_size = pdu_size - offset;
 	proto_tree_add_item(tree, hf_s5066_19_body, tvb, offset, body_size, ENC_NA); offset += body_size;
@@ -732,14 +721,14 @@ dissect_s5066_19(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size)
 }
 
 /* S_UNIDATA_REQUEST */
-static guint
-dissect_s5066_20(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id)
+static unsigned
+dissect_s5066_20(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id)
 {
-	guint8 sapid;
+	uint8_t sapid;
 	proto_tree_add_item(tree, hf_s5066_20_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
-	sapid = tvb_get_guint8(tvb, offset) & 0x0F;
+	sapid = tvb_get_uint8(tvb, offset) & 0x0F;
 	proto_tree_add_item(tree, hf_s5066_20_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	offset = dissect_s5066_servicetype(tvb, offset, tree);
 	proto_tree_add_item(tree, hf_s5066_20_ttl, tvb, offset, 3, ENC_BIG_ENDIAN); offset += 3;
 	proto_tree_add_item(tree, hf_s5066_20_size, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
@@ -749,32 +738,32 @@ dissect_s5066_20(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_ap
 }
 
 /* S_UNIDATA_INDICATION */
-static guint
-dissect_s5066_21(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size, guint *client_app_id)
+static unsigned
+dissect_s5066_21(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned pdu_size, unsigned *client_app_id)
 {
-	guint i=0;
+	unsigned i=0;
 	proto_item *ti = NULL;
-	guint d_pdu_size = 0;
-	guint8 tx_mode = 0;
-	guint16 no_err_blocks = 0;
-	guint16 no_nrx_blocks = 0;
-	gboolean non_arq_w_errors = FALSE;
-	guint sapid;
+	unsigned d_pdu_size = 0;
+	uint8_t tx_mode = 0;
+	uint16_t no_err_blocks = 0;
+	uint16_t no_nrx_blocks = 0;
+	bool non_arq_w_errors = false;
+	unsigned sapid;
 
 	proto_tree_add_item(tree, hf_s5066_21_priority, tvb, offset, 1, ENC_BIG_ENDIAN);
-	sapid = tvb_get_guint8(tvb, offset) & 0x0F;
+	sapid = tvb_get_uint8(tvb, offset) & 0x0F;
 	proto_tree_add_item(tree, hf_s5066_21_dest_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 
-	tx_mode = tvb_get_guint8(tvb, offset);
+	tx_mode = tvb_get_uint8(tvb, offset);
 	tx_mode = (tx_mode & 0xF0) >> 4;
 	if (tx_mode == 3) {
-		non_arq_w_errors = TRUE;
+		non_arq_w_errors = true;
 	}
 
 	proto_tree_add_item(tree, hf_s5066_21_tx_mode, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_21_src_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, TRUE);
+	offset = dissect_s5066_address(tvb, offset, tree, true);
 
 	d_pdu_size = tvb_get_ntohs(tvb, offset);
 	proto_tree_add_item(tree, hf_s5066_21_size, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
@@ -806,15 +795,15 @@ dissect_s5066_21(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size, 
 }
 
 /* S_UNIDATA_REQUEST_CONFIRM */
-static guint
-dissect_s5066_22(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id)
+static unsigned
+dissect_s5066_22(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id)
 {
-	guint pdu_size = 0;
-	guint8 sapid;
+	unsigned pdu_size = 0;
+	uint8_t sapid;
 	proto_tree_add_item(tree, hf_s5066_22_unused, tvb, offset, 1, ENC_BIG_ENDIAN);
-	sapid = tvb_get_guint8(tvb, offset) & 0x0F;
+	sapid = tvb_get_uint8(tvb, offset) & 0x0F;
 	proto_tree_add_item(tree, hf_s5066_22_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	pdu_size = tvb_get_ntohs(tvb, offset);
 	proto_tree_add_item(tree, hf_s5066_22_size, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
 	proto_tree_add_item(tree, hf_s5066_22_data, tvb, offset, pdu_size, ENC_NA); offset += pdu_size;
@@ -824,15 +813,15 @@ dissect_s5066_22(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_ap
 }
 
 /* S_UNIDATA_REQUEST_REJECTED */
-static guint
-dissect_s5066_23(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id)
+static unsigned
+dissect_s5066_23(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id)
 {
-	guint pdu_size = 0;
-	guint8 sapid;
+	unsigned pdu_size = 0;
+	uint8_t sapid;
 	proto_tree_add_item(tree, hf_s5066_23_reason, tvb, offset, 1, ENC_BIG_ENDIAN);
-	sapid = tvb_get_guint8(tvb, offset) & 0x0F;
+	sapid = tvb_get_uint8(tvb, offset) & 0x0F;
 	proto_tree_add_item(tree, hf_s5066_23_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	pdu_size = tvb_get_ntohs(tvb, offset);
 	proto_tree_add_item(tree, hf_s5066_23_size, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
 	proto_tree_add_item(tree, hf_s5066_23_data, tvb, offset, pdu_size, ENC_NA); offset += pdu_size;
@@ -842,14 +831,14 @@ dissect_s5066_23(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_ap
 }
 
 /* S_EXPEDITED_UNIDATA_REQUEST */
-static guint
-dissect_s5066_24(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id)
+static unsigned
+dissect_s5066_24(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id)
 {
-	guint8 sapid;
+	uint8_t sapid;
 	proto_tree_add_item(tree, hf_s5066_24_unused, tvb, offset, 1, ENC_BIG_ENDIAN);
-	sapid = tvb_get_guint8(tvb, offset) & 0x0F;
+	sapid = tvb_get_uint8(tvb, offset) & 0x0F;
 	proto_tree_add_item(tree, hf_s5066_24_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	offset = dissect_s5066_servicetype(tvb, offset, tree);
 	proto_tree_add_item(tree, hf_s5066_24_ttl, tvb, offset, 3, ENC_BIG_ENDIAN); offset += 3;
 	proto_tree_add_item(tree, hf_s5066_24_size, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
@@ -859,32 +848,32 @@ dissect_s5066_24(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_ap
 }
 
 /* S_EXPEDITED_UNIDATA_INDICATION */
-static guint
-dissect_s5066_25(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size, guint *client_app_id)
+static unsigned
+dissect_s5066_25(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned pdu_size, unsigned *client_app_id)
 {
-	guint i=0;
+	unsigned i=0;
 	proto_item *ti = NULL;
-	guint d_pdu_size = 0;
-	guint8 tx_mode = 0;
-	guint16 no_err_blocks = 0;
-	guint16 no_nrx_blocks = 0;
-	gboolean non_arq_w_errors = FALSE;
-	guint8 sapid;
+	unsigned d_pdu_size = 0;
+	uint8_t tx_mode = 0;
+	uint16_t no_err_blocks = 0;
+	uint16_t no_nrx_blocks = 0;
+	bool non_arq_w_errors = false;
+	uint8_t sapid;
 
 	proto_tree_add_item(tree, hf_s5066_25_unused, tvb, offset, 1, ENC_BIG_ENDIAN);
-	sapid = tvb_get_guint8(tvb, offset) & 0x0F;
+	sapid = tvb_get_uint8(tvb, offset) & 0x0F;
 	proto_tree_add_item(tree, hf_s5066_25_dest_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 
-	tx_mode = tvb_get_guint8(tvb, offset);
+	tx_mode = tvb_get_uint8(tvb, offset);
 	tx_mode = (tx_mode & 0xF0) >> 4;
 	if (tx_mode == 3) {
-		non_arq_w_errors = TRUE;
+		non_arq_w_errors = true;
 	}
 
 	proto_tree_add_item(tree, hf_s5066_25_tx_mode, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_s5066_25_src_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, TRUE);
+	offset = dissect_s5066_address(tvb, offset, tree, true);
 
 	d_pdu_size = tvb_get_ntohs(tvb, offset);
 	proto_tree_add_item(tree, hf_s5066_25_size, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
@@ -916,15 +905,15 @@ dissect_s5066_25(tvbuff_t *tvb, guint offset, proto_tree *tree, guint pdu_size, 
 }
 
 /* S_EXPEDITED_UNIDATA_REQUEST_CONFIRM */
-static guint
-dissect_s5066_26(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id)
+static unsigned
+dissect_s5066_26(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id)
 {
-	guint pdu_size = 0;
-	guint8 sapid;
+	unsigned pdu_size = 0;
+	uint8_t sapid;
 	proto_tree_add_item(tree, hf_s5066_26_unused, tvb, offset, 1, ENC_BIG_ENDIAN);
-	sapid = tvb_get_guint8(tvb, offset) & 0x0F;
+	sapid = tvb_get_uint8(tvb, offset) & 0x0F;
 	proto_tree_add_item(tree, hf_s5066_26_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	pdu_size = tvb_get_ntohs(tvb, offset);
 	proto_tree_add_item(tree, hf_s5066_26_size, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
 	proto_tree_add_item(tree, hf_s5066_26_data, tvb, offset, pdu_size, ENC_NA); offset += pdu_size;
@@ -934,15 +923,15 @@ dissect_s5066_26(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_ap
 }
 
 /* S_EXPEDITED_UNIDATA_REQUEST_REJECTED */
-static guint
-dissect_s5066_27(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_app_id)
+static unsigned
+dissect_s5066_27(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned *client_app_id)
 {
-	guint pdu_size = 0;
-	guint8 sapid;
+	unsigned pdu_size = 0;
+	uint8_t sapid;
 	proto_tree_add_item(tree, hf_s5066_27_reason, tvb, offset, 1, ENC_BIG_ENDIAN);
-	sapid = tvb_get_guint8(tvb, offset) & 0x0F;
+	sapid = tvb_get_uint8(tvb, offset) & 0x0F;
 	proto_tree_add_item(tree, hf_s5066_27_sapid, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
-	offset = dissect_s5066_address(tvb, offset, tree, FALSE);
+	offset = dissect_s5066_address(tvb, offset, tree, false);
 	pdu_size = tvb_get_ntohs(tvb, offset);
 	proto_tree_add_item(tree, hf_s5066_27_size, tvb, offset, 2, ENC_BIG_ENDIAN); offset += 2;
 	proto_tree_add_item(tree, hf_s5066_27_data, tvb, offset, pdu_size, ENC_NA); offset += pdu_size;
@@ -951,10 +940,10 @@ dissect_s5066_27(tvbuff_t *tvb, guint offset, proto_tree *tree, guint *client_ap
 	return offset;
 }
 
-static guint
+static unsigned
 get_s5066_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-	guint16 plen;
+	uint16_t plen;
 
 	/* Get the length of the S5066 PDU. */
 	plen = tvb_get_ntohs(tvb, offset + s5066_size_offset);
@@ -972,9 +961,9 @@ dissect_s5066_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 	/* Check if the first two bytes are 0x90 0xEB: if not,
 	   then this is not a S5066 PDU or an unreassembled one.
 	   The third byte is the STANAG 5066 version: Right now only 0x00 is defined. */
-	if( (tvb_get_guint8(tvb, 0) != 0x90) ||
-	    (tvb_get_guint8(tvb, 1) != 0xEB) ||
-	    (tvb_get_guint8(tvb, 2) != 0x00) ) {
+	if( (tvb_get_uint8(tvb, 0) != 0x90) ||
+	    (tvb_get_uint8(tvb, 1) != 0xEB) ||
+	    (tvb_get_uint8(tvb, 2) != 0x00) ) {
 		return 0;
 	}
 	tcp_dissect_pdus(tvb, pinfo, tree, s5066_desegment, s5066_header_size, get_s5066_pdu_len, dissect_s5066_common, data);
@@ -984,28 +973,28 @@ dissect_s5066_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 static int
 dissect_s5066_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint offset = 0;
-	guint pdu_size = 0;
+	unsigned offset = 0;
+	unsigned pdu_size = 0;
 	proto_item *ti_s5066 = NULL;
 	proto_item *ti_pdu = NULL;
 	tvbuff_t *next_tvb;
-	gint available_length = 0;
-	gint reported_length = 0;
-	gint client_app_id = 0;
+	int available_length = 0;
+	int reported_length = 0;
+	int client_app_id = 0;
 	proto_tree *s5066_tree = NULL;
 	proto_tree *s5066_tree_pdu = NULL;
 
 	/* Determine PDU type to display in INFO column */
-	guint8 pdu_type = tvb_get_guint8(tvb, s5066_header_size);
+	uint8_t pdu_type = tvb_get_uint8(tvb, s5066_header_size);
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "S5066");
 	/* Clear out stuff in the info column, the add PDU type */
-	col_add_fstr(pinfo->cinfo, COL_INFO, "PDU type %s", val_to_str(pdu_type, s5066_pdu_type, "Unknown (0x%02x)"));
+	col_add_fstr(pinfo->cinfo, COL_INFO, "PDU type %s", val_to_str(pinfo->pool, pdu_type, s5066_pdu_type, "Unknown (0x%02x)"));
 
 	pdu_size = tvb_get_ntohs(tvb, s5066_size_offset) + s5066_header_size;
 
 	ti_s5066 = proto_tree_add_item(tree, proto_s5066, tvb, 0, -1, ENC_NA);
-	proto_item_append_text(ti_s5066, ", PDU type %s", val_to_str(pdu_type, s5066_pdu_type, "Unknown (0x%02x)"));
+	proto_item_append_text(ti_s5066, ", PDU type %s", val_to_str(pinfo->pool, pdu_type, s5066_pdu_type, "Unknown (0x%02x)"));
 	s5066_tree = proto_item_add_subtree(ti_s5066, ett_s5066);
 	proto_tree_add_item(s5066_tree, hf_s5066_sync_word, tvb, offset, 2, ENC_BIG_ENDIAN); offset +=2;
 	if (!s5066_edition_one) {
@@ -1049,7 +1038,7 @@ dissect_s5066_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 	reported_length = pdu_size - offset;
 	available_length = tvb_captured_length(tvb) - offset;
 
-	next_tvb = tvb_new_subset(tvb, offset, MIN(available_length, reported_length), reported_length);
+	next_tvb = tvb_new_subset_length_caplen(tvb, offset, MIN(available_length, reported_length), reported_length);
 
 	if(dissector_try_uint(s5066sis_dissector_table, client_app_id, next_tvb, pinfo, tree) == 0) {
 		call_data_dissector(next_tvb, pinfo, tree);
@@ -1411,7 +1400,7 @@ proto_register_s5066(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_s5066,
 		&ett_s5066_pdu,
 		&ett_s5066_servicetype,
@@ -1421,13 +1410,11 @@ proto_register_s5066(void)
 
 	module_t *s5066_module;
 
-	proto_s5066 = proto_register_protocol (
-			"STANAG 5066 (SIS layer)",	/* name */
-			"STANAG 5066 SIS",		/* short name*/
-			"s5066sis"			/* abbrev */
-		);
+	proto_s5066 = proto_register_protocol ("STANAG 5066 (SIS layer)", "STANAG 5066 SIS", "s5066sis");
 	proto_register_field_array(proto_s5066, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	s5066_tcp_handle = register_dissector("s5066sis", dissect_s5066_tcp, proto_s5066);
 
 	s5066_module = prefs_register_protocol(proto_s5066, proto_reg_handoff_s5066);
 	prefs_register_bool_preference(s5066_module, "desegment_pdus",
@@ -1440,11 +1427,6 @@ proto_register_s5066(void)
 				       "Whether the S5066 SIS dissector should dissect this edition of the STANAG."
 				       " This edition was never formally approved and is very rare. The common edition is edition 1.2.",
 				       &s5066_edition_one);
-	prefs_register_uint_preference(s5066_module, "tcp.port",
-				       "STANAG 5066 SIS TCP Port",
-				       "Set the port for STANAG 5066 SIS. (If other than the default 5066."
-				       " This number is registered with IANA.)",
-				       10, &global_s5066_port);
 
 	s5066sis_dissector_table = register_dissector_table("s5066sis.ctl.appid", "STANAG 5066 Application Identifier", proto_s5066, FT_UINT16, BASE_DEC);
 
@@ -1453,19 +1435,12 @@ proto_register_s5066(void)
 void
 proto_reg_handoff_s5066(void)
 {
-	static gboolean Initialized = FALSE;
-	static dissector_handle_t s5066_tcp_handle;
-	static guint saved_s5066_port;
+	static bool Initialized = false;
 
 	if (!Initialized) {
-		s5066_tcp_handle = create_dissector_handle(dissect_s5066_tcp, proto_s5066);
-		Initialized = TRUE;
-	} else {
-		dissector_delete_uint("tcp.port", saved_s5066_port, s5066_tcp_handle);
+		dissector_add_uint_with_preference("tcp.port", S5066_PORT, s5066_tcp_handle);
+		Initialized = true;
 	}
-
-	dissector_add_uint("tcp.port", global_s5066_port, s5066_tcp_handle);
-	saved_s5066_port = global_s5066_port;
 
 	if (!s5066_edition_one) {
 		s5066_header_size = 5;
@@ -1477,7 +1452,7 @@ proto_reg_handoff_s5066(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

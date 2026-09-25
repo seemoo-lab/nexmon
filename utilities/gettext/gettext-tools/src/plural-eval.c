@@ -1,6 +1,5 @@
 /* Expression evaluation for plural form selection.
-   Copyright (C) 2000-2003, 2005, 2015-2016 Free Software Foundation, Inc.
-   Written by Ulrich Drepper <drepper@cygnus.com>, 2000.
+   Copyright (C) 2000-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,17 +12,16 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "plural-eval.h"
 
 #include <stddef.h>
-#include <signal.h>
 
 #include "plural-exp.h"
 
@@ -33,61 +31,3 @@
 /* Include the expression evaluation code from libintl, this time with
    'extern' linkage.  */
 #include "eval-plural.h"
-
-
-/* Exit point.  Must be set before calling install_sigfpe_handler().  */
-sigjmp_buf sigfpe_exit;
-
-#if USE_SIGINFO
-
-/* Additional information that is set before sigfpe_exit is invoked.  */
-int sigfpe_code;
-
-/* Signal handler called in case of arithmetic exception (e.g. division
-   by zero) during plural_eval.  */
-static void
-sigfpe_handler (int sig, siginfo_t *sip, void *scp)
-{
-  sigfpe_code = sip->si_code;
-  siglongjmp (sigfpe_exit, 1);
-}
-
-#else
-
-/* Signal handler called in case of arithmetic exception (e.g. division
-   by zero) during plural_eval.  */
-static void
-sigfpe_handler (int sig)
-{
-  siglongjmp (sigfpe_exit, 1);
-}
-
-#endif
-
-void
-install_sigfpe_handler (void)
-{
-#if USE_SIGINFO
-  struct sigaction action;
-  action.sa_sigaction = sigfpe_handler;
-  action.sa_flags = SA_SIGINFO;
-  sigemptyset (&action.sa_mask);
-  sigaction (SIGFPE, &action, (struct sigaction *) NULL);
-#else
-  signal (SIGFPE, sigfpe_handler);
-#endif
-}
-
-void
-uninstall_sigfpe_handler (void)
-{
-#if USE_SIGINFO
-  struct sigaction action;
-  action.sa_handler = SIG_DFL;
-  action.sa_flags = 0;
-  sigemptyset (&action.sa_mask);
-  sigaction (SIGFPE, &action, (struct sigaction *) NULL);
-#else
-  signal (SIGFPE, SIG_DFL);
-#endif
-}

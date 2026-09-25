@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/log_msg.c	Netfilter Log Message
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
@@ -19,25 +13,18 @@
  * @{
  */
 
+#include "nl-default.h"
+
 #include <sys/types.h>
+
 #include <linux/netfilter/nfnetlink_log.h>
 
-#include <netlink-local.h>
 #include <netlink/attr.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/log_msg.h>
 
-#if __BYTE_ORDER == __BIG_ENDIAN
-static uint64_t ntohll(uint64_t x)
-{
-	return x;
-}
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-static uint64_t ntohll(uint64_t x)
-{
-	return __bswap_64(x);
-}
-#endif
+#include "nl-netfilter.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
 static struct nla_policy log_msg_policy[NFULA_MAX+1] = {
 	[NFULA_PACKET_HDR]		= {
@@ -60,7 +47,40 @@ static struct nla_policy log_msg_policy[NFULA_MAX+1] = {
 	[NFULA_GID]			= { .type = NLA_U32 },
 	[NFULA_SEQ]			= { .type = NLA_U32 },
 	[NFULA_SEQ_GLOBAL]		= { .type = NLA_U32 },
+	[NFULA_HWTYPE]			= { .type = NLA_U16 },
+	[NFULA_HWLEN]			= { .type = NLA_U16 },
+	[NFULA_VLAN]			= { .type = NLA_NESTED },
+	[NFULA_CT]			= { .type = NLA_NESTED },
+	[NFULA_CT_INFO]			= { .type = NLA_U32 },
 };
+
+static struct nla_policy log_msg_vlan_policy[NFULA_VLAN_MAX+1] = {
+	[NFULA_VLAN_PROTO]		= { .type = NLA_U16 },
+	[NFULA_VLAN_TCI]		= { .type = NLA_U16 },
+};
+
+static int
+nfnlmsg_log_msg_parse_vlan(struct nlattr *attr_full, struct nfnl_log_msg *msg)
+{
+	struct nlattr *tb[NFULA_VLAN_MAX+1];
+	struct nlattr *attr;
+	int err;
+
+	err = nla_parse_nested(tb, NFULA_VLAN_MAX, attr_full,
+			       log_msg_vlan_policy);
+	if (err < 0)
+		return err;
+
+	attr = tb[NFULA_VLAN_PROTO];
+	if (attr)
+		nfnl_log_msg_set_vlan_proto(msg, nla_get_u16(attr));
+
+	attr = tb[NFULA_VLAN_TCI];
+	if (attr)
+		nfnl_log_msg_set_vlan_tag(msg, ntohs(nla_get_u16(attr)));
+
+	return 0;
+}
 
 int nfnlmsg_log_msg_parse(struct nlmsghdr *nlh, struct nfnl_log_msg **result)
 {
@@ -158,6 +178,39 @@ int nfnlmsg_log_msg_parse(struct nlmsghdr *nlh, struct nfnl_log_msg **result)
 	if (attr)
 		nfnl_log_msg_set_seq_global(msg, ntohl(nla_get_u32(attr)));
 
+	attr = tb[NFULA_HWTYPE];
+	if (attr)
+		nfnl_log_msg_set_hwtype(msg, ntohs(nla_get_u16(attr)));
+
+	attr = tb[NFULA_HWLEN];
+	if (attr)
+		nfnl_log_msg_set_hwlen(msg, ntohs(nla_get_u16(attr)));
+
+	attr = tb[NFULA_HWHEADER];
+	if (attr)
+		nfnl_log_msg_set_hwheader(msg, nla_data(attr), nla_len(attr));
+
+	attr = tb[NFULA_VLAN];
+	if (attr) {
+		err = nfnlmsg_log_msg_parse_vlan(attr, msg);
+		if (err < 0)
+			goto errout;
+	}
+
+	attr = tb[NFULA_CT];
+	if (attr) {
+		struct nfnl_ct *ct = NULL;
+		err = nfnlmsg_ct_parse_nested(attr, &ct);
+		if (err < 0)
+			goto errout;
+		nfnl_log_msg_set_ct(msg, ct);
+		nfnl_ct_put(ct);
+	}
+
+	attr = tb[NFULA_CT_INFO];
+	if (attr)
+		nfnl_log_msg_set_ct_info(msg, ntohl(nla_get_u32(attr)));
+
 	*result = msg;
 	return 0;
 
@@ -173,10 +226,9 @@ static int log_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 	int err;
 
 	if ((err = nfnlmsg_log_msg_parse(nlh, &msg)) < 0)
-		goto errout;
+		return err;
 
 	err = pp->pp_cb((struct nl_object *) msg, pp);
-errout:
 	nfnl_log_msg_put(msg);
 	return err;
 }
@@ -196,12 +248,12 @@ static struct nl_cache_ops nfnl_log_msg_ops = {
 	.co_obj_ops		= &log_msg_obj_ops,
 };
 
-static void __init log_msg_init(void)
+static void _nl_init log_msg_init(void)
 {
 	nl_cache_mngt_register(&nfnl_log_msg_ops);
 }
 
-static void __exit log_msg_exit(void)
+static void _nl_exit log_msg_exit(void)
 {
 	nl_cache_mngt_unregister(&nfnl_log_msg_ops);
 }

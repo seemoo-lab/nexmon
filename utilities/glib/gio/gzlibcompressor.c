@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2009 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -37,25 +39,19 @@ enum {
   PROP_0,
   PROP_FORMAT,
   PROP_LEVEL,
-  PROP_FILE_INFO
+  PROP_FILE_INFO,
+  PROP_OS
 };
 
 /**
- * SECTION:gzcompressor
- * @short_description: Zlib compressor
- * @include: gio/gio.h
+ * GZlibCompressor:
  *
- * #GZlibCompressor is an implementation of #GConverter that
+ * `GZlibCompressor` is an implementation of [iface@Gio.Converter] that
  * compresses data using zlib.
  */
 
 static void g_zlib_compressor_iface_init          (GConverterIface *iface);
 
-/**
- * GZlibCompressor:
- *
- * Zlib decompression
- */
 struct _GZlibCompressor
 {
   GObject parent_instance;
@@ -65,6 +61,7 @@ struct _GZlibCompressor
   z_stream zstream;
   gz_header gzheader;
   GFileInfo *file_info;
+  int os;
 };
 
 static void
@@ -75,22 +72,30 @@ g_zlib_compressor_set_gzheader (GZlibCompressor *compressor)
   const gchar *filename;
 
   if (compressor->format != G_ZLIB_COMPRESSOR_FORMAT_GZIP ||
-      compressor->file_info == NULL)
+      (compressor->file_info == NULL &&
+       compressor->os < 0))
     return;
 
   memset (&compressor->gzheader, 0, sizeof (gz_header));
-  compressor->gzheader.os = 0x03; /* Unix */
 
-  filename = g_file_info_get_name (compressor->file_info);
-  compressor->gzheader.name = (Bytef *) filename;
-  compressor->gzheader.name_max = filename ? strlen (filename) + 1 : 0;
+  if (compressor->os >= 0)
+    compressor->gzheader.os = compressor->os;
+  else
+    compressor->gzheader.os = 0x03; /* Unix */
 
-  compressor->gzheader.time =
-      (uLong) g_file_info_get_attribute_uint64 (compressor->file_info,
-                                                G_FILE_ATTRIBUTE_TIME_MODIFIED);
+  if (compressor->file_info)
+    {
+      filename = g_file_info_get_name (compressor->file_info);
+      compressor->gzheader.name = (Bytef *) filename;
+      compressor->gzheader.name_max = filename ? strlen (filename) + 1 : 0;
+
+      compressor->gzheader.time =
+          (uLong) g_file_info_get_attribute_uint64 (compressor->file_info,
+                                                    G_FILE_ATTRIBUTE_TIME_MODIFIED);
+    }
 
   if (deflateSetHeader (&compressor->zstream, &compressor->gzheader) != Z_OK)
-    g_warning ("unexpected zlib error: %s\n", compressor->zstream.msg);
+    g_warning ("unexpected zlib error: %s", compressor->zstream.msg);
 #endif /* !G_OS_WIN32 || ZLIB >= 1.2.4 */
 }
 
@@ -138,6 +143,10 @@ g_zlib_compressor_set_property (GObject      *object,
       g_zlib_compressor_set_file_info (compressor, g_value_get_object (value));
       break;
 
+    case PROP_OS:
+      g_zlib_compressor_set_os (compressor, g_value_get_int (value));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -169,6 +178,10 @@ g_zlib_compressor_get_property (GObject    *object,
       g_value_set_object (value, compressor->file_info);
       break;
 
+    case PROP_OS:
+      g_value_set_int (value, compressor->os);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -178,6 +191,7 @@ g_zlib_compressor_get_property (GObject    *object,
 static void
 g_zlib_compressor_init (GZlibCompressor *compressor)
 {
+  compressor->os = -1;
 }
 
 static void
@@ -211,7 +225,7 @@ g_zlib_compressor_constructed (GObject *object)
     g_error ("GZlibCompressor: Not enough memory for zlib use");
 
   if (res != Z_OK)
-    g_warning ("unexpected zlib error: %s\n", compressor->zstream.msg);
+    g_warning ("unexpected zlib error: %s", compressor->zstream.msg);
 
   g_zlib_compressor_set_gzheader (compressor);
 }
@@ -226,20 +240,34 @@ g_zlib_compressor_class_init (GZlibCompressorClass *klass)
   gobject_class->get_property = g_zlib_compressor_get_property;
   gobject_class->set_property = g_zlib_compressor_set_property;
 
+  /**
+   * GZlibCompressor:format:
+   *
+   * The format of the compressed data.
+   *
+   * Since: 2.24
+   */
   g_object_class_install_property (gobject_class,
 				   PROP_FORMAT,
-				   g_param_spec_enum ("format",
-						      P_("compression format"),
-						      P_("The format of the compressed data"),
+				   g_param_spec_enum ("format", NULL, NULL,
 						      G_TYPE_ZLIB_COMPRESSOR_FORMAT,
 						      G_ZLIB_COMPRESSOR_FORMAT_ZLIB,
 						      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
 						      G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GZlibCompressor:level:
+   *
+   * The level of compression from `0` (no compression) to `9` (most
+   * compression).
+   *
+   * `-1` for the default level.
+   *
+   * Since: 2.24
+   */
   g_object_class_install_property (gobject_class,
 				   PROP_LEVEL,
-				   g_param_spec_int ("level",
-						     P_("compression level"),
-						     P_("The level of compression from 0 (no compression) to 9 (most compression), -1 for the default level"),
+				   g_param_spec_int ("level", NULL, NULL,
 						     -1, 9,
 						     -1,
 						     G_PARAM_READWRITE |
@@ -249,31 +277,58 @@ g_zlib_compressor_class_init (GZlibCompressorClass *klass)
   /**
    * GZlibCompressor:file-info:
    *
-   * If set to a non-%NULL #GFileInfo object, and #GZlibCompressor:format is
-   * %G_ZLIB_COMPRESSOR_FORMAT_GZIP, the compressor will write the file name
-   * and modification time from the file info to the GZIP header.
+   * A [class@Gio.FileInfo] containing file information to put into the gzip
+   * header.
+   *
+   * The file name and modification time from the file info will be used.
+   *
+   * This will only be used if non-`NULL` and
+   * [property@Gio.ZlibCompressor:format] is
+   * [enum@Gio.ZlibCompressorFormat.GZIP].
    *
    * Since: 2.26
    */
   g_object_class_install_property (gobject_class,
                                    PROP_FILE_INFO,
-                                   g_param_spec_object ("file-info",
-                                                       P_("file info"),
-                                                       P_("File info"),
+                                   g_param_spec_object ("file-info", NULL, NULL,
                                                        G_TYPE_FILE_INFO,
                                                        G_PARAM_READWRITE |
                                                        G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GZlibCompressor:os:
+   *
+   * The OS code of the gzip header.
+   *
+   * This will be used if set to a non-negative value, and if
+   * [property@Gio.ZlibCompressor:format] is
+   * [enum@Gio.ZlibCompressorFormat.GZIP], the compressor will set the OS code of
+   * the gzip header to this value.
+   *
+   * If the value is unset, zlib will set the OS code depending on the platform.
+   * This may be undesirable when reproducible output is desired. In that case setting
+   * the OS code to `3` (for Unix) is recommended.
+   *
+   * Since: 2.86
+   */
+  g_object_class_install_property (gobject_class,
+                                   PROP_OS,
+                                   g_param_spec_int  ("os", NULL, NULL,
+                                                      -1, 255,
+                                                      -1,
+                                                      G_PARAM_READWRITE |
+                                                      G_PARAM_STATIC_STRINGS | 
+                                                      G_PARAM_EXPLICIT_NOTIFY));
 }
 
 /**
  * g_zlib_compressor_new:
- * @format: The format to use for the compressed data
- * @level: compression level (0-9), -1 for default
+ * @format: the format to use for the compressed data
+ * @level: compression level (`0`-`9`), `-1` for default
  *
- * Creates a new #GZlibCompressor.
+ * Creates a compressor.
  *
- * Returns: a new #GZlibCompressor
- *
+ * Returns: a new [class@Gio.ZlibCompressor]
  * Since: 2.24
  **/
 GZlibCompressor *
@@ -292,12 +347,11 @@ g_zlib_compressor_new (GZlibCompressorFormat format,
 
 /**
  * g_zlib_compressor_get_file_info:
- * @compressor: a #GZlibCompressor
+ * @compressor: a compressor
  *
- * Returns the #GZlibCompressor:file-info property.
+ * Gets the [property@Gio.ZlibCompressor:file-info] property.
  *
- * Returns: (transfer none): a #GFileInfo, or %NULL
- *
+ * Returns: (nullable) (transfer none): file info for the gzip header, if set
  * Since: 2.26
  */
 GFileInfo *
@@ -310,17 +364,14 @@ g_zlib_compressor_get_file_info (GZlibCompressor *compressor)
 
 /**
  * g_zlib_compressor_set_file_info:
- * @compressor: a #GZlibCompressor
- * @file_info: (allow-none): a #GFileInfo
+ * @compressor: a compressor
+ * @file_info: (nullable): file info for the gzip header
  *
- * Sets @file_info in @compressor. If non-%NULL, and @compressor's
- * #GZlibCompressor:format property is %G_ZLIB_COMPRESSOR_FORMAT_GZIP,
- * it will be used to set the file name and modification time in
- * the GZIP header of the compressed data.
+ * Sets the [property@Gio.ZlibCompressor:file-info] property.
  *
  * Note: it is an error to call this function while a compression is in
  * progress; it may only be called immediately after creation of @compressor,
- * or after resetting it with g_converter_reset().
+ * or after resetting it with [method@Gio.Converter.reset].
  *
  * Since: 2.26
  */
@@ -343,6 +394,53 @@ g_zlib_compressor_set_file_info (GZlibCompressor *compressor,
   g_zlib_compressor_set_gzheader (compressor);
 }
 
+/**
+ * g_zlib_compressor_get_os:
+ * @compressor: a compressor
+ *
+ * Gets the [property@Gio.ZlibCompressor:os] property.
+ *
+ * Returns: the previously set OS value, or `-1` if unset
+ * Since: 2.86
+ */
+int
+g_zlib_compressor_get_os (GZlibCompressor *compressor)
+{
+  g_return_val_if_fail (G_IS_ZLIB_COMPRESSOR (compressor), -1);
+
+  return compressor->os;
+}
+
+/**
+ * g_zlib_compressor_set_os:
+ * @compressor: a compressor
+ * @os: the OS code to use, or `-1` to unset
+ *
+ * Sets the [property@Gio.ZlibCompressor:os] property.
+ *
+ * Note: it is an error to call this function while a compression is in
+ * progress; it may only be called immediately after creation of @compressor,
+ * or after resetting it with [method@Gio.Converter.reset].
+ *
+ * Since: 2.86
+ */
+void
+g_zlib_compressor_set_os (GZlibCompressor *compressor,
+                          int              os)
+{
+  g_return_if_fail (G_IS_ZLIB_COMPRESSOR (compressor));
+  g_return_if_fail (os >= -1 && os < 256);
+
+  if (os == compressor->os)
+    return;
+
+  compressor->os = os;
+
+  g_object_notify (G_OBJECT (compressor), "os");
+
+  g_zlib_compressor_set_gzheader (compressor);
+}
+
 static void
 g_zlib_compressor_reset (GConverter *converter)
 {
@@ -351,7 +449,7 @@ g_zlib_compressor_reset (GConverter *converter)
 
   res = deflateReset (&compressor->zstream);
   if (res != Z_OK)
-    g_warning ("unexpected zlib error: %s\n", compressor->zstream.msg);
+    g_warning ("unexpected zlib error: %s", compressor->zstream.msg);
 
   /* deflateReset reset the header too, so re-set it */
   g_zlib_compressor_set_gzheader (compressor);

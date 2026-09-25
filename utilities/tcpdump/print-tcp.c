@@ -252,7 +252,12 @@ tcp_print(netdissect_options *ndo,
                 if (ip6) {
                         register struct tcp_seq_hash6 *th;
                         struct tcp_seq_hash6 *tcp_seq_hash;
-                        const struct in6_addr *src, *dst;
+                        /*
+                         * ip6_src/ip6_dst live inside a packed header, so
+                         * they may be unaligned; keep them as void pointers
+                         * and only touch them through the UNALIGNED_ macros.
+                         */
+                        const void *src, *dst;
                         struct tha6 tha;
 
                         tcp_seq_hash = tcp_seq_hash6;

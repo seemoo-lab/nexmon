@@ -1,7 +1,5 @@
 /* Extract some translations of a translation catalog.
-   Copyright (C) 2001-2007, 2009-2010, 2012, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,17 +12,16 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
 #include <alloca.h>
 
 #include <assert.h>
 #include <errno.h>
-#include <getopt.h>
 #include <limits.h>
 #include <locale.h>
 #include <stdio.h>
@@ -38,15 +35,19 @@
 
 #include <fnmatch.h>
 
+#include <textstyle.h>
+
+#include <error.h>
+#include "options.h"
+#include "noreturn.h"
 #include "closeout.h"
 #include "dir-list.h"
-#include "error.h"
 #include "error-progname.h"
 #include "progname.h"
 #include "relocatable.h"
-#include "basename.h"
+#include "basename-lgpl.h"
 #include "message.h"
-#include "read-catalog.h"
+#include "read-catalog-file.h"
 #include "read-po.h"
 #include "read-properties.h"
 #include "read-stringtable.h"
@@ -54,7 +55,7 @@
 #include "write-po.h"
 #include "write-properties.h"
 #include "write-stringtable.h"
-#include "color.h"
+#include "xerror-handler.h"
 #include "str-list.h"
 #include "msgl-charset.h"
 #include "xalloc.h"
@@ -89,340 +90,342 @@ struct grep_task {
 };
 static struct grep_task grep_task[5];
 
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "add-location", optional_argument, NULL, 'n' },
-  { "color", optional_argument, NULL, CHAR_MAX + 9 },
-  { "comment", no_argument, NULL, 'C' },
-  { "directory", required_argument, NULL, 'D' },
-  { "domain", required_argument, NULL, 'M' },
-  { "escape", no_argument, NULL, CHAR_MAX + 1 },
-  { "extended-regexp", no_argument, NULL, 'E' },
-  { "extracted-comment", no_argument, NULL, 'X' },
-  { "file", required_argument, NULL, 'f' },
-  { "fixed-strings", no_argument, NULL, 'F' },
-  { "force-po", no_argument, &force_po, 1 },
-  { "help", no_argument, NULL, 'h' },
-  { "ignore-case", no_argument, NULL, 'i' },
-  { "indent", no_argument, NULL, CHAR_MAX + 2 },
-  { "invert-match", no_argument, NULL, 'v' },
-  { "location", required_argument, NULL, 'N' },
-  { "msgctxt", no_argument, NULL, 'J' },
-  { "msgid", no_argument, NULL, 'K' },
-  { "msgstr", no_argument, NULL, 'T' },
-  { "no-escape", no_argument, NULL, CHAR_MAX + 3 },
-  { "no-location", no_argument, NULL, CHAR_MAX + 11 },
-  { "no-wrap", no_argument, NULL, CHAR_MAX + 6 },
-  { "output-file", required_argument, NULL, 'o' },
-  { "properties-input", no_argument, NULL, 'P' },
-  { "properties-output", no_argument, NULL, 'p' },
-  { "regexp", required_argument, NULL, 'e' },
-  { "sort-by-file", no_argument, NULL, CHAR_MAX + 4 },
-  { "sort-output", no_argument, NULL, CHAR_MAX + 5 },
-  { "strict", no_argument, NULL, 'S' },
-  { "stringtable-input", no_argument, NULL, CHAR_MAX + 7 },
-  { "stringtable-output", no_argument, NULL, CHAR_MAX + 8 },
-  { "style", required_argument, NULL, CHAR_MAX + 10 },
-  { "version", no_argument, NULL, 'V' },
-  { "width", required_argument, NULL, 'w' },
-  { NULL, 0, NULL, 0 }
-};
+/* Selected workflow flags.  */
+static string_list_ty *workflow_flags;
+
+/* Selected sticky flags.  */
+static string_list_ty *sticky_flags;
 
 
 /* Forward declaration of local functions.  */
-static void no_pass (int opt)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-        __attribute__ ((noreturn))
-#endif
-;
-static void usage (int status)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-        __attribute__ ((noreturn))
-#endif
-;
+_GL_NORETURN_FUNC static void no_pass (int opt);
+_GL_NORETURN_FUNC static void usage (int status);
 static msgdomain_list_ty *process_msgdomain_list (msgdomain_list_ty *mdlp);
 
 
 int
 main (int argc, char **argv)
 {
-  int opt;
-  bool do_help;
-  bool do_version;
-  char *output_file;
-  const char *input_file;
-  int grep_pass;
-  msgdomain_list_ty *result;
-  catalog_input_format_ty input_syntax = &input_format_po;
-  catalog_output_format_ty output_syntax = &output_format_po;
-  bool sort_by_filepos = false;
-  bool sort_by_msgid = false;
-  size_t i;
-
   /* Set program name for messages.  */
   set_program_name (argv[0]);
   error_print_progname = maybe_print_progname;
+  gram_max_allowed_errors = 20;
 
-#ifdef HAVE_SETLOCALE
   /* Set locale via LC_ALL.  */
   setlocale (LC_ALL, "");
-#endif
 
   /* Set the text message domain.  */
   bindtextdomain (PACKAGE, relocate (LOCALEDIR));
+  bindtextdomain ("gnulib", relocate (GNULIB_LOCALEDIR));
   bindtextdomain ("bison-runtime", relocate (BISON_LOCALEDIR));
   textdomain (PACKAGE);
 
   /* Ensure that write errors on stdout are detected.  */
   atexit (close_stdout);
 
-  /* Set default values for variables.  */
-  do_help = false;
-  do_version = false;
-  output_file = NULL;
-  input_file = NULL;
-  grep_pass = -1;
+  /* Default values for command line options.  */
+  bool do_help = false;
+  bool do_version = false;
+  char *output_file = NULL;
+  catalog_input_format_ty input_syntax = &input_format_po;
+  catalog_output_format_ty output_syntax = &output_format_po;
   location_files = string_list_alloc ();
   domain_names = string_list_alloc ();
-
-  for (i = 0; i < 5; i++)
+  workflow_flags = string_list_alloc ();
+  sticky_flags = string_list_alloc ();
+  for (size_t i = 0; i < 5; i++)
     {
       struct grep_task *gt = &grep_task[i];
-
       gt->matcher = &matcher_grep;
       gt->pattern_count = 0;
       gt->patterns = NULL;
       gt->patterns_size = 0;
       gt->case_insensitive = false;
     }
+  bool sort_by_filepos = false;
+  bool sort_by_msgid = false;
 
-  while ((opt = getopt_long (argc, argv, "CD:e:Ef:FhiJKM:n:N:o:pPTvVw:X",
-                             long_options, NULL))
-         != EOF)
-    switch (opt)
-      {
-      case '\0':                /* Long option.  */
-        break;
-
-      case 'C':
-        grep_pass = 3;
-        break;
-
-      case 'D':
-        dir_list_append (optarg);
-        break;
-
-      case 'e':
-        if (grep_pass < 0)
-          no_pass (opt);
+  /* Parse command line options.  */
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "add-location",       CHAR_MAX + 'n', optional_argument },
+    { NULL,                 'n',            no_argument       },
+    { "color",              CHAR_MAX + 9,   optional_argument },
+    { "comment",            'C',            no_argument       },
+    { "directory",          'D',            required_argument },
+    { "domain",             'M',            required_argument },
+    { "escape",             CHAR_MAX + 1,   no_argument       },
+    { "extended-regexp",    'E',            no_argument       },
+    { "extracted-comment",  'X',            no_argument       },
+    { "file",               'f',            required_argument },
+    { "fixed-strings",      'F',            no_argument       },
+    { "force-po",           0,              no_argument,      &force_po, 1 },
+    { "help",               'h',            no_argument       },
+    { "ignore-case",        'i',            no_argument       },
+    { "indent",             CHAR_MAX + 2,   no_argument       },
+    { "invert-match",       'v',            no_argument       },
+    { "location",           'N',            required_argument },
+    { "msgctxt",            'J',            no_argument       },
+    { "msgid",              'K',            no_argument       },
+    { "msgstr",             'T',            no_argument       },
+    { "no-escape",          CHAR_MAX + 3,   no_argument       },
+    { "no-location",        CHAR_MAX + 11,  no_argument       },
+    { "no-wrap",            CHAR_MAX + 6,   no_argument       },
+    { "output-file",        'o',            required_argument },
+    { "properties-input",   'P',            no_argument       },
+    { "properties-output",  'p',            no_argument       },
+    { "regexp",             'e',            required_argument },
+    { "sort-by-file",       CHAR_MAX + 4,   no_argument       },
+    { "sort-output",        CHAR_MAX + 5,   no_argument       },
+    { "sticky-flag",        'S',            required_argument },
+    { "strict",             CHAR_MAX + 12,  no_argument       },
+    { "stringtable-input",  CHAR_MAX + 7,   no_argument       },
+    { "stringtable-output", CHAR_MAX + 8,   no_argument       },
+    { "style",              CHAR_MAX + 10,  required_argument },
+    { "version",            'V',            no_argument       },
+    { "width",              'w',            required_argument },
+    { "workflow-flag",      'W',            required_argument },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  start_options (argc, argv, options, MOVE_OPTIONS_FIRST, 0);
+  {
+    int grep_pass = -1;
+    int opt;
+    while ((opt = get_next_option ()) != -1)
+      switch (opt)
         {
-          struct grep_task *gt = &grep_task[grep_pass];
-          /* Append optarg and a newline to gt->patterns.  */
-          size_t len = strlen (optarg);
-          gt->patterns =
-            (char *) xrealloc (gt->patterns, gt->patterns_size + len + 1);
-          memcpy (gt->patterns + gt->patterns_size, optarg, len);
-          gt->patterns_size += len;
-          *(gt->patterns + gt->patterns_size) = '\n';
-          gt->patterns_size += 1;
-          gt->pattern_count++;
-        }
-        break;
+        case '\0':                /* Long option with key == 0.  */
+          break;
 
-      case 'E':
-        if (grep_pass < 0)
-          no_pass (opt);
-        grep_task[grep_pass].matcher = &matcher_egrep;
-        break;
+        case 'C':
+          grep_pass = 3;
+          break;
 
-      case 'f':
-        if (grep_pass < 0)
-          no_pass (opt);
-        {
-          struct grep_task *gt = &grep_task[grep_pass];
-          /* Append the contents of the specified file to gt->patterns.  */
-          FILE *fp = fopen (optarg, "r");
+        case 'D':
+          dir_list_append (optarg);
+          break;
 
-          if (fp == NULL)
-            error (EXIT_FAILURE, errno, _("\
-error while opening \"%s\" for reading"), optarg);
+        case 'e':
+          if (grep_pass < 0)
+            no_pass (opt);
+          {
+            struct grep_task *gt = &grep_task[grep_pass];
+            /* Append optarg and a newline to gt->patterns.  */
+            size_t len = strlen (optarg);
+            gt->patterns =
+              (char *) xrealloc (gt->patterns, gt->patterns_size + len + 1);
+            memcpy (gt->patterns + gt->patterns_size, optarg, len);
+            gt->patterns_size += len;
+            *(gt->patterns + gt->patterns_size) = '\n';
+            gt->patterns_size += 1;
+            gt->pattern_count++;
+          }
+          break;
 
-          while (!feof (fp))
-            {
-              char buf[4096];
-              size_t count = fread (buf, 1, sizeof buf, fp);
+        case 'E':
+          if (grep_pass < 0)
+            no_pass (opt);
+          grep_task[grep_pass].matcher = &matcher_egrep;
+          break;
 
-              if (count == 0)
-                {
-                  if (ferror (fp))
-                    error (EXIT_FAILURE, errno, _("\
-error while reading \"%s\""), optarg);
-                  /* EOF reached.  */
-                  break;
-                }
+        case 'f':
+          if (grep_pass < 0)
+            no_pass (opt);
+          {
+            struct grep_task *gt = &grep_task[grep_pass];
 
-              gt->patterns =
-                (char *) xrealloc (gt->patterns, gt->patterns_size + count);
-              memcpy (gt->patterns + gt->patterns_size, buf, count);
-              gt->patterns_size += count;
-            }
+            /* Append the contents of the specified file to gt->patterns.  */
+            FILE *fp = fopen (optarg, "r");
+            if (fp == NULL)
+              error (EXIT_FAILURE, errno,
+                     _("error while opening \"%s\" for reading"), optarg);
 
-          /* Append a final newline if file ended in a non-newline.  */
-          if (gt->patterns_size > 0
-              && *(gt->patterns + gt->patterns_size - 1) != '\n')
-            {
-              gt->patterns =
-                (char *) xrealloc (gt->patterns, gt->patterns_size + 1);
-              *(gt->patterns + gt->patterns_size) = '\n';
-              gt->patterns_size += 1;
-            }
+            while (!feof (fp))
+              {
+                char buf[4096];
+                size_t count = fread (buf, 1, sizeof buf, fp);
 
-          fclose (fp);
-          gt->pattern_count++;
-        }
-        break;
+                if (count == 0)
+                  {
+                    if (ferror (fp))
+                      error (EXIT_FAILURE, errno,
+                             _("error while reading \"%s\""), optarg);
+                    /* EOF reached.  */
+                    break;
+                  }
 
-      case 'F':
-        if (grep_pass < 0)
-          no_pass (opt);
-        grep_task[grep_pass].matcher = &matcher_fgrep;
-        break;
+                gt->patterns =
+                  (char *) xrealloc (gt->patterns, gt->patterns_size + count);
+                memcpy (gt->patterns + gt->patterns_size, buf, count);
+                gt->patterns_size += count;
+              }
 
-      case 'h':
-        do_help = true;
-        break;
+            /* Append a final newline if file ended in a non-newline.  */
+            if (gt->patterns_size > 0
+                && *(gt->patterns + gt->patterns_size - 1) != '\n')
+              {
+                gt->patterns =
+                  (char *) xrealloc (gt->patterns, gt->patterns_size + 1);
+                *(gt->patterns + gt->patterns_size) = '\n';
+                gt->patterns_size += 1;
+              }
 
-      case 'i':
-        if (grep_pass < 0)
-          no_pass (opt);
-        grep_task[grep_pass].case_insensitive = true;
-        break;
+            fclose (fp);
+            gt->pattern_count++;
+          }
+          break;
 
-      case 'J':
-        grep_pass = 0;
-        break;
+        case 'F':
+          if (grep_pass < 0)
+            no_pass (opt);
+          grep_task[grep_pass].matcher = &matcher_fgrep;
+          break;
 
-      case 'K':
-        grep_pass = 1;
-        break;
+        case 'h':
+          do_help = true;
+          break;
 
-      case 'M':
-        string_list_append (domain_names, optarg);
-        break;
+        case 'i':
+          if (grep_pass < 0)
+            no_pass (opt);
+          grep_task[grep_pass].case_insensitive = true;
+          break;
 
-      case 'n':
-        if (handle_filepos_comment_option (optarg))
+        case 'J':
+          grep_pass = 0;
+          break;
+
+        case 'K':
+          grep_pass = 1;
+          break;
+
+        case 'M':
+          string_list_append (domain_names, optarg);
+          break;
+
+        case 'n':            /* -n */
+        case CHAR_MAX + 'n': /* --add-location[={full|yes|file|never|no}] */
+          if (handle_filepos_comment_option (optarg))
+            usage (EXIT_FAILURE);
+          break;
+
+        case 'N':
+          string_list_append (location_files, optarg);
+          break;
+
+        case 'o':
+          output_file = optarg;
+          break;
+
+        case 'p':
+          output_syntax = &output_format_properties;
+          break;
+
+        case 'P':
+          input_syntax = &input_format_properties;
+          break;
+
+        case CHAR_MAX + 12: /* --strict */
+          message_print_style_uniforum ();
+          break;
+
+        case 'S':
+          string_list_append (sticky_flags, optarg);
+          break;
+
+        case 'T':
+          grep_pass = 2;
+          break;
+
+        case 'v':
+          invert_match = true;
+          break;
+
+        case 'V':
+          do_version = true;
+          break;
+
+        case 'w':
+          {
+            char *endp;
+            int value = strtol (optarg, &endp, 10);
+            if (endp != optarg)
+              message_page_width_set (value);
+          }
+          break;
+
+        case 'W':
+          string_list_append (workflow_flags, optarg);
+          break;
+
+        case 'X':
+          grep_pass = 4;
+          break;
+
+        case CHAR_MAX + 1:
+          message_print_style_escape (true);
+          break;
+
+        case CHAR_MAX + 2:
+          message_print_style_indent ();
+          break;
+
+        case CHAR_MAX + 3:
+          message_print_style_escape (false);
+          break;
+
+        case CHAR_MAX + 4:
+          sort_by_filepos = true;
+          break;
+
+        case CHAR_MAX + 5:
+          sort_by_msgid = true;
+          break;
+
+        case CHAR_MAX + 6: /* --no-wrap */
+          message_page_width_ignore ();
+          break;
+
+        case CHAR_MAX + 7: /* --stringtable-input */
+          input_syntax = &input_format_stringtable;
+          break;
+
+        case CHAR_MAX + 8: /* --stringtable-output */
+          output_syntax = &output_format_stringtable;
+          break;
+
+        case CHAR_MAX + 9: /* --color */
+          if (handle_color_option (optarg) || color_test_mode)
+            usage (EXIT_FAILURE);
+          break;
+
+        case CHAR_MAX + 10: /* --style */
+          handle_style_option (optarg);
+          break;
+
+        case CHAR_MAX + 11: /* --no-location */
+          message_print_style_filepos (filepos_comment_none);
+          break;
+
+        default:
           usage (EXIT_FAILURE);
-        break;
-
-      case 'N':
-        string_list_append (location_files, optarg);
-        break;
-
-      case 'o':
-        output_file = optarg;
-        break;
-
-      case 'p':
-        output_syntax = &output_format_properties;
-        break;
-
-      case 'P':
-        input_syntax = &input_format_properties;
-        break;
-
-      case 'S':
-        message_print_style_uniforum ();
-        break;
-
-      case 'T':
-        grep_pass = 2;
-        break;
-
-      case 'v':
-        invert_match = true;
-        break;
-
-      case 'V':
-        do_version = true;
-        break;
-
-      case 'w':
-        {
-          int value;
-          char *endp;
-          value = strtol (optarg, &endp, 10);
-          if (endp != optarg)
-            message_page_width_set (value);
+          break;
         }
-        break;
-
-      case 'X':
-        grep_pass = 4;
-        break;
-
-      case CHAR_MAX + 1:
-        message_print_style_escape (true);
-        break;
-
-      case CHAR_MAX + 2:
-        message_print_style_indent ();
-        break;
-
-      case CHAR_MAX + 3:
-        message_print_style_escape (false);
-        break;
-
-      case CHAR_MAX + 4:
-        sort_by_filepos = true;
-        break;
-
-      case CHAR_MAX + 5:
-        sort_by_msgid = true;
-        break;
-
-      case CHAR_MAX + 6: /* --no-wrap */
-        message_page_width_ignore ();
-        break;
-
-      case CHAR_MAX + 7: /* --stringtable-input */
-        input_syntax = &input_format_stringtable;
-        break;
-
-      case CHAR_MAX + 8: /* --stringtable-output */
-        output_syntax = &output_format_stringtable;
-        break;
-
-      case CHAR_MAX + 9: /* --color */
-        if (handle_color_option (optarg) || color_test_mode)
-          usage (EXIT_FAILURE);
-        break;
-
-      case CHAR_MAX + 10: /* --style */
-        handle_style_option (optarg);
-        break;
-
-      case CHAR_MAX + 11: /* --no-location */
-        message_print_style_filepos (filepos_comment_none);
-        break;
-
-      default:
-        usage (EXIT_FAILURE);
-        break;
-      }
+  }
 
   /* Version information is requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "2001-2016");
+              "2001-2026", "https://gnu.org/licenses/gpl.html");
       printf (_("Written by %s.\n"), proper_name ("Bruno Haible"));
       exit (EXIT_SUCCESS);
     }
@@ -432,6 +435,7 @@ There is NO WARRANTY, to the extent permitted by law.\n\
     usage (EXIT_SUCCESS);
 
   /* Test whether we have an .po file name as argument.  */
+  const char *input_file = NULL;
   if (optind == argc)
     input_file = "-";
   else if (optind + 1 == argc)
@@ -448,7 +452,7 @@ There is NO WARRANTY, to the extent permitted by law.\n\
            "--sort-output", "--sort-by-file");
 
   /* Compile the patterns.  */
-  for (grep_pass = 0; grep_pass < 5; grep_pass++)
+  for (int grep_pass = 0; grep_pass < 5; grep_pass++)
     {
       struct grep_task *gt = &grep_task[grep_pass];
 
@@ -467,7 +471,7 @@ There is NO WARRANTY, to the extent permitted by law.\n\
     }
 
   /* Read input file.  */
-  result = read_catalog_file (input_file, input_syntax);
+  msgdomain_list_ty *result = read_catalog_file (input_file, input_syntax);
 
   if (grep_task[0].pattern_count > 0
       || grep_task[1].pattern_count > 0
@@ -489,7 +493,8 @@ There is NO WARRANTY, to the extent permitted by law.\n\
     msgdomain_list_sort_by_msgid (result);
 
   /* Write the merged message list out.  */
-  msgdomain_list_print (result, output_file, output_syntax, force_po, false);
+  msgdomain_list_print (result, output_file, output_syntax,
+                        textmode_xerror_handler, force_po, false);
 
   exit (EXIT_SUCCESS);
 }
@@ -550,13 +555,16 @@ Message selection:\n\
   [-N SOURCEFILE]... [-M DOMAINNAME]...\n\
   [-J MSGCTXT-PATTERN] [-K MSGID-PATTERN] [-T MSGSTR-PATTERN]\n\
   [-C COMMENT-PATTERN] [-X EXTRACTED-COMMENT-PATTERN]\n\
+  [-W WORKFLOW-FLAG] [-S STICKY-FLAG]\n\
 A message is selected if it comes from one of the specified source files,\n\
 or if it comes from one of the specified domains,\n\
 or if -J is given and its context (msgctxt) matches MSGCTXT-PATTERN,\n\
 or if -K is given and its key (msgid or msgid_plural) matches MSGID-PATTERN,\n\
 or if -T is given and its translation (msgstr) matches MSGSTR-PATTERN,\n\
 or if -C is given and the translator's comment matches COMMENT-PATTERN,\n\
-or if -X is given and the extracted comment matches EXTRACTED-COMMENT-PATTERN.\n\
+or if -X is given and the extracted comment matches EXTRACTED-COMMENT-PATTERN,\n\
+or if -W is given and its flags contain WORKFLOW-FLAG,\n\
+or if -S is given and its flags contain STICKY-FLAG.\n\
 \n\
 When more than one selection criterion is specified, the set of selected\n\
 messages is the union of the selected messages of each criterion.\n\
@@ -579,6 +587,8 @@ expressions if -E is given, or fixed strings if -F is given.\n\
   -e, --regexp=PATTERN        use PATTERN as a regular expression\n\
   -f, --file=FILE             obtain PATTERN from FILE\n\
   -i, --ignore-case           ignore case distinctions\n\
+  -W, --workflow-flag=FLAG    select messages with FLAG\n\
+  -S, --sticky-flag=FLAG      select messages with FLAG\n\
   -v, --invert-match          output only the messages that do not match any\n\
                               selection criterion\n\
 "));
@@ -633,12 +643,16 @@ Informative output:\n"));
       printf (_("\
   -V, --version               output version information and exit\n"));
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"),
-             stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+             "https://savannah.gnu.org/projects/gettext",
+             "bug-gettext@gnu.org");
     }
 
   exit (status);
@@ -650,35 +664,11 @@ Informative output:\n"));
 static bool
 filename_list_match (const string_list_ty *slp, const char *filename)
 {
-  size_t j;
-
-  for (j = 0; j < slp->nitems; ++j)
+  for (size_t j = 0; j < slp->nitems; ++j)
     if (fnmatch (slp->item[j], filename, FNM_PATHNAME) == 0)
       return true;
   return false;
 }
-
-
-#ifdef EINTR
-
-/* EINTR handling for close().
-   These functions can return -1/EINTR even though we don't have any
-   signal handlers set up, namely when we get interrupted via SIGSTOP.  */
-
-static inline int
-nonintr_close (int fd)
-{
-  int retval;
-
-  do
-    retval = close (fd);
-  while (retval < 0 && errno == EINTR);
-
-  return retval;
-}
-#define close nonintr_close
-
-#endif
 
 
 /* Process a string STR of size LEN bytes through grep, and return true
@@ -691,9 +681,7 @@ is_string_selected (int grep_pass, const char *str, size_t len)
   if (gt->pattern_count > 0)
     {
       size_t match_size;
-      size_t match_offset;
-
-      match_offset =
+      size_t match_offset =
         gt->matcher->execute (gt->compiled_patterns, str, len,
                               &match_size, false);
       return (match_offset != (size_t) -1);
@@ -708,15 +696,44 @@ is_string_selected (int grep_pass, const char *str, size_t len)
 static bool
 is_message_selected_no_invert (const message_ty *mp)
 {
-  size_t i;
-  const char *msgstr;
-  size_t msgstr_len;
-  const char *p;
-
   /* Test whether one of mp->filepos[] is selected.  */
-  for (i = 0; i < mp->filepos_count; i++)
+  for (size_t i = 0; i < mp->filepos_count; i++)
     if (filename_list_match (location_files, mp->filepos[i].file_name))
       return true;
+
+  /* Test whether one of the workflow flags is selected.  */
+  if (mp->is_fuzzy && string_list_member (workflow_flags, "fuzzy"))
+    return true;
+
+  /* Test whether one of the sticky flags is selected.  */
+  /* Recognize flag "[no-]wrap".  */
+  if ((mp->do_wrap == yes && string_list_member (sticky_flags, "wrap"))
+      || (mp->do_wrap == no && string_list_member (sticky_flags, "no-wrap")))
+    return true;
+  /* Recognize flag "[no-]<language>-format".  */
+  for (size_t i = 0; i < sticky_flags->nitems; i++)
+    {
+      const char *flag = sticky_flags->item[i];
+      size_t flag_len = strlen (flag);
+      if (flag_len >= 7 && memcmp (flag + flag_len - 7, "-format", 7) == 0)
+        {
+          flag_len -= 7;
+          bool has_no_prefix = (flag_len >= 3 && memcmp (flag, "no-", 3) == 0);
+          if (has_no_prefix)
+            {
+              flag += 3;
+              flag_len -= 3;
+            }
+          for (size_t j = 0; j < NFORMATS; j++)
+            if (strlen (format_language[j]) == flag_len
+                && memcmp (format_language[j], flag, flag_len) == 0)
+              {
+                /* The value of the flag is stored in mp->is_format[j].  */
+                if (mp->is_format[j] == (has_no_prefix ? no : yes))
+                  return true;
+              }
+        }
+    }
 
   /* Test msgctxt using the --msgctxt arguments.  */
   if (mp->msgctxt != NULL
@@ -731,47 +748,48 @@ is_message_selected_no_invert (const message_ty *mp)
     return true;
 
   /* Test msgstr using the --msgstr arguments.  */
-  msgstr = mp->msgstr;
-  msgstr_len = mp->msgstr_len;
-  /* Process each NUL delimited substring separately.  */
-  for (p = msgstr; p < msgstr + msgstr_len; )
-    {
-      size_t length = strlen (p);
+  {
+    const char *msgstr = mp->msgstr;
+    size_t msgstr_len = mp->msgstr_len;
+    /* Process each NUL delimited substring separately.  */
+    for (const char *p = msgstr; p < msgstr + msgstr_len; )
+      {
+        size_t length = strlen (p);
 
-      if (is_string_selected (2, p, length))
-        return true;
+        if (is_string_selected (2, p, length))
+          return true;
 
-      p += length + 1;
-    }
+        p += length + 1;
+      }
+  }
 
   /* Test translator comments using the --comment arguments.  */
   if (grep_task[3].pattern_count > 0
       && mp->comment != NULL && mp->comment->nitems > 0)
     {
       size_t length;
-      char *total_comment;
-      char *q;
-      size_t j;
-      bool selected;
+      {
+        length = 0;
+        for (size_t j = 0; j < mp->comment->nitems; j++)
+          length += strlen (mp->comment->item[j]) + 1;
+      }
+      char *total_comment = (char *) xmalloca (length);
 
-      length = 0;
-      for (j = 0; j < mp->comment->nitems; j++)
-        length += strlen (mp->comment->item[j]) + 1;
-      total_comment = (char *) xmalloca (length);
+      {
+        char *q = total_comment;
+        for (size_t j = 0; j < mp->comment->nitems; j++)
+          {
+            size_t l = strlen (mp->comment->item[j]);
 
-      q = total_comment;
-      for (j = 0; j < mp->comment->nitems; j++)
-        {
-          size_t l = strlen (mp->comment->item[j]);
+            memcpy (q, mp->comment->item[j], l);
+            q += l;
+            *q++ = '\n';
+          }
+        if (q != total_comment + length)
+          abort ();
+      }
 
-          memcpy (q, mp->comment->item[j], l);
-          q += l;
-          *q++ = '\n';
-        }
-      if (q != total_comment + length)
-        abort ();
-
-      selected = is_string_selected (3, total_comment, length);
+      bool selected = is_string_selected (3, total_comment, length);
 
       freea (total_comment);
 
@@ -784,29 +802,28 @@ is_message_selected_no_invert (const message_ty *mp)
       && mp->comment_dot != NULL && mp->comment_dot->nitems > 0)
     {
       size_t length;
-      char *total_comment;
-      char *q;
-      size_t j;
-      bool selected;
+      {
+        length = 0;
+        for (size_t j = 0; j < mp->comment_dot->nitems; j++)
+          length += strlen (mp->comment_dot->item[j]) + 1;
+      }
+      char *total_comment = (char *) xmalloca (length);
 
-      length = 0;
-      for (j = 0; j < mp->comment_dot->nitems; j++)
-        length += strlen (mp->comment_dot->item[j]) + 1;
-      total_comment = (char *) xmalloca (length);
+      {
+        char *q = total_comment;
+        for (size_t j = 0; j < mp->comment_dot->nitems; j++)
+          {
+            size_t l = strlen (mp->comment_dot->item[j]);
 
-      q = total_comment;
-      for (j = 0; j < mp->comment_dot->nitems; j++)
-        {
-          size_t l = strlen (mp->comment_dot->item[j]);
+            memcpy (q, mp->comment_dot->item[j], l);
+            q += l;
+            *q++ = '\n';
+          }
+        if (q != total_comment + length)
+          abort ();
+      }
 
-          memcpy (q, mp->comment_dot->item[j], l);
-          q += l;
-          *q++ = '\n';
-        }
-      if (q != total_comment + length)
-        abort ();
-
-      selected = is_string_selected (4, total_comment, length);
+      bool selected = is_string_selected (4, total_comment, length);
 
       freea (total_comment);
 
@@ -822,13 +839,11 @@ is_message_selected_no_invert (const message_ty *mp)
 static bool
 is_message_selected (const message_ty *mp)
 {
-  bool result;
-
   /* Always keep the header entry.  */
   if (is_header (mp))
     return true;
 
-  result = is_message_selected_no_invert (mp);
+  bool result = is_message_selected_no_invert (mp);
 
   if (invert_match)
     return !result;
@@ -852,9 +867,7 @@ process_message_list (const char *domain, message_list_ty *mlp)
 static msgdomain_list_ty *
 process_msgdomain_list (msgdomain_list_ty *mdlp)
 {
-  size_t k;
-
-  for (k = 0; k < mdlp->nitems; k++)
+  for (size_t k = 0; k < mdlp->nitems; k++)
     process_message_list (mdlp->item[k]->domain, mdlp->item[k]->messages);
 
   return mdlp;

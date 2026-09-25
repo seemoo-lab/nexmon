@@ -171,7 +171,7 @@ analyse_ram()
 
 		printf("__attribute__((weak))\n");
 		printf("__attribute__((at(0x%08x, \"flashpatch\")))\n", fpc[i].target_addr);
-		printf("BPatch(flash_patch_%d, 0x%08x);\n\n", i, fpc[i].target_addr + dd->imm + 4);
+		printf("BPatchAddr(flash_patch_%d, 0x%08x);\n\n", i, fpc[i].target_addr + dd->imm + 4);
 
 		if (rom_array != NULL && (fpc[i].target_addr - rom_start) < rom_len) {
 			memcpy(&rom_array[fpc[i].target_addr - rom_start], &ram_array[fpc[i].data_ptr - ram_start], fpc[i].size);

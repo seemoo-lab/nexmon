@@ -4,47 +4,56 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 ADD_CUSTOM_CMAKE_INCLUDE()
 
-include_directories(
-	${CMAKE_CURRENT_BINARY_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}
+set(CRYPT_HEADER_FILES
+	dot11decrypt_debug.h
+	dot11decrypt_int.h
+	dot11decrypt_system.h
+	dot11decrypt_user.h
+	dot11decrypt_util.h
+	dot11decrypt_ws.h
+	kasumi.h
+	wep-wpadefs.h
 )
 
 set(CRYPT_FILES
-	airpdcap.c
-	airpdcap_ccmp.c
-	airpdcap_rijndael.c
-	airpdcap_tkip.c
+	dot11decrypt.c
+	dot11decrypt_tkip.c
+	dot11decrypt_util.c
+	dot11decrypt_ws.c
 	${CUSTOM_CRYPT_SRC}
 )
+
+list(APPEND CRYPT_FILES
+	dot11decrypt_ccmp.c
+	dot11decrypt_gcmp.c
+)
+
 source_group(crypt FILES ${CRYPT_FILES})
 
-if(WERROR_COMMON_FLAGS)
-	set_source_files_properties(
-		${CRYPT_FILES}
-		PROPERTIES
-		COMPILE_FLAGS ${WERROR_COMMON_FLAGS}
-	)
-endif()
+set_source_files_properties(
+	${CRYPT_FILES}
+	PROPERTIES
+	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
+)
 
 add_library(crypt OBJECT
+	#Included so that Visual Studio can properly put header files in solution
+	${CRYPT_HEADER_FILES}
+
 	${CRYPT_FILES}
+)
+
+target_include_directories(crypt
+	SYSTEM PRIVATE
+		${GCRYPT_INCLUDE_DIRS}
+	PRIVATE
+		${CMAKE_CURRENT_BINARY_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 set_target_properties(crypt PROPERTIES
@@ -56,13 +65,12 @@ CHECKAPI(
 	NAME
 	  crypt
 	SWITCHES
-	  -g termoutput -build
 	SOURCES
 	  ${CRYPT_FILES}
 )
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8

@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,31 +23,34 @@
 #include "address.h"
 #include "address_types.h"
 
+static void print_nsap_net_buf( const uint8_t *, int, char *, int);
+static void print_area_buf ( const uint8_t *, int, char *, int);
+static void print_address_prefix_buf ( const uint8_t *, int, char *, int);
+
 /*
  * XXX - shouldn't there be a centralized routine for dissecting NSAPs?
  * See also "dissect_atm_nsap()" in epan/dissectors/packet-arp.c and
  * "dissect_nsap()" in epan/dissectors/packet-isup.c.
  */
-gchar *
-print_nsap_net( tvbuff_t *tvb, const gint offset, int length )
+char *
+print_nsap_net( wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length )
 {
-  gchar *cur;
+  char *cur;
 
-  cur = (gchar *)wmem_alloc(wmem_packet_scope(), MAX_NSAP_LEN * 3 + 50);
+  cur = (char *)wmem_alloc(scope, MAX_NSAP_LEN * 3 + 50);
   print_nsap_net_buf( tvb_get_ptr(tvb, offset, length), length, cur, MAX_NSAP_LEN * 3 + 50);
   return( cur );
 }
 
-/* XXX - Should these be converted to string buffers? */
-void
-print_nsap_net_buf( const guint8 *ad, int length, gchar *buf, int buf_len)
+static void
+print_nsap_net_buf( const uint8_t *ad, int length, char *buf, int buf_len)
 {
-  gchar *cur;
+  char *cur;
 
   /* to do : NSAP / NET decoding */
 
   if ( (length <= 0 ) || ( length > MAX_NSAP_LEN ) ) {
-    g_strlcpy(buf, "<Invalid length of NSAP>", buf_len);
+    (void) g_strlcpy(buf, "<Invalid length of NSAP>", buf_len);
     return;
   }
   cur = buf;
@@ -68,41 +59,42 @@ print_nsap_net_buf( const guint8 *ad, int length, gchar *buf, int buf_len)
     cur += strlen( cur );
     print_system_id_buf( ad + RFC1237_FULLAREA_LEN, RFC1237_SYSTEMID_LEN, cur, (int) (buf_len-(cur-buf)));
     cur += strlen( cur );
-    cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "[%02x]",
+    cur += snprintf(cur, buf_len-(cur-buf), "[%02x]",
                     ad[ RFC1237_FULLAREA_LEN + RFC1237_SYSTEMID_LEN ] );
     if ( length == RFC1237_NSAP_LEN + 1 ) {
-      g_snprintf(cur, (int) (buf_len-(cur-buf)), "-%02x", ad[ length -1 ] );
+      snprintf(cur, (int) (buf_len-(cur-buf)), "-%02x", ad[ length -1 ] );
     }
   }
   else {    /* probably format as standard */
+    /* XXX - this is an NSAP, not an area address/address prefix */
     print_area_buf( ad, length, buf, buf_len);
   }
 } /* print_nsap */
 
-gchar *
-print_system_id(wmem_allocator_t* scope, const guint8 *ad, int length )
+char *
+print_system_id(wmem_allocator_t* scope, const uint8_t *ad, int length )
 {
-  gchar        *cur;
+  char         *cur;
 
-  cur = (gchar *)wmem_alloc(scope, MAX_SYSTEMID_LEN * 3 + 5);
+  cur = (char *)wmem_alloc(scope, MAX_SYSTEMID_LEN * 3 + 5);
   print_system_id_buf(ad, length, cur, MAX_SYSTEMID_LEN * 3 + 5);
   return( cur );
 }
 
-gchar *
-tvb_print_system_id( tvbuff_t *tvb, const gint offset, int length )
+char *
+tvb_print_system_id( wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length )
 {
-  return( print_system_id(wmem_packet_scope(), tvb_get_ptr(tvb, offset, length), length) );
+  return( print_system_id(scope, tvb_get_ptr(tvb, offset, length), length) );
 }
 
 void
-print_system_id_buf( const guint8 *ad, int length, gchar *buf, int buf_len)
+print_system_id_buf( const uint8_t *ad, int length, char *buf, int buf_len)
 {
-  gchar        *cur;
+  char         *cur;
   int           tmp;
 
   if ( ( length <= 0 ) || ( length > MAX_SYSTEMID_LEN ) ) {
-    g_strlcpy(buf, "<Invalid length of SYSTEM ID>", buf_len);
+    (void) g_strlcpy(buf, "<Invalid length of SYSTEM ID>", buf_len);
     return;
   }
 
@@ -110,119 +102,173 @@ print_system_id_buf( const guint8 *ad, int length, gchar *buf, int buf_len)
   if ( ( 6 == length ) || /* System-ID */
        ( 7 == length ) || /* LAN-ID */
        ( 8 == length )) { /* LSP-ID */
-    cur += g_snprintf(cur, buf_len, "%02x%02x.%02x%02x.%02x%02x", ad[0], ad[1],
+    cur += snprintf(cur, buf_len, "%02x%02x.%02x%02x.%02x%02x", ad[0], ad[1],
                     ad[2], ad[3], ad[4], ad[5] );
     if ( ( 7 == length ) ||
          ( 8 == length )) {
-        cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), ".%02x", ad[6] );
+        cur += snprintf(cur, buf_len-(cur-buf), ".%02x", ad[6] );
     }
     if ( 8 == length ) {
-        g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "-%02x", ad[7] );
+        snprintf(cur, buf_len-(cur-buf), "-%02x", ad[7] );
     }
   }
   else {
     tmp = 0;
     while ( tmp < length / 4 ) { /* 16 / 4 == 4 > four Octets left to print */
-      cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x", ad[tmp++] );
-      cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x", ad[tmp++] );
-      cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x", ad[tmp++] );
-      cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x.", ad[tmp++] );
+      cur += snprintf(cur, buf_len-(cur-buf), "%02x", ad[tmp++] );
+      cur += snprintf(cur, buf_len-(cur-buf), "%02x", ad[tmp++] );
+      cur += snprintf(cur, buf_len-(cur-buf), "%02x", ad[tmp++] );
+      cur += snprintf(cur, buf_len-(cur-buf), "%02x.", ad[tmp++] );
     }
     if ( 1 == tmp ) {   /* Special case for Designated IS */
       cur--;
-      g_snprintf(cur, (gulong) (buf_len-(cur-buf)), ".%02x", ad[tmp] );
+      snprintf(cur, buf_len-(cur-buf), ".%02x", ad[tmp] );
     }
     else {
       for ( ; tmp < length; ) {  /* print the rest without dot */
-        cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x", ad[tmp++] );
+        cur += snprintf(cur, buf_len-(cur-buf), "%02x", ad[tmp++] );
       }
     }
   }
 }
 
-gchar *
-print_area(tvbuff_t *tvb, const gint offset, int length)
+char *
+print_area(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length)
 {
-  gchar *cur;
+  char *cur;
 
-  cur = (gchar *)wmem_alloc(wmem_packet_scope(), MAX_AREA_LEN * 3 + 20);
+  cur = (char *)wmem_alloc(scope, MAX_AREA_LEN * 3 + 20);
   print_area_buf(tvb_get_ptr(tvb, offset, length), length, cur, MAX_AREA_LEN * 3 + 20);
   return cur;
 }
 
-void
-print_area_buf(const guint8 *ad, int length, gchar *buf, int buf_len)
+/*
+ * Note: length is in units of half-octets.
+ */
+char *
+print_address_prefix(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length)
 {
-  gchar *cur;
+  char *cur;
+
+  cur = (char *)wmem_alloc(scope, MAX_AREA_LEN * 3 + 20);
+  print_address_prefix_buf(tvb_get_ptr(tvb, offset, (length+1)/2), length, cur, MAX_AREA_LEN * 3 + 20);
+  return cur;
+}
+
+/*
+ * Note: length is in units of octets.
+ */
+static void
+print_area_buf(const uint8_t *ad, int length, char *buf, int buf_len)
+{
+  print_address_prefix_buf(ad, length*2, buf, buf_len);
+}
+
+/*
+ * Note: length is in units of half-octets.
+ */
+static void
+print_address_prefix_buf(const uint8_t *ad, int length, char *buf, int buf_len)
+{
+  char *cur;
   int  tmp  = 0;
 
   /* to do : all real area decoding now: NET is assumed if id len is 1 more byte
-   * and take away all these stupid resource consuming local statics
    */
-  if (length <= 0 || length > MAX_AREA_LEN) {
-    g_strlcpy(buf, "<Invalid length of AREA>", buf_len);
+  if (length <= 0 || length > MAX_AREA_LEN*2) {
+    (void) g_strlcpy(buf, "<Invalid length of AREA>", buf_len);
     return;
   }
 
   cur = buf;
-  if ( (  ( NSAP_IDI_ISODCC          == *ad )
-       || ( NSAP_IDI_GOSIP2          == *ad )
+  /* Check the AFI and length. */
+  if ( (  ( NSAP_IDI_ISO_DCC_BIN      == *ad )
+       || ( NSAP_IDI_ISO_6523_ICD_BIN == *ad )
        )
        &&
-       (  ( RFC1237_FULLAREA_LEN     ==  length )
-       || ( RFC1237_FULLAREA_LEN + 1 ==  length )
+       (  ( RFC1237_FULLAREA_LEN*2       ==  length )
+       || ( (RFC1237_FULLAREA_LEN + 1)*2 ==  length )
        )
      ) {    /* AFI is good and length is long enough  */
 
+    /* The AFI is either ISO DCC, binary or ISO 6523-ICD, binary,
+     * and the area length corresponds either to the area length
+     * for RFC 1237 (GOSIP) addresses or that length + 1.
+     *
+     * XXX - RFC 1237 doesn't mention ISO DCC, binary, as a valid
+     * AFI; is that from GOSIP Version 1?  If it's ISO DCC, binary,
+     * the IDI is 3 digits, i.e. 1 1/2 octets.
+     */
     /* there used to be a check for (length > RFC1237_FULLAREA_LEN + 1) here,
-     * in order to report an invalied length of AREA for DCC / GOSIP AFI,
+     * in order to report an invalied length of AREA for DCC / ISO 6523 AFI,
      * but that can *never* be the case because the if() test above explicitly
      * tests for (length == RFC1237_FULLAREA_LEN) or (length == RFC1237_FULLAREA_LEN + 1)
      */
 
-    cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "[%02x|%02x:%02x][%02x|%02x:%02x:%02x|%02x:%02x]",
+    /* Show the one-octet AFI, the two-octet IDI, the one-octet DFI, the
+     * 3-octet AA, and the 2 reserved octets.
+     */
+    cur += snprintf(cur, buf_len-(cur-buf), "[%02x|%02x:%02x][%02x|%02x:%02x:%02x|%02x:%02x]",
                     ad[0], ad[1], ad[2], ad[3], ad[4],
                     ad[5], ad[6], ad[7], ad[8] );
-    cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "[%02x:%02x|%02x:%02x]",
+    /* Show the 2-octet RD and the 2-octet Area. */
+    cur += snprintf(cur, buf_len-(cur-buf), "[%02x:%02x|%02x:%02x]",
                     ad[9], ad[10],  ad[11], ad[12] );
-    if ( RFC1237_FULLAREA_LEN + 1 == length )
-      g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "-[%02x]", ad[20] );
+    /* Show whatever the heck this is; it's not specified by RFC 1237,
+     * but we also handle 14-octet areas.  Is it the "Designated IS"
+     * stuff mentioned below?  (I didn't find anything in the IS-IS
+     * spec about that.)
+     */
+    if ( (RFC1237_FULLAREA_LEN + 1)*2 == length )
+      snprintf(cur, buf_len-(cur-buf), "-[%02x]", ad[13] );
   }
-  else { /* print standard format */
-    if ( length == RFC1237_AREA_LEN ) {
-      g_snprintf(buf, buf_len, "%02x.%02x%02x", ad[0], ad[1], ad[2] );
+  else {
+    /* This doesn't look like a full RFC 1237 IS-IS area, so all we know
+     * is that the first octet is an AFI.  Print it separately from all
+     * the other octets.
+     */
+    if ( length == RFC1237_AREA_LEN*2 ) {
+      /* XXX - RFC1237_AREA_LEN, which is 3 octets, doesn't seem to
+       * correspond to anything in RFC 1237.  Where did it come from?
+       */
+      snprintf(buf, buf_len, "%02x.%02x%02x", ad[0], ad[1], ad[2] );
       return;
     }
-    if ( length == 4 ) {
-      g_snprintf(buf, buf_len, "%02x%02x%02x%02x", ad[0], ad[1], ad[2], ad[3] );
+    if ( length == 4*2 ) {
+      snprintf(buf, buf_len, "%02x%02x%02x%02x", ad[0], ad[1], ad[2], ad[3] );
       return;
     }
-    while ( tmp < length / 4 ) {      /* 16/4==4 > four Octets left to print */
-      cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x", ad[tmp++] );
-      cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x", ad[tmp++] );
-      cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x", ad[tmp++] );
-      cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x.", ad[tmp++] );
+    while ( tmp < length / 8 ) {      /* 32/8==4 > four Octets left to print */
+      cur += snprintf(cur, buf_len-(cur-buf), "%02x", ad[tmp++] );
+      cur += snprintf(cur, buf_len-(cur-buf), "%02x", ad[tmp++] );
+      cur += snprintf(cur, buf_len-(cur-buf), "%02x", ad[tmp++] );
+      cur += snprintf(cur, buf_len-(cur-buf), "%02x.", ad[tmp++] );
     }
-    if ( 1 == tmp ) {                     /* Special case for Designated IS */
+    if ( 2 == tmp ) {                     /* Special case for Designated IS */
       cur--;
-      g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "-%02x", ad[tmp] );
+      snprintf(cur, buf_len-(cur-buf), "-%02x", ad[tmp] );
     }
     else {
-      for ( ; tmp < length; ) {  /* print the rest without dot or dash */
-        cur += g_snprintf(cur, (gulong) (buf_len-(cur-buf)), "%02x", ad[tmp++] );
+      for ( ; tmp < length / 2; ) {  /* print the rest without dot or dash */
+        cur += snprintf(cur, buf_len-(cur-buf), "%02x", ad[tmp++] );
+      }
+      /* Odd half-octet? */
+      if (length & 1) {
+        /* Yes - print it (it's the upper half-octet) */
+        snprintf(cur, buf_len-(cur-buf), "%x", (ad[tmp] & 0xF0)>>4 );
       }
     }
   }
-} /* print_area_buf */
+} /* print_address_prefix_buf */
 
 /******************************************************************************
  * OSI Address Type
  ******************************************************************************/
 static int osi_address_type = -1;
 
-static int osi_address_to_str(const address* addr, gchar *buf, int buf_len)
+static int osi_address_to_str(const address* addr, char *buf, int buf_len)
 {
-    print_nsap_net_buf((const guint8 *)addr->data, addr->len, buf, buf_len);
+    print_nsap_net_buf((const uint8_t *)addr->data, addr->len, buf, buf_len);
     return (int)strlen(buf)+1;
 }
 

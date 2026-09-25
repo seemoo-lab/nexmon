@@ -10,77 +10,65 @@
  *
  * Copied from packet-tftp.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/conversation.h>
-#include <epan/prefs.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_quake(void);
 
-static int proto_quake = -1;
-static int hf_quake_header_flags = -1;
-static int hf_quake_header_flags_data = -1;
-static int hf_quake_header_flags_ack = -1;
-static int hf_quake_header_flags_no_ack = -1;
-static int hf_quake_header_flags_endmsg = -1;
-static int hf_quake_header_flags_unreliable = -1;
-static int hf_quake_header_flags_control = -1;
-static int hf_quake_header_length = -1;
-static int hf_quake_header_sequence = -1;
-static int hf_quake_control_command = -1;
+static int proto_quake;
+static int hf_quake_header_flags;
+static int hf_quake_header_flags_data;
+static int hf_quake_header_flags_ack;
+static int hf_quake_header_flags_no_ack;
+static int hf_quake_header_flags_endmsg;
+static int hf_quake_header_flags_unreliable;
+static int hf_quake_header_flags_control;
+static int hf_quake_header_length;
+static int hf_quake_header_sequence;
+static int hf_quake_control_command;
 
-static int hf_quake_CCREQ_CONNECT_game = -1;
-static int hf_quake_CCREQ_CONNECT_version = -1;
-static int hf_quake_CCREQ_SERVER_INFO_game = -1;
-static int hf_quake_CCREQ_SERVER_INFO_version = -1;
-static int hf_quake_CCREQ_PLAYER_INFO_player = -1;
-static int hf_quake_CCREQ_RULE_INFO_lastrule = -1;
+static int hf_quake_CCREQ_CONNECT_game;
+static int hf_quake_CCREQ_CONNECT_version;
+static int hf_quake_CCREQ_SERVER_INFO_game;
+static int hf_quake_CCREQ_SERVER_INFO_version;
+static int hf_quake_CCREQ_PLAYER_INFO_player;
+static int hf_quake_CCREQ_RULE_INFO_lastrule;
 
-static int hf_quake_CCREP_ACCEPT_port = -1;
-static int hf_quake_CCREP_REJECT_reason = -1;
-static int hf_quake_CCREP_SERVER_INFO_address = -1;
-static int hf_quake_CCREP_SERVER_INFO_server = -1;
-static int hf_quake_CCREP_SERVER_INFO_map = -1;
-static int hf_quake_CCREP_SERVER_INFO_num_player = -1;
-static int hf_quake_CCREP_SERVER_INFO_max_player = -1;
-static int hf_quake_CCREP_PLAYER_INFO_name = -1;
-static int hf_quake_CCREP_PLAYER_INFO_colors = -1;
-static int hf_quake_CCREP_PLAYER_INFO_colors_shirt = -1;
-static int hf_quake_CCREP_PLAYER_INFO_colors_pants = -1;
-static int hf_quake_CCREP_PLAYER_INFO_frags = -1;
-static int hf_quake_CCREP_PLAYER_INFO_connect_time = -1;
-static int hf_quake_CCREP_PLAYER_INFO_address = -1;
-static int hf_quake_CCREP_RULE_INFO_rule = -1;
-static int hf_quake_CCREP_RULE_INFO_value = -1;
+static int hf_quake_CCREP_ACCEPT_port;
+static int hf_quake_CCREP_REJECT_reason;
+static int hf_quake_CCREP_SERVER_INFO_address;
+static int hf_quake_CCREP_SERVER_INFO_server;
+static int hf_quake_CCREP_SERVER_INFO_map;
+static int hf_quake_CCREP_SERVER_INFO_num_player;
+static int hf_quake_CCREP_SERVER_INFO_max_player;
+static int hf_quake_CCREP_PLAYER_INFO_name;
+static int hf_quake_CCREP_PLAYER_INFO_colors;
+static int hf_quake_CCREP_PLAYER_INFO_colors_shirt;
+static int hf_quake_CCREP_PLAYER_INFO_colors_pants;
+static int hf_quake_CCREP_PLAYER_INFO_frags;
+static int hf_quake_CCREP_PLAYER_INFO_connect_time;
+static int hf_quake_CCREP_PLAYER_INFO_address;
+static int hf_quake_CCREP_RULE_INFO_rule;
+static int hf_quake_CCREP_RULE_INFO_value;
 
 
-static gint ett_quake = -1;
-static gint ett_quake_control = -1;
-static gint ett_quake_control_colors = -1;
-static gint ett_quake_flags = -1;
+static int ett_quake;
+static int ett_quake_control;
+static int ett_quake_control_colors;
+static int ett_quake_flags;
 
 static dissector_handle_t quake_handle;
 
 /* I took these names directly out of the Q1 source. */
 #define NET_HEADERSIZE 8
 #define DEFAULTnet_hostport 26000
-static guint gbl_quakeServerPort=DEFAULTnet_hostport;
 
 #define NETFLAG_DATA            0x0001
 #define NETFLAG_ACK             0x0002
@@ -141,8 +129,8 @@ static const value_string names_colors[] = {
 	{ 11, "Green" },
 	{ 12, "Yellow" },
 	{ 13, "Blue" },
-	{ 14, "Blue" },
-	{ 15, "Blue" },
+	{ 14, "Fire" },
+	{ 15, "Brights" },
 	{  0, NULL }
 };
 
@@ -150,8 +138,8 @@ static void
 dissect_quake_CCREQ_CONNECT
 (tvbuff_t *tvb, proto_tree *tree)
 {
-	gint offset = 0;
-	gint item_len;
+	int offset = 0;
+	int item_len;
 
 	proto_tree_add_item_ret_length(tree, hf_quake_CCREQ_CONNECT_game,
 			tvb, offset, -1, ENC_ASCII|ENC_NA, &item_len);
@@ -166,8 +154,8 @@ static void
 dissect_quake_CCREQ_SERVER_INFO
 (tvbuff_t *tvb, proto_tree *tree)
 {
-	gint offset = 0;
-	gint item_len;
+	int offset = 0;
+	int item_len;
 
 	proto_tree_add_item_ret_length(tree, hf_quake_CCREQ_SERVER_INFO_game,
 			tvb, offset, -1, ENC_ASCII|ENC_NA, &item_len);
@@ -191,7 +179,7 @@ dissect_quake_CCREQ_RULE_INFO
 (tvbuff_t *tvb, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_quake_CCREQ_RULE_INFO_lastrule,
-			tvb, 0, -1, ENC_ASCII|ENC_NA);
+			tvb, 0, -1, ENC_ASCII);
 }
 
 
@@ -199,7 +187,7 @@ static void
 dissect_quake_CCREP_ACCEPT
 (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	guint32 port;
+	uint32_t port;
 	conversation_t *c;
 
 	port = tvb_get_letohl(tvb, 0);
@@ -216,7 +204,7 @@ dissect_quake_CCREP_REJECT
 (tvbuff_t *tvb, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_quake_CCREP_REJECT_reason,
-			tvb, 0, -1, ENC_ASCII|ENC_NA);
+			tvb, 0, -1, ENC_ASCII);
 }
 
 
@@ -224,8 +212,8 @@ static void
 dissect_quake_CCREP_SERVER_INFO
 (tvbuff_t *tvb, proto_tree *tree)
 {
-	gint offset = 0;
-	gint item_len;
+	int offset = 0;
+	int item_len;
 
 	proto_tree_add_item_ret_length(tree,
 			hf_quake_CCREP_SERVER_INFO_address, tvb, offset, -1,
@@ -257,13 +245,13 @@ static void
 dissect_quake_CCREP_PLAYER_INFO
 (tvbuff_t *tvb, proto_tree *tree)
 {
-	gint offset = 0;
-	guint32 colors;
-	guint32 color_shirt;
-	guint32 color_pants;
+	int offset = 0;
+	uint32_t colors;
+	uint32_t color_shirt;
+	uint32_t color_pants;
 	proto_item *colors_item;
 	proto_tree *colors_tree;
-	gint item_len;
+	int item_len;
 
 	proto_tree_add_item(tree, hf_quake_CCREQ_PLAYER_INFO_player,
 			tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -297,7 +285,7 @@ dissect_quake_CCREP_PLAYER_INFO
 	offset += 4;
 
 	proto_tree_add_item(tree, hf_quake_CCREP_PLAYER_INFO_address,
-			tvb, offset, -1, ENC_ASCII|ENC_NA);
+			tvb, offset, -1, ENC_ASCII);
 }
 
 
@@ -305,8 +293,8 @@ static void
 dissect_quake_CCREP_RULE_INFO
 (tvbuff_t *tvb, proto_tree *tree)
 {
-	gint offset = 0;
-	gint item_len;
+	int offset = 0;
+	int item_len;
 
 	if (tvb_reported_length(tvb) == 0) return;
 
@@ -315,29 +303,29 @@ dissect_quake_CCREP_RULE_INFO
 	offset += item_len;
 
 	proto_tree_add_item(tree, hf_quake_CCREP_RULE_INFO_value,
-			tvb, offset, -1, ENC_ASCII|ENC_NA);
+			tvb, offset, -1, ENC_ASCII);
 }
 
 
 static void
 dissect_quake_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	guint8		command;
+	uint8_t		command;
 	int		direction;
 	proto_tree	*control_tree;
 	tvbuff_t	*next_tvb;
 
-	command = tvb_get_guint8(tvb, 0);
+	command = tvb_get_uint8(tvb, 0);
 	direction = (command & 0x80) ? CCREP : CCREQ;
 
 	col_add_fstr(pinfo->cinfo, COL_INFO, "%s %s",
-			val_to_str(command,names_control_command, "%u"),
-			val_to_str(direction,names_control_direction,"%u"));
+			val_to_str(pinfo->pool, command,names_control_command, "%u"),
+			val_to_str(pinfo->pool, direction,names_control_direction,"%u"));
 
 	control_tree = proto_tree_add_subtree_format(tree, tvb,
 			0, -1, ett_quake_control, NULL, "Control %s: %s",
-			val_to_str(direction, names_control_direction, "%u"),
-			val_to_str(command, names_control_command, "%u"));
+			val_to_str(pinfo->pool, direction, names_control_direction, "%u"),
+			val_to_str(pinfo->pool, command, names_control_command, "%u"));
 	proto_tree_add_uint(control_tree, hf_quake_control_command,
 			tvb, 0, 1, command);
 
@@ -391,37 +379,37 @@ dissect_quake(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 {
 	proto_tree	*quake_tree;
 	proto_item	*quake_item;
-	guint16		flags;
+	uint16_t		flags;
 	proto_item	*flags_item;
 	proto_tree	*flags_tree;
-	guint32		sequence = 0;
+	uint32_t		sequence = 0;
 	tvbuff_t	*next_tvb;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "QUAKE");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	flags = tvb_get_ntohs(tvb, 2);
+	flags = tvb_get_ntohs(tvb, 0);
 
 	quake_item = proto_tree_add_item(tree, proto_quake, tvb, 0, -1, ENC_NA);
 	quake_tree = proto_item_add_subtree(quake_item, ett_quake);
 
 	flags_item = proto_tree_add_item(quake_tree, hf_quake_header_flags,
-			tvb, 2, 2, ENC_BIG_ENDIAN);
+			tvb, 0, 2, ENC_BIG_ENDIAN);
 	flags_tree = proto_item_add_subtree(flags_item, ett_quake_flags);
 	proto_tree_add_item(flags_tree, hf_quake_header_flags_data,
-			tvb, 2, 2, ENC_BIG_ENDIAN);
+			tvb, 0, 2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(flags_tree, hf_quake_header_flags_ack,
-			tvb, 2, 2, ENC_BIG_ENDIAN);
+			tvb, 0, 2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(flags_tree, hf_quake_header_flags_no_ack,
-			tvb, 2, 2, ENC_BIG_ENDIAN);
+			tvb, 0, 2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(flags_tree, hf_quake_header_flags_endmsg,
-			tvb, 2, 2, ENC_BIG_ENDIAN);
+			tvb, 0, 2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(flags_tree, hf_quake_header_flags_unreliable,
-			tvb, 2, 2, ENC_BIG_ENDIAN);
+			tvb, 0, 2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(flags_tree, hf_quake_header_flags_control,
-			tvb, 2, 2, ENC_BIG_ENDIAN);
+			tvb, 0, 2, ENC_BIG_ENDIAN);
 
-	proto_tree_add_item(quake_tree, hf_quake_header_length, tvb, 0, 2, ENC_BIG_ENDIAN);
+	proto_tree_add_item(quake_tree, hf_quake_header_length, tvb, 2, 2, ENC_BIG_ENDIAN);
 
 	if (flags == NETFLAG_CTL) {
 		next_tvb = tvb_new_subset_remaining(tvb, 4);
@@ -575,50 +563,29 @@ proto_register_quake(void)
 		    FT_STRINGZ, BASE_NONE, NULL, 0x0,
 		    "Rule Value", HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_quake,
 		&ett_quake_control,
 		&ett_quake_control_colors,
 		&ett_quake_flags,
 	};
-	module_t *quake_module;
 
-	proto_quake = proto_register_protocol("Quake Network Protocol",
-					      "QUAKE", "quake");
+	proto_quake = proto_register_protocol("Quake Network Protocol", "QUAKE", "quake");
 	proto_register_field_array(proto_quake, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-	/* Register a configuration option for port */
-	quake_module = prefs_register_protocol(proto_quake,
-					       proto_reg_handoff_quake);
-	prefs_register_uint_preference(quake_module, "udp.port",
-				       "Quake Server UDP Port",
-				       "Set the UDP port for the Quake Server",
-				       10, &gbl_quakeServerPort);
+	quake_handle = register_dissector("quake", dissect_quake, proto_quake);
 }
 
 
 void
 proto_reg_handoff_quake(void)
 {
-	static gboolean Initialized=FALSE;
-	static guint ServerPort;
-
-	if (!Initialized) {
-		quake_handle = create_dissector_handle(dissect_quake, proto_quake);
-		Initialized=TRUE;
-	} else {
-		dissector_delete_uint("udp.port", ServerPort, quake_handle);
-	}
-
-	/* set port for future deletes */
-	ServerPort=gbl_quakeServerPort;
-
-	dissector_add_uint("udp.port", gbl_quakeServerPort, quake_handle);
+	dissector_add_uint_with_preference("udp.port", DEFAULTnet_hostport, quake_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

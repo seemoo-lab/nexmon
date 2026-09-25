@@ -1,21 +1,20 @@
 /*
- * Copyright (C) 2000-2002, 2005-2006, 2008-2009, 2011 Free Software Foundation, Inc.
+ * Copyright (C) 2000-2024 Free Software Foundation, Inc.
  * This file is part of the GNU LIBICONV Library.
  *
  * The GNU LIBICONV Library is free software; you can redistribute it
- * and/or modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either version 2
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either version 2.1
  * of the License, or (at your option) any later version.
  *
  * The GNU LIBICONV Library is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
+ * You should have received a copy of the GNU Lesser General Public
  * License along with the GNU LIBICONV Library; see the file COPYING.LIB.
- * If not, write to the Free Software Foundation, Inc., 51 Franklin Street,
- * Fifth Floor, Boston, MA 02110-1301, USA.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
 /* This file defines three conversion loops:
@@ -37,7 +36,6 @@
 # include <wchar.h>
 # define BUF_SIZE 64  /* assume MB_LEN_MAX <= 64 */
   /* Some systems, like BeOS, have multibyte encodings but lack mbstate_t.  */
-  extern size_t mbrtowc ();
 # ifdef mbstate_t
 #  define mbrtowc(pwc, s, n, ps) (mbrtowc)(pwc, s, n, 0)
 #  define mbsinit(ps) 1
@@ -63,8 +61,6 @@ struct wchar_conv_struct {
 #if HAVE_WCRTOMB
 
 /* From wchar_t to anything else. */
-
-#ifndef LIBICONV_PLUG
 
 #if 0
 
@@ -136,8 +132,6 @@ static void wc_to_mb_write_replacement (const char *buf, size_t buflen,
 
 #endif
 
-#endif /* !LIBICONV_PLUG */
-
 static size_t wchar_from_loop_convert (iconv_t icd,
                                        const char* * inbuf, size_t *inbytesleft,
                                        char* * outbuf, size_t *outbytesleft)
@@ -155,11 +149,9 @@ static size_t wchar_from_loop_convert (iconv_t icd,
       size_t count = wcrtomb(buf+bufcount,*inptr,&state);
       if (count == (size_t)(-1)) {
         /* Invalid input. */
-        if (wcd->parent.discard_ilseq) {
+        if (wcd->parent.discard_ilseq & DISCARD_INVALID) {
           count = 0;
-        }
-        #ifndef LIBICONV_PLUG
-        else if (wcd->parent.fallbacks.wc_to_mb_fallback != NULL) {
+        } else if (wcd->parent.fallbacks.wc_to_mb_fallback != NULL) {
           /* Drop the contents of buf[] accumulated so far, and instead
              pass all queued wide characters to the fallback handler. */
           struct wc_to_mb_fallback_locals locals;
@@ -188,9 +180,7 @@ static size_t wchar_from_loop_convert (iconv_t icd,
           *outbytesleft = locals.l_outbytesleft;
           result += 1;
           break;
-        }
-        #endif
-        else {
+        } else {
           errno = EILSEQ;
           return -1;
         }
@@ -292,8 +282,6 @@ static size_t wchar_from_loop_reset (iconv_t icd,
 
 /* From anything else to wchar_t. */
 
-#ifndef LIBICONV_PLUG
-
 struct mb_to_wc_fallback_locals {
   char* l_outbuf;
   size_t l_outbytesleft;
@@ -319,8 +307,6 @@ static void mb_to_wc_write_replacement (const wchar_t *buf, size_t buflen,
     }
   }
 }
-
-#endif /* !LIBICONV_PLUG */
 
 static size_t wchar_to_loop_convert (iconv_t icd,
                                      const char* * inbuf, size_t *inbytesleft,
@@ -360,10 +346,8 @@ static size_t wchar_to_loop_convert (iconv_t icd,
         } else {
           if (res == (size_t)(-1)) {
             /* Invalid input. */
-            if (wcd->parent.discard_ilseq) {
-            }
-            #ifndef LIBICONV_PLUG
-            else if (wcd->parent.fallbacks.mb_to_wc_fallback != NULL) {
+            if (wcd->parent.discard_ilseq & DISCARD_INVALID) {
+            } else if (wcd->parent.fallbacks.mb_to_wc_fallback != NULL) {
               /* Drop the contents of buf[] accumulated so far, and instead
                  pass all queued chars to the fallback handler. */
               struct mb_to_wc_fallback_locals locals;
@@ -389,9 +373,7 @@ static size_t wchar_to_loop_convert (iconv_t icd,
               *outbytesleft = locals.l_outbytesleft;
               result += 1;
               break;
-            }
-            #endif
-            else
+            } else
               return -1;
           } else {
             if (*outbytesleft < sizeof(wchar_t)) {
@@ -456,10 +438,8 @@ static size_t wchar_id_loop_convert (iconv_t icd,
     do {
       wchar_t wc = *inptr++;
       *outptr++ = wc;
-      #ifndef LIBICONV_PLUG
       if (cd->hooks.wc_hook)
         (*cd->hooks.wc_hook)(wc, cd->hooks.data);
-      #endif
     } while (--count > 0);
     *inbuf = (const char*) inptr;
     *outbuf = (char*) outptr;

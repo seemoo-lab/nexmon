@@ -54,12 +54,19 @@
     </widget>
    </item>
    <item>
-    <widget class="SyntaxLineEdit" name="preferenceLineEdit">
+    <widget class="DissectorSyntaxLineEdit" name="preferenceLineEdit">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>1</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="preferenceBrowseButton">
+     <property name="text">
+      <string>Browse…</string>
      </property>
     </widget>
    </item>
@@ -99,9 +106,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>SyntaxLineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>syntax_line_edit.h</header>
+   <class>DissectorSyntaxLineEdit</class>
+   <extends>SyntaxLineEdit</extends>
+   <header>widgets/dissector_syntax_line_edit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

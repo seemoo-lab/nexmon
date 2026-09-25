@@ -1,25 +1,25 @@
 /*
- * Copyright (C) 1999-2008, 2011 Free Software Foundation, Inc.
+ * Copyright (C) 1999-2026 Free Software Foundation, Inc.
  * This file is part of the GNU LIBICONV Library.
  *
  * The GNU LIBICONV Library is free software; you can redistribute it
- * and/or modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either version 2
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either version 2.1
  * of the License, or (at your option) any later version.
  *
  * The GNU LIBICONV Library is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
+ * You should have received a copy of the GNU Lesser General Public
  * License along with the GNU LIBICONV Library; see the file COPYING.LIB.
- * If not, write to the Free Software Foundation, Inc., 51 Franklin Street,
- * Fifth Floor, Boston, MA 02110-1301, USA.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <iconv.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include "config.h"
@@ -37,20 +37,30 @@
 #define USE_AIX
 #define USE_OSF1
 #define USE_DOS
+#define USE_OS2
+#define USE_ZOS
 #define USE_EXTRA
 #else
 /*
  * Consider those system dependent encodings that are needed for the
  * current system.
  */
-#ifdef _AIX
+#if defined(_AIX) || defined(__OS2__)
 #define USE_AIX
 #endif
 #if defined(__osf__) || defined(VMS)
 #define USE_OSF1
 #endif
-#if defined(__DJGPP__) || (defined(_WIN32) && (defined(_MSC_VER) || defined(__MINGW32__)))
+#if defined(__DJGPP__) || (defined(_WIN32) && (defined(_MSC_VER) || defined(__MINGW32__))) || defined(__OS2__)
 #define USE_DOS
+#endif
+#ifdef __OS2__
+#define USE_OS2
+#endif
+/* Enable the EBCDIC encodings not only on z/OS but also on Linux/s390, for
+   easier interoperability between z/OS and Linux/s390.  */
+#if defined(__MVS__) || (defined(__linux__) && (defined(__s390__) || defined(__s390x__)))
+#define USE_ZOS
 #endif
 #endif
 
@@ -98,6 +108,9 @@ enum {
 #ifdef USE_DOS
 # include "encodings_dos.def"
 #endif
+#ifdef USE_ZOS
+# include "encodings_zos.def"
+#endif
 #ifdef USE_EXTRA
 # include "encodings_extra.def"
 #endif
@@ -118,6 +131,9 @@ static struct encoding const all_encodings[] = {
 #endif
 #ifdef USE_DOS
 # include "encodings_dos.def"
+#endif
+#ifdef USE_ZOS
+# include "encodings_zos.def"
 #endif
 #ifdef USE_EXTRA
 # include "encodings_extra.def"
@@ -150,6 +166,8 @@ static struct encoding const all_encodings[] = {
 # include "aliases_sysosf1.h"
 #elif defined __sun
 # include "aliases_syssolaris.h"
+#elif defined __OS2__
+# include "aliases_sysos2.h"
 #else
 # include "aliases.h"
 #endif
@@ -159,7 +177,7 @@ static struct encoding const all_encodings[] = {
  * Defines
  *   const struct alias * aliases2_lookup (const char *str);
  */
-#if defined(USE_AIX) || defined(USE_OSF1) || defined(USE_DOS) || defined(USE_EXTRA) /* || ... */
+#if defined(USE_AIX) || defined(USE_OSF1) || defined(USE_DOS) || defined(USE_OS2) || defined(USE_ZOS) || defined(USE_EXTRA) /* || ... */
 struct stringpool2_t {
 #define S(tag,name,encoding_index) char stringpool_##tag[sizeof(name)];
 #include "aliases2.h"
@@ -178,8 +196,12 @@ static const struct alias sysdep_aliases[] = {
 };
 #ifdef __GNUC__
 __inline
+#else
+#ifdef __cplusplus
+inline
 #endif
-const struct alias *
+#endif
+static const struct alias *
 aliases2_lookup (register const char *str)
 {
   const struct alias * ptr;
@@ -220,10 +242,12 @@ iconv_t iconv_open (const char* tocode, const char* fromcode)
   struct conv_struct * cd;
   unsigned int from_index;
   int from_wchar;
+  unsigned int from_surface;
   unsigned int to_index;
   int to_wchar;
+  unsigned int to_surface;
   int transliterate;
-  int discard_ilseq;
+  unsigned int discard_ilseq;
 
 #include "iconv_open1.h"
 
@@ -263,14 +287,12 @@ int iconv_close (iconv_t icd)
   return 0;
 }
 
-#ifndef LIBICONV_PLUG
-
 /*
  * Verify that a 'struct conv_struct' and a 'struct wchar_conv_struct' each
  * fit in an iconv_allocation_t.
  * If this verification fails, iconv_allocation_t must be made larger and
  * the major version in LIBICONV_VERSION_INFO must be bumped.
- * Currently 'struct conv_struct' has 21 integer/pointer fields, and
+ * Currently 'struct conv_struct' has 23 integer/pointer fields, and
  * 'struct wchar_conv_struct' additionally has an 'mbstate_t' field.
  */
 typedef int verify_size_1[2 * (sizeof (struct conv_struct) <= sizeof (iconv_allocation_t)) - 1];
@@ -282,10 +304,12 @@ int iconv_open_into (const char* tocode, const char* fromcode,
   struct conv_struct * cd;
   unsigned int from_index;
   int from_wchar;
+  unsigned int from_surface;
   unsigned int to_index;
   int to_wchar;
+  unsigned int to_surface;
   int transliterate;
-  int discard_ilseq;
+  unsigned int discard_ilseq;
 
 #include "iconv_open1.h"
 
@@ -299,6 +323,9 @@ invalid:
   return -1;
 }
 
+/* Bit mask of all valid surfaces. */
+#define ALL_SURFACES (ICONV_SURFACE_EBCDIC_ZOS_UNIX)
+
 int iconvctl (iconv_t icd, int request, void* argument)
 {
   conv_t cd = (conv_t) icd;
@@ -306,7 +333,8 @@ int iconvctl (iconv_t icd, int request, void* argument)
     case ICONV_TRIVIALP:
       *(int *)argument =
         ((cd->lfuncs.loop_convert == unicode_loop_convert
-          && cd->iindex == cd->oindex)
+          && cd->iindex == cd->oindex
+          && cd->isurface == cd->osurface)
          || cd->lfuncs.loop_convert == wchar_id_loop_convert
          ? 1 : 0);
       return 0;
@@ -316,11 +344,33 @@ int iconvctl (iconv_t icd, int request, void* argument)
     case ICONV_SET_TRANSLITERATE:
       cd->transliterate = (*(const int *)argument ? 1 : 0);
       return 0;
+    case ICONV_GET_DISCARD_INVALID:
+      *(int *)argument = (cd->discard_ilseq & DISCARD_INVALID ? 1 : 0);
+      return 0;
+    case ICONV_SET_DISCARD_INVALID:
+      if (*(const int *)argument)
+        cd->discard_ilseq |= DISCARD_INVALID;
+      else
+        cd->discard_ilseq &= ~DISCARD_INVALID;
+      return 0;
+    case ICONV_GET_DISCARD_NON_IDENTICAL:
+      *(int *)argument = (cd->discard_ilseq & DISCARD_UNCONVERTIBLE ? 1 : 0);
+      return 0;
+    case ICONV_SET_DISCARD_NON_IDENTICAL:
+      if (*(const int *)argument)
+        cd->discard_ilseq |= DISCARD_UNCONVERTIBLE;
+      else
+        cd->discard_ilseq &= ~DISCARD_UNCONVERTIBLE;
+      return 0;
     case ICONV_GET_DISCARD_ILSEQ:
-      *(int *)argument = cd->discard_ilseq;
+      *(int *)argument =
+        ((DISCARD_INVALID | DISCARD_UNCONVERTIBLE) & ~ cd->discard_ilseq) == 0;
       return 0;
     case ICONV_SET_DISCARD_ILSEQ:
-      cd->discard_ilseq = (*(const int *)argument ? 1 : 0);
+      if (*(const int *)argument)
+        cd->discard_ilseq |= DISCARD_INVALID | DISCARD_UNCONVERTIBLE;
+      else
+        cd->discard_ilseq &= ~(DISCARD_INVALID | DISCARD_UNCONVERTIBLE);
       return 0;
     case ICONV_SET_HOOKS:
       if (argument != NULL) {
@@ -342,6 +392,28 @@ int iconvctl (iconv_t icd, int request, void* argument)
         cd->fallbacks.data = NULL;
       }
       return 0;
+    case ICONV_GET_FROM_SURFACE:
+      *(unsigned int *)argument = cd->isurface;
+      return 0;
+    case ICONV_SET_FROM_SURFACE:
+      if ((*(const unsigned int *)argument & ~ALL_SURFACES) == 0) {
+        cd->isurface = *(const unsigned int *)argument;
+        return 0;
+      } else {
+        errno = EINVAL;
+        return -1;
+      }
+    case ICONV_GET_TO_SURFACE:
+      *(unsigned int *)argument = cd->osurface;
+      return 0;
+    case ICONV_SET_TO_SURFACE:
+      if ((*(const unsigned int *)argument & ~ALL_SURFACES) == 0) {
+        cd->osurface = *(const unsigned int *)argument;
+        return 0;
+      } else {
+        errno = EINVAL;
+        return -1;
+      }
     default:
       errno = EINVAL;
       return -1;
@@ -360,8 +432,8 @@ static int compare_by_index (const void * arg1, const void * arg2)
 
 static int compare_by_name (const void * arg1, const void * arg2)
 {
-  const char * name1 = *(const char **)arg1;
-  const char * name2 = *(const char **)arg2;
+  const char * name1 = *(const char * const *)arg1;
+  const char * name2 = *(const char * const *)arg2;
   /* Compare alphabetically, but put "CS" names at the end. */
   int sign = strcmp(name1,name2);
   if (sign != 0) {
@@ -448,6 +520,8 @@ static const unsigned short all_canonical[] = {
 # include "canonical_sysosf1.h"
 #elif defined __sun
 # include "canonical_syssolaris.h"
+#elif defined __OS2__
+# include "canonical_sysos2.h"
 #else
 # include "canonical.h"
 #endif
@@ -468,6 +542,16 @@ static const unsigned short all_canonical[] = {
 #ifdef USE_DOS
 # include "canonical_dos.h"
 #endif
+#ifdef USE_OS2
+# if defined __OS2__
+#  include "canonical_os2_sysos2.h"
+# else
+#  include "canonical_os2.h"
+# endif
+#endif
+#ifdef USE_ZOS
+# include "canonical_zos.h"
+#endif
 #ifdef USE_EXTRA
 # include "canonical_extra.h"
 #endif
@@ -479,6 +563,8 @@ static const unsigned short all_canonical[] = {
 # include "canonical_local_sysosf1.h"
 #elif defined __sun
 # include "canonical_local_syssolaris.h"
+#elif defined __OS2__
+# include "canonical_local_sysos2.h"
 #else
 # include "canonical_local.h"
 #endif
@@ -503,7 +589,7 @@ const char * iconv_canonicalize (const char * name)
   for (code = name;;) {
     /* Search code in the table. */
     for (cp = code, bp = buf, count = MAX_WORD_LENGTH+10+1; ; cp++, bp++) {
-      unsigned char c = * (unsigned char *) cp;
+      unsigned char c = (unsigned char) *cp;
       if (c >= 0x80)
         goto invalid;
       if (c >= 'a' && c <= 'z')
@@ -555,7 +641,7 @@ const char * iconv_canonicalize (const char * name)
       /* On systems which define __STDC_ISO_10646__, wchar_t is Unicode.
          This is also the case on native Woe32 systems and Cygwin >= 1.7, where
          we know that it is UTF-16.  */
-#if ((defined _WIN32 || defined __WIN32__) && !defined __CYGWIN__) || (defined __CYGWIN__ && CYGWIN_VERSION_DLL_MAJOR >= 1007)
+#if (defined _WIN32 && !defined __CYGWIN__) || (defined __CYGWIN__ && CYGWIN_VERSION_DLL_MAJOR >= 1007)
       if (sizeof(wchar_t) == 4) {
         index = ei_ucs4internal;
         break;
@@ -605,6 +691,4 @@ int _libiconv_version = _LIBICONV_VERSION;
 strong_alias (libiconv_open, iconv_open)
 strong_alias (libiconv, iconv)
 strong_alias (libiconv_close, iconv_close)
-#endif
-
 #endif

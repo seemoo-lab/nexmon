@@ -5,18 +5,11 @@
  * By Clement Marrast <clement.marrast@molex.com>
  * Copyright 2012 Clement Marrast
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Wireshark - Network traffic analyzer
+ * By Gerald Combs <gerald@wireshark.org>
+ * Copyright 1998 Gerald Combs
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,19 +21,21 @@
 void proto_register_wreth(void);
 void proto_reg_handoff_wreth(void);
 
-static gint WrethIdentPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethConnectPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethDisconnectPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethBlinkyPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethGetValuePacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethSetValuePacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethBoostPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethAckPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethNackPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethMailPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree);
-static gint WrethMailDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree, guint8 fragmented);
-static gint WrethCodefMasterInfoDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethMailboxTree);
-static gint WrethCodefEquipmentInfoDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethMailboxTree);
+static dissector_handle_t wreth_handle;
+
+static int WrethIdentPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethConnectPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethDisconnectPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethBlinkyPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethGetValuePacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethSetValuePacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethBoostPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethAckPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethNackPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethMailPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree);
+static int WrethMailDissection(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree, uint8_t fragmented);
+static int WrethCodefMasterInfoDissection(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethMailboxTree);
+static int WrethCodefEquipmentInfoDissection(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethMailboxTree);
 
 /* Remote ethernet sub packet type */
 #define WSE_RETH_SUBTYPE    0x0200
@@ -69,118 +64,118 @@ static gint WrethCodefEquipmentInfoDissection(tvbuff_t *tvb, guint8 Offset, pack
 #define WRETH_TASK_REGISTERED           9
 
 /* Initialize the protocol and registered fields */
-static gint wreth_proto = -1;
+static int wreth_proto = -1;
 
-/* static gint wreth_mail_proto = -1; */
-static int hf_Wreth_Subtype = -1;
-static int hf_Wreth_Size = -1;
-static int hf_Wreth_FunctionCode = -1;
-static int hf_Wreth_FrameId = -1;
-static int hf_Wreth_ErrorCode = -1;
-static int hf_Wreth_Fragmented = -1;
-static int hf_Wreth_Retry = -1;
-static int hf_Wreth_IdentificationBiosVersion = -1;
-static int hf_Wreth_IdentificationBoardNumber = -1;
-static int hf_Wreth_IdentificationProtocolVersion = -1;
-static int hf_Wreth_IdentificationBoardId = -1;
-static int hf_Wreth_IdentificationState = -1;
-static int hf_Wreth_IdentificationMacAddr = -1;
-static int hf_Wreth_ConnectProtocolVersion = -1;
-static int hf_Wreth_ConnectTimeout = -1;
-static int hf_Wreth_BlinkyPeriod = -1;
-static int hf_Wreth_GetValueVal = -1;
-static int hf_Wreth_SetValueVal = -1;
-static int hf_Wreth_BoostValue = -1;
-static int hf_Wreth_MailDestTic = -1;
-static int hf_Wreth_MailReserved = -1;
-static int hf_Wreth_Mail_Codef = -1;
-static int hf_Wreth_Mail_Status = -1;
-static int hf_Wreth_Mail_TicUser_Root = -1;
-static int hf_Wreth_Mail_PidUser = -1;
-static int hf_Wreth_Mail_Mode = -1;
-static int hf_Wreth_Mail_Time = -1;
-static int hf_Wreth_Mail_Stop = -1;
-static int hf_Wreth_Mail_Nfonc = -1;
-static int hf_Wreth_Mail_Ncard = -1;
-static int hf_Wreth_Mail_Nchan = -1;
-static int hf_Wreth_Mail_Nes = -1;
-static int hf_Wreth_Mail_Nb = -1;
-static int hf_Wreth_Mail_TypVar = -1;
-static int hf_Wreth_Mail_Adr = -1;
-static int hf_Wreth_Mail_TicUser_DispCyc = -1;
-static int hf_Wreth_Mail_Nb_Max_Size_Mail = -1;
-static int hf_Wreth_Mail_User_ThreadID = -1;
-static int hf_Wreth_Mail_DispCyc_Version = -1;
-static int hf_Wreth_Mail_DifUserParam = -1;
-static int hf_Wreth_Mail_Filler = -1;
-/* static int hf_Wreth_Mail_Data = -1; */
-static int hf_Wreth_Mail_Mastinf_Version = -1;
-static int hf_Wreth_Mail_Mastinf_Release = -1;
-static int hf_Wreth_Mail_Mastinf_Protocol = -1;
-static int hf_Wreth_Mail_Mastinf_CyclicFlux = -1;
-static int hf_Wreth_Mail_Mastinf_szProtocolName = -1;
-static int hf_Wreth_Mail_Mastinf_MaxTypeEquipment = -1;
-static int hf_Wreth_Mail_Mastinf_MinEquipmentNumber = -1;
-static int hf_Wreth_Mail_Mastinf_MaxEquipmentNumber = -1;
-static int hf_Wreth_Mail_Equinf_Version = -1;
-static int hf_Wreth_Mail_Equinf_Release = -1;
-static int hf_Wreth_Mail_Equinf_Network = -1;
-static int hf_Wreth_Mail_Equinf_Protocol = -1;
-static int hf_Wreth_Mail_Equinf_Messaging = -1;
-static int hf_Wreth_Mail_Equinf_Equipment = -1;
-static int hf_Wreth_Mail_Equinf_Flux = -1;
-static int hf_Wreth_Mail_Equinf_IncWord = -1;
-static int hf_Wreth_Mail_Equinf_IncDWord = -1;
-static int hf_Wreth_Mail_Equinf_IncFWord = -1;
-static int hf_Wreth_Mail_Mastinf_DllItemName = -1;
-static int hf_Wreth_Mail_Mastinf_szEquipmentName = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteBit = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadBit = -1;
-static int hf_Wreth_Mail_Equinf_BreakBit = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteIBit = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadIBit = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteQBit = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadQBit = -1;
-static int hf_Wreth_Mail_Equinf_BreakQBit = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteByte = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadByte = -1;
-static int hf_Wreth_Mail_Equinf_BreakByte = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteIByte = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadIByte = -1;
-static int hf_Wreth_Mail_Equinf_BreakIByte = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteQByte = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadQByte = -1;
-static int hf_Wreth_Mail_Equinf_BreakQByte = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadWord = -1;
-static int hf_Wreth_Mail_Equinf_BreakWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteIWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadIWord = -1;
-static int hf_Wreth_Mail_Equinf_BreakIWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteQWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadQWord = -1;
-static int hf_Wreth_Mail_Equinf_BreakQWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteDWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadDWord = -1;
-static int hf_Wreth_Mail_Equinf_BreakDWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxWriteFWord = -1;
-static int hf_Wreth_Mail_Equinf_MaxReadFWord = -1;
-static int hf_Wreth_Mail_Equinf_BreakFWord = -1;
-static int hf_Wreth_Mail_Equinf_ReadFactorWord = -1;
-static int hf_Wreth_Mail_Equinf_ReadFactorIWord = -1;
-static int hf_Wreth_Mail_Equinf_ReadFactorQWord = -1;
-static int hf_Wreth_Mail_Equinf_ReadFactorDWord = -1;
-static int hf_Wreth_Mail_Equinf_ReadFactorFWord = -1;
-static int hf_Wreth_Mail_Equinf_WriteFactorWord = -1;
-static int hf_Wreth_Mail_Equinf_WriteFactorIWord = -1;
-static int hf_Wreth_Mail_Equinf_WriteFactorQWord = -1;
-static int hf_Wreth_Mail_Equinf_WriteFactorDWord = -1;
-static int hf_Wreth_Mail_Equinf_WriteFactorFWord = -1;
-static int hf_Wreth_Mail_Equinf_DataFormat = -1;
-static int hf_Wreth_Mail_Equinf_BreakIBit = -1;
+/* static int wreth_mail_proto = -1; */
+static int hf_Wreth_Subtype;
+static int hf_Wreth_Size;
+static int hf_Wreth_FunctionCode;
+static int hf_Wreth_FrameId;
+static int hf_Wreth_ErrorCode;
+static int hf_Wreth_Fragmented;
+static int hf_Wreth_Retry;
+static int hf_Wreth_IdentificationBiosVersion;
+static int hf_Wreth_IdentificationBoardNumber;
+static int hf_Wreth_IdentificationProtocolVersion;
+static int hf_Wreth_IdentificationBoardId;
+static int hf_Wreth_IdentificationState;
+static int hf_Wreth_IdentificationMacAddr;
+static int hf_Wreth_ConnectProtocolVersion;
+static int hf_Wreth_ConnectTimeout;
+static int hf_Wreth_BlinkyPeriod;
+static int hf_Wreth_GetValueVal;
+static int hf_Wreth_SetValueVal;
+static int hf_Wreth_BoostValue;
+static int hf_Wreth_MailDestTic;
+static int hf_Wreth_MailReserved;
+static int hf_Wreth_Mail_Codef;
+static int hf_Wreth_Mail_Status;
+static int hf_Wreth_Mail_TicUser_Root;
+static int hf_Wreth_Mail_PidUser;
+static int hf_Wreth_Mail_Mode;
+static int hf_Wreth_Mail_Time;
+static int hf_Wreth_Mail_Stop;
+static int hf_Wreth_Mail_Nfonc;
+static int hf_Wreth_Mail_Ncard;
+static int hf_Wreth_Mail_Nchan;
+static int hf_Wreth_Mail_Nes;
+static int hf_Wreth_Mail_Nb;
+static int hf_Wreth_Mail_TypVar;
+static int hf_Wreth_Mail_Adr;
+static int hf_Wreth_Mail_TicUser_DispCyc;
+static int hf_Wreth_Mail_Nb_Max_Size_Mail;
+static int hf_Wreth_Mail_User_ThreadID;
+static int hf_Wreth_Mail_DispCyc_Version;
+static int hf_Wreth_Mail_DifUserParam;
+static int hf_Wreth_Mail_Filler;
+/* static int hf_Wreth_Mail_Data; */
+static int hf_Wreth_Mail_Mastinf_Version;
+static int hf_Wreth_Mail_Mastinf_Release;
+static int hf_Wreth_Mail_Mastinf_Protocol;
+static int hf_Wreth_Mail_Mastinf_CyclicFlux;
+static int hf_Wreth_Mail_Mastinf_szProtocolName;
+static int hf_Wreth_Mail_Mastinf_MaxTypeEquipment;
+static int hf_Wreth_Mail_Mastinf_MinEquipmentNumber;
+static int hf_Wreth_Mail_Mastinf_MaxEquipmentNumber;
+static int hf_Wreth_Mail_Equinf_Version;
+static int hf_Wreth_Mail_Equinf_Release;
+static int hf_Wreth_Mail_Equinf_Network;
+static int hf_Wreth_Mail_Equinf_Protocol;
+static int hf_Wreth_Mail_Equinf_Messaging;
+static int hf_Wreth_Mail_Equinf_Equipment;
+static int hf_Wreth_Mail_Equinf_Flux;
+static int hf_Wreth_Mail_Equinf_IncWord;
+static int hf_Wreth_Mail_Equinf_IncDWord;
+static int hf_Wreth_Mail_Equinf_IncFWord;
+static int hf_Wreth_Mail_Mastinf_DllItemName;
+static int hf_Wreth_Mail_Mastinf_szEquipmentName;
+static int hf_Wreth_Mail_Equinf_MaxWriteBit;
+static int hf_Wreth_Mail_Equinf_MaxReadBit;
+static int hf_Wreth_Mail_Equinf_BreakBit;
+static int hf_Wreth_Mail_Equinf_MaxWriteIBit;
+static int hf_Wreth_Mail_Equinf_MaxReadIBit;
+static int hf_Wreth_Mail_Equinf_MaxWriteQBit;
+static int hf_Wreth_Mail_Equinf_MaxReadQBit;
+static int hf_Wreth_Mail_Equinf_BreakQBit;
+static int hf_Wreth_Mail_Equinf_MaxWriteByte;
+static int hf_Wreth_Mail_Equinf_MaxReadByte;
+static int hf_Wreth_Mail_Equinf_BreakByte;
+static int hf_Wreth_Mail_Equinf_MaxWriteIByte;
+static int hf_Wreth_Mail_Equinf_MaxReadIByte;
+static int hf_Wreth_Mail_Equinf_BreakIByte;
+static int hf_Wreth_Mail_Equinf_MaxWriteQByte;
+static int hf_Wreth_Mail_Equinf_MaxReadQByte;
+static int hf_Wreth_Mail_Equinf_BreakQByte;
+static int hf_Wreth_Mail_Equinf_MaxWriteWord;
+static int hf_Wreth_Mail_Equinf_MaxReadWord;
+static int hf_Wreth_Mail_Equinf_BreakWord;
+static int hf_Wreth_Mail_Equinf_MaxWriteIWord;
+static int hf_Wreth_Mail_Equinf_MaxReadIWord;
+static int hf_Wreth_Mail_Equinf_BreakIWord;
+static int hf_Wreth_Mail_Equinf_MaxWriteQWord;
+static int hf_Wreth_Mail_Equinf_MaxReadQWord;
+static int hf_Wreth_Mail_Equinf_BreakQWord;
+static int hf_Wreth_Mail_Equinf_MaxWriteDWord;
+static int hf_Wreth_Mail_Equinf_MaxReadDWord;
+static int hf_Wreth_Mail_Equinf_BreakDWord;
+static int hf_Wreth_Mail_Equinf_MaxWriteFWord;
+static int hf_Wreth_Mail_Equinf_MaxReadFWord;
+static int hf_Wreth_Mail_Equinf_BreakFWord;
+static int hf_Wreth_Mail_Equinf_ReadFactorWord;
+static int hf_Wreth_Mail_Equinf_ReadFactorIWord;
+static int hf_Wreth_Mail_Equinf_ReadFactorQWord;
+static int hf_Wreth_Mail_Equinf_ReadFactorDWord;
+static int hf_Wreth_Mail_Equinf_ReadFactorFWord;
+static int hf_Wreth_Mail_Equinf_WriteFactorWord;
+static int hf_Wreth_Mail_Equinf_WriteFactorIWord;
+static int hf_Wreth_Mail_Equinf_WriteFactorQWord;
+static int hf_Wreth_Mail_Equinf_WriteFactorDWord;
+static int hf_Wreth_Mail_Equinf_WriteFactorFWord;
+static int hf_Wreth_Mail_Equinf_DataFormat;
+static int hf_Wreth_Mail_Equinf_BreakIBit;
 
 /* Initialize the subtree pointers */
-static gint ett_wreth = -1;
+static int ett_wreth;
 
 /* Note: vals are stored as unsigned 32 bit quantities */
 static const value_string tabStatus[] = {
@@ -213,7 +208,7 @@ static const value_string tabStatus[] = {
     {  54, "stat_nopolling" },
     {  55, "stat_badintpol" },
     {  56, "stat_answer" },
-    {  57, "stat_no_statment" },
+    {  57, "stat_no_statement" },
     {  58, "stat_net_no_ready" },
     {  59, "stat_key" },
 
@@ -732,11 +727,11 @@ static value_string_ext ErrorCode_vals_ext = VALUE_STRING_EXT_INIT(ErrorCode_val
 
 static int dissect_wreth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint16     packet_type,functionCode;
-    guint8      fragmented;
+    uint16_t    packet_type,functionCode;
+    uint8_t     fragmented;
     proto_item *mi, *ti;
     proto_tree *pWrethTree ;
-    guint8      Offset = 0 ;
+    uint8_t     Offset = 0 ;
 
 
     /*Read the packet type, if not good, exit*/
@@ -751,7 +746,7 @@ static int dissect_wreth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     pWrethTree = proto_item_add_subtree(mi, ett_wreth);
 
     functionCode = tvb_get_letohs(tvb,4);
-    fragmented   = tvb_get_guint8(tvb,10);
+    fragmented   = tvb_get_uint8(tvb,10);
 
     if(fragmented > 2)
     {
@@ -849,9 +844,9 @@ static const value_string IdentState[] = {
     { 0, NULL }
 };
 
-gint WrethIdentPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree)
+int WrethIdentPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree)
 {
-    guint16 Size;
+    uint16_t Size;
 
     Size = tvb_get_letohs(tvb, 2);
 
@@ -869,7 +864,7 @@ gint WrethIdentPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_t
     }
 
     /*BiosVersion*/
-    proto_tree_add_item(pWrethTree, hf_Wreth_IdentificationBiosVersion, tvb, Offset, 6, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(pWrethTree, hf_Wreth_IdentificationBiosVersion, tvb, Offset, 6, ENC_ASCII);
 
     /*Board Number*/
     proto_tree_add_item(pWrethTree, hf_Wreth_IdentificationBoardNumber, tvb, Offset + 6, 2, ENC_LITTLE_ENDIAN);
@@ -893,9 +888,9 @@ gint WrethIdentPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_t
 
 /*****************************************************************************/
 
-gint WrethConnectPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree _U_)
+int WrethConnectPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree _U_)
 {
-    guint16    Size;
+    uint16_t   Size;
 
     Size = tvb_get_letohs(tvb,2);
 
@@ -917,9 +912,9 @@ gint WrethConnectPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto
 
 /*****************************************************************************/
 
-gint WrethDisconnectPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree _U_)
+int WrethDisconnectPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree _U_)
 {
-    guint16    Size;
+    uint16_t   Size;
 
     Size = tvb_get_letohs(tvb,2);
 
@@ -937,9 +932,9 @@ gint WrethDisconnectPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, pr
 
 /*****************************************************************************/
 
-gint WrethBlinkyPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree)
+int WrethBlinkyPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree)
 {
-    guint16    Size;
+    uint16_t   Size;
 
     Size = tvb_get_letohs(tvb,2);
 
@@ -959,9 +954,9 @@ gint WrethBlinkyPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_
 
 /*****************************************************************************/
 
-gint WrethGetValuePacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree)
+int WrethGetValuePacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree)
 {
-    guint16    Size;
+    uint16_t   Size;
 
     Size = tvb_get_letohs(tvb,2);
 
@@ -984,9 +979,9 @@ gint WrethGetValuePacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, prot
 
 /*****************************************************************************/
 
-gint WrethSetValuePacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree)
+int WrethSetValuePacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree)
 {
-    guint16    Size;
+    uint16_t   Size;
 
     Size = tvb_get_letohs(tvb,2);
 
@@ -1009,9 +1004,9 @@ static const value_string BoostValue[] = {
     { 0, NULL }
 };
 
-gint WrethBoostPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree)
+int WrethBoostPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree)
 {
-    guint16    Size;
+    uint16_t   Size;
 
     Size = tvb_get_letohs(tvb,2);
 
@@ -1031,9 +1026,9 @@ gint WrethBoostPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_t
 
 /*****************************************************************************/
 
-gint WrethAckPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree _U_)
+int WrethAckPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree _U_)
 {
-    guint16    Size;
+    uint16_t   Size;
 
     Size = tvb_get_letohs(tvb,2);
 
@@ -1051,10 +1046,10 @@ gint WrethAckPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tre
 
 /*****************************************************************************/
 
-gint WrethNackPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree)
+int WrethNackPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pinfo, proto_tree * pWrethTree)
 {
-    guint16 Size;
-    guint16 ErrorCode;
+    uint16_t Size;
+    uint16_t ErrorCode;
 
     Size      = tvb_get_letohs(tvb,2);
     ErrorCode = tvb_get_letohs(tvb,8);
@@ -1062,12 +1057,12 @@ gint WrethNackPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tr
     if((Size != 0)&&(Size != 6))
     {
         /* Invalid ack frame */
-        col_set_str(pInfo->cinfo, COL_INFO, "Invalid non acknowledge frame");
+        col_set_str(pinfo->cinfo, COL_INFO, "Invalid non acknowledge frame");
         return 0;
     }
 
 
-    col_add_str(pInfo->cinfo, COL_INFO, val_to_str_ext(ErrorCode, &ErrorCode_vals_ext, "Unknown 0x%04x"));
+    col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(pinfo->pool, ErrorCode, &ErrorCode_vals_ext, "Unknown 0x%04x"));
 
     if(Size == 6)
     {
@@ -1079,7 +1074,7 @@ gint WrethNackPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tr
 
 /*****************************************************************************/
 
-gint WrethMailPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree)
+int WrethMailPacket(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo, proto_tree * pWrethTree)
 {
 
     proto_tree_add_item(pWrethTree, hf_Wreth_MailDestTic, tvb, Offset, 2, ENC_LITTLE_ENDIAN);
@@ -1095,12 +1090,12 @@ gint WrethMailPacket(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tr
 
 /*****************************************************************************/
 
-gint WrethMailDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, proto_tree * pWrethTree, guint8 fragmented)
+int WrethMailDissection(tvbuff_t *tvb, uint8_t Offset, packet_info * pinfo, proto_tree * pWrethTree, uint8_t fragmented)
 {
     proto_item *mi;
     proto_tree *pWrethMailboxTree;
-    gint        Nb    = 0;
-    guint16     Codef = 0;
+    uint32_t    Nb    = 0;
+    uint16_t    Codef = 0;
 
     mi = proto_tree_add_protocol_format(pWrethTree, wreth_proto, tvb, Offset, -1, "MailBox");
     pWrethMailboxTree = proto_item_add_subtree(mi, ett_wreth);
@@ -1108,15 +1103,15 @@ gint WrethMailDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, prot
     /*If it's not the last fragment, display the header of the MailBox*/
     if (2 != fragmented)
     {
-        guint16 Card, Chan;
-        gint Status;
+        uint16_t Card, Chan;
+        int Status;
 
         /*Codef*/
         Codef = tvb_get_letohs(tvb,Offset);
         proto_tree_add_item(pWrethMailboxTree, hf_Wreth_Mail_Codef, tvb, Offset, 2, ENC_LITTLE_ENDIAN);
         Offset += 2;
         /*Status*/
-        Status = (gint16)tvb_get_letohs(tvb,Offset); /* cast fetched value to signed so sign is extended */
+        Status = (int16_t)tvb_get_letohs(tvb,Offset); /* cast fetched value to signed so sign is extended */
                                                      /*  so that lookup of 32-bit unsigned in tabCodef   */
                                                      /*  value_string array will work properly.          */
         proto_tree_add_item(pWrethMailboxTree, hf_Wreth_Mail_Status, tvb, Offset, 2, ENC_LITTLE_ENDIAN);
@@ -1151,8 +1146,7 @@ gint WrethMailDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, prot
         proto_tree_add_item(pWrethMailboxTree, hf_Wreth_Mail_Nes, tvb, Offset, 2, ENC_LITTLE_ENDIAN);
         Offset += 2;
         /*Mail Nb*/
-        Nb = (gint)tvb_get_letohs(tvb,Offset);
-        proto_tree_add_item(pWrethMailboxTree, hf_Wreth_Mail_Nb, tvb, Offset, 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item_ret_uint(pWrethMailboxTree, hf_Wreth_Mail_Nb, tvb, Offset, 2, ENC_LITTLE_ENDIAN, &Nb);
         Offset += 2;
         /*Mail TypVar*/
         proto_tree_add_item(pWrethMailboxTree, hf_Wreth_Mail_TypVar, tvb, Offset, 2, ENC_LITTLE_ENDIAN);
@@ -1179,17 +1173,17 @@ gint WrethMailDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, prot
         proto_tree_add_item(pWrethMailboxTree, hf_Wreth_Mail_Filler, tvb, Offset, 2, ENC_LITTLE_ENDIAN);
         Offset += 2;
 
-        col_add_fstr(pInfo->cinfo, COL_INFO, "Mail : Codef = Ox%X (%s), Status = %02d (%s), Card = %d, Chan = %d" ,
+        col_add_fstr(pinfo->cinfo, COL_INFO, "Mail : Codef = Ox%X (%s), Status = %02d (%s), Card = %d, Chan = %d" ,
                      Codef,
-                     val_to_str_ext(Codef, &tabCodef_ext, "Unknown 0x%04x"),
+                     val_to_str_ext(pinfo->pool, Codef, &tabCodef_ext, "Unknown 0x%04x"),
                      Status,
-                     val_to_str_ext(Status, &tabStatus_ext, "Unknown %d"),
+                     val_to_str_ext(pinfo->pool, Status, &tabStatus_ext, "Unknown %d"),
                      Card,
                      Chan);
     }
     else
     {
-        col_set_str(pInfo->cinfo, COL_INFO, "Mail : Data Second Fragment ");
+        col_set_str(pinfo->cinfo, COL_INFO, "Mail : Data Second Fragment ");
     }
 
     if (0 != Nb)
@@ -1198,10 +1192,10 @@ gint WrethMailDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, prot
         switch(Codef)
         {
             case 0x1002: /*Master Info*/
-                WrethCodefMasterInfoDissection(tvb, Offset, pInfo, pWrethMailboxTree);
+                WrethCodefMasterInfoDissection(tvb, Offset, pinfo, pWrethMailboxTree);
                 break;
             case 0x1079: /*Equipment Info*/
-                WrethCodefEquipmentInfoDissection(tvb, Offset, pInfo, pWrethMailboxTree);
+                WrethCodefEquipmentInfoDissection(tvb, Offset, pinfo, pWrethMailboxTree);
                 break;
             default:
                 proto_tree_add_protocol_format(pWrethMailboxTree, wreth_proto, tvb, Offset, -1, "Data");
@@ -1214,7 +1208,7 @@ gint WrethMailDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo, prot
 
 /*****************************************************************************/
 
-gint WrethCodefMasterInfoDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo _U_, proto_tree * pWrethMailboxTree)
+int WrethCodefMasterInfoDissection(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo _U_, proto_tree * pWrethMailboxTree)
 {
     proto_item *mi;
     proto_tree *pWrethMailboxDataTree;
@@ -1235,7 +1229,7 @@ gint WrethCodefMasterInfoDissection(tvbuff_t *tvb, guint8 Offset, packet_info * 
     proto_tree_add_item(pWrethMailboxDataTree, hf_Wreth_Mail_Mastinf_CyclicFlux, tvb, Offset, 1, ENC_LITTLE_ENDIAN);
     Offset += 1;
     /*szProtocolName*/
-    proto_tree_add_item(pWrethMailboxDataTree, hf_Wreth_Mail_Mastinf_szProtocolName, tvb, Offset, 16, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(pWrethMailboxDataTree, hf_Wreth_Mail_Mastinf_szProtocolName, tvb, Offset, 16, ENC_ASCII);
     Offset += 16;
     /*bMaxTypeEquipment*/
     proto_tree_add_item(pWrethMailboxDataTree, hf_Wreth_Mail_Mastinf_MaxTypeEquipment, tvb, Offset, 1, ENC_LITTLE_ENDIAN);
@@ -1252,7 +1246,7 @@ gint WrethCodefMasterInfoDissection(tvbuff_t *tvb, guint8 Offset, packet_info * 
 
 /*****************************************************************************/
 
-gint WrethCodefEquipmentInfoDissection(tvbuff_t *tvb, guint8 Offset, packet_info * pInfo _U_, proto_tree * pWrethMailboxTree)
+int WrethCodefEquipmentInfoDissection(tvbuff_t *tvb, uint8_t Offset, packet_info * pInfo _U_, proto_tree * pWrethMailboxTree)
 {
     proto_item *mi;
     proto_tree *pWrethMailboxDataTree;
@@ -1297,10 +1291,10 @@ gint WrethCodefEquipmentInfoDissection(tvbuff_t *tvb, guint8 Offset, packet_info
     /*Free*/
     Offset += 4;
     /*DllItemName*/
-    proto_tree_add_item(pWrethMailboxDataTree, hf_Wreth_Mail_Mastinf_DllItemName, tvb, Offset, 14, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(pWrethMailboxDataTree, hf_Wreth_Mail_Mastinf_DllItemName, tvb, Offset, 14, ENC_ASCII);
     Offset += 14;
     /*szEquipmentName*/
-    proto_tree_add_item(pWrethMailboxDataTree, hf_Wreth_Mail_Mastinf_szEquipmentName, tvb, Offset, 16, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(pWrethMailboxDataTree, hf_Wreth_Mail_Mastinf_szEquipmentName, tvb, Offset, 16, ENC_ASCII);
     Offset += 16;
     /*Free*/
     Offset += 2;
@@ -1506,7 +1500,7 @@ void proto_register_wreth(void)
             NULL, HFILL }
         },
         { &hf_Wreth_IdentificationMacAddr,
-            { "Client MAC address :", "wreth.IdentClientMacAddr",
+            { "Client MAC address", "wreth.IdentClientMacAddr",
             FT_ETHER, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
@@ -1980,7 +1974,7 @@ void proto_register_wreth(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_wreth
     };
 
@@ -1991,18 +1985,16 @@ void proto_register_wreth(void)
     );
     proto_register_field_array(wreth_proto, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    wreth_handle = register_dissector("wreth", dissect_wreth, wreth_proto);
 }
 
 void proto_reg_handoff_wreth(void)
 {
-    dissector_handle_t wreth_handle;
-
-    wreth_handle = create_dissector_handle(dissect_wreth, wreth_proto);
     dissector_add_uint("ethertype", WRETH_PORT, wreth_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

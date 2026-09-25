@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -40,41 +28,41 @@
 #define PACKET_TYPE_CONTINUE  0x02
 #define PACKET_TYPE_END       0x03
 
-int proto_btavctp = -1;
+int proto_btavctp;
 
-static int hf_btavctp_transaction               = -1;
-static int hf_btavctp_packet_type               = -1;
-static int hf_btavctp_cr                        = -1;
-static int hf_btavctp_ipid                      = -1;
-static int hf_btavctp_rfa                       = -1;
-static int hf_btavctp_pid                       = -1;
-static int hf_btavctp_number_of_packets         = -1;
+static int hf_btavctp_transaction;
+static int hf_btavctp_packet_type;
+static int hf_btavctp_cr;
+static int hf_btavctp_ipid;
+static int hf_btavctp_rfa;
+static int hf_btavctp_pid;
+static int hf_btavctp_number_of_packets;
 
-static gint ett_btavctp             = -1;
+static int ett_btavctp;
 
-static expert_field ei_btavctp_unexpected_frame = EI_INIT;
-static expert_field ei_btavctp_invalid_profile = EI_INIT;
+static expert_field ei_btavctp_unexpected_frame;
+static expert_field ei_btavctp_invalid_profile;
 
 static dissector_handle_t btavctp_handle;
 
 typedef struct _fragment_t {
-    guint   length;
-    guint8  *data;
+    unsigned   length;
+    uint8_t *data;
 } fragment_t;
 
 typedef struct _fragments_t {
-    guint32      interface_id;
-    guint32      adapter_id;
-    guint32      chandle;
-    guint32      psm;
-    guint32      count;
-    guint32      number_of_packets;
-    guint32      pid;
+    uint32_t     interface_id;
+    uint32_t     adapter_id;
+    uint32_t     chandle;
+    uint32_t     psm;
+    uint32_t     count;
+    uint32_t     number_of_packets;
+    uint32_t     pid;
     wmem_tree_t  *fragment;
 } fragments_t;
 
-static wmem_tree_t *reassembling = NULL;
-static fragments_t *fragments    = NULL;
+static wmem_tree_t *reassembling;
+static fragments_t *fragments;
 
 static const value_string packet_type_vals[] = {
     { PACKET_TYPE_SINGLE,   "Single" },
@@ -99,7 +87,7 @@ static const value_string ipid_vals[] = {
 void proto_register_btavctp(void);
 void proto_reg_handoff_btavctp(void);
 
-static gint
+static int
 dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item      *ti;
@@ -108,20 +96,20 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     proto_item      *ipid_item = NULL;
     btavctp_data_t  *avctp_data;
     tvbuff_t        *next_tvb;
-    gint            offset = 0;
-    guint           packet_type;
-    guint           cr;
-    guint           pid = 0;
-    guint           transaction;
-    guint           number_of_packets = 0;
-    guint           length;
-    guint           i_frame;
-    gboolean        ipid = FALSE;
-    guint32         interface_id;
-    guint32         adapter_id;
-    guint32         chandle;
-    guint32         psm;
-    gint            previous_proto;
+    int             offset = 0;
+    unsigned        packet_type;
+    unsigned        cr;
+    unsigned        pid = 0;
+    unsigned        transaction;
+    unsigned        number_of_packets = 0;
+    unsigned        length;
+    unsigned        i_frame;
+    bool            ipid = false;
+    uint32_t        interface_id;
+    uint32_t        adapter_id;
+    uint32_t        chandle;
+    uint32_t        psm;
+    int             previous_proto;
 
     previous_proto = (GPOINTER_TO_INT(wmem_list_frame_data(wmem_list_frame_prev(wmem_list_tail(pinfo->layers)))));
     if (previous_proto == proto_btl2cap) {
@@ -161,13 +149,13 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     proto_tree_add_item(btavctp_tree, hf_btavctp_transaction,  tvb, offset, 1, ENC_BIG_ENDIAN);
     pitem = proto_tree_add_item(btavctp_tree, hf_btavctp_packet_type,  tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(btavctp_tree, hf_btavctp_cr,  tvb, offset, 1, ENC_BIG_ENDIAN);
-    transaction = tvb_get_guint8(tvb, offset) >> 4;
-    packet_type = (tvb_get_guint8(tvb, offset) & 0x0C) >> 2;
-    cr = (tvb_get_guint8(tvb, offset) & 0x02) >> 1 ;
+    transaction = tvb_get_uint8(tvb, offset) >> 4;
+    packet_type = (tvb_get_uint8(tvb, offset) & 0x0C) >> 2;
+    cr = (tvb_get_uint8(tvb, offset) & 0x02) >> 1 ;
 
     if (packet_type == PACKET_TYPE_SINGLE || packet_type == PACKET_TYPE_START) {
         ipid_item = proto_tree_add_item(btavctp_tree, hf_btavctp_ipid,  tvb, offset, 1, ENC_BIG_ENDIAN);
-        ipid = tvb_get_guint8(tvb, offset) & 0x01;
+        ipid = tvb_get_uint8(tvb, offset) & 0x01;
     } else {
         proto_tree_add_item(btavctp_tree, hf_btavctp_rfa,  tvb, offset, 1, ENC_BIG_ENDIAN);
     }
@@ -175,7 +163,7 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
     if (packet_type == PACKET_TYPE_START) {
         proto_tree_add_item(btavctp_tree, hf_btavctp_number_of_packets,  tvb, offset, 1, ENC_BIG_ENDIAN);
-        number_of_packets = tvb_get_guint8(tvb, offset);
+        number_of_packets = tvb_get_uint8(tvb, offset);
         offset++;
     }
 
@@ -184,7 +172,7 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         pid = tvb_get_ntohs(tvb, offset);
 
         if (p_get_proto_data(pinfo->pool, pinfo, proto_bluetooth, PROTO_DATA_BLUETOOTH_SERVICE_UUID ) == NULL) {
-            guint8 *value_data;
+            uint8_t *value_data;
             bluetooth_uuid_t  uuid;
 
             uuid.size = 2;
@@ -192,7 +180,7 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             uuid.data[0] = pid >> 8;
             uuid.data[1] = pid & 0xFF;
 
-            value_data = wmem_strdup(wmem_file_scope(), print_numeric_uuid(&uuid));
+            value_data = wmem_strdup(wmem_file_scope(), print_numeric_bluetooth_uuid(pinfo->pool, &uuid));
 
             p_add_proto_data(pinfo->pool, pinfo, proto_bluetooth, PROTO_DATA_BLUETOOTH_SERVICE_UUID, value_data);
         }
@@ -210,7 +198,7 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             return offset;
     }
 
-    avctp_data = wmem_new(wmem_packet_scope(), btavctp_data_t);
+    avctp_data = wmem_new(pinfo->pool, btavctp_data_t);
     avctp_data->cr           = cr;
     avctp_data->interface_id = interface_id;
     avctp_data->adapter_id   = adapter_id;
@@ -229,14 +217,14 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         uuid.data[0] = pid >> 8;
         uuid.data[1] = pid & 0xFF;
 
-        if (!dissector_try_string(bluetooth_uuid_table, print_numeric_uuid(&uuid), next_tvb, pinfo, tree, avctp_data)) {
+        if (!dissector_try_string_with_data(bluetooth_uuid_table, print_numeric_bluetooth_uuid(pinfo->pool, &uuid), next_tvb, pinfo, tree, true, avctp_data)) {
             call_data_dissector(next_tvb, pinfo, tree);
         }
 
     } else {
         fragment_t     *fragment;
         wmem_tree_key_t key[6];
-        guint32         frame_number;
+        uint32_t        frame_number;
 
         frame_number = pinfo->num;
 
@@ -254,10 +242,10 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         key[5].key = NULL;
 
         if (packet_type == PACKET_TYPE_START) {
-            if (!pinfo->fd->flags.visited) {
+            if (!pinfo->fd->visited) {
                 fragment = wmem_new(wmem_file_scope(), fragment_t);
                 fragment->length = length;
-                fragment->data = (guint8 *) wmem_alloc(wmem_file_scope(), fragment->length);
+                fragment->data = (uint8_t *) wmem_alloc(wmem_file_scope(), fragment->length);
                 tvb_memcpy(tvb, fragment->data, offset, fragment->length);
 
                 fragments = wmem_new(wmem_file_scope(), fragments_t);
@@ -294,10 +282,10 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                     fragments->psm == psm))
                 fragments = NULL;
 
-            if (!pinfo->fd->flags.visited && fragments != NULL) {
+            if (!pinfo->fd->visited && fragments != NULL) {
                 fragment = wmem_new(wmem_file_scope(), fragment_t);
                 fragment->length = length;
-                fragment->data = (guint8 *) wmem_alloc(wmem_file_scope(), fragment->length);
+                fragment->data = (uint8_t *) wmem_alloc(wmem_file_scope(), fragment->length);
                 tvb_memcpy(tvb, fragment->data, offset, fragment->length);
 
                 fragments->count++;
@@ -329,7 +317,6 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             call_data_dissector(next_tvb, pinfo, tree);
 
         } else if (packet_type == PACKET_TYPE_END) {
-            guint    i_length = 0;
 
             fragments = (fragments_t *)wmem_tree_lookup32_array_le(reassembling, key);
             if (!(fragments && fragments->interface_id == interface_id &&
@@ -338,10 +325,10 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                     fragments->psm == psm))
                 fragments = NULL;
 
-            if (!pinfo->fd->flags.visited && fragments != NULL) {
+            if (!pinfo->fd->visited && fragments != NULL) {
                 fragment = wmem_new(wmem_file_scope(), fragment_t);
                 fragment->length = length;
-                fragment->data = (guint8 *) wmem_alloc(wmem_file_scope(), fragment->length);
+                fragment->data = (uint8_t *) wmem_alloc(wmem_file_scope(), fragment->length);
                 tvb_memcpy(tvb, fragment->data, offset, fragment->length);
 
                 fragments->count++;
@@ -375,22 +362,16 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                 expert_add_info(pinfo, pitem, &ei_btavctp_unexpected_frame);
                 call_data_dissector(next_tvb, pinfo, tree);
             } else {
-                guint8   *reassembled;
+                uint8_t  *reassembled = NULL;
                 bluetooth_uuid_t  uuid;
 
                 for (i_frame = 1; i_frame <= fragments->count; ++i_frame) {
                     fragment = (fragment_t *)wmem_tree_lookup32_le(fragments->fragment, i_frame);
-                    length += fragment->length;
-                }
-
-                reassembled = (guint8 *) wmem_alloc(pinfo->pool, length);
-
-                for (i_frame = 1; i_frame <= fragments->count; ++i_frame) {
-                    fragment = (fragment_t *)wmem_tree_lookup32_le(fragments->fragment, i_frame);
-                    memcpy(reassembled + i_length,
-                            fragment->data,
-                            fragment->length);
-                    i_length += fragment->length;
+                    if (fragment) {
+                        reassembled = (uint8_t*)wmem_realloc(pinfo->pool, reassembled, length + fragment->length);
+                        memcpy(reassembled + length, fragment->data, fragment->length);
+                        length += fragment->length;
+                    }
                 }
 
                 next_tvb = tvb_new_child_real_data(tvb, reassembled, length, length);
@@ -401,7 +382,7 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                 uuid.data[0] = fragments->pid >> 8;
                 uuid.data[1] = fragments->pid & 0xFF;
 
-                if (!dissector_try_string(bluetooth_uuid_table, print_numeric_uuid(&uuid), next_tvb, pinfo, tree, avctp_data)) {
+                if (!dissector_try_string_with_data(bluetooth_uuid_table, print_numeric_bluetooth_uuid(pinfo->pool, &uuid), next_tvb, pinfo, tree, true, avctp_data)) {
                     call_data_dissector(next_tvb, pinfo, tree);
                 }
             }
@@ -459,7 +440,7 @@ proto_register_btavctp(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_btavctp
     };
 
@@ -479,7 +460,7 @@ proto_register_btavctp(void)
     expert_btavctp = expert_register_protocol(proto_btavctp);
     expert_register_field_array(expert_btavctp, ei, array_length(ei));
 
-    module = prefs_register_protocol(proto_btavctp, NULL);
+    module = prefs_register_protocol_subtree("Bluetooth", proto_btavctp, NULL);
     prefs_register_static_text_preference(module, "avctp.version",
             "Bluetooth Protocol AVCTP version: 1.4",
             "Version of protocol supported by this dissector.");
@@ -498,7 +479,7 @@ proto_reg_handoff_btavctp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

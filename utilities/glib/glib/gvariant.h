@@ -2,10 +2,12 @@
  * Copyright © 2007, 2008 Ryan Lortie
  * Copyright © 2009, 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -80,7 +82,7 @@ GVariantClass                   g_variant_classify                      (GVarian
 GLIB_AVAILABLE_IN_ALL
 GVariant *                      g_variant_new_boolean                   (gboolean              value);
 GLIB_AVAILABLE_IN_ALL
-GVariant *                      g_variant_new_byte                      (guchar                value);
+GVariant *                      g_variant_new_byte                      (guint8                value);
 GLIB_AVAILABLE_IN_ALL
 GVariant *                      g_variant_new_int16                     (gint16                value);
 GLIB_AVAILABLE_IN_ALL
@@ -133,7 +135,7 @@ GVariant *                      g_variant_new_fixed_array               (const G
 GLIB_AVAILABLE_IN_ALL
 gboolean                        g_variant_get_boolean                   (GVariant             *value);
 GLIB_AVAILABLE_IN_ALL
-guchar                          g_variant_get_byte                      (GVariant             *value);
+guint8                          g_variant_get_byte                      (GVariant             *value);
 GLIB_AVAILABLE_IN_ALL
 gint16                          g_variant_get_int16                     (GVariant             *value);
 GLIB_AVAILABLE_IN_ALL
@@ -268,7 +270,7 @@ GVariant *                      g_variant_new_from_data                 (const G
 typedef struct _GVariantIter GVariantIter;
 struct _GVariantIter {
   /*< private >*/
-  gsize x[16];
+  guintptr x[16];
 };
 
 GLIB_AVAILABLE_IN_ALL
@@ -297,7 +299,15 @@ gboolean                        g_variant_iter_loop                     (GVarian
 typedef struct _GVariantBuilder GVariantBuilder;
 struct _GVariantBuilder {
   /*< private >*/
-  gsize x[16];
+  union
+  {
+    struct {
+      gsize partial_magic;
+      const GVariantType *type;
+      guintptr y[14];
+    } s;
+    guintptr x[16];
+  } u;
 };
 
 typedef enum
@@ -319,7 +329,8 @@ typedef enum
   G_VARIANT_PARSE_ERROR_UNEXPECTED_TOKEN,
   G_VARIANT_PARSE_ERROR_UNKNOWN_KEYWORD,
   G_VARIANT_PARSE_ERROR_UNTERMINATED_STRING_CONSTANT,
-  G_VARIANT_PARSE_ERROR_VALUE_EXPECTED
+  G_VARIANT_PARSE_ERROR_VALUE_EXPECTED,
+  G_VARIANT_PARSE_ERROR_RECURSION
 } GVariantParseError;
 #define G_VARIANT_PARSE_ERROR (g_variant_parse_error_quark ())
 
@@ -329,6 +340,73 @@ GQuark                          g_variant_parser_get_error_quark        (void);
 GLIB_AVAILABLE_IN_ALL
 GQuark                          g_variant_parse_error_quark             (void);
 
+/**
+ * G_VARIANT_BUILDER_INIT:
+ * @variant_type: a const GVariantType*
+ *
+ * A stack-allocated [struct@GLib.VariantBuilder] must be initialized
+ * if it is used together with
+ * [`g_auto()`](auto-cleanup.html#variable-declaration). This macro can
+ * be used as initializer when declaring the builder, but it cannot be
+ * assigned to a variable.
+ *
+ * The effects of initializing the builder with
+ * `G_VARIANT_BUILDER_INIT` is the same as initializing it with
+ * [func@GLib.VARIANT_BUILDER_INIT_UNSET], followed by a call to
+ * [method@GLib.VariantBuilder.init].
+ *
+ * The passed @variant_type should be a static [type@GLib.VariantType]
+ * to avoid lifetime issues, as copying the @variant_type does not
+ * happen in the `G_VARIANT_BUILDER_INIT` call, but rather in functions
+ * that make sure that [struct@GLib.VariantBuilder] is valid.
+ *
+ * ```c
+ *   g_auto(GVariantBuilder) builder = G_VARIANT_BUILDER_INIT (G_VARIANT_TYPE_BYTESTRING);
+ * ```
+ *
+ * Since: 2.50
+ */
+#define G_VARIANT_BUILDER_INIT(variant_type)                                          \
+  {                                                                                   \
+    {                                                                                 \
+      {                                                                               \
+        2942751021u /* == GVSB_MAGIC_PARTIAL, see gvariant.c */, variant_type, { 0, } \
+      }                                                                               \
+    }                                                                                 \
+  }
+
+/**
+ * G_VARIANT_BUILDER_INIT_UNSET:
+ *
+ * A stack-allocated [struct@GLib.VariantBuilder] must be initialized
+ * if it is used together with
+ * [`g_auto()`](auto-cleanup.html#variable-declaration). This macro can
+ * be used as initializer when declaring the builder, but it cannot be
+ * assigned to a variable.
+ *
+ * The builder can be initialized to a specific [type@GLib.VariantType]
+ * later with [method@GLib.VariantBuilder.init].
+ *
+ * Use [func@GLib.VARIANT_BUILDER_INIT] to directly initialize the
+ * builder with a specific [type@GLib.VariantType].
+ *
+ * ```c
+ *   g_auto(GVariantBuilder) builder = G_VARIANT_BUILDER_INIT_UNSET ();
+ *
+ *   if (condition)
+ *     return NULL;
+ *
+ *   g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{su}"));
+ *   return g_variant_ref_sink (g_variant_builder_end (&builder));
+ * ```
+ *
+ * Since: 2.84
+ */
+#define G_VARIANT_BUILDER_INIT_UNSET() \
+  {                                    \
+    0,                                 \
+  } GLIB_AVAILABLE_MACRO_IN_2_84
+
 GLIB_AVAILABLE_IN_ALL
 GVariantBuilder *               g_variant_builder_new                   (const GVariantType   *type);
 GLIB_AVAILABLE_IN_ALL
@@ -337,6 +415,9 @@ GLIB_AVAILABLE_IN_ALL
 GVariantBuilder *               g_variant_builder_ref                   (GVariantBuilder      *builder);
 GLIB_AVAILABLE_IN_ALL
 void                            g_variant_builder_init                  (GVariantBuilder      *builder,
+                                                                         const GVariantType   *type);
+GLIB_AVAILABLE_IN_2_84
+void                            g_variant_builder_init_static           (GVariantBuilder      *builder,
                                                                          const GVariantType   *type);
 GLIB_AVAILABLE_IN_ALL
 GVariant *                      g_variant_builder_end                   (GVariantBuilder      *builder);
@@ -404,8 +485,53 @@ gint                            g_variant_compare                       (gconstp
 typedef struct _GVariantDict GVariantDict;
 struct _GVariantDict {
   /*< private >*/
-  gsize x[16];
+  union
+  {
+    struct {
+      GVariant *asv;
+      gsize partial_magic;
+      guintptr y[14];
+    } s;
+    guintptr x[16];
+  } u;
 };
+
+/**
+ * G_VARIANT_DICT_INIT:
+ * @asv: (nullable): a GVariant*
+ *
+ * A stack-allocated #GVariantDict must be initialized if it is used
+ * together with g_auto() to avoid warnings or crashes if function
+ * returns before g_variant_dict_init() is called on the builder.
+ *
+ * This macro can be used as initializer instead of an explicit
+ * zeroing a variable when declaring it and a following
+ * g_variant_dict_init(), but it cannot be assigned to a variable.
+ *
+ * The passed @asv has to live long enough for #GVariantDict to gather
+ * the entries from, as the gathering does not happen in the
+ * G_VARIANT_DICT_INIT() call, but rather in functions that make sure
+ * that #GVariantDict is valid.  In context where the initialization
+ * value has to be a constant expression, the only possible value of
+ * @asv is %NULL.  It is still possible to call g_variant_dict_init()
+ * safely with a different @asv right after the variable was
+ * initialized with G_VARIANT_DICT_INIT().
+ *
+ * |[<!-- language="C" -->
+ *   g_autoptr(GVariant) variant = get_asv_variant ();
+ *   g_auto(GVariantDict) dict = G_VARIANT_DICT_INIT (variant);
+ * ]|
+ *
+ * Since: 2.50
+ */
+#define G_VARIANT_DICT_INIT(asv)                                             \
+  {                                                                          \
+    {                                                                        \
+      {                                                                      \
+        asv, 3488698669u /* == GVSD_MAGIC_PARTIAL, see gvariant.c */, { 0, } \
+      }                                                                      \
+    }                                                                        \
+  }
 
 GLIB_AVAILABLE_IN_2_40
 GVariantDict *                  g_variant_dict_new                      (GVariant             *from_asv);

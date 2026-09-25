@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #define NDPS_HEADER_LEN 16
 
@@ -30,6 +18,7 @@
 #define TCP_PORT_ENS                    0x0bc8 /* NDPS Event Notification Service */
 #define TCP_PORT_RMS                    0x0bcb /* NDPS Remote Management Service */
 #define TCP_PORT_NOTIFY_LISTENER        0x0bc9 /* NDPS Notify Listener */
+#define TCP_PORT_RANGE        "3014,3016-3019,3369"
 
 
 /*
@@ -1697,7 +1686,7 @@ static const value_string object_ids_15[] = { /* 060F6086 480186F837 (LENGTH 15)
 	{ 0x01090210,		"(Novell) Attribute PRINTER OUTPUT MAXIMUM DIMENSION TRANSFER FEED DIRECTION" },
 	{ 0x01090211,		"(Novell) Attribute PRINTER OUTPUT MINIMUM DIMENSION FEED DIRECTION" },
 	{ 0x01090212,		"(Novell) Attribute PRINTER OUTPUT MINIMUM DIMENSION TRANSFER FEED DIRECTION" },
-	{ 0x01090213,		"(Novell) Attribute PRINTER OUTPUT STACK INGORE DER" },
+	{ 0x01090213,		"(Novell) Attribute PRINTER OUTPUT STACK IGNORE DER" },
 	{ 0x01090214,		"(Novell) Attribute PRINTER OUTPUT PAGE DELIVERY ENTRY" },
 	{ 0x01090215,		"(Novell) Attribute PRINTER OUTPUT BURSTING" },
 	{ 0x01090216,		"(Novell) Attribute PRINTER OUTPUT DECOLLATING" },

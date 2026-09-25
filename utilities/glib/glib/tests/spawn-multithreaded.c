@@ -1,6 +1,8 @@
 /* 
  * Copyright (C) 2011 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -23,15 +25,223 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+
 #include <glib.h>
 #include <string.h>
 
+#include <sys/types.h>
+
 static char *echo_prog_path;
+
+#ifdef G_OS_WIN32
+static char *sleep_prog_path;
+#endif
+
+#ifdef G_OS_UNIX
+#include <unistd.h>
+#endif
+
+#ifdef G_OS_WIN32
+#include <windows.h>
+#endif
+
+typedef struct
+{
+  GMainLoop *main_loop;
+  gint *n_alive;  /* (atomic) */
+  gint ttl;  /* seconds */
+  GMainLoop *thread_main_loop;  /* (nullable) */
+} SpawnChildsData;
+
+static GPid
+get_a_child (gint ttl)
+{
+  GPid pid;
+
+#ifdef G_OS_WIN32
+  STARTUPINFO si;
+  PROCESS_INFORMATION pi;
+  gchar *cmdline;
+  wchar_t *cmdline_utf16;
+
+  memset (&si, 0, sizeof (si));
+  si.cb = sizeof (&si);
+  memset (&pi, 0, sizeof (pi));
+
+  cmdline = g_strdup_printf ("%s %d", sleep_prog_path, ttl);
+
+  cmdline_utf16 = g_utf8_to_utf16 (cmdline, -1, NULL, NULL, NULL);
+  g_assert_nonnull (cmdline_utf16);
+
+  if (!CreateProcess (NULL, cmdline_utf16, NULL, NULL,
+                      FALSE, 0, NULL, NULL, &si, &pi))
+    g_error ("CreateProcess failed: %s",
+             g_win32_error_message (GetLastError ()));
+
+  g_free (cmdline_utf16);
+  g_free (cmdline);
+
+  CloseHandle (pi.hThread);
+  pid = pi.hProcess;
+
+  return pid;
+#else
+  pid = fork ();
+  if (pid < 0)
+    exit (1);
+
+  if (pid > 0)
+    return pid;
+
+  sleep (ttl);
+  _exit (0);
+#endif /* G_OS_WIN32 */
+}
+
+static void
+child_watch_callback (GPid pid, gint status, gpointer user_data)
+{
+  SpawnChildsData *data = user_data;
+
+  g_test_message ("Child %" G_PID_FORMAT " (ttl %d) exited, status %d",
+                  pid, data->ttl, status);
+
+  g_spawn_close_pid (pid);
+
+  if (g_atomic_int_dec_and_test (data->n_alive))
+    g_main_loop_quit (data->main_loop);
+  if (data->thread_main_loop != NULL)
+    g_main_loop_quit (data->thread_main_loop);
+}
+
+static gpointer
+start_thread (gpointer user_data)
+{
+  GMainLoop *new_main_loop;
+  GSource *source;
+  GPid pid;
+  SpawnChildsData *data = user_data;
+  gint ttl = data->ttl;
+  GMainContext *new_main_context = NULL;
+
+  new_main_context = g_main_context_new ();
+  new_main_loop = g_main_loop_new (new_main_context, FALSE);
+  data->thread_main_loop = new_main_loop;
+
+  pid = get_a_child (ttl);
+  source = g_child_watch_source_new (pid);
+  g_source_set_callback (source,
+                         (GSourceFunc) child_watch_callback, data, NULL);
+  g_source_attach (source, g_main_loop_get_context (new_main_loop));
+  g_source_unref (source);
+
+  g_test_message ("Created pid: %" G_PID_FORMAT " (ttl %d)", pid, ttl);
+
+  g_main_loop_run (new_main_loop);
+  g_main_loop_unref (new_main_loop);
+  g_main_context_unref (new_main_context);
+
+  return NULL;
+}
+
+static gboolean
+quit_loop (gpointer data)
+{
+  GMainLoop *main_loop = data;
+
+  g_main_loop_quit (main_loop);
+
+  return TRUE;
+}
+
+static void
+test_spawn_childs (void)
+{
+  GPid pid;
+  GMainLoop *main_loop = NULL;
+  SpawnChildsData child1_data = { 0, }, child2_data = { 0, };
+  gint n_alive;
+  guint timeout_id;
+
+  main_loop = g_main_loop_new (NULL, FALSE);
+
+#ifdef G_OS_WIN32
+  g_assert_no_errno (system ("cd ."));
+#else
+  g_assert_no_errno (system ("true"));
+#endif
+
+  n_alive = 2;
+  timeout_id = g_timeout_add_seconds (30, quit_loop, main_loop);
+
+  child1_data.main_loop = main_loop;
+  child1_data.ttl = 1;
+  child1_data.n_alive = &n_alive;
+  pid = get_a_child (child1_data.ttl);
+  g_child_watch_add (pid,
+                     (GChildWatchFunc) child_watch_callback,
+                     &child1_data);
+
+  child2_data.main_loop = main_loop;
+  child2_data.ttl = 2;
+  child2_data.n_alive = &n_alive;
+  pid = get_a_child (child2_data.ttl);
+  g_child_watch_add (pid,
+                     (GChildWatchFunc) child_watch_callback,
+                     &child2_data);
+
+  g_main_loop_run (main_loop);
+  g_main_loop_unref (main_loop);
+  g_source_remove (timeout_id);
+
+  g_assert_cmpint (g_atomic_int_get (&n_alive), ==, 0);
+}
+
+static void
+test_spawn_childs_threads (void)
+{
+  GMainLoop *main_loop = NULL;
+  SpawnChildsData thread1_data = { 0, }, thread2_data = { 0, };
+  gint n_alive;
+  guint timeout_id;
+  GThread *thread1, *thread2;
+
+  main_loop = g_main_loop_new (NULL, FALSE);
+
+#ifdef G_OS_WIN32
+  g_assert_no_errno (system ("cd ."));
+#else
+  g_assert_no_errno (system ("true"));
+#endif
+
+  n_alive = 2;
+  timeout_id = g_timeout_add_seconds (30, quit_loop, main_loop);
+
+  thread1_data.main_loop = main_loop;
+  thread1_data.n_alive = &n_alive;
+  thread1_data.ttl = 1;  /* seconds */
+  thread1 = g_thread_new (NULL, start_thread, &thread1_data);
+
+  thread2_data.main_loop = main_loop;
+  thread2_data.n_alive = &n_alive;
+  thread2_data.ttl = 2;  /* seconds */
+  thread2 = g_thread_new (NULL, start_thread, &thread2_data);
+
+  g_main_loop_run (main_loop);
+  g_main_loop_unref (main_loop);
+  g_source_remove (timeout_id);
+
+  g_assert_cmpint (g_atomic_int_get (&n_alive), ==, 0);
+
+  g_thread_join (g_steal_pointer (&thread2));
+  g_thread_join (g_steal_pointer (&thread1));
+}
 
 static void
 multithreaded_test_run (GThreadFunc function)
 {
-  int i;
+  guint i;
   GPtrArray *threads = g_ptr_array_new ();
   guint n_threads;
 
@@ -42,7 +252,7 @@ multithreaded_test_run (GThreadFunc function)
     {
       GThread *thread;
 
-      thread = g_thread_new ("test", function, GINT_TO_POINTER (i));
+      thread = g_thread_new ("test", function, GUINT_TO_POINTER (i));
       g_ptr_array_add (threads, thread);
     }
 
@@ -50,7 +260,7 @@ multithreaded_test_run (GThreadFunc function)
     {
       gpointer ret;
       ret = g_thread_join (g_ptr_array_index (threads, i));
-      g_assert_cmpint (GPOINTER_TO_INT (ret), ==, i);
+      g_assert_cmpint (GPOINTER_TO_UINT (ret), ==, i);
     }
   g_ptr_array_free (threads, TRUE);
 }
@@ -58,14 +268,14 @@ multithreaded_test_run (GThreadFunc function)
 static gpointer
 test_spawn_sync_multithreaded_instance (gpointer data)
 {
-  int tnum = GPOINTER_TO_INT (data);
+  guint tnum = GPOINTER_TO_UINT (data);
   GError *error = NULL;
   GPtrArray *argv;
   char *arg;
   char *stdout_str;
   int estatus;
 
-  arg = g_strdup_printf ("thread %d", tnum);
+  arg = g_strdup_printf ("thread %u", tnum);
 
   argv = g_ptr_array_new ();
   g_ptr_array_add (argv, echo_prog_path);
@@ -79,7 +289,7 @@ test_spawn_sync_multithreaded_instance (gpointer data)
   g_free (stdout_str);
   g_ptr_array_free (argv, TRUE);
 
-  return GINT_TO_POINTER (tnum);
+  return GUINT_TO_POINTER (tnum);
 }
 
 static void
@@ -105,7 +315,7 @@ on_child_exited (GPid     pid,
   data->child_exited = TRUE;
   if (data->child_exited && data->stdout_done)
     g_main_loop_quit (data->loop);
-  
+
   return G_SOURCE_REMOVE;
 }
 
@@ -147,7 +357,7 @@ on_child_stdout (GIOChannel   *channel,
 static gpointer
 test_spawn_async_multithreaded_instance (gpointer thread_data)
 {
-  int tnum = GPOINTER_TO_INT (thread_data);
+  guint tnum = GPOINTER_TO_UINT (thread_data);
   GError *error = NULL;
   GPtrArray *argv;
   char *arg;
@@ -162,7 +372,7 @@ test_spawn_async_multithreaded_instance (gpointer thread_data)
   context = g_main_context_new ();
   loop = g_main_loop_new (context, TRUE);
 
-  arg = g_strdup_printf ("thread %d", tnum);
+  arg = g_strdup_printf ("thread %u", tnum);
 
   argv = g_ptr_array_new ();
   g_ptr_array_add (argv, echo_prog_path);
@@ -192,8 +402,8 @@ test_spawn_async_multithreaded_instance (gpointer thread_data)
 
   g_main_loop_run (loop);
 
-  g_assert (data.child_exited);
-  g_assert (data.stdout_done);
+  g_assert_true (data.child_exited);
+  g_assert_true (data.stdout_done);
   g_assert_cmpstr (data.stdout_buf->str, ==, arg);
   g_string_free (data.stdout_buf, TRUE);
 
@@ -203,7 +413,7 @@ test_spawn_async_multithreaded_instance (gpointer thread_data)
 
   g_free (arg);
 
-  return GINT_TO_POINTER (tnum);
+  return GUINT_TO_POINTER (tnum);
 }
 
 static void
@@ -223,21 +433,27 @@ main (int   argc,
 
   dirname = g_path_get_dirname (argv[0]);
   echo_prog_path = g_build_filename (dirname, "test-spawn-echo" EXEEXT, NULL);
-  if (!g_file_test (echo_prog_path, G_FILE_TEST_EXISTS))
-    {
-      g_free (echo_prog_path);
-      echo_prog_path = g_build_filename (dirname, "lt-test-spawn-echo" EXEEXT, NULL);
-    }
-  g_free (dirname);
 
   g_assert (g_file_test (echo_prog_path, G_FILE_TEST_EXISTS));
+#ifdef G_OS_WIN32
+  sleep_prog_path = g_build_filename (dirname, "test-spawn-sleep" EXEEXT, NULL);
+  g_assert (g_file_test (sleep_prog_path, G_FILE_TEST_EXISTS));
+#endif
 
+  g_clear_pointer (&dirname, g_free);
+
+  g_test_add_func ("/gthread/spawn-childs", test_spawn_childs);
+  g_test_add_func ("/gthread/spawn-childs-threads", test_spawn_childs_threads);
   g_test_add_func ("/gthread/spawn-sync", test_spawn_sync_multithreaded);
   g_test_add_func ("/gthread/spawn-async", test_spawn_async_multithreaded);
 
   ret = g_test_run();
 
   g_free (echo_prog_path);
+
+#ifdef G_OS_WIN32
+  g_free (sleep_prog_path);
+#endif
 
   return ret;
 }

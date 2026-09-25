@@ -22,14 +22,10 @@ __data__ = 'a class for dealing with the oui txt file'
 #########################################
 """
 
-from airdrop import install_dir
-
 import re
-import urllib2
-import urllib
-import sys
 import os
 
+from airdrop import install_dir
 
 class macOUI_lookup:
     """
@@ -52,16 +48,16 @@ class macOUI_lookup:
             "/usr/share/wireshark/wireshark/manuf/oui.txt",
             "/usr/share/wireshark/manuf/oui.txt"]
         # append any oui paths provided by program using lib to list
-        if oui != None:
+        if oui is not None:
             self.OUI_PATH.append(oui)
         for PATH in self.OUI_PATH:
             if os.path.isfile(PATH):
                 aircrackOUI=PATH
-        if aircrackOUI == None:
+        if aircrackOUI is None:
             # default
             aircrackOUI=self.OUI_PATH[1]
         #a poor fix where if we have no file it trys to download it
-        self.ouiTxtUrl   = "http://standards.ieee.org/regauth/oui/oui.txt"
+        self.ouiTxtUrl   = "http://standards-oui.ieee.org/oui.txt"
         self.ouiUnPath   = install_dir#path to oui.txt if module is installed
         self.ouiInPath   = install_dir + '/support/'         #path to oui.txt if module is not installed
         self.ouiTxt = aircrackOUI
@@ -75,7 +71,7 @@ class macOUI_lookup:
         check for valid company name key
         """
         compMatch = re.compile(name,re.I)
-        if self.company_oui.has_key(name):
+        if name in self.company_oui:
             return True
         for key in self.company_oui.keys():
                 if compMatch.search(key) is not None:   
@@ -87,7 +83,7 @@ class macOUI_lookup:
         check for a valid oui prefix
         """
 
-        if self.oui_company.has_key(name): 
+        if name in self.oui_company:
             return True
         else: 
             return False
@@ -107,18 +103,18 @@ class macOUI_lookup:
         look up a company name and return their OUI's
         """
         oui = []
-        if type(companyLst).__name__ == "list":
+        if type(companyLst) is list:
             for name in companyLst:
                 compMatch = re.compile(name,re.I)
-                if self.company_oui.has_key(name):
+                if name in self.company_oui:
                     oui.extend(self.company_oui[name])
                 else:
                     for key in self.company_oui:
                         if compMatch.search(key) is not None:
                             oui.extend(self.company_oui[key])
 
-        elif type(companyLst).__name__ == "str":
-            if self.company_oui.has_key(companyLst):
+        elif type(companyLst) is str:
+            if companyLst in self.company_oui:
                 oui = self.company_oui[companyLst]
             else:
                 
@@ -132,8 +128,8 @@ class macOUI_lookup:
         """
         open the file and read it in
         """
-        ouiFile = open(self.ouiTxt, "r")
-        text = ouiFile.readlines()
+        with open(self.ouiTxt, "r") as fid:
+            text = fid.readlines()
         #text = ouiFile.read()
         return text
     
@@ -146,7 +142,7 @@ class macOUI_lookup:
         #matches the following example "00-00-00   (hex)\t\tXEROX CORPORATION" 
         ouiLines = self.ouiRaw
         for line in ouiLines:
-            if Hex.search(line) != None: 
+            if Hex.search(line) is not None: 
                 #return the matched text and build a list out of it
                 lineList = Hex.search(line).group().replace("\t"," ").split("  ") 
                 #build a dict in the format of mac:company name 
@@ -159,7 +155,7 @@ class macOUI_lookup:
         """
         company_oui = {}
         for oui in self.oui_company:
-            if company_oui.has_key(self.oui_company[oui][0]):
+            if self.oui_company[oui][0] in company_oui:
                 company_oui[self.oui_company[oui][0]].append(oui)
             else:
                 company_oui[self.oui_company[oui][0]] = [oui]

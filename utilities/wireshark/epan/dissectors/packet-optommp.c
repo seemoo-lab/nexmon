@@ -6,25 +6,12 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include "packet-tcp.h"
 
 #define OPTO_FRAME_HEADER_LEN 8
@@ -39,29 +26,26 @@
 #define OPTOMMP_READ_BLOCK_RESPONSE 7
 
 /* Initialize the protocol and registered fields */
-static gint proto_optommp = -1;
+static int proto_optommp;
 static dissector_handle_t optommp_tcp_handle;
 static dissector_handle_t optommp_udp_handle;
-static gint hf_optommp_nodest_id = -1;
-static gint hf_optommp_dest_id = -1;
-static gint hf_optommp_boot_id = -1;
-static gint hf_optommp_tl = -1;
-static gint hf_optommp_tcode = -1;
-static gint hf_optommp_source_ID = -1;
-static gint hf_optommp_rcode = -1;
-static gint hf_optommp_quadlet_data = -1;
-static gint hf_optommp_data_length = -1;
-static gint hf_optommp_dest_offset  = -1;
-static gint hf_optommp_data_block_byte  = -1;
-static gint hf_optommp_data_block_quadlet  = -1;
+static int hf_optommp_nodest_id;
+static int hf_optommp_dest_id;
+static int hf_optommp_boot_id;
+static int hf_optommp_tl;
+static int hf_optommp_tcode;
+static int hf_optommp_source_ID;
+static int hf_optommp_rcode;
+static int hf_optommp_quadlet_data;
+static int hf_optommp_data_length;
+static int hf_optommp_dest_offset;
+static int hf_optommp_data_block_byte;
+static int hf_optommp_data_block_quadlet;
 /* Initialize the subtree pointers */
-static gint ett_optommp = -1;
-static gint ett_dest_id = -1;
-static gint ett_data_block_q = -1;
-static gint ett_data_block_b = -1;
-/* PORT_PREF */
-static guint gOPTOMMP_PORT_PREF = 0;
-
+static int ett_optommp;
+static int ett_dest_id;
+static int ett_data_block_q;
+static int ett_data_block_b;
 
 static const value_string optommp_tcode_names[] = {
     { 0, "Write Quadlet Request" },
@@ -95,31 +79,37 @@ static const value_string optommp_rcode_meanings[] = {
 };
 
 static const range_string optommp_mm_areas[] = {
-    { 0xf0100000,   0xf01bffff,
-            "Expanded Analog & Digital Point Configuration - Read/Write" },
+    {   0xf0100000, 0xf01bffff,
+            "Expanded Analog & Digital Channel Configuration - Read/Write" },
     {   0xf01c0000, 0xf01c7fff,
-            "Expanded Analog Point Calc & Set - Read/Write" },
+            "Expanded Analog Channel Calc & Set - Read/Write" },
     {   0xf01d4000, 0xf01dffff,
-            "Expanded Analog Point Read & Clear - Read/Write" },
+            "Expanded Analog Channel Read & Clear - Read/Write" },
+    {   0xF01E0000, 0xF021FFFF,
+            "Expanded Digital Channel Read - Read Only" },
+    {   0xF0220000, 0xF025FFFF,
+            "Expanded Digital Channel Write - Read/Write" },
     {   0xf0260000, 0xf029ffff,
-            "Expanded Analog Point Read - Read" },
+            "Expanded Analog Channel Read - Read Only" },
     {   0xf02a0000, 0xf02dffff,
-            "Expanded Analog Point Write - Read/Write" },
+            "Expanded Analog Channel Write - Read/Write" },
     {   0xf02e0000, 0xf02f7fff,
-            "Expanded Digital Point Read & Clear - Read/Write" },
+            "Expanded Digital Channel Read & Clear - Read/Write" },
+    {   0xF02F8000, 0xF02FFFFF,
+            "I/O Channel Data Preserved Area (64-bit energy counters)" },
     {   0xf0300000, 0xf030024b,
             "Status Area Read - Read Only" },
+    {   0xF0380000, 0xF03802B3,
+            "Status Write Area - Read/Write" },
     {   0xf0310400, 0xf031110f,
             "Communications Port Configuration - Read/Write" },
     {   0xf0329000, 0xf032efff,
             "Serial Pass-Through - Read/Write" },
     {   0xf0350000, 0xf0350023,
             "Date and Time Configuration - Read/Write" },
-    {   0xf0380000, 0xf0380297,
-            "Status Area Write - Read/Write" },
     {   0xf0390000, 0xf0390003,
             "Modbus Configuration - Read/Write" },
-    {   0xf03a0004, 0xf03a0073,
+    {   0xf03a0004, 0xf03a007F,
             "Network Security Configuration - Read/Write" },
     {   0xf03a1000, 0xf03a1fff,
             "SSI Module Configuration - Read/Write" },
@@ -139,7 +129,7 @@ static const range_string optommp_mm_areas[] = {
             "PPP Configuration - Read/Write" },
     {   0xf03eb800, 0xf03fb827,
             "PPP Status - Read Only" },
-    {   0xf03fffc4, 0xf03fffff,
+    {   0xf03fffc0, 0xf03fffff,
             "Streaming Configuration - Read/Write" },
     {   0xf0400000, 0xf04001ff,
             "Digital Bank Read - Read Only" },
@@ -150,15 +140,15 @@ static const range_string optommp_mm_areas[] = {
     {   0xf0700000, 0xf07001ff,
             "Analog Bank Write - Read/Write" },
     {   0xf0800000, 0xf0800fd3,
-            "Digital Point Read - Read Only" },
+            "Digital Channel Read - Read Only" },
     {   0xf0900000, 0xf0900fcf,
-            "Digital Point Write - Read/Write" },
+            "Digital Channel Write - Read/Write" },
     {   0xf0a00000, 0xf0a00fcf,
-            "Old Analog Point Read - Read Only" },
+            "Old Analog Channel Read - Read Only" },
     {   0xf0b00000, 0xf0b00fcf,
-            "Old Analog Point Write - Read/Write" },
+            "Old Analog Channel Write - Read/Write" },
     {   0xf0c00000, 0xf0c011ff,
-            "Old A&D Point Configuration Information - Read/Write" },
+            "Old A&D Channel Configuration Information - Read/Write" },
     {   0xf0d00000, 0xf0d01fff,
             "Old Digital Events and Reactions - Read/Write" },
     {   0xf0d40000, 0xf0d4ffff,
@@ -166,17 +156,27 @@ static const range_string optommp_mm_areas[] = {
     {   0xf0d80000, 0xf0dc81ff,
             "Scratch Pad - Read/Write" },
     {   0xf0e00000, 0xf0e001ff,
-            "Old Analog Point Calculation and Set - Read Only" },
+            "Old Analog Channel Calculation and Set - Read Only" },
     {   0xf0f00000, 0xf0f002ff,
             "Old Digital Read and Clear - Read Only" },
     {   0xf0f80000, 0xf0f801ff,
             "Old Analog Read and Clear/Restart - Read Only" },
     {   0xf1000000, 0xf100021f,
             "Streaming - Read Only" },
+    {   0xF1000300, 0xF1000BFF,
+            "Expanded Streaming Data - Read Only" },
     {   0xf1001000, 0xf10017ff,
             "Analog EU or Digital Counter Packed Data - Read" },
     {   0xf1001800, 0xf100183f,
             "Digital Packed Data - Read/Write" },
+    {   0xf1001900, 0xF10019FF,
+            "Expanded Digital Packed Data Read - Read Only" },
+    {   0xF1001A00, 0xF1001A7F,
+            "Expanded Digital Packed Must On/Off (MOMO) - Read/Write" },
+    {   0xF1002000, 0xF100607F,
+            "Analog/Digital Channel Quality of Data - Read Only" },
+    {   0xF1008000, 0xF100BFFF,
+            "Expanded Analog EU or Digital Counter (Feature) Packed Area - Read Only" },
     {   0xf1100000, 0xf1101fff,
             "Alarm Event Settings - Read/Write" },
     {   0xf1200000, 0xf12111ff,
@@ -185,18 +185,34 @@ static const range_string optommp_mm_areas[] = {
             "Email Configuration - Read/Write" },
     {   0xf1540000, 0xf1540efc,
             "Serial Event Configuration - Read/Write" },
-    {   0xf1560000, 0xf1f60f7f,
+    {   0xf1560000, 0xf1560f7f,
             "Wiegand Serial Event Configuration - Read/Write" },
     {   0xf1808000, 0xf1809ffe,
             "SNAP High-Density Digital - Read Only" },
+    {   0xF1809000, 0xF1809FFF,
+            "SNAP High-Density Digital Read Counter Area - Read Only" },
     {   0xf180a000, 0xf180bffe,
-            "SNAP High-Density Digital Read and Clear - Read/Write" },
+            "SNAP High-Density Digital Read and Clear Latches - Read/Write" },
+    {   0xF180B000, 0xF180BFFF,
+            "SNAP High-Density Digital Read and Clear Counter - Read/Write" },
     {   0xf180c000, 0xf180c3fe,
             "SNAP High-Density Digital Write - Read/Write" },
     {   0xf2000000, 0xf2002edf,
             "PID Configuration and Status - Read/Write" },
     {   0xf2100000, 0xf21047ff,
             "PID Configuration and Status - Read/Write" },
+    {   0xF2180000, 0xF218137F,
+            "PID Names" },
+    {   0xF2280000, 0xF228FFFF,
+            "Public I/O Tag Configuration (Channels 0-31) - Read/Write" },
+    {   0xF2290000, 0xF2295FFF,
+            "Public Tag Revision Number" },
+    {   0xF2293000, 0xF229FFFF,
+            "Public PID Tag Configuration" },
+    {   0xF22A0000, 0xF22AFFFF,
+            "Public I/O Tag Configuration (Channels 32-63)  - Read/Write" },
+    {   0xF22B0000, 0xF22B01FF,
+            "Public Scratchpad Tag Configuration" },
     {   0xf3000000, 0xf3000707,
             "Data Logging Configuration - Read/Write" },
     {   0xf3020000, 0xf302176f,
@@ -215,53 +231,55 @@ static const range_string optommp_mm_areas[] = {
             "WLAN Configuration - Read/Write" },
     {   0xf8000000, 0xf800000b,
             "WLAN Enable - Read/Write" },
+    {   0xF8110000, 0xF81107FF,
+            "Module Build Info" },
     {   0xfffff008, 0xfffff077,
             "IP Settings - Read/Write" },
     {   0,          0,          NULL }
 };
 
 /* Function Prototypes */
-static guint get_optommp_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+static unsigned get_optommp_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
     int offset, void *data _U_);
-static gint dissect_optommp_reassemble_tcp(tvbuff_t *tvb, packet_info *pinfo,
+static int dissect_optommp_reassemble_tcp(tvbuff_t *tvb, packet_info *pinfo,
     proto_tree *tree, void *data);
-static gint dissect_optommp_reassemble_udp(tvbuff_t *tvb, packet_info *pinfo,
+static int dissect_optommp_reassemble_udp(tvbuff_t *tvb, packet_info *pinfo,
     proto_tree *tree, void *data);
-static gint dissect_optommp(tvbuff_t *tvb, packet_info *pinfo, proto_tree
+static int dissect_optommp(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     *tree, void * data _U_);
 static void dissect_optommp_dest_id(proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset);
+    tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_write_quadlet_request(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset);
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_write_block_request(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset);
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_write_response(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset);
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_read_quadlet_request(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset);
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_read_block_request(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset);
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_read_quadlet_response(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset);
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_read_block_response(proto_item **ti, proto_tree
-    *tree, tvbuff_t *tvb, guint *poffset);
+    *tree, tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_source_ID(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset);
+    tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_destination_offset_6(proto_item **ti,
-     proto_tree *tree, tvbuff_t *tvb, guint *poffset);
+     proto_tree *tree, tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_quadlet_data(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset);
+    tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_rcode(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset);
-static guint16 dissect_optommp_data_length(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset);
+    tvbuff_t *tvb, unsigned *poffset);
+static uint16_t dissect_optommp_data_length(proto_item **ti, proto_tree *tree,
+    tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_data_block(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset, guint16 data_length);
+    tvbuff_t *tvb, unsigned *poffset, uint16_t data_length);
 static void dissect_optommp_data_block_byte(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset);
+    tvbuff_t *tvb, unsigned *poffset);
 static void dissect_optommp_data_block_quadlet(proto_item **ti, proto_tree
-    *tree, tvbuff_t *tvb, guint *poffset);
-static gint optommp_has_destination_offset(guint8 tcode);
+    *tree, tvbuff_t *tvb, unsigned *poffset);
+static int optommp_has_destination_offset(uint8_t tcode);
 
 void proto_register_optommp(void);
 void proto_reg_handoff_optommp(void);
@@ -274,14 +292,14 @@ parameters:     pinfo: not used
                 offset: not used
 purpose:        Gets the message length depending on tcode and data_block len
 ****************************************************************************/
-static guint get_optommp_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+static unsigned get_optommp_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
     int offset, void *data _U_)
 {
-    guint len = OPTO_FRAME_HEADER_LEN;
-    guint8 tcode = 0;
+    unsigned len = OPTO_FRAME_HEADER_LEN;
+    uint8_t tcode = 0;
 
     /* Just want the most significant nibble */
-    tcode = tvb_get_guint8(tvb, offset + 3) >> 4;
+    tcode = tvb_get_uint8(tvb, offset + 3) >> 4;
 
     if( tcode == OPTOMMP_WRITE_QUADLET_REQUEST ||
         tcode == OPTOMMP_WRITE_BLOCK_REQUEST ||
@@ -302,7 +320,7 @@ static guint get_optommp_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
         tvb_reported_length_remaining(tvb, offset) >= 14 )
     {
         /* offset + 12 is the data_length of the packet */
-        len += (guint) tvb_get_ntohs(tvb, offset + 12);
+        len += (unsigned) tvb_get_ntohs(tvb, offset + 12);
     }
 
     return len;
@@ -313,10 +331,10 @@ function:       dissect_optommp_reassemble_tcp()
 parameters:     void
 purpose:        reassemble packets then send to dissector
 ****************************************************************************/
-static gint dissect_optommp_reassemble_tcp(tvbuff_t *tvb, packet_info *pinfo,
+static int dissect_optommp_reassemble_tcp(tvbuff_t *tvb, packet_info *pinfo,
     proto_tree *tree, void *data)
 {
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, OPTO_FRAME_HEADER_LEN,
+    tcp_dissect_pdus(tvb, pinfo, tree, true, OPTO_FRAME_HEADER_LEN,
         get_optommp_message_len, dissect_optommp, data);
 
     return tvb_captured_length(tvb);
@@ -327,7 +345,7 @@ function:       dissect_optommp_reassemble_udp()
 parameters:     void
 purpose:        reassemble packets then send to dissector
 ****************************************************************************/
-static gint dissect_optommp_reassemble_udp(tvbuff_t *tvb, packet_info *pinfo,
+static int dissect_optommp_reassemble_udp(tvbuff_t *tvb, packet_info *pinfo,
     proto_tree *tree, void *data)
 {
     dissect_optommp(tvb, pinfo, tree, data);
@@ -340,11 +358,11 @@ function:       dissect_optommp()
 parameters:     void
 purpose:        add the optommp protocol subtree
 ****************************************************************************/
-static gint dissect_optommp(tvbuff_t *tvb, packet_info *pinfo, proto_tree
+static int dissect_optommp(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     *tree, void *data _U_)
 {
     /* Declare and init variables for each part of the packet */
-    guint8 tcode = 0;
+    uint8_t tcode = 0;
 
     /* Provide a summary label */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "OptoMMP");
@@ -352,21 +370,21 @@ static gint dissect_optommp(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     if( tvb_reported_length(tvb) >= OPTOMMP_MIN_LENGTH)
     {
         /* the tcode is the most sig nibble of the 3rd byte */
-        tcode = tvb_get_guint8(tvb, 3) >> 4;
+        tcode = tvb_get_uint8(tvb, 3) >> 4;
         if( optommp_has_destination_offset(tcode) != 0 &&
             tvb_reported_length(tvb) >= 12)
         {
-            guint64 destination_offset = 0;
+            uint64_t destination_offset = 0;
             destination_offset = tvb_get_ntoh48(tvb, 6);
             col_add_fstr(pinfo->cinfo, COL_INFO,
-                " type: %s, dest_off: 0x%012" G_GINT64_MODIFIER "x",
-                val_to_str(tcode, optommp_tcode_names, "Unknown (0x%02x)"),
+                " type: %s, dest_off: 0x%012" PRIx64,
+                val_to_str(pinfo->pool, tcode, optommp_tcode_names, "Unknown (0x%02x)"),
                 destination_offset);
         }
         else
         {
             col_add_fstr(pinfo->cinfo, COL_INFO, " type: %s",
-                val_to_str(tcode, optommp_tcode_names, "Unknown (0x%02x)"));
+                val_to_str(pinfo->pool, tcode, optommp_tcode_names, "Unknown (0x%02x)"));
         }
     }
 
@@ -375,22 +393,22 @@ static gint dissect_optommp(tvbuff_t *tvb, packet_info *pinfo, proto_tree
         proto_item *root_ti = NULL;
         proto_item *ti = NULL;
         proto_tree *optommp_tree = NULL;
-        guint offset = 0;
+        unsigned offset = 0;
 
         /* Add the root node of our protocol */
         root_ti = proto_tree_add_item(tree, proto_optommp, tvb, 0, -1,
             ENC_NA);
         if( tvb_reported_length(tvb) >= OPTOMMP_MIN_LENGTH)
         {
-            tcode = tvb_get_guint8(tvb, 3) >> 4;
-            proto_item_append_text(root_ti, ", type: %s", val_to_str(tcode,
+            tcode = tvb_get_uint8(tvb, 3) >> 4;
+            proto_item_append_text(root_ti, ", type: %s", val_to_str(pinfo->pool, tcode,
                 optommp_tcode_names, "Unknown (0x%02x)"));
             if( optommp_has_destination_offset(tcode) != 0 )
             {
-                guint64 destination_offset = 0;
+                uint64_t destination_offset = 0;
                 destination_offset = tvb_get_ntoh48(tvb, 6);
                 proto_item_append_text(root_ti,
-                    ", dest_off: 0x%012" G_GINT64_MODIFIER "x",
+                    ", dest_off: 0x%012" PRIx64,
                     destination_offset);
             }
             /* Add an expansion to the tree */
@@ -404,7 +422,7 @@ static gint dissect_optommp(tvbuff_t *tvb, packet_info *pinfo, proto_tree
             /* Dissect tcode */
             proto_tree_add_item(optommp_tree, hf_optommp_tcode, tvb,
                 offset, 1, ENC_BIG_ENDIAN);
-            tcode = tvb_get_guint8(tvb, offset) >> 4;
+            tcode = tvb_get_uint8(tvb, offset) >> 4;
             ++offset;
             /* Dissect the rest of the packet according to type */
             switch( tcode )
@@ -452,10 +470,10 @@ parameters:     tree:       The subtree to append nodes to
 purpose:        Dissect destination id and boot id
 ****************************************************************************/
 static void dissect_optommp_dest_id(proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset)
+    tvbuff_t *tvb, unsigned *poffset)
 {
     proto_tree *dest_id_tree = NULL;
-    guint16 dest_id = 0;
+    uint16_t dest_id = 0;
 
     /* Check whether boot id present */
     dest_id = tvb_get_ntohs(tvb, *poffset);
@@ -485,7 +503,7 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect a write quadlet request
 ****************************************************************************/
 static void dissect_optommp_write_quadlet_request(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset)
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset)
 {
     dissect_optommp_source_ID(ti, tree, tvb, poffset);
     dissect_optommp_destination_offset_6(ti, tree, tvb, poffset);
@@ -501,9 +519,9 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect a write block request
 ****************************************************************************/
 static void dissect_optommp_write_block_request(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset)
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset)
 {
-    guint16 data_length = 0;
+    uint16_t data_length = 0;
     dissect_optommp_source_ID(ti, tree, tvb, poffset);
     dissect_optommp_destination_offset_6(ti, tree, tvb, poffset);
     data_length = dissect_optommp_data_length(ti, tree, tvb, poffset);
@@ -520,7 +538,7 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect a write response
 ****************************************************************************/
 static void dissect_optommp_write_response(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset)
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset)
 {
     dissect_optommp_source_ID(ti, tree, tvb, poffset);
     dissect_optommp_rcode(ti, tree, tvb, poffset);
@@ -535,7 +553,7 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect a read quadlet request
 ****************************************************************************/
 static void dissect_optommp_read_quadlet_request(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset)
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset)
 {
     dissect_optommp_source_ID(ti, tree, tvb, poffset);
     dissect_optommp_destination_offset_6(ti, tree, tvb, poffset);
@@ -550,7 +568,7 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect a read block request
 ****************************************************************************/
 static void dissect_optommp_read_block_request(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset)
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset)
 {
     dissect_optommp_source_ID(ti, tree, tvb, poffset);
     dissect_optommp_destination_offset_6(ti, tree, tvb, poffset);
@@ -566,7 +584,7 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect a read quadlet response
 ****************************************************************************/
 static void dissect_optommp_read_quadlet_response(proto_item **ti,
-    proto_tree *tree, tvbuff_t *tvb, guint *poffset)
+    proto_tree *tree, tvbuff_t *tvb, unsigned *poffset)
 {
     dissect_optommp_source_ID(ti, tree, tvb, poffset);
     dissect_optommp_rcode(ti, tree, tvb, poffset);
@@ -583,9 +601,9 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect a read block response
 ****************************************************************************/
 static void dissect_optommp_read_block_response(proto_item **ti, proto_tree
-    *tree, tvbuff_t *tvb, guint *poffset)
+    *tree, tvbuff_t *tvb, unsigned *poffset)
 {
-    guint16 data_length = 0;
+    uint16_t data_length = 0;
     dissect_optommp_source_ID(ti, tree, tvb, poffset);
     dissect_optommp_rcode(ti, tree, tvb, poffset);
     *poffset += 5; /* Skip the reserved part for now */
@@ -603,7 +621,7 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect the source id field.
 ****************************************************************************/
 static void dissect_optommp_source_ID(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset)
+    tvbuff_t *tvb, unsigned *poffset)
 {
     if( tvb_reported_length(tvb) >= *poffset + 2 )
     {
@@ -623,7 +641,7 @@ purpose:        Get the destination offset byte by byte and then reassemble
 note:           This must be called when the reported length < offset + 8
 ****************************************************************************/
 static void dissect_optommp_destination_offset_6(proto_item **ti,
-     proto_tree *tree, tvbuff_t *tvb, guint *poffset)
+     proto_tree *tree, tvbuff_t *tvb, unsigned *poffset)
 {
     if( tvb_reported_length(tvb) >= *poffset + 6 )
     {
@@ -643,7 +661,7 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect the quadlet data part for packets that have it
 ****************************************************************************/
 static void dissect_optommp_quadlet_data(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset)
+    tvbuff_t *tvb, unsigned *poffset)
 {
     if( tvb_reported_length(tvb) >= *poffset + 4 )
     {
@@ -661,10 +679,10 @@ parameters:     ti:         Reserved for future use
                 poffset:    Keeps track of our location in the tree
 purpose:        Dissect data length
 ****************************************************************************/
-static guint16 dissect_optommp_data_length(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset)
+static uint16_t dissect_optommp_data_length(proto_item **ti, proto_tree *tree,
+    tvbuff_t *tvb, unsigned *poffset)
 {
-    guint16 data_length = 0;
+    uint16_t data_length = 0;
 
     if( tvb_reported_length(tvb) >= *poffset + 2 )
     {
@@ -687,7 +705,7 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect rcode part for packets that have it
 ****************************************************************************/
 static void dissect_optommp_rcode(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset)
+    tvbuff_t *tvb, unsigned *poffset)
 {
     if( tvb_reported_length(tvb) >= *poffset + 1 )
     {
@@ -708,13 +726,13 @@ parameters:     ti:         The node to add the subtree to
 purpose:        Dissect a data block.
 ****************************************************************************/
 static void dissect_optommp_data_block(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset, guint16 data_length)
+    tvbuff_t *tvb, unsigned *poffset, uint16_t data_length)
 {
     proto_tree *data_block_tree_b = NULL;
     proto_tree *data_block_tree_q = NULL;
-    guint i = 0;
-    guint quadlet_offset = 0;
-    guint byte_offset = 0;
+    unsigned i = 0;
+    unsigned quadlet_offset = 0;
+    unsigned byte_offset = 0;
     quadlet_offset = *poffset;
     byte_offset = *poffset;
 
@@ -722,7 +740,7 @@ static void dissect_optommp_data_block(proto_item **ti, proto_tree *tree,
     data_block_tree_q = proto_tree_add_subtree(tree, tvb, *poffset,
         data_length, ett_data_block_q, ti, "data_block (as quadlets)");
 
-    for( i = 0; i < (guint16) (data_length / 4); ++i )
+    for( i = 0; i < (uint16_t) (data_length / 4); ++i )
     {
         dissect_optommp_data_block_quadlet(ti, data_block_tree_q, tvb,
             &quadlet_offset);
@@ -748,17 +766,12 @@ parameters:     ti:         Reserved for future use
 purpose:        Dissect a data block.
 ****************************************************************************/
 static void dissect_optommp_data_block_byte(proto_item **ti, proto_tree *tree,
-    tvbuff_t *tvb, guint *poffset)
+    tvbuff_t *tvb, unsigned *poffset)
 {
     if( tvb_reported_length(tvb) >= *poffset + 1 )
     {
-        GByteArray *unused_ret_val = NULL;
-        unused_ret_val = g_byte_array_new();
-        /* CheckAPI.pl complained when using ENC_BIG_ENDIAN as the sixth
-        *  parameter, so set it to 0x0 */
-        *ti = proto_tree_add_bytes_item(tree, hf_optommp_data_block_byte, tvb,
-            *poffset, 1, 0x0, unused_ret_val, NULL, NULL);
-        g_byte_array_free(unused_ret_val, TRUE);
+        *ti = proto_tree_add_item(tree, hf_optommp_data_block_byte, tvb,
+            *poffset, 1, ENC_NA);
     }
 
     ++(*poffset);
@@ -773,7 +786,7 @@ parameters:     ti:             Reserved for future use
 purpose:        Dissect a data block.
 ****************************************************************************/
 static void dissect_optommp_data_block_quadlet(proto_item **ti, proto_tree
-    *tree, tvbuff_t *tvb, guint *poffset)
+    *tree, tvbuff_t *tvb, unsigned *poffset)
 {
     if( tvb_reported_length(tvb) >= *poffset + 4 )
     {
@@ -793,7 +806,7 @@ parameters:     ti:             Reserved for future use
 returns:        1 if packet type has destination_offset field, 0 otherwise
 purpose:        Dissect a data block.
 ****************************************************************************/
-static gint optommp_has_destination_offset(guint8 tcode)
+static int optommp_has_destination_offset(uint8_t tcode)
 {
     if( tcode == 0 || tcode == 1 || tcode == 4 || tcode == 5 )
         return 1;
@@ -808,7 +821,6 @@ purpose:        create and register the protocol, trees, and fields
 ****************************************************************************/
 void proto_register_optommp(void)
 {
-    module_t *optommp_module;
     /* The fields */
     static hf_register_info hf[] =
     {
@@ -888,7 +900,7 @@ void proto_register_optommp(void)
     };
 
     /* The subtrees */
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_optommp,
         &ett_dest_id,
@@ -896,17 +908,13 @@ void proto_register_optommp(void)
         &ett_data_block_b
     };
     /* The protocol */
-    proto_optommp = proto_register_protocol(
-        "OptoMMP",
-        "OptoMMP",
-        "optommp");
+    proto_optommp = proto_register_protocol("OptoMMP", "OptoMMP", "optommp");
     proto_register_field_array(proto_optommp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
-    optommp_module = prefs_register_protocol(proto_optommp,
-        proto_reg_handoff_optommp);
-    prefs_register_uint_preference(optommp_module, "tcp.port",
-        "OptoMMP TCP or UDP Port", " OptoMMP TCP or UDP port if other than the default",
-        10, &gOPTOMMP_PORT_PREF);
+
+    /* The dissectors */
+    optommp_tcp_handle = register_dissector("optommp.tcp", dissect_optommp_reassemble_tcp, proto_optommp);
+    optommp_udp_handle = register_dissector("optommp.udp", dissect_optommp_reassemble_udp, proto_optommp);
 }
 
 /****************************************************************************
@@ -916,30 +924,12 @@ purpose:        plug into wireshark with a handle
 ****************************************************************************/
 void proto_reg_handoff_optommp(void)
 {
-    static gboolean initialized = FALSE;
-    static gint currentPort;
-
-    if( !initialized )
-    {
-        optommp_tcp_handle = create_dissector_handle(
-            dissect_optommp_reassemble_tcp, proto_optommp);
-        optommp_udp_handle = create_dissector_handle(
-            dissect_optommp_reassemble_udp, proto_optommp);
-        initialized = TRUE;
-    }
-    else
-    {
-        dissector_delete_uint("tcp.port", currentPort, optommp_tcp_handle);
-        dissector_delete_uint("udp.port", currentPort, optommp_udp_handle);
-    }
-
-    currentPort = gOPTOMMP_PORT_PREF;
-    dissector_add_uint("tcp.port", currentPort, optommp_tcp_handle);
-    dissector_add_uint("udp.port", currentPort, optommp_udp_handle);
+    dissector_add_for_decode_as_with_preference("tcp.port", optommp_tcp_handle);
+    dissector_add_for_decode_as_with_preference("udp.port", optommp_udp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

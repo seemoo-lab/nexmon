@@ -1,23 +1,11 @@
-/* etypes.h
+/** @file
  * Defines ethernet packet types, similar to tcpdump's ethertype.h
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __ETYPES_H__
@@ -25,11 +13,11 @@
 
 #include "ws_symbol_export.h"
 
+#include <wsutil/value_string.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#include <epan/value_string.h>
 
 /*
  * Maximum length of an IEEE 802.3 frame; Ethernet type/length values
@@ -38,7 +26,7 @@ extern "C" {
 #define IEEE_802_3_MAX_LEN		1500
 
 /*
- * Minimum length of an Ethernet II frame;  Ethernet type/length values
+ * Minimum length of an Ethernet II frame; Ethernet type/length values
  * greater than or equal to it are types.
  */
 #define ETHERNET_II_MIN_LEN		1536
@@ -59,6 +47,7 @@ extern "C" {
  * Public Assignments" link on the page at
  *
  *	http://standards.ieee.org/regauth/ethertype/index.shtml
+ *      http://standards-oui.ieee.org/ethertype/eth.txt
  *
  * goes to, but it is redirected to the second of those - i.e., both
  * of the IEEE URLs ultimately go to the same page.)
@@ -83,7 +72,7 @@ extern "C" {
 #endif
 
 #ifndef ETHERTYPE_WOL
-#define ETHERTYPE_WOL			0x0842	/* Wake on LAN.  Not offically registered. */
+#define ETHERTYPE_WOL			0x0842	/* Wake on LAN. Not officially registered. */
 #endif
 
 #ifndef ETHERTYPE_WMX_M2M
@@ -122,8 +111,8 @@ extern "C" {
 #define ETHERTYPE_MSRP			0x22EA
 #endif
 
-#ifndef ETHERTYPE_AVBTP
-#define ETHERTYPE_AVBTP			0x22F0
+#ifndef ETHERTYPE_AVTP
+#define ETHERTYPE_AVTP			0x22F0
 #endif
 
 #ifndef ETHERTYPE_ROHC				/* ROHC (Robust Header Compression) is an IP header compression protocol specified in */
@@ -193,7 +182,7 @@ extern "C" {
 #endif
 
 #ifndef ETHERTYPE_RAW_FR
-#define ETHERTYPE_RAW_FR		0x6559	/* Raw Frame Relay        [RFC1701] */
+#define ETHERTYPE_RAW_FR		0x6559	/* Raw Frame Relay [RFC1701] */
 #endif
 
 #ifndef ETHERTYPE_REVARP
@@ -226,6 +215,18 @@ extern "C" {
 
 #ifndef ETHERTYPE_VLAN
 #define ETHERTYPE_VLAN			0x8100	/* 802.1Q Virtual LAN */
+#endif
+
+#ifndef ETHERTYPE_SLPP
+#define ETHERTYPE_SLPP			0x8102	/* Nortel/Avaya/Extremenetworks Simple Loop Protection Protocol */
+#endif
+
+#ifndef ETHERTYPE_VLACP
+#define ETHERTYPE_VLACP			0x8103	/* Nortel/Avaya/Extremenetworks virtual LACP */
+#endif
+
+#ifndef ETHERTYPE_OLDSLPP
+#define ETHERTYPE_OLDSLPP		0x8104	/* Nortel/Avaya/Extremenetworks Simple Loop Protection Protocol */
 #endif
 
 #ifndef ETHERTYPE_NSRP
@@ -308,6 +309,10 @@ extern "C" {
 #define ETHERTYPE_PPPOES		0x8864	/* PPPoE Session Protocol */
 #endif
 
+#ifndef ETHERTYPE_LINK_CTL
+#define ETHERTYPE_LINK_CTL		0x886C	/* HPNA, wlan link local tunnel */
+#endif
+
 #ifndef ETHERTYPE_INTEL_ANS
 #define ETHERTYPE_INTEL_ANS		0x886D	/* Intel ANS (NIC teaming) http://www.intel.com/support/network/adapter/ans/probes.htm */
 #endif
@@ -318,6 +323,10 @@ extern "C" {
 
 #ifndef ETHERTYPE_JUMBO_LLC
 #define ETHERTYPE_JUMBO_LLC		0x8870	/* 802.2 jumbo frames http://tools.ietf.org/html/draft-ietf-isis-ext-eth */
+#endif
+
+#ifndef ETHERTYPE_BRCM_TYPE
+#define ETHERTYPE_BRCM_TYPE		0x8874	/* Broadcom Ethernet switches management tag */
 #endif
 
 #ifndef ETHERTYPE_HOMEPLUG
@@ -336,8 +345,20 @@ extern "C" {
 #define ETHERTYPE_EAPOL			0x888E	/* 802.1x Authentication */
 #endif
 
+#ifndef ETHERTYPE_FORTINET_FGCP_HB  /* Not register https://community.fortinet.com/t5/FortiGate/Technical-Tip-FortiGate-HA-Heartbeat-packet-Ethertypes/ta-p/197807 */
+#define ETHERTYPE_FORTINET_FGCP_HB	0x8890	/* Fortinet FGCP HeartBeat */
+#endif
+
 #ifndef ETHERTYPE_PROFINET
 #define ETHERTYPE_PROFINET		0x8892	/* PROFIBUS PROFINET protocol */
+#endif
+
+#ifndef ETHERTYPE_FORTINET_FGCP_SESSION  /* Not register https://community.fortinet.com/t5/FortiGate/Technical-Tip-FortiGate-HA-Heartbeat-packet-Ethertypes/ta-p/197807 */
+#define ETHERTYPE_FORTINET_FGCP_SESSION	0x8893	/* Fortinet FGCP HeartBeat */
+#endif
+
+#ifndef ETHERTYPE_REALTEK
+#define ETHERTYPE_REALTEK		0x8899	/* Realtek Layer 2 Protocols */
 #endif
 
 #ifndef ETHERTYPE_HYPERSCSI
@@ -364,6 +385,10 @@ extern "C" {
 #define ETHERTYPE_IEEE_802_1AD		0x88A8	/* IEEE 802.1ad Provider Bridge, Q-in-Q */
 #endif
 
+#ifndef ETHERTYPE_IEEE_EXTREME_MESH
+#define ETHERTYPE_IEEE_EXTREME_MESH     0x88A9  /* Ethernet type for Extreme Mesh */
+#endif
+
 #ifndef ETHERTYPE_EPL_V2
 #define ETHERTYPE_EPL_V2		0x88AB	/* communication profile for Real-Time Ethernet */
 #endif
@@ -377,13 +402,13 @@ extern "C" {
 #endif
 
 #ifndef ETHERTYPE_WAI
-#define ETHERTYPE_WAI			0x88B4	/*  Instant Wireless Network Communications, Co. Ltd. */
-#endif						/*  WAI is a new authentication protocol that
-						    will be used to access authentication in
-						    IP based networks. This protocol establishes
-						    a logic channel between a station and access
-						    equipment by using an EtherType Field to
-						    accomplish authentication. */
+#define ETHERTYPE_WAI			0x88B4	/* Instant Wireless Network Communications, Co. Ltd. */
+#endif						/* WAI is a new authentication protocol that
+						   will be used to access authentication in
+						   IP based networks. This protocol establishes
+						   a logic channel between a station and access
+						   equipment by using an EtherType Field to
+						   accomplish authentication. */
 
 #ifndef ETHERTYPE_EXPERIMENTAL_ETH1
 #define ETHERTYPE_EXPERIMENTAL_ETH1	0x88B5	/* IEEE Std 802 - Local Experimental Ethertype 1. */
@@ -401,14 +426,14 @@ extern "C" {
 #define ETHERTYPE_IEC61850_GOOSE	0x88B8	/* IEC 61850 is a global standard for the use in utility communication,*/
 #endif						/* in particular for the information exchange between IED's in a power */
 						/* transmission or distribution substation. */
-						/*  There are three types of application services
-						    that use a specific EtherType. GOOSE uses
-						    EtherType field 88b8, GSE management services
-						    uses EtherType field 88b9. These two protocols
-						    are defined in IEC 61850-8-1. SV (Sampled
-						    Value Transmission) uses EtherType field
-						    88ba; the protocol is defined in IEC 61850-9-1
-						    and IEC 61850-9-2. */
+						/* There are three types of application services
+						   that use a specific EtherType. GOOSE uses
+						   EtherType field 88b8, GSE management services
+						   uses EtherType field 88b9. These two protocols
+						   are defined in IEC 61850-8-1. SV (Sampled
+						   Value Transmission) uses EtherType field
+						   88ba; the protocol is defined in IEC 61850-9-1
+						   and IEC 61850-9-2. */
 
 #ifndef ETHERTYPE_IEC61850_GSE
 #define ETHERTYPE_IEC61850_GSE		0x88B9	/* IEC 61850 is a global standard for the use in utility communication,*/
@@ -419,7 +444,7 @@ extern "C" {
 #endif						/* in particular for the information exchange between IED's in a power */
 
 #ifndef ETHERTYPE_TIPC
-#define ETHERTYPE_TIPC			0x88CA	/* TIPC  (Transparent Inter Process Communication, */
+#define ETHERTYPE_TIPC			0x88CA	/* TIPC (Transparent Inter Process Communication, */
 #endif						/* http://tipc.sourceforge.net/) Ericsson Research Canada Inc */
 
 #ifndef ETHERTYPE_RSN_PREAUTH
@@ -435,7 +460,7 @@ extern "C" {
 #endif
 
 #ifndef ETHERTYPE_3GPP2
-#define ETHERTYPE_3GPP2			0x88D2	/* This will be used in a revision of the Interoperabi */
+#define ETHERTYPE_3GPP2			0x88D2	/* This will be used in a revision of the Interoperability */
 #endif						/* Specification (IOS) for cdma2000 Access Network Interfaces (document numbers A.S0011-B */
 						/* through A.S0017-B v1.0). This document already uses the Ether type 8881 */
 
@@ -487,10 +512,10 @@ extern "C" {
 #define ETHERTYPE_PTP			0x88F7	/* IEEE1588v2 (PTPv2) over Ethernet */
 #endif						/* in particular for the information exchange between IED's in a power */
 						/* transmission or distribution substation. */
-						/*  There are three types of application services */
+						/* There are three types of application services */
 
 #ifndef ETHERTYPE_NCSI
-#define ETHERTYPE_NCSI			0x88F8	/*  DMTF NC-SI: Network Controller Sideband Interface */
+#define ETHERTYPE_NCSI			0x88F8	/* DMTF NC-SI: Network Controller Sideband Interface */
 #endif
 
 #ifndef ETHERTYPE_PRP
@@ -502,7 +527,7 @@ extern "C" {
 #endif
 
 #ifndef ETHERTYPE_CFM
-#define ETHERTYPE_CFM			0x8902	/* IEEE 802.1ag Connectivity Fault Management(CFM) protocol */
+#define ETHERTYPE_CFM			0x8902	/* IEEE 802.1Q Connectivity Fault Management(CFM) protocol */
 #endif
 
 #ifndef ETHERTYPE_DCE
@@ -529,6 +554,10 @@ extern "C" {
 #define ETHERTYPE_FIP			0x8914	/* FCoE Initialization Protocol */
 #endif
 
+#ifndef ETHERTYPE_ROCE
+#define ETHERTYPE_ROCE			0x8915	/* Infiniband RDMA over Converged Ethernet */
+#endif
+
 #ifndef ETHERTYPE_MIH
 #define ETHERTYPE_MIH			0x8917	/* Media Independent Handover Protocol */
 #endif
@@ -541,8 +570,20 @@ extern "C" {
 #define ETHERTYPE_VNTAG			0x8926	/* VN-Tag */
 #endif
 
+#ifndef ETHERTYPE_SEL_L2
+#define ETHERTYPE_SEL_L2		0x892B	/* Schweitzer Engineering Labs Layer 2 */
+#endif
+
+#ifndef ETHERTYPE_BLUECOM
+#define ETHERTYPE_BLUECOM		0x892D	/* Bachmann bluecom protocol */
+#endif
+
 #ifndef ETHERTYPE_HSR
 #define ETHERTYPE_HSR			0x892F	/* High-availability Seamless Redundancy (IEC62439 Part 3) */
+#endif
+
+#ifndef ETHERTYPE_IEEE_1905
+#define ETHERTYPE_IEEE_1905		0x893A	/* IEEE 1905 */
 #endif
 
 #ifndef ETHERTYPE_IEEE_802_1BR
@@ -553,8 +594,20 @@ extern "C" {
 #define ETHERTYPE_ECP			0x8940	/* Edge Control Protocol */
 #endif
 
+#ifndef ETHERTYPE_ONOS
+#define ETHERTYPE_ONOS			0x8942	/* Open Network OS */
+#endif
+
+#ifndef ETHERTYPE_GEONETWORKING
+#define ETHERTYPE_GEONETWORKING		0x8947	/* GeoNetworking as defined in ETSI EN 302 636-4-1. */
+#endif
+
 #ifndef ETHERTYPE_NSH
 #define ETHERTYPE_NSH			0x894F	/* Network Service Header (draft-ietf-sfc-nsh-01.txt) */
+#endif
+
+#ifndef ETHERTYPE_PA_HBBACKUP
+#define ETHERTYPE_PA_HBBACKUP		0x8988	/* Paloalto Networks Cluster heartbeat backup via mgmt interfaces */
 #endif
 
 #ifndef ETHERTYPE_LOOP
@@ -569,12 +622,28 @@ extern "C" {
 #define ETHERTYPE_RTCFG			0x9022	/* RTnet: Real-Time Configuration Protocol */
 #endif
 
-#ifndef ETHERYPE_QINQ_OLD
+#ifndef ETHERTYPE_QINQ_OLD
 #define ETHERTYPE_QINQ_OLD		0x9100	/* QinQ: old non-standard 802.1ad */
 #endif
 
-#ifndef ETHERTYPE_LLT
-#define ETHERTYPE_LLT			0xCAFE	/* Veritas Low Latency Transport (not officially registered) */
+#ifndef ETHERTYPE_EERO
+#define ETHERTYPE_EERO			0x9104	/* EERO: broadcast packets sent by EERO MESH AP's (not officially registered) */
+#endif
+
+#ifndef ETHERTYPE_TECMP
+#define ETHERTYPE_TECMP			0x99FE	/* Technically Enhanced Capture Module Protocol (TECMP) and ASAM Capture Module Protocol (CMP)*/
+#endif
+
+#ifndef ETHERTYPE_6LOWPAN
+#define ETHERTYPE_6LOWPAN		0xA0ED	/* RFC 4944: Transmission of IPv6 Packets over IEEE 802.15.4 Networks */
+#endif
+
+#ifndef ETHERTYPE_ECPRI
+#define ETHERTYPE_ECPRI			0xAEFE /* Ethernet type of eCPRI */
+#endif
+
+#ifndef ETHERTYPE_CABLELABS
+#define ETHERTYPE_CABLELABS		0xB4E3 /* Ethernet type for CableLabs layer-3 protocol */
 #endif
 
 #ifndef ETHERTYPE_XIP
@@ -585,22 +654,41 @@ extern "C" {
 #define ETHERTYPE_NWP			0xC0DF	/* Neighborhood Watch Protocol (not officially registered) */
 #endif
 
+#ifndef ETHERTYPE_LLT
+#define ETHERTYPE_LLT			0xCAFE	/* Veritas Low Latency Transport (not officially registered) */
+#endif
+
 #ifndef ETHERTYPE_TDMOE
 #define ETHERTYPE_TDMOE			0xD00D	/* Digium TDMoE packets (not officially registered) */
+#endif
+
+#ifndef ETHERTYPE_AVSP
+#define ETHERTYPE_AVSP			0xD28B /* Ethernet type for Arista vendor specific packet frames */
+#endif
+
+#ifndef ETHERTYPE_EXEH
+#define ETHERTYPE_EXEH			0xE555	/* EXos internal Extra Header */
+#endif
+
+#ifndef ETHERTYPE_ATMF
+#define ETHERTYPE_ATMF			0xFBAE  /* Allied Telesis Autonomous Management Framework frames */
+#endif
+
+#ifndef ETHERTYPE_ATRL
+#define ETHERTYPE_ATRL			0xFBAC	/* Allied Telesis Resiliency Link frames */
 #endif
 
 #ifndef ETHERTYPE_FCFT
 #define ETHERTYPE_FCFT			0xFCFC	/* used to transport FC frames+MDS hdr internal to Cisco's MDS switch */
 #endif
 
-#ifndef ETHERTYPE_ROCE
-#define ETHERTYPE_ROCE			0x8915	/* Infiniband RDMA over Converged Ethernet */
+#ifndef ETHERTYPE_ACIGLEAN
+#define ETHERTYPE_ACIGLEAN		0xFFF2	/* Used to transport Cisco ACI internal frames for ARP gleaning (not registered) */
 #endif
 
-#ifndef ETHERTYPE_BLUECOM
-#define ETHERTYPE_BLUECOM		0x892D	/* Bachmann bluecom protocol */
+#ifndef ETHERTYPE_IEEE_802_1CB
+#define ETHERTYPE_IEEE_802_1CB		0xF1C1	/* IEEE 802.1CB Frame Replication and Elimination for Reliability */
 #endif
-
 
 WS_DLL_PUBLIC const value_string etype_vals[];
 
@@ -611,7 +699,7 @@ WS_DLL_PUBLIC const value_string etype_vals[];
 #endif /* __ETYPES_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

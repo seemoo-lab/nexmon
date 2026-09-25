@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,23 +26,14 @@
 
 
 /**
- * SECTION:gsimplepermission
- * @title: GSimplePermission
- * @short_description: A GPermission that doesn't change value
- * @include: gio/gio.h
- *
- * #GSimplePermission is a trivial implementation of #GPermission that
- * represents a permission that is either always or never allowed.  The
- * value is given at construction and doesn't change.
- *
- * Calling request or release will result in errors.
- **/
-
-/**
  * GSimplePermission:
  *
- * #GSimplePermission is an opaque data structure.  There are no methods
- * except for those defined by #GPermission.
+ * `GSimplePermission` is a trivial implementation of [class@Gio.Permission]
+ * that represents a permission that is either always or never allowed.  The
+ * value is given at construction and doesn’t change.
+ *
+ * Calling [method@Gio.Permission.acquire] or [method@Gio.Permission.release]
+ * on a `GSimplePermission` will result in errors.
  **/
 
 typedef GPermissionClass GSimplePermissionClass;

@@ -1,6 +1,5 @@
 /* Reading file lists.
-   Copyright (C) 1995-1998, 2000-2002, 2007, 2015-2016 Free Software
-   Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Peter Miller, Ulrich Drepper, and Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "file-list.h"
@@ -27,8 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <error.h>
 #include "str-list.h"
-#include "error.h"
 #include "gettext.h"
 
 /* A convenience macro.  I don't like writing gettext() every time.  */
@@ -39,11 +38,7 @@
 string_list_ty *
 read_names_from_file (const char *file_name)
 {
-  size_t line_len = 0;
-  char *line_buf = NULL;
   FILE *fp;
-  string_list_ty *result;
-
   if (strcmp (file_name, "-") == 0)
     fp = stdin;
   else
@@ -54,8 +49,10 @@ read_names_from_file (const char *file_name)
                _("error while opening \"%s\" for reading"), file_name);
     }
 
-  result = string_list_alloc ();
+  string_list_ty *result = string_list_alloc ();
 
+  size_t line_len = 0;
+  char *line_buf = NULL;
   while (!feof (fp))
     {
       /* Read next line from file.  */
@@ -75,10 +72,9 @@ read_names_from_file (const char *file_name)
         line_buf[--len] = '\0';
 
       /* Test if we have to ignore the line.  */
-      if (*line_buf == '\0' || *line_buf == '#')
-        continue;
-
-      string_list_append_unique (result, line_buf);
+      if (!(*line_buf == '\0' || *line_buf == '#'))
+        /* Include the line in the result.  */
+        string_list_append_unique (result, line_buf);
     }
 
   /* Free buffer allocated through getline.  */

@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Credits:
  *
@@ -33,10 +21,10 @@
 #include <epan/crc32-tvb.h>
 
 
-guint32
-crc32_ccitt_tvb(tvbuff_t *tvb, guint len)
+uint32_t
+crc32_ccitt_tvb(tvbuff_t *tvb, unsigned len)
 {
-	const guint8* buf;
+	const uint8_t* buf;
 
 	tvb_ensure_bytes_exist(tvb, 0, len);  /* len == -1 not allowed */
 	buf = tvb_get_ptr(tvb, 0, len);
@@ -44,10 +32,10 @@ crc32_ccitt_tvb(tvbuff_t *tvb, guint len)
 	return ( crc32_ccitt_seed(buf, len, CRC32_CCITT_SEED) );
 }
 
-guint32
-crc32_ccitt_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
+uint32_t
+crc32_ccitt_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len)
 {
-	const guint8* buf;
+	const uint8_t* buf;
 
 	tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
 	buf = tvb_get_ptr(tvb, offset, len);
@@ -55,10 +43,10 @@ crc32_ccitt_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
 	return ( crc32_ccitt(buf, len) );
 }
 
-guint32
-crc32_ccitt_tvb_seed(tvbuff_t *tvb, guint len, guint32 seed)
+uint32_t
+crc32_ccitt_tvb_seed(tvbuff_t *tvb, unsigned len, uint32_t seed)
 {
-	const guint8* buf;
+	const uint8_t* buf;
 
 	tvb_ensure_bytes_exist(tvb, 0, len);  /* len == -1 not allowed */
 	buf = tvb_get_ptr(tvb, 0, len);
@@ -66,11 +54,11 @@ crc32_ccitt_tvb_seed(tvbuff_t *tvb, guint len, guint32 seed)
 	return ( crc32_ccitt_seed(buf, len, seed) );
 }
 
-guint32
-crc32_ccitt_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len,
-			    guint32 seed)
+uint32_t
+crc32_ccitt_tvb_offset_seed(tvbuff_t *tvb, unsigned offset, unsigned len,
+			    uint32_t seed)
 {
-	const guint8* buf;
+	const uint8_t* buf;
 
 	tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
 	buf = tvb_get_ptr(tvb, offset, len);
@@ -78,10 +66,10 @@ crc32_ccitt_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len,
 	return ( crc32_ccitt_seed(buf, len, seed) );
 }
 
-guint32
-crc32c_tvb_offset_calculate(tvbuff_t *tvb, guint offset, guint len, guint32 seed)
+uint32_t
+crc32c_tvb_offset_calculate(tvbuff_t *tvb, unsigned offset, unsigned len, uint32_t seed)
 {
-	const guint8* buf;
+	const uint8_t* buf;
 
 	tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
 	buf = tvb_get_ptr(tvb, offset, len);
@@ -98,10 +86,10 @@ crc32c_tvb_offset_calculate(tvbuff_t *tvb, guint offset, guint len, guint32 seed
  * or is fetching it big-endian and byte-swapping the CRC done
  * to cope with 802.x sending stuff out in reverse bit order?
  */
-guint32
-crc32_802_tvb(tvbuff_t *tvb, guint len)
+uint32_t
+crc32_802_tvb(tvbuff_t *tvb, unsigned len)
 {
-	guint32 c_crc;
+	uint32_t c_crc;
 
 	c_crc = crc32_ccitt_tvb(tvb, len);
 
@@ -111,11 +99,11 @@ crc32_802_tvb(tvbuff_t *tvb, guint len)
 	return ( c_crc );
 }
 
-guint32
-crc32_mpeg2_tvb_offset_seed(tvbuff_t *tvb, guint offset,
-			    guint len, guint32 seed)
+uint32_t
+crc32_mpeg2_tvb_offset_seed(tvbuff_t *tvb, unsigned offset,
+			    unsigned len, uint32_t seed)
 {
-	const guint8* buf;
+	const uint8_t* buf;
 
 	tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
 	buf = tvb_get_ptr(tvb, offset, len);
@@ -123,28 +111,28 @@ crc32_mpeg2_tvb_offset_seed(tvbuff_t *tvb, guint offset,
 	return ( crc32_mpeg2_seed(buf, len, seed) );
 }
 
-guint32
-crc32_mpeg2_tvb(tvbuff_t *tvb, guint len)
+uint32_t
+crc32_mpeg2_tvb(tvbuff_t *tvb, unsigned len)
 {
 	return ( crc32_mpeg2_tvb_offset_seed(tvb, 0, len, CRC32_MPEG2_SEED) );
 }
 
-guint32
-crc32_mpeg2_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
+uint32_t
+crc32_mpeg2_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len)
 {
 	return ( crc32_mpeg2_tvb_offset_seed(tvb, offset, len, CRC32_MPEG2_SEED) );
 }
 
-guint32
-crc32_mpeg2_tvb_seed(tvbuff_t *tvb, guint len, guint32 seed)
+uint32_t
+crc32_mpeg2_tvb_seed(tvbuff_t *tvb, unsigned len, uint32_t seed)
 {
 	return ( crc32_mpeg2_tvb_offset_seed(tvb, 0, len, seed) );
 }
 
-guint32 crc32_0x0AA725CF_tvb_offset_seed(tvbuff_t *tvb,
-					 guint offset, guint len, guint32 seed)
+uint32_t crc32_0x0AA725CF_tvb_offset_seed(tvbuff_t *tvb,
+					 unsigned offset, unsigned len, uint32_t seed)
 {
-	const guint8 *buf;
+	const uint8_t *buf;
 
 	tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
 	buf = tvb_get_ptr(tvb, offset, len);
@@ -153,7 +141,7 @@ guint32 crc32_0x0AA725CF_tvb_offset_seed(tvbuff_t *tvb,
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -8,7 +8,8 @@ and have it work correctly (including i18n).  So many users need to go
 through @code{configure; make; make install} with all its
 dependencies, options, and hurdles.
 
-Red Hat, Debian, and similar package systems solve the ``ease of
+Most package management systems, that allow the user to install
+pre-built binaries of the packages, solve the ``ease of
 installation'' problem, but they hardwire path names, usually to
 @file{/usr} or @file{/usr/local}.  This means that users need root
 privileges to install a binary package, and prevents installing two
@@ -52,9 +53,7 @@ make install DESTDIR=/tmp/inst$$
 
 Installation with @option{--enable-relocatable} will not work for
 setuid or setgid executables, because such executables search only
-system library paths for security reasons.  Also, installation with
-@option{--enable-relocatable} might not work on OpenBSD, when the
-package contains shared libraries and libtool versions 1.5.xx are used.
+system library paths for security reasons.
 
 The runtime penalty and size penalty are negligible on GNU/Linux (just
 one system call more when an executable is launched), and small on

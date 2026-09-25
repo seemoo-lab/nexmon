@@ -8,25 +8,12 @@
  * from nearly-the-same packet-raw.c created by Mike Hall <mlh@io.com>
  * Copyright 1999
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/capture_dissectors.h>
 #include <epan/expert.h>
 #include <wiretap/wtap.h>
 
@@ -35,12 +22,13 @@
 void proto_register_clip(void);
 void proto_reg_handoff_clip(void);
 
-static int proto_clip = -1;
+static int proto_clip;
 
-static gint ett_clip = -1;
+static int ett_clip;
 
-static expert_field ei_no_link_info = EI_INIT;
+static expert_field ei_no_link_info;
 
+static dissector_handle_t clip_handle;
 static dissector_handle_t ip_handle;
 
 static int
@@ -88,7 +76,7 @@ dissect_clip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 void
 proto_register_clip(void)
 {
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_clip,
   };
 
@@ -103,27 +91,25 @@ proto_register_clip(void)
   proto_register_subtree_array(ett, array_length(ett));
   expert_clip = expert_register_protocol(proto_clip);
   expert_register_field_array(expert_clip, ei, array_length(ei));
+
+  clip_handle = register_dissector("clip", dissect_clip, proto_clip);
 }
 
 void
 proto_reg_handoff_clip(void)
 {
-  dissector_handle_t clip_handle;
 
   /*
    * Get a handle for the IP dissector.
    */
   ip_handle = find_dissector_add_dependency("ip", proto_clip);
 
-  clip_handle = create_dissector_handle(dissect_clip, proto_clip);
       /* XXX - no protocol, can't be disabled */
   dissector_add_uint("wtap_encap", WTAP_ENCAP_LINUX_ATM_CLIP, clip_handle);
-
-  register_capture_dissector("wtap_encap", WTAP_ENCAP_LINUX_ATM_CLIP, capture_ip, proto_clip);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

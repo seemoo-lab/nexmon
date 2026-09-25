@@ -1,0 +1,109 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRegExecRollback" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRegExecRollback</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRegExecRollback_1a7461d5545d620887243c714effee005d" prot="public" static="no" mutable="no">
+        <type>xmlRegStatePtr</type>
+        <definition>xmlRegStatePtr state</definition>
+        <argsstring></argsstring>
+        <name>state</name>
+        <qualifiedname>_xmlRegExecRollback::state</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="347" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="347" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecRollback_1a750b5d744c39a06bfb13e6eb010e35d0" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int index</definition>
+        <argsstring></argsstring>
+        <name>index</name>
+        <qualifiedname>_xmlRegExecRollback::index</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="348" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="348" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecRollback_1a044af6f0a341633560914f9d862fbfa7" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nextbranch</definition>
+        <argsstring></argsstring>
+        <name>nextbranch</name>
+        <qualifiedname>_xmlRegExecRollback::nextbranch</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="349" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="349" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecRollback_1a33ac739d9dc43a77366eb4e0d26d2fe8" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* counts</definition>
+        <argsstring></argsstring>
+        <name>counts</name>
+        <qualifiedname>_xmlRegExecRollback::counts</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="350" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="350" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>_xmlAutomataState</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlRegAtom</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlRegExecRollback</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>state</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="3">
+        <label>_xmlRegTrans</label>
+        <childnode refid="4" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="346" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="346" bodyend="351"/>
+    <listofallmembers>
+      <member refid="struct__xmlRegExecRollback_1a33ac739d9dc43a77366eb4e0d26d2fe8" prot="public" virt="non-virtual"><scope>_xmlRegExecRollback</scope><name>counts</name></member>
+      <member refid="struct__xmlRegExecRollback_1a750b5d744c39a06bfb13e6eb010e35d0" prot="public" virt="non-virtual"><scope>_xmlRegExecRollback</scope><name>index</name></member>
+      <member refid="struct__xmlRegExecRollback_1a044af6f0a341633560914f9d862fbfa7" prot="public" virt="non-virtual"><scope>_xmlRegExecRollback</scope><name>nextbranch</name></member>
+      <member refid="struct__xmlRegExecRollback_1a7461d5545d620887243c714effee005d" prot="public" virt="non-virtual"><scope>_xmlRegExecRollback</scope><name>state</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

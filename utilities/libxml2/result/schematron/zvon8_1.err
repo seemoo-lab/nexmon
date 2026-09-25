@@ -1,0 +1,2 @@
+./test/schematron/zvon8_1.xml:1: element XXX: schematron error : /XXX line 1: Some BBB are missing
+./test/schematron/zvon8_1.xml fails to validate

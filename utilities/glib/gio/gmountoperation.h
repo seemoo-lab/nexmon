@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,12 +38,6 @@ G_BEGIN_DECLS
 #define G_IS_MOUNT_OPERATION_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_MOUNT_OPERATION))
 #define G_MOUNT_OPERATION_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), G_TYPE_MOUNT_OPERATION, GMountOperationClass))
 
-/**
- * GMountOperation:
- *
- * Class for providing authentication methods for mounting operations,
- * such as mounting a file locally, or authenticating with a server.
- **/
 typedef struct _GMountOperationClass   GMountOperationClass;
 typedef struct _GMountOperationPrivate GMountOperationPrivate;
 
@@ -64,6 +60,15 @@ struct _GMountOperationClass
 			 const char            *default_domain,
 			 GAskPasswordFlags      flags);
 
+  /**
+   * GMountOperationClass::ask_question:
+   * @op: a #GMountOperation
+   * @message: string containing a message to display to the user
+   * @choices: (array zero-terminated=1) (element-type utf8): an array of
+   *    strings for each possible choice
+   *
+   * Virtual implementation of #GMountOperation::ask-question.
+   */
   void (* ask_question) (GMountOperation       *op,
 			 const char            *message,
 			 const char            *choices[]);
@@ -73,6 +78,19 @@ struct _GMountOperationClass
 
   void (* aborted)      (GMountOperation       *op);
 
+  /**
+   * GMountOperationClass::show_processes:
+   * @op: a #GMountOperation
+   * @message: string containing a message to display to the user
+   * @processes: (element-type GPid): an array of #GPid for processes blocking
+   *    the operation
+   * @choices: (array zero-terminated=1) (element-type utf8): an array of
+   *    strings for each possible choice
+   *
+   * Virtual implementation of #GMountOperation::show-processes.
+   *
+   * Since: 2.22
+   */
   void (* show_processes) (GMountOperation      *op,
                            const gchar          *message,
                            GArray               *processes,
@@ -96,44 +114,59 @@ struct _GMountOperationClass
   void (*_g_reserved9) (void);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType             g_mount_operation_get_type      (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
+GType             g_mount_operation_get_type      (void);
+GIO_AVAILABLE_IN_ALL
 GMountOperation * g_mount_operation_new           (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const char *  g_mount_operation_get_username      (GMountOperation *op);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void          g_mount_operation_set_username      (GMountOperation *op,
 						   const char      *username);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const char *  g_mount_operation_get_password      (GMountOperation *op);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void          g_mount_operation_set_password      (GMountOperation *op,
 						   const char      *password);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean      g_mount_operation_get_anonymous     (GMountOperation *op);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void          g_mount_operation_set_anonymous     (GMountOperation *op,
 						   gboolean         anonymous);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const char *  g_mount_operation_get_domain        (GMountOperation *op);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void          g_mount_operation_set_domain        (GMountOperation *op,
 						   const char      *domain);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GPasswordSave g_mount_operation_get_password_save (GMountOperation *op);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void          g_mount_operation_set_password_save (GMountOperation *op,
 						   GPasswordSave    save);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 int           g_mount_operation_get_choice        (GMountOperation *op);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void          g_mount_operation_set_choice        (GMountOperation *op,
 						   int              choice);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void          g_mount_operation_reply             (GMountOperation *op,
 						   GMountOperationResult result);
+GIO_AVAILABLE_IN_2_58
+gboolean      g_mount_operation_get_is_tcrypt_hidden_volume (GMountOperation *op);
+GIO_AVAILABLE_IN_2_58
+void          g_mount_operation_set_is_tcrypt_hidden_volume (GMountOperation *op,
+                                                             gboolean hidden_volume);
+GIO_AVAILABLE_IN_2_58
+gboolean      g_mount_operation_get_is_tcrypt_system_volume (GMountOperation *op);
+GIO_AVAILABLE_IN_2_58
+void          g_mount_operation_set_is_tcrypt_system_volume (GMountOperation *op,
+                                                             gboolean system_volume);
+GIO_AVAILABLE_IN_2_58
+guint  g_mount_operation_get_pim           (GMountOperation *op);
+GIO_AVAILABLE_IN_2_58
+void          g_mount_operation_set_pim           (GMountOperation *op,
+                                                   guint pim);
 
 G_END_DECLS
 

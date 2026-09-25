@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,7 +14,7 @@
 
 #include <epan/proto.h>
 #include <epan/tvbuff.h>
-#include <epan/value_string.h>
+#include <wsutil/value_string.h>
 
 #include "dvb_chartbl.h"
 
@@ -64,7 +52,7 @@ static const value_string dvb_string_encoding_vals[] = {
 
 
 static dvb_encoding_e
-dvb_analyze_string_charset0(guint8 byte0)
+dvb_analyze_string_charset0(uint8_t byte0)
 {
     switch (byte0) {
         case 0x01:
@@ -107,7 +95,7 @@ dvb_analyze_string_charset0(guint8 byte0)
 
 
 static dvb_encoding_e
-dvb_analyze_string_charset0_10(guint16 byte12)
+dvb_analyze_string_charset0_10(uint16_t byte12)
 {
     switch (byte12) {
         case 0x0000:
@@ -150,7 +138,7 @@ dvb_analyze_string_charset0_10(guint16 byte12)
 
 
 static dvb_encoding_e
-dvb_analyze_string_charset0_1F(guint8 byte1)
+dvb_analyze_string_charset0_1F(uint8_t byte1)
 {
    /* http://www.dvbservices.com/identifiers/encoding_type_id */
 
@@ -174,11 +162,11 @@ dvb_analyze_string_charset0_1F(guint8 byte1)
 }
 
 
-guint
+unsigned
 dvb_analyze_string_charset(tvbuff_t *tvb, int offset, int length, dvb_encoding_e *encoding)
 {
    if (length >= 1) {
-      guint8 byte0 = tvb_get_guint8(tvb, offset + 0);
+      uint8_t byte0 = tvb_get_uint8(tvb, offset + 0);
 
       if (byte0 >= 0x20) {
          /* the first byte is a normal character, not the number of a character table */
@@ -187,7 +175,7 @@ dvb_analyze_string_charset(tvbuff_t *tvb, int offset, int length, dvb_encoding_e
 
       } else if (byte0 == 0x1F) {
          if (length >= 2) {
-            *encoding = dvb_analyze_string_charset0_1F(tvb_get_guint8(tvb, offset + 1));
+            *encoding = dvb_analyze_string_charset0_1F(tvb_get_uint8(tvb, offset + 1));
             return 2;
          }
          *encoding = DVB_ENCODING_INVALID;
@@ -219,7 +207,7 @@ dvb_analyze_string_charset(tvbuff_t *tvb, int offset, int length, dvb_encoding_e
 }
 
 
-guint
+unsigned
 dvb_enc_to_item_enc(dvb_encoding_e encoding)
 {
    /* XXX: take ISO control codes into account,
@@ -279,25 +267,28 @@ dvb_enc_to_item_enc(dvb_encoding_e encoding)
 
 void
 dvb_add_chartbl(proto_tree *tree, int hf,
-        tvbuff_t *tvb, gint offset, gint length, dvb_encoding_e encoding)
+        tvbuff_t *tvb, int offset, int length, dvb_encoding_e encoding)
 {
+    if (tree == NULL)
+        return;
+
     if (length==0) {
         proto_item *pi;
 
         pi = proto_tree_add_bytes_format(tree, hf, tvb, 0, 0, NULL,
                 "Default character table (Latin)");
-        PROTO_ITEM_SET_GENERATED(pi);
+        proto_item_set_generated(pi);
     }
     else {
         proto_tree_add_bytes_format_value(tree, hf,
             tvb, offset, length, NULL, "%s (%s)",
             val_to_str_const(encoding, dvb_string_encoding_vals, "Unknown"),
-            tvb_bytes_to_str_punct(wmem_packet_scope(), tvb, offset, length, ' '));
+            tvb_bytes_to_str_punct(PNODE_POOL(tree), tvb, offset, length, ' '));
     }
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

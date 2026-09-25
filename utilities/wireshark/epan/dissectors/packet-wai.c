@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /* Protocol reference:
  * http://isotc.iso.org/livelink/livelink?func=ll&objId=8500308&objAction=Open&ei=nt-RTKe1IJKTjAeepLS8BQ&usg=AFQjCNEn8hlU_SfoAGkM-X48JL_BL8bptA&sig2=JOHNPrqgCMO4q0cWhAfkow
@@ -36,6 +24,8 @@
 #include <epan/packet.h>
 #include <epan/etypes.h>
 #include <epan/reassemble.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #define WAI_SUB_PRE_AUTHENTICATION      0x01    /* pre-authentication start */
 #define WAI_SUB_STAKEY_REQ              0x02    /* STAKey request */
@@ -66,98 +56,98 @@ static reassembly_table wai_reassembly_table;
 
 static dissector_handle_t wai_handle;
 
-static int proto_wai = -1;
+static int proto_wai;
 
-static gint hf_wai_version = -1;
-static gint hf_wai_type = -1;
-static gint hf_wai_subtype = -1;
-static gint hf_wai_reserved = -1;
-static gint hf_wai_length = -1;
-static gint hf_wai_seq = -1;
-static gint hf_wai_fragm_seq = -1;
-static gint hf_wai_flag = -1;
-static gint hf_wai_data = -1;
-static gint hf_wai_bk_rekeying_flag = -1;
-static gint hf_wai_preauthentication_flag = -1;
-static gint hf_wai_certificate_flag = -1;
-static gint hf_wai_optional_flag = -1;
-static gint hf_wai_usk_rekeying_flag = -1;
-static gint hf_wai_negotiation_flag = -1;
-static gint hf_wai_revoking_flag = -1;
-static gint hf_wai_reserved_flag = -1;
-static gint hf_wai_attr_type = -1;
-static gint hf_wai_cert = -1;
-static gint hf_wai_cert_id = -1;
-static gint hf_wai_cert_data = -1;
-static gint hf_wai_cert_len = -1;
-static gint hf_wai_addid = -1;
-static gint hf_wai_ae_mac = -1;
-static gint hf_wai_asue_mac = -1;
-static gint hf_wai_bkid = -1;
-static gint hf_wai_uskid = -1;
-static gint hf_wai_wie = -1;
-static gint hf_wai_message_auth_code = -1;
-static gint hf_wai_mskid = -1;
-static gint hf_wai_data_pack_num = -1;
-static gint hf_wai_key_data = -1;
-static gint hf_wai_key_data_len = -1;
-static gint hf_wai_key_data_content = -1;
-static gint hf_wai_key_ann_id = -1;
-static gint hf_wai_auth_id = -1;
-static gint hf_wai_identity = -1;
-static gint hf_wai_identity_id = -1;
-static gint hf_wai_identity_len = -1;
-static gint hf_wai_identity_data = -1;
-static gint hf_wai_ecdh = -1;
-static gint hf_wai_ecdh_id = -1;
-static gint hf_wai_ecdh_len = -1;
-static gint hf_wai_ecdh_content = -1;
-static gint hf_wai_counter = -1;
-static gint hf_wai_sta_key_id = -1;
-static gint hf_wai_challenge = -1;
-static gint hf_wai_cert_ver = -1;
-static gint hf_wai_nonce = -1;
-static gint hf_wai_ver_res = -1;
-static gint hf_wai_sign_alg = -1;
-static gint hf_wai_hash_alg_id = -1;
-static gint hf_wai_sign_alg_id = -1;
-static gint hf_wai_param = -1;
-static gint hf_wai_param_id = -1;
-static gint hf_wai_param_content = -1;
-static gint hf_wai_sign_val = -1;
-static gint hf_wai_sign_content = -1;
-static gint hf_wai_sign = -1;
-static gint hf_wai_identity_list = -1;
-static gint hf_wai_reserved_byte = -1;
-static gint hf_wai_no_of_ids = -1;
-static gint hf_wai_access_res = -1;
-static gint hf_wai_fragments = -1;
-static gint hf_wai_fragment = -1;
-static gint hf_wai_fragment_overlap = -1;
-static gint hf_wai_fragment_overlap_conflicts = -1;
-static gint hf_wai_fragment_multiple_tails = -1;
-static gint hf_wai_fragment_too_long_fragment = -1;
-static gint hf_wai_fragment_error = -1;
-static gint hf_wai_fragment_count = -1;
-static gint hf_wai_reassembled_in = -1;
-static gint hf_wai_reassembled_length = -1;
+static int hf_wai_version;
+static int hf_wai_type;
+static int hf_wai_subtype;
+static int hf_wai_reserved;
+static int hf_wai_length;
+static int hf_wai_seq;
+static int hf_wai_fragm_seq;
+static int hf_wai_flag;
+static int hf_wai_data;
+static int hf_wai_bk_rekeying_flag;
+static int hf_wai_preauthentication_flag;
+static int hf_wai_certificate_flag;
+static int hf_wai_optional_flag;
+static int hf_wai_usk_rekeying_flag;
+static int hf_wai_negotiation_flag;
+static int hf_wai_revoking_flag;
+static int hf_wai_reserved_flag;
+static int hf_wai_attr_type;
+static int hf_wai_cert;
+static int hf_wai_cert_id;
+static int hf_wai_cert_data;
+static int hf_wai_cert_len;
+static int hf_wai_addid;
+static int hf_wai_ae_mac;
+static int hf_wai_asue_mac;
+static int hf_wai_bkid;
+static int hf_wai_uskid;
+static int hf_wai_wie;
+static int hf_wai_message_auth_code;
+static int hf_wai_mskid;
+static int hf_wai_data_pack_num;
+static int hf_wai_key_data;
+static int hf_wai_key_data_len;
+static int hf_wai_key_data_content;
+static int hf_wai_key_ann_id;
+static int hf_wai_auth_id;
+static int hf_wai_identity;
+static int hf_wai_identity_id;
+static int hf_wai_identity_len;
+static int hf_wai_identity_data;
+static int hf_wai_ecdh;
+static int hf_wai_ecdh_id;
+static int hf_wai_ecdh_len;
+static int hf_wai_ecdh_content;
+static int hf_wai_counter;
+static int hf_wai_sta_key_id;
+static int hf_wai_challenge;
+static int hf_wai_cert_ver;
+static int hf_wai_nonce;
+static int hf_wai_ver_res;
+static int hf_wai_sign_alg;
+static int hf_wai_hash_alg_id;
+static int hf_wai_sign_alg_id;
+static int hf_wai_param;
+static int hf_wai_param_id;
+static int hf_wai_param_content;
+static int hf_wai_sign_val;
+static int hf_wai_sign_content;
+static int hf_wai_sign;
+static int hf_wai_identity_list;
+static int hf_wai_reserved_byte;
+static int hf_wai_no_of_ids;
+static int hf_wai_access_res;
+static int hf_wai_fragments;
+static int hf_wai_fragment;
+static int hf_wai_fragment_overlap;
+static int hf_wai_fragment_overlap_conflicts;
+static int hf_wai_fragment_multiple_tails;
+static int hf_wai_fragment_too_long_fragment;
+static int hf_wai_fragment_error;
+static int hf_wai_fragment_count;
+static int hf_wai_reassembled_in;
+static int hf_wai_reassembled_length;
 
-static gint ett_wai = -1;
-static gint ett_wai_data = -1;
-static gint ett_wai_flags = -1;
-static gint ett_wai_certificate = -1;
-static gint ett_wai_mac = -1;
-static gint ett_wai_identity = -1;
-static gint ett_wai_key_data = -1;
-static gint ett_wai_ecdh_param = -1;
-static gint ett_wai_certificate_verification = -1;
-static gint ett_wai_identity_list = -1;
-static gint ett_wai_sign = -1;
-static gint ett_wai_sign_alg = -1;
-static gint ett_wai_sign_val = -1;
-static gint ett_wai_parameter = -1;
-static gint ett_wai_fragment = -1;
-static gint ett_wai_fragments = -1;
+static int ett_wai;
+static int ett_wai_data;
+static int ett_wai_flags;
+static int ett_wai_certificate;
+static int ett_wai_mac;
+static int ett_wai_identity;
+static int ett_wai_key_data;
+static int ett_wai_ecdh_param;
+static int ett_wai_certificate_verification;
+static int ett_wai_identity_list;
+static int ett_wai_sign;
+static int ett_wai_sign_alg;
+static int ett_wai_sign_val;
+static int ett_wai_parameter;
+static int ett_wai_fragment;
+static int ett_wai_fragments;
 
 static const value_string wai_type_names [] = {
     { 1, "WAI protocol package"},
@@ -166,7 +156,7 @@ static const value_string wai_type_names [] = {
 
 static const value_string wai_attr_type_names [] = {
     { 1, "Signature"},
-    { 2, "Certificate Authentification Result"},
+    { 2, "Certificate Authentication Result"},
     { 3, "Identity List"},
     { 0, NULL }
 };
@@ -273,7 +263,7 @@ static const true_false_string  wai_reserved_flag = {
 };
 
 static void
-dissect_flag(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_flag(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_item *flag_item;
     proto_tree *flag_tree;
@@ -292,54 +282,54 @@ dissect_flag(tvbuff_t *tvb, guint offset, proto_tree *tree)
 }
 
 inline static void
-dissect_bkid(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_bkid(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_wai_bkid, tvb, offset, 16, ENC_NA);
 }
 
 inline static void
-dissect_uskid(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_uskid(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_wai_uskid, tvb, offset, 1, ENC_NA);
 }
 
-inline static void dissect_wie(tvbuff_t *tvb, guint offset, guint length, proto_tree *tree)
+inline static void dissect_wie(tvbuff_t *tvb, unsigned offset, unsigned length, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_wai_wie, tvb, offset, length, ENC_NA);
 }
 
 inline static void
-dissect_message_auth_code(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_message_auth_code(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_wai_message_auth_code, tvb, offset, 20, ENC_NA);
 }
 
 inline static void
-dissect_mskid(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_mskid(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_wai_mskid, tvb, offset, 1, ENC_NA);
 }
 
 inline static void
-dissect_key_announcement_identifier(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_key_announcement_identifier(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_wai_key_ann_id, tvb, offset, 16, ENC_NA);
 }
 
 inline static void
-dissect_counter(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_counter(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_wai_counter, tvb, offset, 16, ENC_NA);
 }
 
 inline static void
-dissect_authentication_id(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_authentication_id(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_wai_auth_id, tvb, offset, 32, ENC_NA);
 }
 
 static void
-dissect_addid(tvbuff_t *tvb, guint offset, proto_tree *tree)
+dissect_addid(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_item *mac_item;
     proto_tree *mac_tree;
@@ -351,13 +341,13 @@ dissect_addid(tvbuff_t *tvb, guint offset, proto_tree *tree)
     proto_tree_add_item(mac_tree, hf_wai_asue_mac, tvb, offset+6, 6, ENC_NA);
 }
 
-static guint16
-dissect_identity(tvbuff_t * tvb, const guint16 offset, proto_tree * tree,
+static uint16_t
+dissect_identity(tvbuff_t * tvb, const uint16_t offset, proto_tree * tree,
    const char * const label)
 {
     proto_tree *id_tree;
     proto_item *id_item;
-    guint16     length;
+    uint16_t    length;
 
     length = tvb_get_ntohs(tvb, offset+2);
 
@@ -371,16 +361,16 @@ dissect_identity(tvbuff_t * tvb, const guint16 offset, proto_tree * tree,
     return length + 4;
 }
 
-static gint16
-dissect_certificate(tvbuff_t * tvb, const gint offset, proto_tree * tree,
-                    const gchar * const label)
+static int16_t
+dissect_certificate(tvbuff_t * tvb, const int offset, proto_tree * tree,
+                    const char * const label)
 {
     proto_item  *certificate_item;
     proto_tree  *certificate_tree;
     proto_item  *id_item;
-    guint16      length;
-    guint16      id;
-    const gchar *id_name = "unknown";
+    uint16_t     length;
+    uint16_t     id;
+    const char *id_name = "unknown";
 
     id = tvb_get_ntohs(tvb, offset);
 
@@ -404,17 +394,17 @@ dissect_certificate(tvbuff_t * tvb, const gint offset, proto_tree * tree,
     return length + 4;
 }
 
-static guint16
-dissect_ecdh_parameter(tvbuff_t * tvb, const gint offset, proto_tree * tree)
+static uint16_t
+dissect_ecdh_parameter(tvbuff_t * tvb, const int offset, proto_tree * tree)
 {
     proto_item  *ecdh_item;
     proto_tree  *ecdh_tree;
     proto_item  *ecdh_id_item;
-    guint8       ecdh_id;
-    guint16      ecdh_len;
-    const gchar *id_name = "unknown";
+    uint8_t      ecdh_id;
+    uint16_t     ecdh_len;
+    const char *id_name = "unknown";
 
-    ecdh_id = tvb_get_guint8(tvb, offset);
+    ecdh_id = tvb_get_uint8(tvb, offset);
 
     if (ecdh_id == 1) {
         id_name = "OID";
@@ -434,11 +424,11 @@ dissect_ecdh_parameter(tvbuff_t * tvb, const gint offset, proto_tree * tree)
     return ecdh_len + 3;
 }
 
-static guint16
-dissect_challenge(tvbuff_t *tvb, guint offset, proto_tree *tree, const gchar * const label)
+static uint16_t
+dissect_challenge(tvbuff_t *tvb, unsigned offset, proto_tree *tree, const char * const label)
 {
     proto_item    *challenge_item;
-    const guint16  challenge_length = 32;
+    const uint16_t challenge_length = 32;
 
     challenge_item = proto_tree_add_item(tree, hf_wai_challenge, tvb, offset, 32, ENC_NA);
     proto_item_append_text(challenge_item, "(%schallenge)",  ((label==NULL)?"":label));
@@ -446,14 +436,14 @@ dissect_challenge(tvbuff_t *tvb, guint offset, proto_tree *tree, const gchar * c
     return challenge_length;
 }
 
-static guint16
-dissect_key_data(tvbuff_t *tvb, guint offset, proto_tree *tree, const gchar *const label)
+static uint16_t
+dissect_key_data(tvbuff_t *tvb, unsigned offset, proto_tree *tree, const char *const label)
 {
     proto_item  *key_data_item;
     proto_tree  *key_data_tree;
-    guint8      length;
+    uint8_t     length;
 
-    length = tvb_get_guint8(tvb, offset);
+    length = tvb_get_uint8(tvb, offset);
 
     key_data_item = proto_tree_add_item(tree, hf_wai_key_data, tvb, offset, length+1, ENC_NA);
     proto_item_set_text(key_data_item, "%sKey Data", ((label==NULL)?"":label));
@@ -467,14 +457,14 @@ dissect_key_data(tvbuff_t *tvb, guint offset, proto_tree *tree, const gchar *con
     return length + 1;
 }
 
-static guint
-dissect_multiple_certificate(tvbuff_t * tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_multiple_certificate(tvbuff_t * tvb, unsigned offset, proto_tree *tree)
 {
     proto_item *multicert_item;
     proto_tree *multicert_tree;
     proto_item *nonce_1_item;
     proto_item *nonce_2_item;
-    guint       length;
+    unsigned    length;
 
     length = tvb_get_ntohs(tvb, offset+1);
     multicert_item = proto_tree_add_item(tree, hf_wai_cert_ver, tvb, offset, length+3, ENC_NA);
@@ -499,14 +489,14 @@ dissect_multiple_certificate(tvbuff_t * tvb, guint offset, proto_tree *tree)
     return length + 3;
 }
 
-static guint
-dissect_identity_list(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned
+dissect_identity_list(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_item *id_list_item;
     proto_tree *id_list_tree;
-    guint16     length;
-    guint16     no_of_ids;
-    guint16     i;
+    uint16_t    length;
+    uint16_t    no_of_ids;
+    uint16_t    i;
 
     length = tvb_get_ntohs(tvb, offset+1);
     id_list_item = proto_tree_add_item(tree, hf_wai_identity_list, tvb, offset, length+3, ENC_NA);
@@ -522,17 +512,17 @@ dissect_identity_list(tvbuff_t *tvb, guint offset, proto_tree *tree)
     offset += 2;
 
     for(i=0; i < no_of_ids; i++) {
-        gchar number[4] = {0};
+        char number[6] = {0};
 
-        g_snprintf(number, 4, "%d", i);
+        snprintf(number, 6, "%d", i);
         offset += dissect_identity(tvb, offset, id_list_tree, number);
     }
 
     return length + 3;
 }
 
-static guint16
-dissect_signature_algorithm(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static uint16_t
+dissect_signature_algorithm(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_item *sa_item;
     proto_tree *sa_tree;
@@ -540,10 +530,10 @@ dissect_signature_algorithm(tvbuff_t *tvb, guint offset, proto_tree *tree)
     proto_tree *param_tree;
     proto_item *alg_name_item;
     proto_item *sig_name_item;
-    guint16     length;
-    guint8      alg_id;
-    guint8      sig_id;
-    guint16     param_len;
+    uint16_t    length;
+    uint8_t     alg_id;
+    uint8_t     sig_id;
+    uint16_t    param_len;
 
     length  = tvb_get_ntohs(tvb, offset);
 
@@ -554,15 +544,15 @@ dissect_signature_algorithm(tvbuff_t *tvb, guint offset, proto_tree *tree)
     offset += 2;
 
     alg_name_item = proto_tree_add_item(sa_tree, hf_wai_hash_alg_id, tvb, offset, 1, ENC_BIG_ENDIAN);
-    alg_id = tvb_get_guint8(tvb, offset);
+    alg_id = tvb_get_uint8(tvb, offset);
 
     if (1 == alg_id) {
-        proto_item_set_text(alg_name_item, "Algorithm Idendifier: SHA-256  (0x01)");
+        proto_item_set_text(alg_name_item, "Algorithm Identifier: SHA-256  (0x01)");
     }
 
     offset += 1;
     sig_name_item = proto_tree_add_item(sa_tree, hf_wai_sign_alg_id, tvb, offset, 1, ENC_BIG_ENDIAN);
-    sig_id = tvb_get_guint8(tvb, offset);
+    sig_id = tvb_get_uint8(tvb, offset);
 
     if (1 == sig_id) {
         proto_item_set_text(sig_name_item, "Signature Algorithm Identifier: ECDSA-192  (0x01)");
@@ -581,12 +571,12 @@ dissect_signature_algorithm(tvbuff_t *tvb, guint offset, proto_tree *tree)
     return length + 2;
 }
 
-static guint16
-dissect_signature_value(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static uint16_t
+dissect_signature_value(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_item *sv_item;
     proto_tree *sv_tree;
-    guint16     length = 0;
+    uint16_t    length = 0;
 
     length  = tvb_get_ntohs(tvb, offset);
 
@@ -601,12 +591,12 @@ dissect_signature_value(tvbuff_t *tvb, guint offset, proto_tree *tree)
     return length + 2;
 }
 
-static guint16
-dissect_signature(tvbuff_t *tvb, guint offset, proto_tree *tree, const gchar *const label)
+static uint16_t
+dissect_signature(tvbuff_t *tvb, unsigned offset, proto_tree *tree, const char *const label)
 {
     proto_item *ss_item;
     proto_tree *ss_tree;
-    guint       length = 0;
+    unsigned    length = 0;
 
     length  = tvb_get_ntohs(tvb, offset+1);
 
@@ -629,11 +619,11 @@ dissect_signature(tvbuff_t *tvb, guint offset, proto_tree *tree, const gchar *co
 
 
 static void
-dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
+dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, uint8_t subtype, uint16_t lenx)
 {
     proto_item  *data_item;
     proto_tree  *data_tree;
-    const gchar *type_name;
+    const char *type_name;
 
     data_item = proto_tree_add_item(tree, hf_wai_data, tvb, 0, lenx, ENC_NA);
     data_tree = proto_item_add_subtree (data_item, ett_wai_data);
@@ -667,7 +657,7 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
         case WAI_SUB_AUTH_ACTIVATION:
         {
             /* Chapter 8.1.4.2.1 WAI Authentication Activation  [ref: 1] */
-            guint16 offset = 0;
+            uint16_t offset = 0;
 
             dissect_flag(tvb, offset, data_tree);
             offset += 1;
@@ -681,10 +671,10 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
         case WAI_SUB_ACCESS_AUTH_REQ:
         {
             /* Chapter 8.1.4.2.2 Access WAI Authentication Request  [ref: 1] */
-            guint16 offset = 0;
-            guint8  optional_field;
+            uint16_t offset = 0;
+            uint8_t optional_field;
 
-            optional_field = tvb_get_guint8(tvb, 0) & FLAG_BIT3;
+            optional_field = tvb_get_uint8(tvb, 0) & FLAG_BIT3;
 
             dissect_flag(tvb, offset, data_tree);
             offset += 1;
@@ -706,10 +696,10 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
         case WAI_SUB_ACCESS_AUTH_RESP:
         {
             /* Chapter 8.1.4.2.5 Access WAI Authentication Response  [ref: 1] */
-            guint16 offset = 0;
-            guint8  optional_field;
+            uint16_t offset = 0;
+            uint8_t optional_field;
 
-            optional_field = tvb_get_guint8(tvb, 0) & FLAG_BIT3;
+            optional_field = tvb_get_uint8(tvb, 0) & FLAG_BIT3;
 
             dissect_flag(tvb, offset, data_tree);
             offset += 1;
@@ -723,7 +713,7 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
             offset += dissect_identity(tvb, offset, data_tree, "STA ASUE ");
 
             if (optional_field) {
-                guint  length = 0;
+                unsigned  length = 0;
                 offset += dissect_multiple_certificate(tvb, offset, data_tree);
                 offset += dissect_signature(tvb, offset, data_tree, "Server Signature trusted by ASUE");
                 length  = tvb_get_ntohs(tvb, offset+1);
@@ -737,10 +727,10 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
         case WAI_SUB_CERT_AUTH_REQ:
         {
             /* Chapter 8.1.4.2.3 Certificate Authentication Request  [ref: 1] */
-            guint16 offset = 0;
-            guint8  optional_field;
+            uint16_t offset = 0;
+            uint8_t optional_field;
 
-            optional_field = tvb_get_guint8(tvb, 0) & FLAG_BIT3;
+            optional_field = tvb_get_uint8(tvb, 0) & FLAG_BIT3;
 
             dissect_addid(tvb, offset, data_tree);
             offset += 12;
@@ -756,7 +746,7 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
         case WAI_SUB_CERT_AUTH_RESP:
         {
             /* Chapter 8.1.4.2.4 Certificate Authentication Response  [ref: 1] */
-            guint16 offset = 0;
+            uint16_t offset = 0;
 
             dissect_addid(tvb, offset, data_tree);
             offset += 12;
@@ -780,7 +770,7 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
         {
             /* Chapter 8.1.4.3.2 Unicast Key Negotiation Response [ref: 1] */
             tvbuff_t *next_tvb;
-            guint     length = 0;
+            unsigned  length = 0;
 
             dissect_flag(tvb, 0, data_tree);
             dissect_bkid(tvb, 1, data_tree);
@@ -800,7 +790,7 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
         {
             /* Chapter 8.1.4.3.3 Unicast Key Negotiation Confirmation [ref: 1] */
             tvbuff_t *next_tvb;
-            guint     length = 0;
+            unsigned  length = 0;
 
             dissect_flag(tvb, 0, data_tree);
             dissect_bkid(tvb, 1, data_tree);
@@ -818,7 +808,7 @@ dissect_wai_data(tvbuff_t *tvb, proto_tree *tree, guint8 subtype, guint16 lenx)
         case WAI_SUB_MULTICAST_ANNOUNCE:
         {
             /* Chapter 8.1.4.4.1 Multicast Key/STAKey Announcement [ref: 1] */
-            guint16 offset = 0;
+            uint16_t offset = 0;
 
             dissect_flag(tvb, offset, data_tree);
             offset += 1;
@@ -866,20 +856,20 @@ Figure 18 from [ref:1]
 */
 #define WAI_MESSAGE_LENGTH 12   /*Length of all fields without 'Data' field*/
 #define WAI_DATA_OFFSET    WAI_MESSAGE_LENGTH
-    guint16        version;
-    guint8         subtype;
-    guint16        length;
-    guint16        packet_num;
-    guint8         fragment_num;
-    guint8         flags;
+    uint16_t       version;
+    uint8_t        subtype;
+    uint16_t       length;
+    uint16_t       packet_num;
+    uint8_t        fragment_num;
+    uint8_t        flags;
     fragment_head *frag_msg;
     proto_tree    *wai_tree     = NULL;
     tvbuff_t      *next_tvb;
     tvbuff_t      *new_tvb;
-    const gchar   *subtype_name = "Unknown type";
+    const char    *subtype_name = "Unknown type";
 
     length = tvb_get_ntohs(tvb, 6)-WAI_MESSAGE_LENGTH;
-    subtype = tvb_get_guint8(tvb, 3);
+    subtype = tvb_get_uint8(tvb, 3);
 
     /* quick sanity check */
     if ((length != tvb_reported_length (tvb)-WAI_MESSAGE_LENGTH) ||
@@ -894,12 +884,12 @@ Figure 18 from [ref:1]
     if (version == 1) {
         subtype_name = val_to_str_ext_const(subtype, &wai_subtype_names_ext, "Unknown type");
     }
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%s", subtype_name);
+    col_append_str(pinfo->cinfo, COL_INFO, subtype_name);
 
     /* Field lengths and offsets in WAI protocol described above */
     packet_num   = tvb_get_ntohs(tvb, 8);
-    fragment_num = tvb_get_guint8(tvb, 10);
-    flags        = tvb_get_guint8(tvb, 11);
+    fragment_num = tvb_get_uint8(tvb, 10);
+    flags        = tvb_get_uint8(tvb, 11);
 
     if (tree) {
         proto_item *wai_item;
@@ -964,17 +954,6 @@ Figure 18 from [ref:1]
     }
 
     return tvb_captured_length(tvb);
-}
-
-static void wai_reassemble_init (void)
-{
-    reassembly_table_init(&wai_reassembly_table,
-                          &addresses_reassembly_table_functions);
-}
-
-static void wai_reassemble_cleanup (void)
-{
-    reassembly_table_destroy(&wai_reassembly_table);
 }
 
 void
@@ -1347,7 +1326,7 @@ proto_register_wai(void)
            NULL, HFILL }}
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_wai,
         &ett_wai_data,
         &ett_wai_flags,
@@ -1367,10 +1346,10 @@ proto_register_wai(void)
     };
 
     proto_wai = proto_register_protocol("WAI Protocol", "WAI", "wai");
-    register_init_routine(&wai_reassemble_init);
-    register_cleanup_routine(&wai_reassemble_cleanup);
     proto_register_field_array(proto_wai, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    reassembly_table_register(&wai_reassembly_table,
+                          &addresses_reassembly_table_functions);
 
     wai_handle = register_dissector("wai", dissect_wai, proto_wai);
 }
@@ -1382,7 +1361,7 @@ proto_reg_handoff_wai(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

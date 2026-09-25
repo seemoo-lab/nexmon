@@ -1,8 +1,5 @@
 /* GNU gettext - internationalization aids
-   Copyright (C) 1995-1996, 1998, 2000-2004, 2009, 2015-2016 Free Software
-   Foundation, Inc.
-
-   This file was written by Peter Miller <millerp@canb.auug.org.au>
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Peter Miller, Ulrich Drepper, and Bruno Haible.  */
 
 #ifndef _STR_LIST_H
 #define _STR_LIST_H 1
@@ -51,9 +50,16 @@ extern string_list_ty *string_list_alloc (void);
 /* Append a single string to the end of a list of strings.  */
 extern void string_list_append (string_list_ty *slp, const char *s);
 
+/* Append a freshly allocated single string to the end of a list of strings,
+   transferring its ownership to SLP.  */
+extern void string_list_append_move (string_list_ty *slp, char *s);
+
 /* Append a single string to the end of a list of strings, unless it is
    already contained in the list.  */
 extern void string_list_append_unique (string_list_ty *slp, const char *s);
+/* Likewise with a string descriptor as argument.  */
+extern void string_list_append_unique_desc (string_list_ty *slp,
+                                            const char *s, size_t s_len);
 
 /* Destroy a list of strings.  */
 extern void string_list_destroy (string_list_ty *slp);
@@ -79,6 +85,12 @@ extern char *string_list_join (const string_list_ty *slp, const char *separator,
 
 /* Return 1 if s is contained in the list of strings, 0 otherwise.  */
 extern bool string_list_member (const string_list_ty *slp, const char *s);
+/* Likewise with a string descriptor as argument.  */
+extern bool string_list_member_desc (const string_list_ty *slp,
+                                     const char *s, size_t s_len);
+
+/* Remove s from the list of strings.  Return the removed string or NULL.  */
+extern const char * string_list_remove (string_list_ty *slp, const char *s);
 
 
 #ifdef __cplusplus

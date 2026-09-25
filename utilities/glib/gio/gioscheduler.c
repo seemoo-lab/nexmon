@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,18 +25,6 @@
 #include "gioscheduler.h"
 #include "gcancellable.h"
 #include "gtask.h"
-
-/**
- * SECTION:gioscheduler
- * @short_description: I/O Scheduler
- * @include: gio/gio.h
- * 
- * As of GLib 2.36, #GIOScheduler is deprecated in favor of
- * #GThreadPool and #GTask.
- *
- * Schedules asynchronous I/O operations. #GIOScheduler integrates 
- * into the main event loop (#GMainLoop) and uses threads.
- */
 
 struct _GIOSchedulerJob {
   GList *active_link;
@@ -94,8 +84,8 @@ io_job_thread (GTask         *task,
  * g_io_scheduler_push_job:
  * @job_func: a #GIOSchedulerJobFunc.
  * @user_data: data to pass to @job_func
- * @notify: (allow-none): a #GDestroyNotify for @user_data, or %NULL
- * @io_priority: the [I/O priority][io-priority]
+ * @notify: (nullable): a #GDestroyNotify for @user_data, or %NULL
+ * @io_priority: the [I/O priority](iface.AsyncResult.html#io-priority)
  * of the request.
  * @cancellable: optional #GCancellable object, %NULL to ignore.
  *
@@ -108,7 +98,7 @@ io_job_thread (GTask         *task,
  * by calling g_cancellable_cancel() or by calling 
  * g_io_scheduler_cancel_all_jobs().
  *
- * Deprecated: use #GThreadPool or g_task_run_in_thread()
+ * Deprecated: 2.36: use #GThreadPool or g_task_run_in_thread()
  **/
 void
 g_io_scheduler_push_job (GIOSchedulerJobFunc  job_func,
@@ -138,6 +128,9 @@ g_io_scheduler_push_job (GIOSchedulerJobFunc  job_func,
   G_UNLOCK (active_jobs);
 
   task = g_task_new (NULL, cancellable, NULL, NULL);
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  g_task_set_source_tag (task, g_io_scheduler_push_job);
+G_GNUC_END_IGNORE_DEPRECATIONS
   g_task_set_task_data (task, job, (GDestroyNotify)g_io_job_free);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, io_job_thread);
@@ -152,7 +145,7 @@ g_io_scheduler_push_job (GIOSchedulerJobFunc  job_func,
  * A job is cancellable if a #GCancellable was passed into
  * g_io_scheduler_push_job().
  *
- * Deprecated: You should never call this function, since you don't
+ * Deprecated: 2.36: You should never call this function, since you don't
  * know how other libraries in your program might be making use of
  * gioscheduler.
  **/
@@ -223,7 +216,7 @@ mainloop_proxy_free (MainLoopProxy *proxy)
  * @job: a #GIOSchedulerJob
  * @func: a #GSourceFunc callback that will be called in the original thread
  * @user_data: data to pass to @func
- * @notify: (allow-none): a #GDestroyNotify for @user_data, or %NULL
+ * @notify: (nullable): a #GDestroyNotify for @user_data, or %NULL
  * 
  * Used from an I/O job to send a callback to be run in the thread
  * that the job was started from, waiting for the result (and thus
@@ -231,7 +224,7 @@ mainloop_proxy_free (MainLoopProxy *proxy)
  *
  * Returns: The return value of @func
  *
- * Deprecated: Use g_main_context_invoke().
+ * Deprecated: 2.36: Use g_main_context_invoke().
  **/
 gboolean
 g_io_scheduler_job_send_to_mainloop (GIOSchedulerJob *job,
@@ -258,7 +251,7 @@ g_io_scheduler_job_send_to_mainloop (GIOSchedulerJob *job,
   g_source_set_priority (source, G_PRIORITY_DEFAULT);
   g_source_set_callback (source, mainloop_proxy_func, proxy,
 			 NULL);
-  g_source_set_name (source, "[gio] mainloop_proxy_func");
+  g_source_set_static_name (source, "[gio] mainloop_proxy_func");
 
   g_source_attach (source, job->context);
   g_source_unref (source);
@@ -278,7 +271,7 @@ g_io_scheduler_job_send_to_mainloop (GIOSchedulerJob *job,
  * @job: a #GIOSchedulerJob
  * @func: a #GSourceFunc callback that will be called in the original thread
  * @user_data: data to pass to @func
- * @notify: (allow-none): a #GDestroyNotify for @user_data, or %NULL
+ * @notify: (nullable): a #GDestroyNotify for @user_data, or %NULL
  * 
  * Used from an I/O job to send a callback to be run asynchronously in
  * the thread that the job was started from. The callback will be run
@@ -290,7 +283,7 @@ g_io_scheduler_job_send_to_mainloop (GIOSchedulerJob *job,
  * @func is called, either by passing %NULL as @notify to 
  * g_io_scheduler_push_job() or by using refcounting for @user_data.
  *
- * Deprecated: Use g_main_context_invoke().
+ * Deprecated: 2.36: Use g_main_context_invoke().
  **/
 void
 g_io_scheduler_job_send_to_mainloop_async (GIOSchedulerJob *job,
@@ -315,7 +308,7 @@ g_io_scheduler_job_send_to_mainloop_async (GIOSchedulerJob *job,
   g_source_set_priority (source, G_PRIORITY_DEFAULT);
   g_source_set_callback (source, mainloop_proxy_func, proxy,
 			 (GDestroyNotify)mainloop_proxy_free);
-  g_source_set_name (source, "[gio] mainloop_proxy_func");
+  g_source_set_static_name (source, "[gio] mainloop_proxy_func");
 
   g_source_attach (source, job->context);
   g_source_unref (source);

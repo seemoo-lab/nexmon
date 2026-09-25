@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  *
  * References to source files point in general to the glusterfs sources.
@@ -251,7 +239,7 @@ enum gf_brick_procnum {
 	GF_BRICK_MAXVALUE
 };
 
-/* GLUSTER_HNDSK_PROGRAM  for nersion 1 and 2*/
+/* GLUSTER_HNDSK_PROGRAM  for version 1 and 2*/
 enum gluster_prog_hndsk_procs {
 	GF_HNDSK_NULL = 0,
 	GF_HNDSK_SETVOLUME,
@@ -259,6 +247,7 @@ enum gluster_prog_hndsk_procs {
 	GF_HNDSK_PING,
 	GF_HNDSK_SET_LK_VER,
 	GF_HNDSK_EVENT_NOTIFY,
+	GF_HNDSK_GET_VOLUME_INFO,
 	GF_HNDSK_MAXVALUE
 };
 
@@ -361,6 +350,7 @@ enum gf_fop_procnum {
 	GFS3_OP_SETATTR,
 	GFS3_OP_FSETATTR,
 	GFS3_OP_READDIRP,
+	GFS3_OP_FORGET,
 	GFS3_OP_RELEASE,
 	GFS3_OP_RELEASEDIR,
 	GFS3_OP_FREMOVEXATTR,
@@ -459,7 +449,7 @@ enum gf_upcall_event {
 };
 
 extern int
-gluster_rpc_dissect_dict(proto_tree *tree, tvbuff_t *tvb, int hfindex,
+gluster_rpc_dissect_dict(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int hfindex,
 								int offset);
 
 extern int

@@ -1,0 +1,231 @@
+0
+DOCTYPE
+html
+<none>
+<none>
+1
+DOCTYPE
+html
+<none>
+<none>
+2
+DOCTYPE
+html
+<none>
+<none>
+3
+DOCTYPE
+html
+<none>
+<none>
+4
+Comment
+DOC
+5
+DOCTYPE
+foo
+<none>
+<none>
+6
+StartTag
+h
+7
+8
+Character
+<>
+9
+StartTag
+h a=b
+10
+StartTag
+h a=b
+11
+StartTag
+h
+EndTag
+h
+12
+StartTag
+p
+Character
+One
+StartTag
+p
+Character
+Two
+13
+StartTag
+h
+EndTag
+h
+14
+StartTag
+h a=b c=d
+15
+StartTag
+h a=b c=d
+16
+StartTag
+h a=b
+17
+Comment
+comment
+18
+Comment
+-
+19
+Comment
+ --comment 
+20
+Comment
+<!
+21
+Comment
+comment
+22
+Comment
+ <!
+23
+Comment
+-
+24
+Comment
+
+25
+Comment
+
+26
+Comment
+
+27
+Comment
+ <test
+28
+Comment
+<<
+29
+Comment
+ <!test
+30
+Comment
+ <!-test
+31
+Comment
+ <!--test
+32
+Comment
+ <<!--test
+33
+Character
+<test-->
+34
+Character
+<!test-->
+35
+Character
+<!-test-->
+36
+Character
+<!--test-->
+37
+Character
+<!-- < test -->
+38
+Character
+<!-- </ test -->
+39
+Character
+<!-- <test> -->
+40
+Character
+<!-- </test> -->
+41
+Character
+<!--<script>-</script>-->
+42
+Character
+<!--<script>--</script>-->
+43
+Character
+<!--<script>---</script>-->
+44
+Character
+<!--<script> - </script>-->
+45
+Character
+<!--<script> -- </script>-->
+46
+Character
+&
+47
+Character
+&&
+48
+Character
+& 
+49
+Character
+&f
+50
+Character
+&#
+51
+Character
+&#x
+52
+Character
+I'm ¬it
+53
+Character
+I'm ∉
+54
+Character
+I'm ¬it
+55
+Character
+I'm ¬in
+56
+Character
+I'm &no
+57
+Character
+&¬;
+58
+Character
+$
+59
+Character
+?
+60
+StartTag
+h a=?
+EndTag
+h
+61
+StartTag
+h a=&notx
+62
+StartTag
+h a=&not1
+63
+StartTag
+h a=&noti
+64
+StartTag
+h a=©
+65
+StartTag
+s o=& t=
+66
+StartTag
+a a=a&
+Character
+foo
+67
+StartTag
+plaintext
+Character
+foobar
+68
+StartTag
+a a=f<

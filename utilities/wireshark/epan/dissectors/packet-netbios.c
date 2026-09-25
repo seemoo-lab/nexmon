@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,11 +20,15 @@
 #include <epan/reassemble.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
-#include <epan/capture_dissectors.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-netbios.h"
 
 void proto_register_netbios(void);
 void proto_reg_handoff_netbios(void);
+
+static dissector_handle_t netbios_handle;
+static capture_dissector_handle_t netbios_cap_handle;
 
 /* Netbios command numbers */
 #define NB_ADD_GROUP		0x00
@@ -79,62 +71,62 @@ void proto_reg_handoff_netbios(void);
 #define	NB_SENDER_NAME		28
 
 
-static int proto_netbios = -1;
-static int hf_netb_cmd = -1;
-static int hf_netb_hdr_len = -1;
-static int hf_netb_delimiter = -1;
-static int hf_netb_xmit_corrl = -1;
-static int hf_netb_resp_corrl = -1;
-static int hf_netb_call_name_type = -1;
-static int hf_netb_version = -1;
-static int hf_netbios_no_receive_flags = -1;
-static int hf_netbios_no_receive_flags_send_no_ack = -1;
-static int hf_netb_largest_frame = -1;
-static int hf_netb_nb_name = -1;
-static int hf_netb_nb_name_type = -1;
-static int hf_netb_status_buffer_len = -1;
-static int hf_netb_status = -1;
-static int hf_netb_name_type = -1;
-static int hf_netb_max_data_recv_size = -1;
-static int hf_netb_termination_indicator = -1;
-static int hf_netb_num_data_bytes_accepted = -1;
-static int hf_netb_local_ses_no = -1;
-static int hf_netb_remote_ses_no = -1;
-static int hf_netb_flags = -1;
-static int hf_netb_flags_send_no_ack = -1;
-static int hf_netb_flags_ack = -1;
-static int hf_netb_flags_ack_with_data = -1;
-static int hf_netb_flags_ack_expected = -1;
-static int hf_netb_flags_recv_cont_req = -1;
-static int hf_netb_data2 = -1;
-static int hf_netb_data2_frame = -1;
-static int hf_netb_data2_user = -1;
-static int hf_netb_data2_status = -1;
-static int hf_netb_datagram_mac = -1;
-static int hf_netb_datagram_bcast_mac = -1;
-static int hf_netb_resync_indicator = -1;
-static int hf_netb_status_request = -1;
-static int hf_netb_local_session_no = -1;
-static int hf_netb_state_of_name = -1;
-static int hf_netb_status_response = -1;
-static int hf_netb_fragments = -1;
-static int hf_netb_fragment = -1;
-static int hf_netb_fragment_overlap = -1;
-static int hf_netb_fragment_overlap_conflict = -1;
-static int hf_netb_fragment_multiple_tails = -1;
-static int hf_netb_fragment_too_long_fragment = -1;
-static int hf_netb_fragment_error = -1;
-static int hf_netb_fragment_count = -1;
-static int hf_netb_reassembled_length = -1;
+static int proto_netbios;
+static int hf_netb_cmd;
+static int hf_netb_hdr_len;
+static int hf_netb_delimiter;
+static int hf_netb_xmit_corrl;
+static int hf_netb_resp_corrl;
+static int hf_netb_call_name_type;
+static int hf_netb_version;
+static int hf_netbios_no_receive_flags;
+static int hf_netbios_no_receive_flags_send_no_ack;
+static int hf_netb_largest_frame;
+static int hf_netb_nb_name;
+static int hf_netb_nb_name_type;
+static int hf_netb_status_buffer_len;
+static int hf_netb_status;
+static int hf_netb_name_type;
+static int hf_netb_max_data_recv_size;
+static int hf_netb_termination_indicator;
+static int hf_netb_num_data_bytes_accepted;
+static int hf_netb_local_ses_no;
+static int hf_netb_remote_ses_no;
+static int hf_netb_flags;
+static int hf_netb_flags_send_no_ack;
+static int hf_netb_flags_ack;
+static int hf_netb_flags_ack_with_data;
+static int hf_netb_flags_ack_expected;
+static int hf_netb_flags_recv_cont_req;
+static int hf_netb_data2;
+static int hf_netb_data2_frame;
+static int hf_netb_data2_user;
+static int hf_netb_data2_status;
+static int hf_netb_datagram_mac;
+static int hf_netb_datagram_bcast_mac;
+static int hf_netb_resync_indicator;
+static int hf_netb_status_request;
+static int hf_netb_local_session_no;
+static int hf_netb_state_of_name;
+static int hf_netb_status_response;
+static int hf_netb_fragments;
+static int hf_netb_fragment;
+static int hf_netb_fragment_overlap;
+static int hf_netb_fragment_overlap_conflict;
+static int hf_netb_fragment_multiple_tails;
+static int hf_netb_fragment_too_long_fragment;
+static int hf_netb_fragment_error;
+static int hf_netb_fragment_count;
+static int hf_netb_reassembled_length;
 
-static gint ett_netb = -1;
-static gint ett_netb_name = -1;
-static gint ett_netb_flags = -1;
-static gint ett_netb_status = -1;
-static gint ett_netb_fragments = -1;
-static gint ett_netb_fragment = -1;
+static int ett_netb;
+static int ett_netb_name;
+static int ett_netb_flags;
+static int ett_netb_status;
+static int ett_netb_fragments;
+static int ett_netb_fragment;
 
-static expert_field ei_netb_unknown_command_data = EI_INIT;
+static expert_field ei_netb_unknown_command_data;
 
 static const fragment_items netbios_frag_items = {
 	&ett_netb_fragment,
@@ -201,7 +193,7 @@ static value_string_ext nb_name_type_vals_ext = VALUE_STRING_EXT_INIT(nb_name_ty
 static reassembly_table netbios_reassembly_table;
 
 /* defragmentation of NetBIOS Frame */
-static gboolean netbios_defragment = TRUE;
+static bool netbios_defragment = true;
 
 /* See
 
@@ -249,10 +241,6 @@ static const value_string name_types[] = {
 	{ 0, NULL }
 };
 
-static const true_false_string flags_allowed = {
-	"Allowed",
-	"Not allowed"
-};
 
 static const true_false_string netb_version_str = {
 	"2.00 or higher",
@@ -284,20 +272,21 @@ static const value_string max_frame_size_vals[] = {
 };
 
 
-static gboolean
-capture_netbios(const guchar *pd _U_, int offset _U_, int len _U_, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
+static bool
+capture_netbios(const unsigned char *pd _U_, int offset _U_, int len _U_, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
 {
 	capture_dissector_increment_count(cpinfo, proto_netbios);
-	return TRUE;
+	return true;
 }
 
 
 int
-process_netbios_name(const guchar *name_ptr, char *name_ret, int name_ret_len)
+process_netbios_name(const unsigned char *name_ptr, char *name_ret, int name_ret_len)
 {
 	int    i;
 	int    name_type = *(name_ptr + NETBIOS_NAME_LEN - 1);
-	guchar name_char;
+	unsigned char name_char;
+	char  *name_ret_orig = name_ret;
 	static const char hex_digits[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
 
 	for (i = 0; i < NETBIOS_NAME_LEN - 1; i++) {
@@ -324,7 +313,7 @@ process_netbios_name(const guchar *name_ptr, char *name_ret, int name_ret_len)
 
 	name_ret--;
 
-	for (i = 0; i < NETBIOS_NAME_LEN - 1; i++) {
+	while (name_ret >= name_ret_orig) {
 		if (*name_ret != ' ') {
 			*(name_ret + 1) = 0;
 			break;
@@ -506,12 +495,12 @@ nb_call_name_type( tvbuff_t *tvb, int offset, proto_tree *tree)
 }
 
 
-static guint8
+static uint8_t
 nb_local_session( tvbuff_t *tvb, int offset, proto_tree *tree)
 
 {/* add the local session to tree, and return its value */
 
-	guint8 local_session = tvb_get_guint8( tvb, offset + NB_LOCAL_SES);
+	uint8_t local_session = tvb_get_uint8( tvb, offset + NB_LOCAL_SES);
 
 	proto_tree_add_uint( tree, hf_netb_local_ses_no, tvb, offset + NB_LOCAL_SES, 1,
 		local_session);
@@ -520,12 +509,12 @@ nb_local_session( tvbuff_t *tvb, int offset, proto_tree *tree)
 }
 
 
-static guint8
+static uint8_t
 nb_remote_session( tvbuff_t *tvb, int offset, proto_tree *tree)
 
 {/* add the remote session to tree, and return its value */
 
-	guint8 remote_session = tvb_get_guint8( tvb, offset + NB_RMT_SES);
+	uint8_t remote_session = tvb_get_uint8( tvb, offset + NB_RMT_SES);
 
 	proto_tree_add_uint( tree, hf_netb_remote_ses_no, tvb, offset + NB_RMT_SES, 1,
 		remote_session);
@@ -558,7 +547,7 @@ static void
 nb_resync_indicator( tvbuff_t *tvb, int offset, proto_tree *tree, const char *cmd_str)
 
 {
-	guint16 resync_indicator = tvb_get_letohs( tvb, offset + NB_DATA2);
+	uint16_t resync_indicator = tvb_get_letohs( tvb, offset + NB_DATA2);
 
 
 	switch (resync_indicator) {
@@ -585,7 +574,7 @@ nb_resync_indicator( tvbuff_t *tvb, int offset, proto_tree *tree, const char *cm
 /*									*/
 /************************************************************************/
 
-static guint32
+static uint32_t
 dissect_netb_unknown( tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree)
 
 {/* Handle any unknown commands, do nothing */
@@ -596,7 +585,7 @@ dissect_netb_unknown( tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree 
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_add_group_name( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the ADD GROUP NAME QUERY command */
@@ -610,7 +599,7 @@ dissect_netb_add_group_name( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, 
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_add_name( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the ADD NAME QUERY command */
@@ -623,7 +612,7 @@ dissect_netb_add_name( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_name_in_conflict( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the NAME IN CONFLICT command */
@@ -636,11 +625,11 @@ dissect_netb_name_in_conflict( tvbuff_t *tvb, packet_info *pinfo _U_, int offset
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_status_query( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the STATUS QUERY command */
-	guint8 status_request = tvb_get_guint8( tvb, offset + NB_DATA1);
+	uint8_t status_request = tvb_get_uint8( tvb, offset + NB_DATA1);
 
 	switch (status_request) {
 
@@ -669,7 +658,7 @@ dissect_netb_status_query( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, pr
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_terminate_trace( tvbuff_t *tvb _U_, packet_info *pinfo _U_, int offset _U_, proto_tree *tree _U_)
 
 {/* Handle the TERMINATE TRACE command */
@@ -683,9 +672,9 @@ dissect_netb_terminate_trace( tvbuff_t *tvb _U_, packet_info *pinfo _U_, int off
 }
 
 
-static const guchar zeroes[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static const unsigned char zeroes[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-static guint32
+static uint32_t
 dissect_netb_datagram( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the DATAGRAM command */
@@ -706,7 +695,7 @@ dissect_netb_datagram( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_datagram_bcast( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the DATAGRAM BROADCAST command */
@@ -724,11 +713,11 @@ dissect_netb_datagram_bcast( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, 
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_name_query( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the NAME QUERY command */
-	guint8 local_session_number = tvb_get_guint8( tvb, offset + NB_DATA2);
+	uint8_t local_session_number = tvb_get_uint8( tvb, offset + NB_DATA2);
 
 	if (local_session_number == 0) {
 		proto_tree_add_uint_format_value( tree, hf_netb_local_session_no, tvb, offset + NB_DATA2, 1,
@@ -748,7 +737,7 @@ dissect_netb_name_query( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, prot
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_add_name_resp( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the ADD NAME RESPONSE command */
@@ -765,11 +754,11 @@ dissect_netb_add_name_resp( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, p
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_name_resp( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the NAME RECOGNIZED command */
-	guint8 local_session_number = tvb_get_guint8( tvb, offset + NB_DATA2);
+	uint8_t local_session_number = tvb_get_uint8( tvb, offset + NB_DATA2);
 
 	switch (local_session_number) {
 
@@ -801,11 +790,11 @@ dissect_netb_name_resp( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_status_resp( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the STATUS RESPONSE command */
-	guint8	    status_response = tvb_get_guint8( tvb, offset + NB_DATA1);
+	uint8_t	    status_response = tvb_get_uint8( tvb, offset + NB_DATA1);
 	proto_item *td2;
 	proto_tree *data2_tree;
 
@@ -834,7 +823,7 @@ dissect_netb_status_resp( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, pro
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_data_ack( tvbuff_t* tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the DATA ACK command */
@@ -847,12 +836,12 @@ dissect_netb_data_ack( tvbuff_t* tvb, packet_info *pinfo _U_, int offset, proto_
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_data_first_middle( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the DATA FIRST MIDDLE command */
 
-	guint8 remote_session, local_session;
+	uint8_t remote_session, local_session;
 
 	/*
 	 * This is the first frame, or the middle frame, of a fragmented
@@ -882,12 +871,12 @@ dissect_netb_data_first_middle( tvbuff_t *tvb, packet_info *pinfo _U_, int offse
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_data_only_last( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the DATA ONLY LAST command */
 
-	guint8 remote_session, local_session;
+	uint8_t remote_session, local_session;
 
 	/*
 	 * This is a complete packet, or the last frame of a fragmented
@@ -910,7 +899,7 @@ dissect_netb_data_only_last( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, 
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_session_confirm( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the SESSION CONFIRM command */
@@ -927,7 +916,7 @@ dissect_netb_session_confirm( tvbuff_t *tvb, packet_info *pinfo _U_, int offset,
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_session_end( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the SESSION END command */
@@ -940,7 +929,7 @@ dissect_netb_session_end( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, pro
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_session_init( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the SESSION INITIALIZE command */
@@ -956,7 +945,7 @@ dissect_netb_session_init( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, pr
 	return 0;
 }
 
-static guint32
+static uint32_t
 dissect_netb_no_receive( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the NO RECEIVE command */
@@ -971,7 +960,7 @@ dissect_netb_no_receive( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, prot
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_receive_outstanding( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the RECEIVE OUTSTANDING command */
@@ -984,7 +973,7 @@ dissect_netb_receive_outstanding( tvbuff_t *tvb, packet_info *pinfo _U_, int off
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_receive_continue( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the RECEIVE CONTINUE command */
@@ -997,7 +986,7 @@ dissect_netb_receive_continue( tvbuff_t *tvb, packet_info *pinfo _U_, int offset
 }
 
 
-static guint32
+static uint32_t
 dissect_netb_session_alive( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree)
 
 {/* Handle the SESSION ALIVE command */
@@ -1024,7 +1013,7 @@ dissect_netb_session_alive( tvbuff_t *tvb, packet_info *pinfo _U_, int offset, p
 /*									*/
 /************************************************************************/
 
-static guint32 (*const dissect_netb[])(tvbuff_t *, packet_info *, int, proto_tree *) = {
+static uint32_t (*const dissect_netb[])(tvbuff_t *, packet_info *, int, proto_tree *) = {
 
 	dissect_netb_add_group_name,	  /* Add Group Name	 0x00 */
 	dissect_netb_add_name,		  /* Add Name		 0x01 */
@@ -1082,12 +1071,12 @@ dissect_netbios(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 {
 	proto_tree    *netb_tree = NULL;
 	proto_item    *ti;
-	guint16	       hdr_len, command;
+	uint16_t	       hdr_len, command;
 	const char    *command_name;
 	char 	       name[(NETBIOS_NAME_LEN - 1)*4 + 1];
 	int	       name_type;
-	guint16	       session_id;
-	gboolean       save_fragmented;
+	uint16_t	       session_id;
+	bool           save_fragmented;
 	int	       len;
 	fragment_head *fd_head;
 	tvbuff_t      *next_tvb;
@@ -1114,12 +1103,12 @@ dissect_netbios(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 
 
 	hdr_len = tvb_get_letohs(tvb, offset + NB_LENGTH);
-	command = tvb_get_guint8( tvb, offset + NB_COMMAND);
+	command = tvb_get_uint8( tvb, offset + NB_COMMAND);
 					/* limit command so no table overflows */
-	command = MIN( command, sizeof( dissect_netb)/ sizeof(void *));
+	command = MIN(command, array_length(dissect_netb));
 
 		/* print command name */
-	command_name = val_to_str_ext(command, &cmd_vals_ext, "Unknown (0x%02x)");
+	command_name = val_to_str_ext(pinfo->pool, command, &cmd_vals_ext, "Unknown (0x%02x)");
 	switch ( command ) {
 		case NB_NAME_QUERY:
 			name_type = get_netbios_name( tvb, offset + 12, name, (NETBIOS_NAME_LEN - 1)*4 + 1);
@@ -1152,7 +1141,7 @@ dissect_netbios(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 	}
 
 					/* if command in table range */
-	if ( command < sizeof( dissect_netb)/ sizeof(void *)) {
+	if ( command < array_length(dissect_netb)) {
 
 					/* branch to handle commands */
 		session_id = (dissect_netb[ command])( tvb, pinfo, offset, netb_tree);
@@ -1240,23 +1229,10 @@ dissect_netbios(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 	return tvb_captured_length(tvb);
 }
 
-static void
-netbios_init(void)
-{
-	reassembly_table_init(&netbios_reassembly_table,
-	    &addresses_reassembly_table_functions);
-}
-
-static void
-netbios_cleanup(void)
-{
-	reassembly_table_destroy(&netbios_reassembly_table);
-}
-
 void
 proto_register_netbios(void)
 {
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_netb,
 		&ett_netb_name,
 		&ett_netb_flags,
@@ -1360,7 +1336,7 @@ proto_register_netbios(void)
 
 		{ &hf_netb_flags_ack_with_data,
 		  { "Acknowledge with data", "netbios.flags.ack_with_data", FT_BOOLEAN, 8,
-		    TFS( &flags_allowed), 0x04, NULL, HFILL }},
+		    TFS( &tfs_allowed_not_allowed), 0x04, NULL, HFILL }},
 
 		{ &hf_netb_flags_ack_expected,
 		  { "Acknowledge expected", "netbios.flags.ack_expected", FT_BOOLEAN,  8,
@@ -1466,8 +1442,10 @@ proto_register_netbios(void)
 	expert_netbios = expert_register_protocol(proto_netbios);
 	expert_register_field_array(expert_netbios, ei, array_length(ei));
 
+	netbios_handle = register_dissector("netbios", dissect_netbios, proto_netbios);
+	netbios_cap_handle = register_capture_dissector("netbios", capture_netbios, proto_netbios);
 
-	netbios_heur_subdissector_list = register_heur_dissector_list("netbios", proto_netbios);
+	netbios_heur_subdissector_list = register_heur_dissector_list_with_description("netbios", "NetBIOS payload", proto_netbios);
 
 	netbios_module = prefs_register_protocol(proto_netbios, NULL);
 	prefs_register_bool_preference(netbios_module, "defragment",
@@ -1475,24 +1453,20 @@ proto_register_netbios(void)
 	    "Whether the NetBIOS dissector should defragment messages spanning multiple frames",
 	    &netbios_defragment);
 
-	register_init_routine(netbios_init);
-	register_cleanup_routine(netbios_cleanup);
+	reassembly_table_register(&netbios_reassembly_table,
+	    &addresses_reassembly_table_functions);
 }
 
 void
 proto_reg_handoff_netbios(void)
 {
-	dissector_handle_t netbios_handle;
-
-	netbios_handle = create_dissector_handle(dissect_netbios,
-	    proto_netbios);
 	dissector_add_uint("llc.dsap", SAP_NETBIOS, netbios_handle);
-	register_capture_dissector("llc.dsap", SAP_NETBIOS, capture_netbios, proto_netbios);
+	capture_dissector_add_uint("llc.dsap", SAP_NETBIOS, netbios_cap_handle);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

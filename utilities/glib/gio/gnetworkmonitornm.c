@@ -2,10 +2,12 @@
  *
  * Copyright 2014 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -52,9 +54,23 @@ typedef enum {
   NM_CONNECTIVITY_FULL
 } NMConnectivityState;
 
+/* Copied from https://developer.gnome.org/libnm-util/stable/libnm-util-NetworkManager.html#NMState;
+ * used inline to avoid a NetworkManager dependency from GLib. */
+typedef enum {
+  NM_STATE_UNKNOWN          = 0,
+  NM_STATE_ASLEEP           = 10,
+  NM_STATE_DISCONNECTED     = 20,
+  NM_STATE_DISCONNECTING    = 30,
+  NM_STATE_CONNECTING       = 40,
+  NM_STATE_CONNECTED_LOCAL  = 50,
+  NM_STATE_CONNECTED_SITE   = 60,
+  NM_STATE_CONNECTED_GLOBAL = 70,
+} NMState;
+
 struct _GNetworkMonitorNMPrivate
 {
   GDBusProxy *proxy;
+  guint signal_id;
 
   GNetworkConnectivity connectivity;
   gboolean network_available;
@@ -155,22 +171,46 @@ sync_properties (GNetworkMonitorNM *nm,
                  gboolean           emit_signals)
 {
   GVariant *v;
+  NMState nm_state;
   NMConnectivityState nm_connectivity;
   gboolean new_network_available;
   gboolean new_network_metered;
   GNetworkConnectivity new_connectivity;
 
+  v = g_dbus_proxy_get_cached_property (nm->priv->proxy, "State");
+  if (!v)
+    return;
+
+  nm_state = g_variant_get_uint32 (v);
+  g_variant_unref (v);
+
   v = g_dbus_proxy_get_cached_property (nm->priv->proxy, "Connectivity");
+  if (!v)
+    return;
+
   nm_connectivity = g_variant_get_uint32 (v);
   g_variant_unref (v);
 
-  if (nm_connectivity == NM_CONNECTIVITY_NONE)
+  if (nm_state <= NM_STATE_CONNECTED_LOCAL)
     {
       new_network_available = FALSE;
       new_network_metered = FALSE;
       new_connectivity = G_NETWORK_CONNECTIVITY_LOCAL;
     }
-  else
+  else if (nm_state <= NM_STATE_CONNECTED_SITE)
+    {
+      new_network_available = TRUE;
+      new_network_metered = FALSE;
+      if (nm_connectivity == NM_CONNECTIVITY_PORTAL)
+        {
+          new_connectivity = G_NETWORK_CONNECTIVITY_PORTAL;
+        }
+      else
+        {
+          new_connectivity = G_NETWORK_CONNECTIVITY_LIMITED;
+        }
+    }
+  else /* nm_state == NM_STATE_CONNECTED_FULL */
     {
 
       /* this is only available post NM 1.0 */
@@ -197,64 +237,37 @@ sync_properties (GNetworkMonitorNM *nm,
       return;
     }
 
+  gboolean changed = FALSE;
+
   if (new_network_available != nm->priv->network_available)
     {
       nm->priv->network_available = new_network_available;
       g_object_notify (G_OBJECT (nm), "network-available");
+      changed = TRUE;
     }
   if (new_network_metered != nm->priv->network_metered)
     {
       nm->priv->network_metered = new_network_metered;
       g_object_notify (G_OBJECT (nm), "network-metered");
+      changed = TRUE;
     }
   if (new_connectivity != nm->priv->connectivity)
     {
       nm->priv->connectivity = new_connectivity;
       g_object_notify (G_OBJECT (nm), "connectivity");
+      changed = TRUE;
     }
+
+  if (changed)
+    g_signal_emit_by_name (nm, "network-changed", new_network_available);
 }
 
 static void
-update_cached_property (GDBusProxy   *proxy,
-                        const char   *property_name,
-                        GVariantDict *dict)
+proxy_properties_changed_cb (GDBusProxy        *proxy,
+                             GVariant          *changed_properties,
+                             GStrv              invalidated_properties,
+                             GNetworkMonitorNM *nm)
 {
-  GVariant *v;
-
-  v = g_variant_dict_lookup_value (dict, property_name, NULL);
-  if (!v)
-    return;
-  g_dbus_proxy_set_cached_property (proxy, property_name, v);
-}
-
-static void
-proxy_signal_cb (GDBusProxy        *proxy,
-                 gchar             *sender_name,
-                 gchar             *signal_name,
-                 GVariant          *parameters,
-                 GNetworkMonitorNM *nm)
-{
-  GVariant *asv;
-  GVariantDict *dict;
-
-  if (g_strcmp0 (signal_name, "PropertiesChanged") != 0)
-    return;
-
-  g_variant_get (parameters, "(@a{sv})", &asv);
-  if (!asv)
-    return;
-
-  dict = g_variant_dict_new (asv);
-  if (!dict)
-    {
-      g_warning ("Failed to handle PropertiesChanged signal from NetworkManager");
-      return;
-    }
-
-  update_cached_property (nm->priv->proxy, "Connectivity", dict);
-
-  g_variant_dict_unref (dict);
-
   sync_properties (nm, TRUE);
 }
 
@@ -263,7 +276,6 @@ has_property (GDBusProxy *proxy,
               const char *property_name)
 {
   char **props;
-  guint i;
   gboolean prop_found = FALSE;
 
   props = g_dbus_proxy_get_cached_property_names (proxy);
@@ -271,15 +283,7 @@ has_property (GDBusProxy *proxy,
   if (!props)
     return FALSE;
 
-  for (i = 0; props[i] != NULL; i++)
-    {
-      if (g_str_equal (props[i], property_name))
-        {
-          prop_found = TRUE;
-          break;
-        }
-    }
-
+  prop_found = g_strv_contains ((const gchar * const *) props, property_name);
   g_strfreev (props);
   return prop_found;
 }
@@ -313,6 +317,8 @@ g_network_monitor_nm_initable_init (GInitable     *initable,
 
   if (!name_owner)
     {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   _("NetworkManager not running"));
       g_object_unref (proxy);
       return FALSE;
     }
@@ -328,8 +334,8 @@ g_network_monitor_nm_initable_init (GInitable     *initable,
       return FALSE;
     }
 
-  g_signal_connect (G_OBJECT (proxy), "g-signal",
-                    G_CALLBACK (proxy_signal_cb), nm);
+  nm->priv->signal_id = g_signal_connect (G_OBJECT (proxy), "g-properties-changed",
+                                          G_CALLBACK (proxy_properties_changed_cb), nm);
   nm->priv->proxy = proxy;
   sync_properties (nm, FALSE);
 
@@ -341,6 +347,13 @@ g_network_monitor_nm_finalize (GObject *object)
 {
   GNetworkMonitorNM *nm = G_NETWORK_MONITOR_NM (object);
 
+  if (nm->priv->proxy != NULL &&
+      nm->priv->signal_id != 0)
+    {
+      g_signal_handler_disconnect (nm->priv->proxy,
+                                   nm->priv->signal_id);
+      nm->priv->signal_id = 0;
+    }
   g_clear_object (&nm->priv->proxy);
 
   G_OBJECT_CLASS (g_network_monitor_nm_parent_class)->finalize (object);
@@ -351,7 +364,7 @@ g_network_monitor_nm_class_init (GNetworkMonitorNMClass *nl_class)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (nl_class);
 
-  gobject_class->finalize  = g_network_monitor_nm_finalize;
+  gobject_class->finalize = g_network_monitor_nm_finalize;
   gobject_class->get_property = g_network_monitor_nm_get_property;
 
   g_object_class_override_property (gobject_class, PROP_NETWORK_AVAILABLE, "network-available");

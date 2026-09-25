@@ -4,19 +4,7 @@
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,24 +15,30 @@
 void proto_register_ascend(void);
 void proto_reg_handoff_ascend(void);
 
-static int proto_ascend  = -1;
-static int hf_link_type  = -1;
-static int hf_session_id = -1;
-static int hf_called_number = -1;
-static int hf_chunk      = -1;
-static int hf_task       = -1;
-static int hf_user_name  = -1;
+static int proto_ascend;
+static int hf_link_type;
+static int hf_session_id;
+static int hf_called_number;
+static int hf_chunk;
+static int hf_task;
+static int hf_user_name;
 
-static gint ett_raw = -1;
+static int ett_raw;
 
 static const value_string encaps_vals[] = {
-  {ASCEND_PFX_WDS_X, "PPP Transmit"},
-  {ASCEND_PFX_WDS_R, "PPP Receive" },
-  {ASCEND_PFX_WDD,   "Ethernet"    },
-  {0,                NULL          } };
+  {ASCEND_PFX_WDS_X,  "PPP Transmit"               },
+  {ASCEND_PFX_WDS_R,  "PPP Receive"                },
+  {ASCEND_PFX_WDD,    "Ethernet triggering dialout"},
+  {ASCEND_PFX_ISDN_X, "ISDN Transmit"              },
+  {ASCEND_PFX_ISDN_R, "ISDN Receive"               },
+  {ASCEND_PFX_ETHER,  "Ethernet"                   },
+  {0,                  NULL                        }
+};
 
+static dissector_handle_t ascend_handle;
 static dissector_handle_t eth_withoutfcs_handle;
 static dissector_handle_t ppp_hdlc_handle;
+static dissector_handle_t lapd_phdr_handle;
 
 static int
 dissect_ascend(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
@@ -52,6 +46,7 @@ dissect_ascend(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
   proto_tree                    *fh_tree;
   proto_item                    *ti, *hidden_item;
   union wtap_pseudo_header      *pseudo_header = pinfo->pseudo_header;
+  struct isdn_phdr              isdn;
 
   /* load the top pane info. This should be overwritten by
      the next protocol in the stack */
@@ -80,20 +75,31 @@ dissect_ascend(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     fh_tree = proto_item_add_subtree(ti, ett_raw);
     proto_tree_add_uint(fh_tree, hf_link_type, tvb, 0, 0,
                         pseudo_header->ascend.type);
-    if (pseudo_header->ascend.type == ASCEND_PFX_WDD) {
+    switch (pseudo_header->ascend.type) {
+
+    case ASCEND_PFX_WDD:
+      /* Ethernet packet forcing a call */
       proto_tree_add_string(fh_tree, hf_called_number, tvb, 0, 0,
                             pseudo_header->ascend.call_num);
       proto_tree_add_uint(fh_tree, hf_chunk, tvb, 0, 0,
                           pseudo_header->ascend.chunk);
       hidden_item = proto_tree_add_uint(fh_tree, hf_session_id, tvb, 0, 0, 0);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
-    } else {  /* It's wandsession data */
+      proto_item_set_hidden(hidden_item);
+      break;
+
+    case ASCEND_PFX_WDS_X:
+    case ASCEND_PFX_WDS_R:
+      /* wandsession data */
       proto_tree_add_string(fh_tree, hf_user_name, tvb, 0, 0,
                             pseudo_header->ascend.user);
       proto_tree_add_uint(fh_tree, hf_session_id, tvb, 0, 0,
                           pseudo_header->ascend.sess);
       hidden_item = proto_tree_add_uint(fh_tree, hf_chunk, tvb, 0, 0, 0);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
+      break;
+
+    default:
+      break;
     }
     proto_tree_add_uint(fh_tree, hf_task, tvb, 0, 0, pseudo_header->ascend.task);
   }
@@ -104,7 +110,18 @@ dissect_ascend(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
       call_dissector(ppp_hdlc_handle, tvb, pinfo, tree);
       break;
     case ASCEND_PFX_WDD:
+    case ASCEND_PFX_ETHER:
       call_dissector(eth_withoutfcs_handle, tvb, pinfo, tree);
+      break;
+    case ASCEND_PFX_ISDN_X:
+      isdn.uton = true;
+      isdn.channel = 0;
+      call_dissector_with_data(lapd_phdr_handle, tvb, pinfo, tree, &isdn);
+      break;
+    case ASCEND_PFX_ISDN_R:
+      isdn.uton = false;
+      isdn.channel = 0;
+      call_dissector_with_data(lapd_phdr_handle, tvb, pinfo, tree, &isdn);
       break;
     default:
       break;
@@ -140,7 +157,7 @@ proto_register_ascend(void)
       { "User name",      "ascend.user",  FT_STRING, BASE_NONE,   NULL, 0x0,
         NULL, HFILL }},
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_raw,
   };
 
@@ -148,25 +165,26 @@ proto_register_ascend(void)
                                          "Lucent/Ascend", "ascend");
   proto_register_field_array(proto_ascend, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  ascend_handle = register_dissector("ascend", dissect_ascend, proto_ascend);
 }
 
 void
 proto_reg_handoff_ascend(void)
 {
-  dissector_handle_t ascend_handle;
-
   /*
-   * Get handles for the Ethernet and PPP-in-HDLC-like-framing dissectors.
+   * Get handles for the Ethernet, PPP-in-HDLC-like-framing, and
+   * LAPD-with-pseudoheader dissectors.
    */
   eth_withoutfcs_handle = find_dissector_add_dependency("eth_withoutfcs", proto_ascend);
   ppp_hdlc_handle = find_dissector_add_dependency("ppp_hdlc", proto_ascend);
+  lapd_phdr_handle = find_dissector_add_dependency("lapd-phdr", proto_ascend);
 
-  ascend_handle = create_dissector_handle(dissect_ascend, proto_ascend);
   dissector_add_uint("wtap_encap", WTAP_ENCAP_ASCEND, ascend_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

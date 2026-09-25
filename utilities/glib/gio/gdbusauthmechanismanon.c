@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -54,10 +56,11 @@ static void                     mechanism_server_data_receive       (GDBusAuthMe
                                                                      gsize                 data_len);
 static gchar                   *mechanism_server_data_send          (GDBusAuthMechanism   *mechanism,
                                                                      gsize                *out_data_len);
-static gchar                   *mechanism_server_get_reject_reason  (GDBusAuthMechanism   *mechanism);
+static gchar                   *mechanism_server_or_client_get_reject_reason (GDBusAuthMechanism   *mechanism);
 static void                     mechanism_server_shutdown           (GDBusAuthMechanism   *mechanism);
 static GDBusAuthMechanismState  mechanism_client_get_state          (GDBusAuthMechanism   *mechanism);
 static gchar                   *mechanism_client_initiate           (GDBusAuthMechanism   *mechanism,
+                                                                     GDBusConnectionFlags  conn_flags,
                                                                      gsize                *out_initial_response_len);
 static void                     mechanism_client_data_receive       (GDBusAuthMechanism   *mechanism,
                                                                      const gchar          *data,
@@ -100,12 +103,13 @@ _g_dbus_auth_mechanism_anon_class_init (GDBusAuthMechanismAnonClass *klass)
   mechanism_class->server_initiate           = mechanism_server_initiate;
   mechanism_class->server_data_receive       = mechanism_server_data_receive;
   mechanism_class->server_data_send          = mechanism_server_data_send;
-  mechanism_class->server_get_reject_reason  = mechanism_server_get_reject_reason;
+  mechanism_class->server_get_reject_reason  = mechanism_server_or_client_get_reject_reason;
   mechanism_class->server_shutdown           = mechanism_server_shutdown;
   mechanism_class->client_get_state          = mechanism_client_get_state;
   mechanism_class->client_initiate           = mechanism_client_initiate;
   mechanism_class->client_data_receive       = mechanism_client_data_receive;
   mechanism_class->client_data_send          = mechanism_client_data_send;
+  mechanism_class->client_get_reject_reason  = mechanism_server_or_client_get_reject_reason;
   mechanism_class->client_shutdown           = mechanism_client_shutdown;
 }
 
@@ -219,12 +223,11 @@ mechanism_server_data_send (GDBusAuthMechanism   *mechanism,
 }
 
 static gchar *
-mechanism_server_get_reject_reason (GDBusAuthMechanism   *mechanism)
+mechanism_server_or_client_get_reject_reason (GDBusAuthMechanism   *mechanism)
 {
   GDBusAuthMechanismAnon *m = G_DBUS_AUTH_MECHANISM_ANON (mechanism);
 
   g_return_val_if_fail (G_IS_DBUS_AUTH_MECHANISM_ANON (mechanism), NULL);
-  g_return_val_if_fail (m->priv->is_server && !m->priv->is_client, NULL);
   g_return_val_if_fail (m->priv->state == G_DBUS_AUTH_MECHANISM_STATE_REJECTED, NULL);
 
   /* can never end up here because we are never in the REJECTED state */
@@ -259,9 +262,11 @@ mechanism_client_get_state (GDBusAuthMechanism   *mechanism)
 
 static gchar *
 mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
+                           GDBusConnectionFlags  conn_flags,
                            gsize                *out_initial_response_len)
 {
   GDBusAuthMechanismAnon *m = G_DBUS_AUTH_MECHANISM_ANON (mechanism);
+  gchar *result;
 
   g_return_val_if_fail (G_IS_DBUS_AUTH_MECHANISM_ANON (mechanism), NULL);
   g_return_val_if_fail (!m->priv->is_server && !m->priv->is_client, NULL);
@@ -269,10 +274,11 @@ mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
   m->priv->is_client = TRUE;
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_ACCEPTED;
 
-  *out_initial_response_len = -1;
-
   /* just return our library name and version */
-  return g_strdup ("GDBus 0.1");
+  result = g_strdup ("GDBus 0.1");
+  *out_initial_response_len = strlen (result);
+
+  return result;
 }
 
 static void

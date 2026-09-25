@@ -1,19 +1,10 @@
 /*
  * genpmk - Generate a file with precomputed PMK's and words
  *
- * Copyright (c) 2005, Joshua Wright <jwright@hasborg.com>
+ * Copyright (c) 2004-2018, Joshua Wright <jwright@hasborg.com>
  *
- * $Id: genpmk.c,v 4.1 2008-03-20 16:49:38 jwright Exp $
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. See COPYING for more
- * details.
- *
- * coWPAtty is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This software may be modified and distributed under the terms
+ * of the BSD-3-clause license. See the LICENSE file for details.
  */
 
 #include <stdlib.h>
@@ -33,7 +24,7 @@
 #include "sha1.h"
 
 #define PROGNAME "genpmk"
-#define VER "1.1"
+#define VER "1.3"
 
 /* Globals */
 int sig = 0;			/* Used for handling signals */
@@ -169,7 +160,7 @@ int main(int argc, char **argv)
 	   create the file. */
 	ret = stat(opt.hashfile, &teststat);
 	if (errno == ENOENT || teststat.st_size == 0) {
-		/* File does not exist or is empty, populate header and 
+		/* File does not exist or is empty, populate header and
 		   create */
 		printf("File %s does not exist, creating.\n", opt.hashfile);
 		memcpy(hf_header.ssid, opt.ssid, strlen(opt.ssid));
@@ -213,7 +204,7 @@ int main(int argc, char **argv)
 				opt.ssid, hf_header.ssid);
 			exit(-1);
 		}
-		
+
 		printf("File %s exists, appending new data.\n", opt.hashfile);
 		if (fopen(opt.hashfile, "ab") == NULL) {
 			perror("fopen");
@@ -242,11 +233,11 @@ int main(int argc, char **argv)
 		/*
 		 * Test length of word.  IEEE 802.11i indicates the passphrase must be
 		 * at least 8 characters in length, and no more than 63 characters in
-		 * length. 
+		 * length.
 		 */
 		if (fret < 8 || fret > 63) {
 			if (opt.verbose) {
-				printf("Invalid passphrase length: %s (%u).\n",
+				printf("Invalid passphrase length: %s (%zd).\n",
 				       passphrase, strlen(passphrase));
 			}
 			continue;

@@ -13,7 +13,7 @@ IF (M_INCLUDE_DIRS)
 ENDIF (M_INCLUDE_DIRS)
 
 #
-# On OS X, make sure we do *NOT* find math.h in the Kernel framework,
+# On macOS, make sure we do *NOT* find math.h in the Kernel framework,
 # as that will convince CMake to cause the build to look there for
 # headers.
 #
@@ -34,8 +34,7 @@ SET(CMAKE_FIND_FRAMEWORK LAST)
 FIND_PATH(M_INCLUDE_DIR math.h)
 SET(CMAKE_FIND_FRAMEWORK ${SAVED_CMAKE_FIND_FRAMEWORK})
 
-SET(M_NAMES m)
-FIND_LIBRARY(M_LIBRARY NAMES ${M_NAMES} )
+set(M_LIBRARY m)
 
 # handle the QUIETLY and REQUIRED arguments and set M_FOUND to TRUE if 
 # all listed variables are TRUE

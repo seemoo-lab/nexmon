@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,9 +33,6 @@
 
 #include "glib.h"
 
-#define C2P(c)          ((gpointer) ((long) (c)))
-#define P2C(p)          ((gchar) ((long) (p)))
-
 typedef struct {
   GString *s;
   gint count;
@@ -45,7 +44,7 @@ node_build_string (GNode    *node,
 {
   CallbackData *d = data;
 
-  g_string_append_c (d->s, P2C (node->data));
+  g_string_append_c (d->s, GPOINTER_TO_INT (node->data));
 
   d->count--;
 
@@ -168,25 +167,25 @@ traversal_test (void)
     { G_LEVEL_ORDER, G_TRAVERSE_ALL,        3,  7, "ABFCDEG"     },
     { G_LEVEL_ORDER, G_TRAVERSE_ALL,        3,  8, "ABFCDEG"     },
   };
-  gint i;
+  gsize i;
   CallbackData data;
 
-  root = g_node_new (C2P ('A'));
-  node_B = g_node_new (C2P ('B'));
+  root = g_node_new (GINT_TO_POINTER ('A'));
+  node_B = g_node_new (GINT_TO_POINTER ('B'));
   g_node_append (root, node_B);
-  g_node_append_data (node_B, C2P ('E'));
-  g_node_prepend_data (node_B, C2P ('C'));
-  node_D = g_node_new (C2P ('D'));
+  g_node_append_data (node_B, GINT_TO_POINTER ('E'));
+  g_node_prepend_data (node_B, GINT_TO_POINTER ('C'));
+  node_D = g_node_new (GINT_TO_POINTER ('D'));
   g_node_insert (node_B, 1, node_D);
-  node_F = g_node_new (C2P ('F'));
+  node_F = g_node_new (GINT_TO_POINTER ('F'));
   g_node_append (root, node_F);
-  node_G = g_node_new (C2P ('G'));
+  node_G = g_node_new (GINT_TO_POINTER ('G'));
   g_node_append (node_F, node_G);
-  node_J = g_node_new (C2P ('J'));
+  node_J = g_node_new (GINT_TO_POINTER ('J'));
   g_node_prepend (node_G, node_J);
-  g_node_insert (node_G, 42, g_node_new (C2P ('K')));
-  g_node_insert_data (node_G, 0, C2P ('H'));
-  g_node_insert (node_G, 1, g_node_new (C2P ('I')));
+  g_node_insert (node_G, 42, g_node_new (GINT_TO_POINTER ('K')));
+  g_node_insert_data (node_G, 0, GINT_TO_POINTER ('H'));
+  g_node_insert (node_G, 1, g_node_new (GINT_TO_POINTER ('I')));
 
   /* we have built:                    A
    *                                 /   \
@@ -227,13 +226,23 @@ traversal_test (void)
   g_node_traverse (root, G_LEVEL_ORDER, G_TRAVERSE_ALL, -1, node_build_string, &data);
   g_assert_cmpstr (data.s->str, ==, "ABFEDCGKJIH");
   
-  g_node_append (node_D, g_node_new (C2P ('L')));
-  g_node_insert (node_D, -1, g_node_new (C2P ('M')));
+  g_node_append (node_D, g_node_new (GINT_TO_POINTER ('L')));
+  g_node_insert (node_D, -1, g_node_new (GINT_TO_POINTER ('M')));
 
   g_string_set_size (data.s, 0);
   data.count = -1;
   g_node_traverse (root, G_LEVEL_ORDER, G_TRAVERSE_ALL, -1, node_build_string, &data);
   g_assert_cmpstr (data.s->str, ==, "ABFEDCGLMKJIH");
+
+  g_string_set_size (data.s, 0);
+  data.count = -1;
+  g_node_traverse (root, G_PRE_ORDER, G_TRAVERSE_LEAFS, -1, node_build_string, &data);
+  g_assert_cmpstr (data.s->str, ==, "ELMCKJIH");
+
+  g_string_set_size (data.s, 0);
+  data.count = -1;
+  g_node_traverse (root, G_PRE_ORDER, G_TRAVERSE_NON_LEAFS, -1, node_build_string, &data);
+  g_assert_cmpstr (data.s->str, ==, "ABDFG");
 
   g_node_destroy (root);
   g_string_free (data.s, TRUE);
@@ -252,31 +261,31 @@ construct_test (void)
   GNode *node_H;
   guint i;
 
-  root = g_node_new (C2P ('A'));
+  root = g_node_new (GINT_TO_POINTER ('A'));
   g_assert_cmpint (g_node_depth (root), ==, 1);
   g_assert_cmpint (g_node_max_height (root), ==, 1);
 
-  node_B = g_node_new (C2P ('B'));
+  node_B = g_node_new (GINT_TO_POINTER ('B'));
   g_node_append (root, node_B);
   g_assert (root->children == node_B);
 
-  g_node_append_data (node_B, C2P ('E'));
-  g_node_prepend_data (node_B, C2P ('C'));
-  node_D = g_node_new (C2P ('D'));
+  g_node_append_data (node_B, GINT_TO_POINTER ('E'));
+  g_node_prepend_data (node_B, GINT_TO_POINTER ('C'));
+  node_D = g_node_new (GINT_TO_POINTER ('D'));
   g_node_insert (node_B, 1, node_D);
 
-  node_F = g_node_new (C2P ('F'));
+  node_F = g_node_new (GINT_TO_POINTER ('F'));
   g_node_append (root, node_F);
   g_assert (root->children->next == node_F);
 
-  node_G = g_node_new (C2P ('G'));
+  node_G = g_node_new (GINT_TO_POINTER ('G'));
   g_node_append (node_F, node_G);
-  node_J = g_node_new (C2P ('J'));
+  node_J = g_node_new (GINT_TO_POINTER ('J'));
   g_node_insert_after (node_G, NULL, node_J);
-  g_node_insert (node_G, 42, g_node_new (C2P ('K')));
-  node_H = g_node_new (C2P ('H'));
+  g_node_insert (node_G, 42, g_node_new (GINT_TO_POINTER ('K')));
+  node_H = g_node_new (GINT_TO_POINTER ('H'));
   g_node_insert_after (node_G, NULL, node_H);
-  g_node_insert (node_G, 1, g_node_new (C2P ('I')));
+  g_node_insert (node_G, 1, g_node_new (GINT_TO_POINTER ('I')));
 
   /* we have built:                    A
    *                                 /   \
@@ -294,16 +303,16 @@ construct_test (void)
   g_assert_cmpint (g_node_n_nodes (root, G_TRAVERSE_ALL), ==, 11);
   g_assert_cmpint (g_node_max_height (node_F), ==, 3);
   g_assert_cmpint (g_node_n_children (node_G), ==, 4);
-  g_assert (g_node_find_child (root, G_TRAVERSE_ALL, C2P ('F')) == node_F);
-  g_assert (g_node_find_child (node_G, G_TRAVERSE_LEAFS, C2P ('H')) == node_H);
-  g_assert (g_node_find_child (root, G_TRAVERSE_ALL, C2P ('H')) == NULL);
-  g_assert (g_node_find (root, G_LEVEL_ORDER, G_TRAVERSE_NON_LEAFS, C2P ('I')) == NULL);
-  g_assert (g_node_find (root, G_IN_ORDER, G_TRAVERSE_LEAFS, C2P ('J')) == node_J);
+  g_assert (g_node_find_child (root, G_TRAVERSE_ALL, GINT_TO_POINTER ('F')) == node_F);
+  g_assert (g_node_find_child (node_G, G_TRAVERSE_LEAFS, GINT_TO_POINTER ('H')) == node_H);
+  g_assert (g_node_find_child (root, G_TRAVERSE_ALL, GINT_TO_POINTER ('H')) == NULL);
+  g_assert (g_node_find (root, G_LEVEL_ORDER, G_TRAVERSE_NON_LEAFS, GINT_TO_POINTER ('I')) == NULL);
+  g_assert (g_node_find (root, G_IN_ORDER, G_TRAVERSE_LEAFS, GINT_TO_POINTER ('J')) == node_J);
 
   for (i = 0; i < g_node_n_children (node_B); i++)
     {
       node = g_node_nth_child (node_B, i);
-      g_assert_cmpint (P2C (node->data), ==, ('C' + i));
+      g_assert_cmpint (GPOINTER_TO_INT (node->data), ==, ('C' + i));
     }
 
   for (i = 0; i < g_node_n_children (node_G); i++)
@@ -345,14 +354,14 @@ misc_test (void)
   GNode *node_E;
   CallbackData data;
 
-  root = g_node_new (C2P ('A'));
-  node_B = g_node_new (C2P ('B'));
+  root = g_node_new (GINT_TO_POINTER ('A'));
+  node_B = g_node_new (GINT_TO_POINTER ('B'));
   g_node_append (root, node_B);
-  node_D = g_node_new (C2P ('D'));
+  node_D = g_node_new (GINT_TO_POINTER ('D'));
   g_node_append (root, node_D);
-  node_C = g_node_new (C2P ('C'));
+  node_C = g_node_new (GINT_TO_POINTER ('C'));
   g_node_insert_after (root, node_B, node_C);
-  node_E = g_node_new (C2P ('E'));
+  node_E = g_node_new (GINT_TO_POINTER ('E'));
   g_node_append (node_C, node_E);
 
   g_assert (g_node_get_root (node_E) == root);
@@ -362,10 +371,10 @@ misc_test (void)
   g_assert (g_node_first_sibling (node_D) == node_B);
   g_assert (g_node_first_sibling (node_E) == node_E);
   g_assert (g_node_first_sibling (root) == root);
-  g_assert_cmpint (g_node_child_index (root, C2P ('B')), ==, 0);
-  g_assert_cmpint (g_node_child_index (root, C2P ('C')), ==, 1);
-  g_assert_cmpint (g_node_child_index (root, C2P ('D')), ==, 2);
-  g_assert_cmpint (g_node_child_index (root, C2P ('E')), ==, -1);
+  g_assert_cmpint (g_node_child_index (root, GINT_TO_POINTER ('B')), ==, 0);
+  g_assert_cmpint (g_node_child_index (root, GINT_TO_POINTER ('C')), ==, 1);
+  g_assert_cmpint (g_node_child_index (root, GINT_TO_POINTER ('D')), ==, 2);
+  g_assert_cmpint (g_node_child_index (root, GINT_TO_POINTER ('E')), ==, -1);
 
   data.s = g_string_new ("");
   data.count = -1;
@@ -418,21 +427,21 @@ unlink_test (void)
    *
    */
 
-  root = g_node_new (C2P ('a'));
-  node = bnode = g_node_append_data (root, C2P ('b'));
-  g_node_append_data (node, C2P ('e'));
-  g_node_append_data (node, C2P ('f'));
-  g_node_append_data (node, C2P ('g'));
+  root = g_node_new (GINT_TO_POINTER ('a'));
+  node = bnode = g_node_append_data (root, GINT_TO_POINTER ('b'));
+  g_node_append_data (node, GINT_TO_POINTER ('e'));
+  g_node_append_data (node, GINT_TO_POINTER ('f'));
+  g_node_append_data (node, GINT_TO_POINTER ('g'));
 
-  node = cnode = g_node_append_data (root, C2P ('c'));
-  g_node_append_data (node, C2P ('h'));
-  g_node_append_data (node, C2P ('i'));
-  g_node_append_data (node, C2P ('j'));
+  node = cnode = g_node_append_data (root, GINT_TO_POINTER ('c'));
+  g_node_append_data (node, GINT_TO_POINTER ('h'));
+  g_node_append_data (node, GINT_TO_POINTER ('i'));
+  g_node_append_data (node, GINT_TO_POINTER ('j'));
 
-  node = g_node_append_data (root, C2P ('d'));
-  g_node_append_data (node, C2P ('k'));
-  g_node_append_data (node, C2P ('l'));
-  g_node_append_data (node, C2P ('m'));
+  node = g_node_append_data (root, GINT_TO_POINTER ('d'));
+  g_node_append_data (node, GINT_TO_POINTER ('k'));
+  g_node_append_data (node, GINT_TO_POINTER ('l'));
+  g_node_append_data (node, GINT_TO_POINTER ('m'));
 
   g_node_unlink (cnode);
 
@@ -473,10 +482,10 @@ copy_test (void)
   GNode *copy;
   gchar *expected;
 
-  root = g_node_new (C2P ('a'));
-  g_node_append_data (root, C2P ('b'));
-  g_node_append_data (root, C2P ('c'));
-  g_node_append_data (root, C2P ('d'));
+  root = g_node_new (GINT_TO_POINTER ('a'));
+  g_node_append_data (root, GINT_TO_POINTER ('b'));
+  g_node_append_data (root, GINT_TO_POINTER ('c'));
+  g_node_append_data (root, GINT_TO_POINTER ('d'));
 
   expected = "abcd";
   g_node_traverse (root, G_LEVEL_ORDER, G_TRAVERSE_ALL, -1, check_order, &expected);
@@ -513,4 +522,3 @@ main (int   argc,
 
   return g_test_run ();
 }
-

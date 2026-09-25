@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaWildcardNs" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaWildcardNs</compoundname>
+    <includes local="no">schemasInternals.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaWildcardNs_1af0d645cf2cd4d850a42fe36829b36a47" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlSchemaWildcardNs" kindref="compound">_xmlSchemaWildcardNs</ref> *</type>
+        <definition>struct _xmlSchemaWildcardNs* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlSchemaWildcardNs::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="282" column="31" bodyfile="schemasInternals.h" bodystart="282" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaWildcardNs_1a3e19d0b7c498da553db7c10f46fcf307" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>_xmlSchemaWildcardNs::value</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="283" column="19" bodyfile="schemasInternals.h" bodystart="283" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Used to build a list of namespaces on wildcards. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlSchemaWildcardNs</label>
+        <link refid="struct__xmlSchemaWildcardNs"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="schemasInternals.h" line="281" column="1" bodyfile="schemasInternals.h" bodystart="281" bodyend="284"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaWildcardNs_1af0d645cf2cd4d850a42fe36829b36a47" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcardNs</scope><name>next</name></member>
+      <member refid="struct__xmlSchemaWildcardNs_1a3e19d0b7c498da553db7c10f46fcf307" prot="public" virt="non-virtual"><scope>_xmlSchemaWildcardNs</scope><name>value</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

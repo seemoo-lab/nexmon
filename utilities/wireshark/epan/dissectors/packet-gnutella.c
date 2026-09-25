@@ -6,29 +6,18 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include "packet-gnutella.h"
 #include "packet-tcp.h"
 
 void proto_register_gnutella(void);
 void proto_reg_handoff_gnutella(void);
+
+static dissector_handle_t gnutella_handle;
 
 /*
  * See
@@ -36,50 +25,112 @@ void proto_reg_handoff_gnutella(void);
  *	http://rfc-gnutella.sourceforge.net/developer/index.html
  */
 
-static int proto_gnutella = -1;
+static int proto_gnutella;
 
-static int hf_gnutella_stream = -1;
+static int hf_gnutella_stream;
 
-static int hf_gnutella_header = -1;
-static int hf_gnutella_header_id = -1;
-static int hf_gnutella_header_payload = -1;
-static int hf_gnutella_header_ttl = -1;
-static int hf_gnutella_header_hops = -1;
-static int hf_gnutella_header_size = -1;
+static int hf_gnutella_header;
+static int hf_gnutella_header_id;
+static int hf_gnutella_header_payload;
+static int hf_gnutella_header_ttl;
+static int hf_gnutella_header_hops;
+static int hf_gnutella_header_size;
 
-static int hf_gnutella_pong_payload = -1;
-static int hf_gnutella_pong_port = -1;
-static int hf_gnutella_pong_ip = -1;
-static int hf_gnutella_pong_files = -1;
-static int hf_gnutella_pong_kbytes = -1;
+static int hf_gnutella_pong_payload;
+static int hf_gnutella_pong_port;
+static int hf_gnutella_pong_ip;
+static int hf_gnutella_pong_files;
+static int hf_gnutella_pong_kbytes;
 
-static int hf_gnutella_query_payload = -1;
-static int hf_gnutella_query_min_speed = -1;
-static int hf_gnutella_query_search = -1;
+static int hf_gnutella_query_payload;
+static int hf_gnutella_query_min_speed;
+static int hf_gnutella_query_search;
 
-static int hf_gnutella_queryhit_payload = -1;
-static int hf_gnutella_queryhit_count = -1;
-static int hf_gnutella_queryhit_port = -1;
-static int hf_gnutella_queryhit_ip = -1;
-static int hf_gnutella_queryhit_speed = -1;
-static int hf_gnutella_queryhit_extra = -1;
-static int hf_gnutella_queryhit_servent_id = -1;
+static int hf_gnutella_queryhit_payload;
+static int hf_gnutella_queryhit_count;
+static int hf_gnutella_queryhit_port;
+static int hf_gnutella_queryhit_ip;
+static int hf_gnutella_queryhit_speed;
+static int hf_gnutella_queryhit_extra;
+static int hf_gnutella_queryhit_servent_id;
 
-static int hf_gnutella_queryhit_hit = -1;
-static int hf_gnutella_queryhit_hit_index = -1;
-static int hf_gnutella_queryhit_hit_size = -1;
-static int hf_gnutella_queryhit_hit_name = -1;
-static int hf_gnutella_queryhit_hit_extra = -1;
+static int hf_gnutella_queryhit_hit;
+static int hf_gnutella_queryhit_hit_index;
+static int hf_gnutella_queryhit_hit_size;
+static int hf_gnutella_queryhit_hit_name;
+static int hf_gnutella_queryhit_hit_extra;
 
-static int hf_gnutella_push_payload = -1;
-static int hf_gnutella_push_servent_id = -1;
-static int hf_gnutella_push_index = -1;
-static int hf_gnutella_push_ip = -1;
-static int hf_gnutella_push_port = -1;
+static int hf_gnutella_push_payload;
+static int hf_gnutella_push_servent_id;
+static int hf_gnutella_push_index;
+static int hf_gnutella_push_ip;
+static int hf_gnutella_push_port;
 
-static gint ett_gnutella = -1;
+static int ett_gnutella;
 
-static void dissect_gnutella_pong(tvbuff_t *tvb, guint offset, proto_tree *tree) {
+#define GNUTELLA_TCP_PORT	6346
+
+/*
+ * Used to determine whether a chunk of data looks like a Gnutella packet
+ * or not - it might be a transfer stream, or it might be part of a
+ * Gnutella packet that starts in an earlier missing TCP segment.
+ *
+ * One Gnutella spec says packets SHOULD be no bigger than 4K, although
+ * that's SHOULD, not MUST.
+ */
+#define GNUTELLA_MAX_SNAP_SIZE	4096
+
+#define GNUTELLA_UNKNOWN_NAME	"Unknown"
+#define GNUTELLA_PING		0x00
+#define GNUTELLA_PING_NAME	"Ping"
+#define GNUTELLA_PONG		0x01
+#define GNUTELLA_PONG_NAME	"Pong"
+#define GNUTELLA_PUSH		0x40
+#define GNUTELLA_PUSH_NAME	"Push"
+#define GNUTELLA_QUERY		0x80
+#define GNUTELLA_QUERY_NAME	"Query"
+#define GNUTELLA_QUERYHIT	0x81
+#define GNUTELLA_QUERYHIT_NAME	"QueryHit"
+
+#define GNUTELLA_HEADER_LENGTH		23
+#define GNUTELLA_SERVENT_ID_LENGTH	16
+#define GNUTELLA_PORT_LENGTH		2
+#define GNUTELLA_IP_LENGTH		4
+#define GNUTELLA_LONG_LENGTH		4
+#define GNUTELLA_SHORT_LENGTH		2
+#define GNUTELLA_BYTE_LENGTH		1
+
+#define GNUTELLA_PONG_LENGTH		14
+#define GNUTELLA_PONG_PORT_OFFSET	0
+#define GNUTELLA_PONG_IP_OFFSET		2
+#define GNUTELLA_PONG_FILES_OFFSET	6
+#define GNUTELLA_PONG_KBYTES_OFFSET	10
+
+#define GNUTELLA_QUERY_SPEED_OFFSET	0
+#define GNUTELLA_QUERY_SEARCH_OFFSET	2
+
+#define GNUTELLA_QUERYHIT_HEADER_LENGTH		11
+#define GNUTELLA_QUERYHIT_COUNT_OFFSET		0
+#define GNUTELLA_QUERYHIT_PORT_OFFSET		1
+#define GNUTELLA_QUERYHIT_IP_OFFSET		3
+#define GNUTELLA_QUERYHIT_SPEED_OFFSET		7
+#define GNUTELLA_QUERYHIT_FIRST_HIT_OFFSET	11
+#define GNUTELLA_QUERYHIT_HIT_INDEX_OFFSET	0
+#define GNUTELLA_QUERYHIT_HIT_SIZE_OFFSET	4
+#define GNUTELLA_QUERYHIT_END_OF_STRING_LENGTH	2
+
+#define GNUTELLA_PUSH_SERVENT_ID_OFFSET		0
+#define GNUTELLA_PUSH_INDEX_OFFSET		16
+#define GNUTELLA_PUSH_IP_OFFSET			20
+#define GNUTELLA_PUSH_PORT_OFFSET		24
+
+#define GNUTELLA_HEADER_ID_OFFSET		0
+#define GNUTELLA_HEADER_PAYLOAD_OFFSET		16
+#define GNUTELLA_HEADER_TTL_OFFSET		17
+#define GNUTELLA_HEADER_HOPS_OFFSET		18
+#define GNUTELLA_HEADER_SIZE_OFFSET		19
+
+static void dissect_gnutella_pong(tvbuff_t *tvb, unsigned offset, proto_tree *tree) {
 
 	proto_tree_add_item(tree,
 		hf_gnutella_pong_port,
@@ -111,7 +162,7 @@ static void dissect_gnutella_pong(tvbuff_t *tvb, guint offset, proto_tree *tree)
 
 }
 
-static void dissect_gnutella_query(tvbuff_t *tvb, guint offset, proto_tree *tree, guint size) {
+static void dissect_gnutella_query(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned size) {
 
 	proto_tree_add_item(tree,
 		hf_gnutella_query_min_speed,
@@ -121,12 +172,28 @@ static void dissect_gnutella_query(tvbuff_t *tvb, guint offset, proto_tree *tree
 		ENC_LITTLE_ENDIAN);
 
 	if (size > GNUTELLA_SHORT_LENGTH) {
+		/*
+		 * XXX - the 0.4 spec says, of this field:
+		 *
+		 *   It SHOULD use an ASCII-compatible encoding and
+		 *   charset. In this version of the protocol, no
+		 *   encoding was specified, but most servents use
+		 *   the ISO-8859-1 character set, but other encodings
+		 *   such as UTF-8 MAY also be used (possibly in
+		 *   conjonction with Query Data), as well as other
+		 *   international character sets (ISO-8859-*, KOI-8,
+		 *   S-JIS, Big5, ...).
+		 *
+		 * No obvious mechanism is provided to indicate what
+		 * encoding is being used; perhaps this should be
+		 * made a preference, defaulting to ISO 8859-1.
+		 */
 		proto_tree_add_item(tree,
 			hf_gnutella_query_search,
 			tvb,
 			offset + GNUTELLA_QUERY_SEARCH_OFFSET,
 			size - GNUTELLA_SHORT_LENGTH,
-			ENC_ASCII|ENC_NA);
+			ENC_ASCII);
 	}
 	else {
 		proto_tree_add_string_format(tree,
@@ -136,7 +203,7 @@ static void dissect_gnutella_query(tvbuff_t *tvb, guint offset, proto_tree *tree
 	}
 }
 
-static void dissect_gnutella_queryhit(tvbuff_t *tvb, guint offset, proto_tree *tree, guint size) {
+static void dissect_gnutella_queryhit(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned size) {
 
 	proto_tree *qhi, *hit_tree;
 	int hit_count, i;
@@ -147,7 +214,7 @@ static void dissect_gnutella_queryhit(tvbuff_t *tvb, guint offset, proto_tree *t
 	int name_at_offset, extra_at_offset;
 	int cur_char, remaining, used;
 
-	hit_count = tvb_get_guint8(tvb, offset + GNUTELLA_QUERYHIT_COUNT_OFFSET);
+	hit_count = tvb_get_uint8(tvb, offset + GNUTELLA_QUERYHIT_COUNT_OFFSET);
 
 	proto_tree_add_uint(tree,
 		hf_gnutella_queryhit_count,
@@ -191,7 +258,7 @@ static void dissect_gnutella_queryhit(tvbuff_t *tvb, guint offset, proto_tree *t
 		name_at_offset = hit_offset;
 
 		while(hit_offset - offset < size) {
-			cur_char = tvb_get_guint8(tvb, hit_offset);
+			cur_char = tvb_get_uint8(tvb, hit_offset);
 			if(cur_char == '\0')
 				break;
 
@@ -204,7 +271,7 @@ static void dissect_gnutella_queryhit(tvbuff_t *tvb, guint offset, proto_tree *t
 		extra_at_offset = hit_offset;
 
 		while(hit_offset - offset < size) {
-			cur_char = tvb_get_guint8(tvb, hit_offset);
+			cur_char = tvb_get_uint8(tvb, hit_offset);
 			if(cur_char == '\0')
 				break;
 
@@ -244,7 +311,7 @@ static void dissect_gnutella_queryhit(tvbuff_t *tvb, guint offset, proto_tree *t
 			tvb,
 			name_at_offset,
 			name_length,
-			ENC_ASCII|ENC_NA);
+			ENC_ASCII);
 
 		if(extra_length) {
 			proto_tree_add_item(hit_tree,
@@ -282,7 +349,7 @@ static void dissect_gnutella_queryhit(tvbuff_t *tvb, guint offset, proto_tree *t
 
 }
 
-static void dissect_gnutella_push(tvbuff_t *tvb, guint offset, proto_tree *tree) {
+static void dissect_gnutella_push(tvbuff_t *tvb, unsigned offset, proto_tree *tree) {
 
 	proto_tree_add_item(tree,
 		hf_gnutella_push_servent_id,
@@ -314,11 +381,11 @@ static void dissect_gnutella_push(tvbuff_t *tvb, guint offset, proto_tree *tree)
 
 }
 
-static guint
+static unsigned
 get_gnutella_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                      int offset, void *data _U_)
 {
-	guint32 size;
+	uint32_t size;
 
 	size = tvb_get_letohl(
 		tvb,
@@ -342,8 +409,8 @@ static int dissect_gnutella_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 	proto_tree *gnutella_header_tree, *gnutella_pong_tree;
 	proto_tree *gnutella_queryhit_tree, *gnutella_push_tree;
 	proto_tree *gnutella_query_tree;
-	guint8 payload_descriptor;
-	guint32 size = 0;
+	uint8_t payload_descriptor;
+	uint32_t size = 0;
 	const char *payload_descriptor_text;
 
 	if (tree) {
@@ -360,7 +427,7 @@ static int dissect_gnutella_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 			GNUTELLA_HEADER_SIZE_OFFSET);
 	}
 
-	payload_descriptor = tvb_get_guint8(
+	payload_descriptor = tvb_get_uint8(
 		tvb,
 		GNUTELLA_HEADER_PAYLOAD_OFFSET);
 
@@ -385,7 +452,7 @@ static int dissect_gnutella_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 			break;
 	}
 
-	col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "%s",
+	col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
 		    payload_descriptor_text);
 
 	if (tree) {
@@ -515,7 +582,7 @@ static int dissect_gnutella(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 	proto_item *ti;
 	proto_tree *gnutella_tree = NULL;
-	guint32 size;
+	uint32_t size;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "Gnutella");
 
@@ -558,7 +625,7 @@ static int dissect_gnutella(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		}
 	}
 
-	tcp_dissect_pdus(tvb, pinfo, tree, TRUE, GNUTELLA_HEADER_SIZE_OFFSET+4,
+	tcp_dissect_pdus(tvb, pinfo, tree, true, GNUTELLA_HEADER_SIZE_OFFSET+4,
 	    get_gnutella_pdu_len, dissect_gnutella_pdu, data);
 	return tvb_captured_length(tvb);
 }
@@ -623,7 +690,7 @@ void proto_register_gnutella(void) {
 		},
 		{ &hf_gnutella_pong_port,
 			{ "Port", "gnutella.pong.port",
-			FT_UINT16, BASE_DEC, NULL, 0,
+			FT_UINT16, BASE_PT_TCP, NULL, 0,
 			"Gnutella Pong TCP Port", HFILL }
 		},
 		{ &hf_gnutella_pong_ip,
@@ -683,7 +750,7 @@ void proto_register_gnutella(void) {
 		},
 		{ &hf_gnutella_queryhit_port,
 			{ "Port", "gnutella.queryhit.port",
-			FT_UINT16, BASE_DEC, NULL, 0,
+			FT_UINT16, BASE_PT_TCP, NULL, 0,
 			"Gnutella QueryHit Port", HFILL }
 		},
 		{ &hf_gnutella_queryhit_ip,
@@ -728,29 +795,25 @@ void proto_register_gnutella(void) {
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_gnutella,
 	};
 
-	proto_gnutella = proto_register_protocol("Gnutella Protocol",
-	    					"GNUTELLA",
-						"gnutella");
+	proto_gnutella = proto_register_protocol("Gnutella Protocol", "GNUTELLA", "gnutella");
 
 	proto_register_field_array(proto_gnutella, hf, array_length(hf));
 
 	proto_register_subtree_array(ett, array_length(ett));
+
+	gnutella_handle = register_dissector("gnutella", dissect_gnutella, proto_gnutella);
 }
 
 void proto_reg_handoff_gnutella(void) {
-	dissector_handle_t gnutella_handle;
-
-	gnutella_handle = create_dissector_handle(dissect_gnutella,
-			proto_gnutella);
-	dissector_add_uint("tcp.port", GNUTELLA_TCP_PORT, gnutella_handle);
+	dissector_add_uint_with_preference("tcp.port", GNUTELLA_TCP_PORT, gnutella_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

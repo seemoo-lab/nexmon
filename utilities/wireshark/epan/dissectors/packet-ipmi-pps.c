@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,7 +17,7 @@
 
 void proto_register_ipmi_pps(void);
 
-static ipmi_cmd_t cmd_pps[] = {
+static const ipmi_cmd_t cmd_pps[] = {
 	{ 0x00, IPMI_TBD,   NULL, NULL, "[PPS OEM] Get Status", 0 },
 	{ 0x01, IPMI_TBD,   NULL, NULL, "[PPS OEM] Get Serial Interface Properties", 0 },
 	{ 0x02, IPMI_TBD,   NULL, NULL, "[PPS OEM] Set Serial Interface Properties", 0 },
@@ -101,8 +89,8 @@ static ipmi_cmd_t cmd_pps[] = {
 void
 proto_register_ipmi_pps(void)
 {
-	static guint8 sig_pps[3] = { 0x0a, 0x40, 0x00 };
-	static guint8 sig_pps_rev[3] = { 0x00, 0x40, 0x0a };
+	static uint8_t sig_pps[3] = { 0x0a, 0x40, 0x00 };
+	static uint8_t sig_pps_rev[3] = { 0x00, 0x40, 0x0a };
 
 	ipmi_register_netfn_cmdtab(IPMI_OEM_REQ, IPMI_OEM_NONE, sig_pps, 3,
 				   "Pigeon Point Systems", cmd_pps, array_length(cmd_pps));
@@ -111,7 +99,7 @@ proto_register_ipmi_pps(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

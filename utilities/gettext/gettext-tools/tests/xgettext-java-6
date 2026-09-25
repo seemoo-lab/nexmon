@@ -1,7 +1,7 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test Java support: --add-comments option.
+# Test Java support: --add-comments option, string concatenation.
 
 cat <<\EOF > xg-j-6.java
 /* a */
@@ -15,7 +15,7 @@ ${XGETTEXT} --add-comments --omit-header --no-location --keyword=_ \
   -d xg-j-6.tmp xg-j-6.java || Exit 1
 LC_ALL=C tr -d '\r' < xg-j-6.tmp.po > xg-j-6.po || Exit 1
 
-cat <<EOF > xg-j-6.ok
+cat <<\EOF > xg-j-6.ok
 #. a
 #. b
 #. c

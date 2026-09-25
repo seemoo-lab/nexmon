@@ -1,5 +1,5 @@
 /* packet-btle_rf.c
- * http://www.whiterocker.com/bt/LINKTYPE_BLUETOOTH_LE_LL_WITH_PHDR.html
+ * https://www.tcpdump.org/linktypes/LINKTYPE_BLUETOOTH_LE_LL_WITH_PHDR.html
  *
  * Copyright 2014, Christopher D. Kilgour, techie at whiterocker dot com
  *
@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -36,39 +24,41 @@
 #define LE_REF_AA_VALID      0x0010
 #define LE_AA_OFFENSES_VALID 0x0020
 #define LE_CHANNEL_ALIASED   0x0040
+#define LE_PDU_TYPE          0x0380
 #define LE_CRC_CHECKED       0x0400
 #define LE_CRC_VALID         0x0800
 #define LE_MIC_CHECKED       0x1000
 #define LE_MIC_VALID         0x2000
+#define LE_PHY               0xC000
 
 #define BTLE_RF_OCTETS 10
 
-static int proto_btle_rf = -1;
+static int proto_btle_rf;
 
-static int hf_btle_rf_signed_byte_unused = -1;
-static int hf_btle_rf_unsigned_byte_unused = -1;
-static int hf_btle_rf_word_unused = -1;
-static int hf_btle_rf_channel = -1;
-static int hf_btle_rf_signal_dbm = -1;
-static int hf_btle_rf_noise_dbm = -1;
-static int hf_btle_rf_access_address_offenses = -1;
-static int hf_btle_rf_reference_access_address = -1;
-static int hf_btle_rf_flags = -1;
-static int hf_btle_rf_dewhitened_flag = -1;
-static int hf_btle_rf_sigpower_valid_flag = -1;
-static int hf_btle_rf_noisepower_valid_flag = -1;
-static int hf_btle_rf_packet_decrypted_flag = -1;
-static int hf_btle_rf_ref_aa_valid_flag = -1;
-static int hf_btle_rf_aa_offenses_valid_flag = -1;
-static int hf_btle_rf_channel_aliased_flag = -1;
-static int hf_btle_rf_flags_rfu_1 = -1;
-static int hf_btle_rf_crc_checked_flag = -1;
-static int hf_btle_rf_crc_valid_flag = -1;
-static int hf_btle_rf_mic_checked_flag = -1;
-static int hf_btle_rf_mic_valid_flag = -1;
-static int hf_btle_rf_flags_rfu_2 = -1;
+static int hf_btle_rf_signed_byte_unused;
+static int hf_btle_rf_unsigned_byte_unused;
+static int hf_btle_rf_word_unused;
+static int hf_btle_rf_channel;
+static int hf_btle_rf_signal_dbm;
+static int hf_btle_rf_noise_dbm;
+static int hf_btle_rf_access_address_offenses;
+static int hf_btle_rf_reference_access_address;
+static int hf_btle_rf_flags;
+static int hf_btle_rf_dewhitened_flag;
+static int hf_btle_rf_sigpower_valid_flag;
+static int hf_btle_rf_noisepower_valid_flag;
+static int hf_btle_rf_packet_decrypted_flag;
+static int hf_btle_rf_ref_aa_valid_flag;
+static int hf_btle_rf_aa_offenses_valid_flag;
+static int hf_btle_rf_channel_aliased_flag;
+static int hf_btle_rf_pdu_type;
+static int hf_btle_rf_crc_checked_flag;
+static int hf_btle_rf_crc_valid_flag;
+static int hf_btle_rf_mic_checked_flag;
+static int hf_btle_rf_mic_valid_flag;
+static int hf_btle_rf_phy;
 
-static const int *hfs_btle_rf_flags[] = {
+static int * const hfs_btle_rf_flags[] = {
     &hf_btle_rf_dewhitened_flag,
     &hf_btle_rf_sigpower_valid_flag,
     &hf_btle_rf_noisepower_valid_flag,
@@ -76,17 +66,17 @@ static const int *hfs_btle_rf_flags[] = {
     &hf_btle_rf_ref_aa_valid_flag,
     &hf_btle_rf_aa_offenses_valid_flag,
     &hf_btle_rf_channel_aliased_flag,
-    &hf_btle_rf_flags_rfu_1,
+    &hf_btle_rf_pdu_type,
     &hf_btle_rf_crc_checked_flag,
     &hf_btle_rf_crc_valid_flag,
     &hf_btle_rf_mic_checked_flag,
     &hf_btle_rf_mic_valid_flag,
-    &hf_btle_rf_flags_rfu_2,
+    &hf_btle_rf_phy,
     NULL
 };
 
-static int ett_btle_rf = -1;
-static int ett_btle_rf_flags = -1;
+static int ett_btle_rf;
+static int ett_btle_rf_flags;
 
 static dissector_handle_t btle_rf_handle;
 static dissector_handle_t btle_handle;
@@ -94,8 +84,30 @@ static dissector_handle_t btle_handle;
 void proto_register_btle_rf(void);
 void proto_reg_handoff_btle_rf(void);
 
+static const value_string le_phys[] =
+{
+    { 0, "LE 1M"    },
+    { 1, "LE 2M"    },
+    { 2, "LE Coded" },
+    { 3, "Reserved" },
+    { 0, NULL }
+};
+
+static const value_string le_pdus[] =
+{
+    { 0, "Advertising or Data (Unspecified Direction)" },
+    { 1, "Auxiliary Advertising" },
+    { 2, "Data, Central to Peripheral" },
+    { 3, "Data, Peripheral to Central" },
+    { 4, "Connected Isochronous, Central to Peripheral" },
+    { 5, "Connected Isochronous, Peripheral to Central" },
+    { 6, "Broadcast Isochronous" },
+    { 7, "Reserved" },
+    { 0, NULL }
+};
+
 static const char *
-btle_rf_channel_type(guint8 rf_channel)
+btle_rf_channel_type(uint8_t rf_channel)
 {
     if (rf_channel <= 39) {
         switch(rf_channel) {
@@ -110,8 +122,8 @@ btle_rf_channel_type(guint8 rf_channel)
     return "Illegal channel";
 }
 
-static guint8
-btle_rf_channel_index(guint8 rf_channel)
+static uint8_t
+btle_rf_channel_index(uint8_t rf_channel)
 {
     if (rf_channel <= 39) {
         if (rf_channel == 39) {
@@ -130,19 +142,19 @@ btle_rf_channel_index(guint8 rf_channel)
             return 37;
         }
     }
-    return (guint8) -1;
+    return (uint8_t) -1;
 }
 
-static gint
+static int
 dissect_btle_rf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item        *ti;
     proto_tree        *btle_rf_tree;
     tvbuff_t          *btle_tvb;
     btle_context_t     context;
-    guint8             rf_channel;
-    guint8             aa_offenses;
-    guint16            flags;
+    uint8_t            rf_channel;
+    uint8_t            aa_offenses;
+    uint16_t           flags;
     bluetooth_data_t  *bluetooth_data = (bluetooth_data_t *) data;
 
     if (tvb_captured_length(tvb) < BTLE_RF_OCTETS)
@@ -156,24 +168,71 @@ dissect_btle_rf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     memset(&context, 0, sizeof(context));
     context.previous_protocol_data.bluetooth_data = bluetooth_data;
     context.aa_category            = E_AA_NO_COMMENT;
-    context.connection_info_valid  = 0; /* TODO */
     context.crc_checked_at_capture = !!(flags & LE_CRC_CHECKED);
     context.crc_valid_at_capture   = !!(flags & LE_CRC_VALID);
     context.mic_checked_at_capture = !!(flags & LE_MIC_CHECKED);
     context.mic_valid_at_capture   = !!(flags & LE_MIC_VALID);
 
+    switch ((flags & LE_PDU_TYPE) >> 7)
+    {
+    case 0: // Advertising or Data (Unspecified Direction)
+        // backwards compatible path
+        context.pdu_type = BTLE_PDU_TYPE_UNKNOWN;
+        break;
+    case 1: // Auxiliary Advertising
+        // advertising is never encrypted, so MIC flags are repurposed
+        context.pdu_type = BTLE_PDU_TYPE_ADVERTISING;
+        context.mic_checked_at_capture = false;
+        context.mic_valid_at_capture = false;
+
+        // context.aux_pdu_type values defined in aux_pdu_common_vals of packet-btle.c
+        // they match with the definition for this link type
+        context.aux_pdu_type = (flags & 0x3000) >> 12;
+        context.aux_pdu_type_valid = true;
+        break;
+    case 2: // Data, Central to Peripheral
+        context.pdu_type = BTLE_PDU_TYPE_DATA;
+        context.direction = BTLE_DIR_CENTRAL_PERIPHERAL;
+        pinfo->p2p_dir = P2P_DIR_SENT;
+        break;
+    case 3: // Data, Peripheral to Central
+        context.pdu_type = BTLE_PDU_TYPE_DATA;
+        context.direction = BTLE_DIR_PERIPHERAL_CENTRAL;
+        pinfo->p2p_dir = P2P_DIR_RECV;
+        break;
+    case 4: // Connected Isochronous, Central to Peripheral
+        context.pdu_type = BTLE_PDU_TYPE_CONNECTEDISO;
+        context.direction = BTLE_DIR_CENTRAL_PERIPHERAL;
+        pinfo->p2p_dir = P2P_DIR_SENT;
+        break;
+    case 5: // Connected Isochronous, Peripheral to Central
+        context.pdu_type = BTLE_PDU_TYPE_CONNECTEDISO;
+        context.direction = BTLE_DIR_PERIPHERAL_CENTRAL;
+        pinfo->p2p_dir = P2P_DIR_RECV;
+        break;
+    case 6: // Broadcast Isochronous
+        context.pdu_type = BTLE_PDU_TYPE_BROADCASTISO;
+        break;
+    case 7: // Reserved
+        context.pdu_type = BTLE_PDU_TYPE_UNKNOWN;
+        break;
+    }
+
     ti = proto_tree_add_item(tree, proto_btle_rf, tvb, 0, tvb_captured_length(tvb), ENC_NA);
     btle_rf_tree = proto_item_add_subtree(ti, ett_btle_rf);
 
     ti = proto_tree_add_item(btle_rf_tree, hf_btle_rf_channel, tvb, 0, 1, ENC_LITTLE_ENDIAN);
-    rf_channel  = tvb_get_guint8(tvb, 0);
+    rf_channel  = tvb_get_uint8(tvb, 0);
     proto_item_append_text(ti, ", %d MHz, %s %d", 2402+2*rf_channel,
                            btle_rf_channel_type(rf_channel),
                            btle_rf_channel_index(rf_channel));
+    context.channel = btle_rf_channel_index(rf_channel);
 
     if (flags & LE_CHANNEL_ALIASED) {
         proto_item_append_text(ti, " [aliased]");
     }
+
+    context.phy = (flags & LE_PHY) >> 14;
 
     if (flags & LE_SIGPOWER_VALID) {
         proto_tree_add_item(btle_rf_tree, hf_btle_rf_signal_dbm, tvb, 1, 1, ENC_LITTLE_ENDIAN);
@@ -191,7 +250,7 @@ dissect_btle_rf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
     if (flags & LE_AA_OFFENSES_VALID) {
         proto_tree_add_item(btle_rf_tree, hf_btle_rf_access_address_offenses, tvb, 3, 1, ENC_LITTLE_ENDIAN);
-        aa_offenses = tvb_get_guint8(tvb, 3);
+        aa_offenses = tvb_get_uint8(tvb, 3);
         if (aa_offenses > 0) {
             if (flags & LE_REF_AA_VALID) {
                 context.aa_category = E_AA_BIT_ERRORS;
@@ -214,7 +273,6 @@ dissect_btle_rf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     else {
         proto_tree_add_item(btle_rf_tree, hf_btle_rf_word_unused, tvb, 4, 4, ENC_LITTLE_ENDIAN);
     }
-
 
     proto_tree_add_bitmask_with_flags(btle_rf_tree, tvb, 8, hf_btle_rf_flags, ett_btle_rf_flags,  hfs_btle_rf_flags, ENC_LITTLE_ENDIAN, BMT_NO_APPEND);
 
@@ -324,9 +382,10 @@ proto_register_btle_rf(void)
             NULL, LE_CHANNEL_ALIASED,
             NULL, HFILL }
         },
-        { &hf_btle_rf_flags_rfu_1,
-          { "RFU", "btle_rf.flags.rfu.1",
-            FT_UINT16, BASE_DEC, NULL, 0x380,
+        { &hf_btle_rf_pdu_type,
+          { "PDU Type", "btle_rf.pdu_type",
+            FT_UINT16, BASE_DEC,
+            VALS(le_pdus), LE_PDU_TYPE,
             NULL, HFILL }
         },
         { &hf_btle_rf_crc_checked_flag,
@@ -353,14 +412,15 @@ proto_register_btle_rf(void)
             NULL, LE_MIC_VALID,
             NULL, HFILL }
         },
-        { &hf_btle_rf_flags_rfu_2,
-          { "RFU", "btle_rf.flags.rfu.2",
-            FT_UINT16, BASE_DEC, NULL, 0xc000,
+        { &hf_btle_rf_phy,
+          { "PHY", "btle_rf.phy",
+            FT_UINT16, BASE_DEC,
+            VALS(le_phys), LE_PHY,
             NULL, HFILL }
         },
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_btle_rf,
         &ett_btle_rf_flags,
     };
@@ -380,7 +440,7 @@ proto_reg_handoff_btle_rf(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

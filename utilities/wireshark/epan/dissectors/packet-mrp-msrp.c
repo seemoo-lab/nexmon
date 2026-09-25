@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * The MSRP Protocol specification can be found at the following:
  * http://www.ieee802.org/1/files/private/at-drafts/d6/802-1at-d6-0.pdf
@@ -37,6 +25,8 @@
 
 void proto_register_mrp_msrp(void);
 void proto_reg_handoff_mrp_msrp(void);
+
+static dissector_handle_t msrp_handle;
 
 /* MSRP End Mark Sequence */
 #define MSRP_END_MARK       0x0000
@@ -215,65 +205,65 @@ static const value_string four_packed_vals[] = {
 /**********************************************************/
 /* Initialize the protocol and registered fields          */
 /**********************************************************/
-static int proto_msrp = -1;
-static int hf_msrp_proto_id = -1;
-static int hf_msrp_message = -1; /* Message is a group of fields */
-static int hf_msrp_attribute_type = -1;
-static int hf_msrp_attribute_length = -1;
-static int hf_msrp_attribute_list_length = -1;
-static int hf_msrp_attribute_list = -1; /* AttributeList is a group of fields */
-static int hf_msrp_vector_attribute = -1; /* VectorAttribute is a group of fields */
+static int proto_msrp;
+static int hf_msrp_proto_id;
+static int hf_msrp_message; /* Message is a group of fields */
+static int hf_msrp_attribute_type;
+static int hf_msrp_attribute_length;
+static int hf_msrp_attribute_list_length;
+static int hf_msrp_attribute_list; /* AttributeList is a group of fields */
+static int hf_msrp_vector_attribute; /* VectorAttribute is a group of fields */
 
 /* The following VectorHeader contains the LeaveAllEvent and NumberOfValues */
-static int hf_msrp_vector_header = -1;
-static int hf_msrp_leave_all_event = -1;
-static int hf_msrp_number_of_values = -1;
-static gint ett_vector_header = -1;
-static const int *vector_header_fields[] = {
+static int hf_msrp_vector_header;
+static int hf_msrp_leave_all_event;
+static int hf_msrp_number_of_values;
+static int ett_vector_header;
+static int * const vector_header_fields[] = {
     &hf_msrp_leave_all_event,
     &hf_msrp_number_of_values,
     NULL
 };
 
-static int hf_msrp_first_value = -1; /* FirstValue is a group of fields */
-static int hf_msrp_stream_id = -1;
-static int hf_msrp_stream_da = -1;
-static int hf_msrp_vlan_id = -1;
-static int hf_msrp_tspec_max_frame_size = -1;
-static int hf_msrp_tspec_max_interval_frames = -1;
-static int hf_msrp_priority_and_rank = -1;
-static int hf_msrp_priority = -1;
-static int hf_msrp_rank = -1;
-static int hf_msrp_reserved = -1;
-static gint ett_priority_and_rank = -1;
-static const int *priority_and_rank_fields[] = {
+static int hf_msrp_first_value; /* FirstValue is a group of fields */
+static int hf_msrp_stream_id;
+static int hf_msrp_stream_da;
+static int hf_msrp_vlan_id;
+static int hf_msrp_tspec_max_frame_size;
+static int hf_msrp_tspec_max_interval_frames;
+static int hf_msrp_priority_and_rank;
+static int hf_msrp_priority;
+static int hf_msrp_rank;
+static int hf_msrp_reserved;
+static int ett_priority_and_rank;
+static int * const priority_and_rank_fields[] = {
     &hf_msrp_priority,
     &hf_msrp_rank,
     &hf_msrp_reserved,
     NULL
 };
 
-static int hf_msrp_sr_class_id = -1;
-static int hf_msrp_sr_class_priority = -1;
-static int hf_msrp_sr_class_vid = -1;
+static int hf_msrp_sr_class_id;
+static int hf_msrp_sr_class_priority;
+static int hf_msrp_sr_class_vid;
 
-static int hf_msrp_accumulated_latency = -1;
-static int hf_msrp_failure_bridge_id = -1;
-static int hf_msrp_failure_code = -1;
+static int hf_msrp_accumulated_latency;
+static int hf_msrp_failure_bridge_id;
+static int hf_msrp_failure_code;
 
-static int hf_msrp_three_packed_event = -1;
-static int hf_msrp_four_packed_event = -1;
+static int hf_msrp_three_packed_event;
+static int hf_msrp_four_packed_event;
 
-static int hf_msrp_end_mark = -1;
+static int hf_msrp_end_mark;
 
 /* Initialize the subtree pointers */
-static gint ett_msrp = -1;
-static gint ett_msg = -1;
-static gint ett_attr_list = -1;
-static gint ett_vect_attr = -1;
-static gint ett_first_value = -1;
+static int ett_msrp;
+static int ett_msg;
+static int ett_attr_list;
+static int ett_vect_attr;
+static int ett_first_value;
 
-static expert_field ei_msrp_attribute_type = EI_INIT;
+static expert_field ei_msrp_attribute_type;
 
 /**********************************************************/
 /* Dissector starts here                                  */
@@ -363,39 +353,39 @@ dissect_msrp_talker_failed(proto_tree *first_value_tree, tvbuff_t *tvb, int msg_
  *
  * dissect one or more ThreePackedEvents
  */
-static guint
-dissect_msrp_three_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, guint offset, guint16 number_of_values)
+static unsigned
+dissect_msrp_three_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, unsigned offset, uint16_t number_of_values)
 {
-    guint counter;
+    unsigned counter;
 
     for ( counter = 0; counter < number_of_values; ) {
-        guint8 value;
-        guint8 three_packed_event[3];
+        uint8_t value;
+        uint8_t three_packed_event[3];
 
-        value = tvb_get_guint8(tvb, offset);
+        value = tvb_get_uint8(tvb, offset);
         three_packed_event[0] = value / 36;
         value -= 36 * three_packed_event[0];
         three_packed_event[1] = value / 6;
         value -=  6 * three_packed_event[1];
         three_packed_event[2] = value;
 
-        proto_tree_add_uint(vect_attr_tree, hf_msrp_three_packed_event, tvb, offset, sizeof(guint8),
+        proto_tree_add_uint(vect_attr_tree, hf_msrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                             three_packed_event[0]);
         counter++;
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_msrp_three_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_msrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                                 three_packed_event[1]);
             counter++;
         }
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_msrp_three_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_msrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                                 three_packed_event[2]);
             counter++;
         }
 
         offset++;
     }
-    return( offset );
+    return offset ;
 }
 
 
@@ -403,43 +393,43 @@ dissect_msrp_three_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, guint
  *
  * dissect one or more FourPackedEvents
  */
-static guint
-dissect_msrp_four_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, guint offset, guint16 number_of_values)
+static unsigned
+dissect_msrp_four_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, unsigned offset, uint16_t number_of_values)
 {
-    guint counter;
+    unsigned counter;
 
     for ( counter = 0; counter < number_of_values; ) {
-        guint8 value;
-        guint8 four_packed_event[4];
+        uint8_t value;
+        uint8_t four_packed_event[4];
 
-        value = tvb_get_guint8(tvb, offset);
+        value = tvb_get_uint8(tvb, offset);
         four_packed_event[0] = (value & 0xc0) >> 6;
         four_packed_event[1] = (value & 0x30) >> 4;
         four_packed_event[2] = (value & 0x0c) >> 2;
         four_packed_event[3] = (value & 0x03);
 
-        proto_tree_add_uint(vect_attr_tree, hf_msrp_four_packed_event, tvb, offset, sizeof(guint8),
+        proto_tree_add_uint(vect_attr_tree, hf_msrp_four_packed_event, tvb, offset, sizeof(uint8_t),
                             four_packed_event[0]);
         counter++;
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_msrp_four_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_msrp_four_packed_event, tvb, offset, sizeof(uint8_t),
                                 four_packed_event[1]);
             counter++;
         }
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_msrp_four_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_msrp_four_packed_event, tvb, offset, sizeof(uint8_t),
                                 four_packed_event[2]);
             counter++;
         }
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_msrp_four_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_msrp_four_packed_event, tvb, offset, sizeof(uint8_t),
                                 four_packed_event[3]);
             counter++;
         }
 
         offset++;
     }
-    return( offset );
+    return offset;
 }
 
 
@@ -460,11 +450,11 @@ dissect_msrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     col_set_str(pinfo->cinfo, COL_INFO, "Multiple Stream Reservation Protocol");
 
     if (tree) {
-        guint8 attribute_type;
-        guint8 attribute_length;
-        guint16 number_of_values;
-        guint16 attribute_list_length;
-        guint offset = 0;
+        uint8_t attribute_type;
+        uint8_t attribute_length;
+        uint16_t number_of_values;
+        uint16_t attribute_list_length;
+        unsigned offset = 0;
         int vect_attr_len;
         int msg_length;  /* Length of MSRP/MRP Message */
         int msg_offset;  /* Use when handling multiple messages.  This points to current msg being decoded. */
@@ -483,8 +473,8 @@ dissect_msrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         msg_offset = 0;
         while (tvb_get_ntohs(tvb, MSRP_ATTRIBUTE_TYPE_OFFSET + msg_offset) != MSRP_END_MARK) {
 
-            attribute_type = tvb_get_guint8(tvb, MSRP_ATTRIBUTE_TYPE_OFFSET + msg_offset);
-            attribute_length = tvb_get_guint8(tvb, MSRP_ATTRIBUTE_LENGTH_OFFSET + msg_offset);
+            attribute_type = tvb_get_uint8(tvb, MSRP_ATTRIBUTE_TYPE_OFFSET + msg_offset);
+            attribute_length = tvb_get_uint8(tvb, MSRP_ATTRIBUTE_LENGTH_OFFSET + msg_offset);
             attribute_list_length = tvb_get_ntohs(tvb, MSRP_ATTRIBUTE_LIST_LENGTH_OFFSET + msg_offset);
 
             /* MSRP Message is a group of fields
@@ -757,7 +747,7 @@ proto_register_mrp_msrp(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_msrp,
         &ett_msg,
         &ett_attr_list,
@@ -782,19 +772,19 @@ proto_register_mrp_msrp(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_msrp = expert_register_protocol(proto_msrp);
     expert_register_field_array(expert_msrp, ei, array_length(ei));
+
+    /* Register the dissector */
+    msrp_handle = register_dissector("mrp-msrp", dissect_msrp, proto_msrp);
 }
 
 void
 proto_reg_handoff_mrp_msrp(void)
 {
-    dissector_handle_t msrp_handle;
-
-    msrp_handle = create_dissector_handle(dissect_msrp, proto_msrp);
     dissector_add_uint("ethertype", ETHERTYPE_MSRP, msrp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

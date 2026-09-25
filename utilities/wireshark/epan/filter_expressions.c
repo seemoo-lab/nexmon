@@ -5,85 +5,120 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <stdlib.h>
-#include <string.h>
 #include <glib.h>
 
 #include <epan/prefs.h>
+#include <epan/uat.h>
+#include <epan/uat-int.h>
 
 #include "epan/filter_expressions.h"
 
-static struct filter_expression *_filter_expression_head = NULL;
-struct filter_expression **pfilter_expression_head = &_filter_expression_head;
+/* UAT variables */
+static uat_t            *display_filter_macro_uat;
+static filter_expression_t *display_filter_macros;
+static unsigned          num_display_filter_macros;
+
+/* Field callbacks. */
+UAT_BOOL_CB_DEF(display_filter_macro_uat, enabled, filter_expression_t)
+UAT_CSTRING_CB_DEF(display_filter_macro_uat, label, filter_expression_t)
+UAT_DISPLAY_FILTER_CB_DEF(display_filter_macro_uat, expression, filter_expression_t)
+UAT_CSTRING_CB_DEF(display_filter_macro_uat, comment, filter_expression_t)
 
 /*
  * Create a new filter_expression and add it to the end of the list
  * of filter_expressions.
  */
-struct filter_expression *
-filter_expression_new(const gchar *label, const gchar *expr,
-		      const gboolean enabled)
+filter_expression_t*
+filter_expression_new(const char *label, const char *expr,
+		      const char *comment, const bool enabled)
 {
-	struct filter_expression *expression;
-	struct filter_expression *prev;
+	filter_expression_t expression;
 
-	expression = (struct filter_expression *)g_malloc0(sizeof(struct filter_expression));
-	expression->label = g_strdup(label);
-	expression->expression = g_strdup(expr);
-	expression->enabled = enabled;
+	// UAT allocates its own memory and then deep-copies this structure in.
+	memset(&expression, 0, sizeof(expression));
+	expression.label = (char *)label;
+	expression.expression = (char *)expr;
+	expression.comment = (char *)comment;
+	expression.enabled = enabled;
 
-	/* Add it at the end so the button order is always the same*/
-	if (*pfilter_expression_head == NULL) {
-		_filter_expression_head = expression;
-	} else {
-		prev = *pfilter_expression_head;
-		while (prev->next != NULL)
-			prev = prev->next;
-		prev->next = expression;
-		expression->filter_index = prev->filter_index + 1;
+	/* XXX - This is just returned to make GTK GUI work. */
+	return (filter_expression_t*)uat_add_record(display_filter_macro_uat, &expression, true);
+}
+
+void filter_expression_iterate_expressions(wmem_foreach_func func, void* user_data)
+{
+	unsigned i;
+
+	for (i = 0; i < num_display_filter_macros; i++)
+	{
+		func(NULL, &display_filter_macros[i], user_data);
 	}
-
-	return(expression);
 }
 
-void
-filter_expression_init(void)
+static void display_filter_free_cb(void*r) {
+	filter_expression_t* rec = (filter_expression_t*)r;
+
+	g_free(rec->label);
+	g_free(rec->expression);
+	g_free(rec->comment);
+}
+
+static void* display_filter_copy_cb(void* n, const void* o, size_t siz _U_) {
+	filter_expression_t* new_record = (filter_expression_t*)n;
+	const filter_expression_t* old_record = (const filter_expression_t*)o;
+
+	new_record->label = g_strdup(old_record->label);
+	new_record->expression = g_strdup(old_record->expression);
+	new_record->comment = g_strdup(old_record->comment);
+
+	new_record->enabled = old_record->enabled;
+
+	return new_record;
+}
+
+static uat_field_t display_filter_uat_flds[] = {
+	UAT_FLD_BOOL(display_filter_macro_uat, enabled, "Show in toolbar",
+		"Checked to add display filter button to toolbar"),
+	UAT_FLD_CSTRING(display_filter_macro_uat, label, "Button Label",
+		"Name of the display filter button"),
+	UAT_FLD_DISPLAY_FILTER(display_filter_macro_uat, expression, "Filter Expression",
+		"Filter expression to be applied by the button"),
+	UAT_FLD_CSTRING(display_filter_macro_uat, comment, "Comment",
+		"Comment describing filter expression"),
+	UAT_END_FIELDS
+};
+
+void filter_expression_register_uat(module_t* pref_module)
 {
-	prefs.filter_expressions = pfilter_expression_head;
-}
+	display_filter_macro_uat = uat_new("Display expressions",
+			sizeof(filter_expression_t),   /* record size */
+			"dfilter_buttons",          /* filename */
+			true,                       /* from_profile */
+			&display_filter_macros,     /* data_ptr */
+			&num_display_filter_macros, /* numitems_ptr */
+			0,                          /* Doesn't not explicitly effect dissection */
+			NULL,                       /* help */
+			display_filter_copy_cb,     /* copy callback */
+			NULL,                       /* update callback */
+			display_filter_free_cb,     /* free callback */
+			NULL,                       /* post update callback */
+			NULL,                       /* reset callback */
+			display_filter_uat_flds);   /* UAT field definitions */
 
-void
-filter_expression_free(struct filter_expression *list_head)
-{
-	if (list_head == NULL)
-		return;
-	filter_expression_free(list_head->next);
-	g_free(list_head->label);
-	g_free(list_head->expression);
-	g_free(list_head);
+	prefs_register_uat_preference(pref_module, "expressions",
+			"Display filter expressions",
+			"Macros for display filters",
+			display_filter_macro_uat);
 }
-
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

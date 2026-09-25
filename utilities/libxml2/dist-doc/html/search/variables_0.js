@@ -1,0 +1,4 @@
+var searchData=
+[
+  ['_5fprivate_0',['_private',['../struct__xmlEntity.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlEntity::_private'],['../struct__xmlParserCtxt.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlParserCtxt::_private'],['../struct__xmlSAXHandler.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlSAXHandler::_private'],['../struct__xmlAttribute.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlAttribute::_private'],['../struct__xmlElement.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlElement::_private'],['../struct__xmlNs.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlNs::_private'],['../struct__xmlDtd.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlDtd::_private'],['../struct__xmlAttr.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlAttr::_private'],['../struct__xmlNode.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlNode::_private'],['../struct__xmlDoc.html#a1cb76d737bf6f5b53e6c970073cba051',1,'_xmlDoc::_private']]]
+];

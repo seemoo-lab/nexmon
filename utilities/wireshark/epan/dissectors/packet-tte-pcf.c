@@ -5,26 +5,13 @@
  * Author: Benjamin Roch, benjamin.roch (AT) tttech.com
  *
  * TTTech Computertechnik AG, Austria.
- * http://www.tttech.com/solutions/ttethernet/
+ * https://www.tttech.com/technologies/time-triggered-ethernet/
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
- * USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -38,19 +25,21 @@ void proto_register_tte_pcf(void);
 void proto_reg_handoff_tte_pcf(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_tte_pcf = -1;
+static int proto_tte_pcf;
 
-static int hf_tte_pcf_ic = -1;
-static int hf_tte_pcf_mn = -1;
-/* static int hf_tte_pcf_res0 = -1; */
-static int hf_tte_pcf_sp = -1;
-static int hf_tte_pcf_sd = -1;
-static int hf_tte_pcf_type = -1;
-/* static int hf_tte_pcf_res1 = -1; */
-static int hf_tte_pcf_tc = -1;
+static int hf_tte_pcf_ic;
+static int hf_tte_pcf_mn;
+/* static int hf_tte_pcf_res0; */
+static int hf_tte_pcf_sp;
+static int hf_tte_pcf_sd;
+static int hf_tte_pcf_type;
+/* static int hf_tte_pcf_res1; */
+static int hf_tte_pcf_tc;
 
 /* Initialize the subtree pointers */
-static gint ett_tte_pcf = -1;
+static int ett_tte_pcf;
+
+static dissector_handle_t tte_pcf_handle;
 
 static const value_string pcf_type_str_vals[] =
     { {2, "integration frame"}
@@ -69,8 +58,8 @@ dissect_tte_pcf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     proto_tree *tte_pcf_tree;
 
     /* variables used to store the fields displayed in the info_column */
-    guint8 sync_priority = 0;
-    guint8 sync_domain   = 0;
+    uint8_t sync_priority = 0;
+    uint8_t sync_domain   = 0;
 
     /* Check that there's enough data */
     if (tvb_reported_length(tvb) < TTE_PCF_LENGTH )
@@ -79,9 +68,9 @@ dissect_tte_pcf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     }
 
     /* get sync_priority and sync_domain */
-    sync_priority = tvb_get_guint8(tvb, TTE_PCF_IC_LENGTH+TTE_PCF_MN_LENGTH+
+    sync_priority = tvb_get_uint8(tvb, TTE_PCF_IC_LENGTH+TTE_PCF_MN_LENGTH+
         TTE_PCF_RES0_LENGTH);
-    sync_domain = tvb_get_guint8(tvb, TTE_PCF_IC_LENGTH+TTE_PCF_MN_LENGTH+
+    sync_domain = tvb_get_uint8(tvb, TTE_PCF_IC_LENGTH+TTE_PCF_MN_LENGTH+
         TTE_PCF_RES0_LENGTH+TTE_PCF_SP_LENGTH);
 
     /* Make entries in Protocol column and Info column on summary display */
@@ -191,7 +180,7 @@ proto_register_tte_pcf(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_tte_pcf
     };
 
@@ -203,25 +192,19 @@ proto_register_tte_pcf(void)
     proto_register_field_array(proto_tte_pcf, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("tte_pcf", dissect_tte_pcf, proto_tte_pcf);
-
+    tte_pcf_handle = register_dissector("tte_pcf", dissect_tte_pcf, proto_tte_pcf);
 }
 
 
 void
 proto_reg_handoff_tte_pcf(void)
 {
-    dissector_handle_t tte_pcf_handle;
-
-    /* initialize the pcf handle */
-    tte_pcf_handle = find_dissector("tte_pcf");
-
     dissector_add_uint("ethertype", ETHERTYPE_TTE_PCF, tte_pcf_handle);
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

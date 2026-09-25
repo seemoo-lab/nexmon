@@ -1,5 +1,5 @@
 /* Class autosprintf - formatted output to an ostream.
-   Copyright (C) 2002, 2012-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -12,18 +12,20 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #ifndef _AUTOSPRINTF_H
 #define _AUTOSPRINTF_H
 
-/* This feature is available in gcc versions 2.5 and later.  */
-#if __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5) || __STRICT_ANSI__
+/* This feature is available in gcc versions 2.5 and later and in clang.  */
+#if !((__GNUC__ >= 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || defined __clang__) && !__STRICT_ANSI__)
 # define _AUTOSPRINTF_ATTRIBUTE_FORMAT() /* empty */
 #else
-/* The __-protected variants of 'format' and 'printf' attributes
-   are accepted by gcc versions 2.6.4 (effectively 2.7) and later.  */
-# if __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 7)
+/* The __-protected variants of 'format' and 'printf' attributes are
+   accepted by gcc versions 2.6.4 (effectively 2.7) and later and in clang.  */
+# if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7) || defined __clang__
 #  define _AUTOSPRINTF_ATTRIBUTE_FORMAT() \
   __attribute__ ((__format__ (__printf__, 2, 3)))
 # else
@@ -47,7 +49,8 @@ namespace gnu
                 _AUTOSPRINTF_ATTRIBUTE_FORMAT();
     /* Copy constructor.  */
     autosprintf (const autosprintf& src);
-    autosprintf& operator = (autosprintf copy);
+    /* Assignment operator.  */
+    autosprintf& operator = (autosprintf temporary);
     /* Destructor: frees the temporarily allocated string.  */
     ~autosprintf ();
     /* Conversion to string.  */

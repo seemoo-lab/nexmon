@@ -5,25 +5,13 @@
  *
  * According with GIOP Compression RFP revised submission
  * OMG mars/2008-12-20
- * http://www.omg.org/docs/ptc/09-01-03.pdf
+ * https://www.omg.org/spec/ZIOP/1.0/Beta1/PDF
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -51,24 +39,24 @@ void proto_register_ziop(void);
  * ------------------------------------------------------------------------------------------+
  */
 
-static int proto_ziop = -1;
+static int proto_ziop;
 
 /*
  * (sub)Tree declares
  */
 
-static gint hf_ziop_magic = -1;
-static gint hf_ziop_giop_version_major = -1;
-static gint hf_ziop_giop_version_minor = -1;
-static gint hf_ziop_flags = -1;
-static gint hf_ziop_message_type = -1;
-static gint hf_ziop_message_size = -1;
-static gint hf_ziop_compressor_id = -1;
-static gint hf_ziop_original_length = -1;
+static int hf_ziop_magic;
+static int hf_ziop_giop_version_major;
+static int hf_ziop_giop_version_minor;
+static int hf_ziop_flags;
+static int hf_ziop_message_type;
+static int hf_ziop_message_size;
+static int hf_ziop_compressor_id;
+static int hf_ziop_original_length;
 
-static gint ett_ziop = -1;
+static int ett_ziop;
 
-static expert_field ei_ziop_version = EI_INIT;
+static expert_field ei_ziop_version;
 
 static dissector_handle_t ziop_tcp_handle;
 
@@ -101,19 +89,19 @@ static const value_string giop_message_types[] = {
 };
 
 
-static gboolean ziop_desegment = TRUE;
+static bool ziop_desegment = true;
 
 
 /* Main entry point */
 static int
 dissect_ziop (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data _U_) {
-  guint offset = 0;
-  guint8 giop_version_major, giop_version_minor, message_type;
+  unsigned offset = 0;
+  uint8_t giop_version_major, giop_version_minor, message_type;
 
   proto_tree *ziop_tree = NULL;
   proto_item *ti;
-  guint8 flags;
-  guint byte_order;
+  uint8_t flags;
+  unsigned byte_order;
   const char *label = "none";
 
   if (tvb_reported_length(tvb) < 7)
@@ -127,13 +115,13 @@ dissect_ziop (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data
   ti = proto_tree_add_item (tree, proto_ziop, tvb, 0, -1, ENC_NA);
   ziop_tree = proto_item_add_subtree (ti, ett_ziop);
 
-  proto_tree_add_item(ziop_tree, hf_ziop_magic, tvb, offset, 4, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(ziop_tree, hf_ziop_magic, tvb, offset, 4, ENC_ASCII);
   offset += 4;
   proto_tree_add_item(ziop_tree, hf_ziop_giop_version_major, tvb, offset, 1, ENC_BIG_ENDIAN);
-  giop_version_major = tvb_get_guint8(tvb, offset);
+  giop_version_major = tvb_get_uint8(tvb, offset);
   offset++;
   proto_tree_add_item(ziop_tree, hf_ziop_giop_version_minor, tvb, offset, 1, ENC_BIG_ENDIAN);
-  giop_version_minor = tvb_get_guint8(tvb, offset);
+  giop_version_minor = tvb_get_uint8(tvb, offset);
   offset++;
 
   if ( (giop_version_major < 1) ||
@@ -151,7 +139,7 @@ dissect_ziop (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data
       return tvb_reported_length(tvb);
   }
 
-  flags = tvb_get_guint8(tvb, offset);
+  flags = tvb_get_uint8(tvb, offset);
   byte_order = (flags & 0x01) ? ENC_LITTLE_ENDIAN : ENC_BIG_ENDIAN;
 
   if (flags & 0x01) {
@@ -162,13 +150,13 @@ dissect_ziop (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data
   offset++;
 
   proto_tree_add_item(ziop_tree, hf_ziop_message_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-  message_type = tvb_get_guint8(tvb, offset);
+  message_type = tvb_get_uint8(tvb, offset);
   offset++;
 
   col_add_fstr (pinfo->cinfo, COL_INFO, "ZIOP %u.%u %s",
                 giop_version_major,
                 giop_version_minor,
-                val_to_str(message_type, giop_message_types,
+                val_to_str(pinfo->pool, message_type, giop_message_types,
                            "Unknown message type (0x%02x)")
                 );
 
@@ -181,17 +169,17 @@ dissect_ziop (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data
   return tvb_reported_length(tvb);
 }
 
-static guint
+static unsigned
 get_ziop_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-  guint8 flags;
-  guint message_size;
-  gboolean stream_is_big_endian;
+  uint8_t flags;
+  unsigned message_size;
+  bool stream_is_big_endian;
 
-  if ( tvb_memeql(tvb, 0, ZIOP_MAGIC, 4) != 0)
+  if ( tvb_memeql(tvb, 0, (const uint8_t *)ZIOP_MAGIC, 4) != 0)
     return 0;
 
-  flags = tvb_get_guint8(tvb, offset + 6);
+  flags = tvb_get_uint8(tvb, offset + 6);
 
   stream_is_big_endian =  ((flags & 0x1) == 0);
 
@@ -206,7 +194,7 @@ get_ziop_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _
 static int
 dissect_ziop_tcp (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data)
 {
-  if ( tvb_memeql(tvb, 0, ZIOP_MAGIC, 4) != 0)
+  if ( tvb_memeql(tvb, 0, (const uint8_t *)ZIOP_MAGIC, 4) != 0)
     {
       if (tvb_get_ntohl(tvb, 0) == GIOP_MAGIC_NUMBER)
         {
@@ -222,10 +210,10 @@ dissect_ziop_tcp (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* 
 }
 
 
-gboolean
+bool
 dissect_ziop_heur (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * data)
 {
-  guint tot_len;
+  unsigned tot_len;
 
   conversation_t *conversation;
   /* check magic number and version */
@@ -236,11 +224,11 @@ dissect_ziop_heur (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void 
     {
       /* Not enough data captured to hold the ZIOP header; don't try
          to interpret it as GIOP. */
-      return FALSE;
+      return false;
     }
-  if ( tvb_memeql(tvb, 0, ZIOP_MAGIC, 4) != 0)
+  if ( tvb_memeql(tvb, 0, (const uint8_t *)ZIOP_MAGIC, 4) != 0)
     {
-      return FALSE;
+      return false;
     }
 
   if ( pinfo->ptype == PT_TCP )
@@ -252,7 +240,7 @@ dissect_ziop_heur (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void 
        * we've already done this work, so we don't need to do it
        * again.
        */
-      if (!pinfo->fd->flags.visited)
+      if (!pinfo->fd->visited)
         {
           conversation = find_or_create_conversation(pinfo);
 
@@ -265,7 +253,7 @@ dissect_ziop_heur (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void 
     {
       dissect_ziop (tvb, pinfo, tree, data);
     }
-  return TRUE;
+  return true;
 }
 
 void
@@ -304,7 +292,7 @@ proto_register_ziop (void)
         "ZIOP original_length", HFILL }}
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_ziop
   };
 
@@ -314,28 +302,27 @@ proto_register_ziop (void)
 
   expert_module_t* expert_ziop;
 
-  proto_ziop = proto_register_protocol("Zipped Inter-ORB Protocol", "ZIOP",
-                                       "ziop");
+  proto_ziop = proto_register_protocol("Zipped Inter-ORB Protocol", "ZIOP", "ziop");
   proto_register_field_array (proto_ziop, hf, array_length (hf));
   proto_register_subtree_array (ett, array_length (ett));
   expert_ziop = expert_register_protocol(proto_ziop);
   expert_register_field_array(expert_ziop, ei, array_length(ei));
 
   register_dissector("ziop", dissect_ziop, proto_ziop);
+  ziop_tcp_handle = register_dissector("ziop.tcp", dissect_ziop_tcp, proto_ziop);
 }
 
 
 void
 proto_reg_handoff_ziop (void)
 {
-  ziop_tcp_handle = create_dissector_handle(dissect_ziop_tcp, proto_ziop);
-  dissector_add_for_decode_as("udp.port", ziop_tcp_handle);
+  dissector_add_for_decode_as_with_preference("udp.port", ziop_tcp_handle);
 
   heur_dissector_add("tcp", dissect_ziop_heur, "ZIOP over TCP", "ziop_tcp", proto_ziop, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

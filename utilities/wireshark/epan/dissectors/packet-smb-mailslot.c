@@ -8,19 +8,7 @@
  *
  * Copied from packet-pop.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,14 +21,14 @@
 void proto_register_smb_mailslot(void);
 void proto_reg_handoff_smb_mailslot(void);
 
-static int proto_smb_msp = -1;
-static int hf_opcode = -1;
-static int hf_priority = -1;
-static int hf_class = -1;
-static int hf_size = -1;
-static int hf_name = -1;
+static int proto_smb_msp;
+static int hf_opcode;
+static int hf_priority;
+static int hf_class;
+static int hf_size;
+static int hf_name;
 
-static int ett_smb_msp = -1;
+static int ett_smb_msp;
 
 static dissector_handle_t mailslot_browse_handle;
 static dissector_handle_t mailslot_lanman_handle;
@@ -73,7 +61,7 @@ static const value_string class_vals[] = {
      si->trans_subcmd gives us which mailslot this response refers to.
 */
 
-gboolean
+bool
 dissect_mailslot_smb(tvbuff_t *mshdr_tvb, tvbuff_t *setup_tvb,
 		     tvbuff_t *tvb, const char *mailslot, packet_info *pinfo,
 		     proto_tree *parent_tree, smb_info_t* smb_info)
@@ -82,12 +70,12 @@ dissect_mailslot_smb(tvbuff_t *mshdr_tvb, tvbuff_t *setup_tvb,
 	int             trans_subcmd;
 	proto_tree      *tree = NULL;
 	proto_item      *item = NULL;
-	guint16         opcode;
+	uint16_t        opcode;
 	int             offset = 0;
 	int             len;
 
 	if (!proto_is_protocol_enabled(find_protocol_by_id(proto_smb_msp))) {
-		return FALSE;
+		return false;
 	}
 	pinfo->current_proto = "SMB Mailslot";
 
@@ -96,7 +84,7 @@ dissect_mailslot_smb(tvbuff_t *mshdr_tvb, tvbuff_t *setup_tvb,
 	if ((tvb==NULL) || (tvb_reported_length(tvb)==0)) {
 		/* Interim reply */
 		col_set_str(pinfo->cinfo, COL_INFO, "Interim reply");
-		return TRUE;
+		return true;
 	}
 
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -120,13 +108,13 @@ dissect_mailslot_smb(tvbuff_t *mshdr_tvb, tvbuff_t *setup_tvb,
 		} else if(strncmp(mailslot,"MSSP",4) == 0){
 			trans_subcmd=MAILSLOT_MSSP;
 		}
-		if (!pinfo->fd->flags.visited) {
+		if (!pinfo->fd->visited) {
 			if (tri != NULL)
 				tri->trans_subcmd = trans_subcmd;
 		}
 	} else {
 		if(!tri){
-			return FALSE;
+			return false;
 		} else {
 			trans_subcmd = tri->trans_subcmd;
 		}
@@ -146,7 +134,7 @@ dissect_mailslot_smb(tvbuff_t *mshdr_tvb, tvbuff_t *setup_tvb,
 		opcode = tvb_get_letohs(setup_tvb, offset);
 
 		col_add_str(pinfo->cinfo, COL_INFO,
-				    val_to_str(opcode, opcode_vals, "Unknown opcode: 0x%04x"));
+				    val_to_str(pinfo->pool, opcode, opcode_vals, "Unknown opcode: 0x%04x"));
 
 
 		/* These are in the setup words; use "setup_tvb". */
@@ -175,7 +163,7 @@ dissect_mailslot_smb(tvbuff_t *mshdr_tvb, tvbuff_t *setup_tvb,
 
 		/* mailslot name */
 		len = tvb_strsize(mshdr_tvb, offset);
-		proto_tree_add_item(tree, hf_name, mshdr_tvb, offset, len, ENC_ASCII|ENC_NA);
+		proto_tree_add_item(tree, hf_name, mshdr_tvb, offset, len, ENC_ASCII);
 		offset += len;
 		proto_item_set_len(item, offset);
 	}
@@ -208,7 +196,7 @@ dissect_mailslot_smb(tvbuff_t *mshdr_tvb, tvbuff_t *setup_tvb,
 		call_data_dissector(tvb, pinfo, parent_tree);
 		break;
 	}
-	return TRUE;
+	return true;
 }
 
 void
@@ -237,12 +225,11 @@ proto_register_smb_mailslot(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_smb_msp
 	};
 
-	proto_smb_msp = proto_register_protocol(
-		"SMB MailSlot Protocol", "SMB Mailslot", "mailslot");
+	proto_smb_msp = proto_register_protocol("SMB MailSlot Protocol", "SMB Mailslot", "mailslot");
 
 	proto_register_field_array(proto_smb_msp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
@@ -257,7 +244,7 @@ proto_reg_handoff_smb_mailslot(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

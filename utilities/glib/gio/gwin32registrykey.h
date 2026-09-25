@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2014 Руслан Ижбулатов <lrn1986@gmail.com>
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -57,7 +59,7 @@ typedef enum {
   G_WIN32_REGISTRY_WATCH_ATTRIBUTES = 1 << 1,
   G_WIN32_REGISTRY_WATCH_VALUES = 1 << 2,
   G_WIN32_REGISTRY_WATCH_SECURITY = 1 << 3,
-} GWin32RegistryKeyWatcherFlags;
+} G_GNUC_FLAG_ENUM GWin32RegistryKeyWatcherFlags;
 
 typedef struct _GWin32RegistryKey GWin32RegistryKey;
 typedef struct _GWin32RegistryKeyClass GWin32RegistryKeyClass;
@@ -134,113 +136,114 @@ struct _GWin32RegistryValueIter {
   gsize                    value_data_expanded_u8_size;
 };
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 GWin32RegistrySubkeyIter *g_win32_registry_subkey_iter_copy     (const GWin32RegistrySubkeyIter *iter);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 void                      g_win32_registry_subkey_iter_free     (GWin32RegistrySubkeyIter       *iter);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 void                      g_win32_registry_subkey_iter_assign   (GWin32RegistrySubkeyIter       *iter,
                                                                  const GWin32RegistrySubkeyIter *other);
-GLIB_AVAILABLE_IN_2_46
-GType                     g_win32_registry_subkey_iter_get_type (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_46
+GType                     g_win32_registry_subkey_iter_get_type (void);
 
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 GWin32RegistryValueIter  *g_win32_registry_value_iter_copy      (const GWin32RegistryValueIter *iter);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 void                      g_win32_registry_value_iter_free      (GWin32RegistryValueIter       *iter);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 void                      g_win32_registry_value_iter_assign    (GWin32RegistryValueIter       *iter,
                                                                  const GWin32RegistryValueIter *other);
-GLIB_AVAILABLE_IN_2_46
-GType                     g_win32_registry_value_iter_get_type  (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_46
+GType                     g_win32_registry_value_iter_get_type  (void);
 
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 GType              g_win32_registry_key_get_type             (void);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 GWin32RegistryKey *g_win32_registry_key_new                  (const gchar                    *path,
                                                               GError                        **error);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 GWin32RegistryKey *g_win32_registry_key_new_w                (const gunichar2                *path,
                                                               GError                        **error);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 GWin32RegistryKey *g_win32_registry_key_get_child            (GWin32RegistryKey              *key,
                                                               const gchar                    *subkey,
                                                               GError                        **error);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 GWin32RegistryKey *g_win32_registry_key_get_child_w          (GWin32RegistryKey              *key,
                                                               const gunichar2                *subkey,
                                                               GError                        **error);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_subkey_iter_init           (GWin32RegistrySubkeyIter       *iter,
                                                               GWin32RegistryKey              *key,
                                                               GError                        **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 void             g_win32_registry_subkey_iter_clear          (GWin32RegistrySubkeyIter       *iter);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gsize            g_win32_registry_subkey_iter_n_subkeys      (GWin32RegistrySubkeyIter       *iter);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_subkey_iter_next           (GWin32RegistrySubkeyIter       *iter,
                                                               gboolean                        skip_errors,
                                                               GError                        **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_subkey_iter_get_name       (GWin32RegistrySubkeyIter        *iter,
-                                                              gchar                          **subkey_name,
+                                                              const gchar                    **subkey_name,
                                                               gsize                           *subkey_name_len,
                                                               GError                         **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_subkey_iter_get_name_w     (GWin32RegistrySubkeyIter        *iter,
-                                                              gunichar2                      **subkey_name,
+                                                              const gunichar2                **subkey_name,
                                                               gsize                           *subkey_name_len,
                                                               GError                         **error);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_value_iter_init            (GWin32RegistryValueIter         *iter,
                                                               GWin32RegistryKey               *key,
                                                               GError                         **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 void             g_win32_registry_value_iter_clear           (GWin32RegistryValueIter         *iter);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gsize            g_win32_registry_value_iter_n_values        (GWin32RegistryValueIter         *iter);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_value_iter_next            (GWin32RegistryValueIter         *iter,
                                                               gboolean                         skip_errors,
                                                               GError                         **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_value_iter_get_value_type  (GWin32RegistryValueIter         *iter,
                                                               GWin32RegistryValueType         *value_type,
                                                               GError                         **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_value_iter_get_name        (GWin32RegistryValueIter         *iter,
                                                               gchar                          **value_name,
                                                               gsize                           *value_name_len,
                                                               GError                         **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_value_iter_get_name_w      (GWin32RegistryValueIter         *iter,
                                                               gunichar2                      **value_name,
                                                               gsize                           *value_name_len,
                                                               GError                         **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_value_iter_get_data        (GWin32RegistryValueIter         *iter,
                                                               gboolean                         auto_expand,
                                                               gpointer                        *value_data,
                                                               gsize                           *value_data_size,
                                                               GError                         **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_value_iter_get_data_w      (GWin32RegistryValueIter         *iter,
                                                               gboolean                         auto_expand,
                                                               gpointer                        *value_data,
                                                               gsize                           *value_data_size,
                                                               GError                         **error);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_66
 gboolean         g_win32_registry_key_get_value              (GWin32RegistryKey               *key,
+                                                              const gchar * const             *mui_dll_dirs,
                                                               gboolean                         auto_expand,
                                                               const gchar                     *value_name,
                                                               GWin32RegistryValueType         *value_type,
@@ -248,8 +251,9 @@ gboolean         g_win32_registry_key_get_value              (GWin32RegistryKey 
                                                               gsize                           *value_data_size,
                                                               GError                         **error);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_66
 gboolean         g_win32_registry_key_get_value_w            (GWin32RegistryKey               *key,
+                                                              const gunichar2 * const         *mui_dll_dirs,
                                                               gboolean                         auto_expand,
                                                               const gunichar2                 *value_name,
                                                               GWin32RegistryValueType         *value_type,
@@ -257,24 +261,30 @@ gboolean         g_win32_registry_key_get_value_w            (GWin32RegistryKey 
                                                               gsize                           *value_data_size,
                                                               GError                         **error);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 const gchar     *g_win32_registry_key_get_path               (GWin32RegistryKey               *key);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 const gunichar2 *g_win32_registry_key_get_path_w             (GWin32RegistryKey               *key);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_key_watch                  (GWin32RegistryKey               *key,
                                                               gboolean                         watch_children,
                                                               GWin32RegistryKeyWatcherFlags    watch_flags,
                                                               GWin32RegistryKeyWatchCallbackFunc callback,
                                                               gpointer                         user_data,
                                                               GError                         **error);
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean         g_win32_registry_key_has_changed            (GWin32RegistryKey               *key);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 void             g_win32_registry_key_erase_change_indicator (GWin32RegistryKey               *key);
+
+GIO_AVAILABLE_IN_2_66
+const gunichar2 * const *g_win32_registry_get_os_dirs_w (void);
+
+GIO_AVAILABLE_IN_2_66
+const gchar * const     *g_win32_registry_get_os_dirs   (void);
 
 G_END_DECLS
 

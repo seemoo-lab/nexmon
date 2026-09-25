@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2000 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,184 +16,157 @@
 #include <glib.h>
 
 #include "help_url.h"
+#include "urls.h"
 #include "wsutil/filesystem.h"
+#include <wsutil/ws_assert.h>
 
-#ifdef HHC_DIR
-#include <windows.h>
-#include <htmlhelp.h>
-#include <wsutil/unicode-utils.h>
-#endif
-
-/*
- * Given a filename return a filesystem URL. Relative paths are prefixed with
- * the datafile directory path.
- */
-gchar *
-data_file_url(const gchar *filename)
-{
-    gchar *file_path;
-    gchar *uri;
-
-    /* Absolute path? */
-#ifdef G_OS_WIN32
-    if((strlen(filename) > 2) && (filename[1] == ':')) {
-      file_path = g_strdup(filename);
-#else
-    if((strlen(filename) > 1) && (filename[0] == '/')) {
-      file_path = g_strdup(filename);
-#endif
-    } else if(running_in_build_directory()) {
-        file_path = g_strdup_printf("%s/doc/%s", get_datafile_dir(), filename);
-    } else {
-        file_path = g_strdup_printf("%s/%s", get_datafile_dir(), filename);
-    }
-
-    /* XXX - check, if the file is really existing, otherwise display a simple_dialog about the problem */
-
-    /* convert filename to uri */
-    uri = g_filename_to_uri(file_path, NULL, NULL);
-    g_free(file_path);
-    return uri;
-}
-
-const char *
-topic_online_url(topic_action_e action)
-{
-    switch(action) {
-    case(ONLINEPAGE_HOME):
-        return "https://www.wireshark.org";
-        break;
-    case(ONLINEPAGE_WIKI):
-        return "https://wiki.wireshark.org";
-        break;
-    case(ONLINEPAGE_DOWNLOAD):
-        return "https://www.wireshark.org/download.html";
-        break;
-    case(ONLINEPAGE_USERGUIDE):
-        return "https://www.wireshark.org/docs/wsug_html_chunked/";
-        break;
-    case(ONLINEPAGE_FAQ):
-        return "http://www.wireshark.org/faq.html";
-        break;
-    case(ONLINEPAGE_ASK):
-        return "https://ask.wireshark.org";
-        break;
-    case(ONLINEPAGE_SAMPLE_FILES):
-        return "https://wiki.wireshark.org/SampleCaptures";
-        break;
-    case(ONLINEPAGE_CAPTURE_SETUP):
-        return "https://wiki.wireshark.org/CaptureSetup";
-        break;
-    case(ONLINEPAGE_NETWORK_MEDIA):
-        return "https://wiki.wireshark.org/CaptureSetup/NetworkMedia";
-        break;
-    case(ONLINEPAGE_SAMPLE_CAPTURES):
-        return "https://wiki.wireshark.org/SampleCaptures";
-        break;
-    case(ONLINEPAGE_SECURITY):
-        return "https://wiki.wireshark.org/Security";
-        break;
-    case(ONLINEPAGE_CHIMNEY):
-        return "https://wiki.wireshark.org/CaptureSetup/Offloading#chimney";
-        break;
-    default:
-        return NULL;
-    }
-}
+// To do:
+// - Automatically generate part or all of this, e.g. by parsing
+//   the DocBook XML or the chunked HTML.
 
 /*
  * Open the help dialog and show a specific HTML help page.
  */
-gchar *
-user_guide_url(const gchar *page) {
+char *
+user_guide_url(const char *page) {
     GString *url = g_string_new("");
 
+#if defined(_WIN32)
     /*
-     * Try to open local .chm file. This is not the most intuitive way to
-     * go about this but it fits in with the rest of the _url functions.
+     * The User's Guide is in a directory named "Wireshark User's Guide" in
+     * the program directory.
      */
-#ifdef HHC_DIR
-    HWND hw;
 
-    g_string_printf(url, "%s\\user-guide.chm::/wsug_chm/%s>Wireshark Help",
-        get_datafile_dir(), page);
-
-    hw = HtmlHelpW(NULL,
-        utf_8to16(url->str),
-        HH_DISPLAY_TOPIC, 0);
-
-    /* if the .chm file could be opened, stop here */
-    if(hw != NULL) {
-        g_string_free(url, TRUE /* free_segment */);
-        return NULL;
+    GString *ug_dir = g_string_new("");
+    g_string_printf(ug_dir, "%s\\Wireshark User's Guide", get_datafile_dir());
+    if (g_file_test(ug_dir->str, G_FILE_TEST_IS_DIR)) {
+        g_string_printf(url, "file:///%s/%s", ug_dir->str, page);
     }
-#endif /* HHC_DIR */
-
-#ifdef DOC_DIR
-    if (g_file_test(DOC_DIR "/guides/wsug_html_chunked", G_FILE_TEST_IS_DIR)) {
-        /* try to open the HTML page from wireshark.org instead */
-        g_string_printf(url, "file://" DOC_DIR "/guides/wsug_html_chunked/%s", page);
-    } else {
-#endif /* ifdef DOC_DIR */
-       /* try to open the HTML page from wireshark.org instead */
-        g_string_printf(url, "https://www.wireshark.org/docs/wsug_html_chunked/%s", page);
-#ifdef DOC_DIR
+    g_string_free(ug_dir, TRUE);
+#else
+    char *path = g_build_filename(get_doc_dir(), "wsug_html_chunked", page, NULL);
+    if (g_file_test(path, G_FILE_TEST_IS_REGULAR)) {
+        /* try to open the HTML page from the filesystem */
+        g_string_printf(url, "file://%s", path);
     }
-#endif /* ifdef DOC_DIR */
+    g_free(path);
+    path = NULL;
+#endif /* _WIN32 */
 
 
+    /* Fall back to wireshark.org. */
+    if (url->len == 0) {
+        g_string_printf(url, WS_DOCS_URL "wsug_html_chunked/%s", page);
+    }
     return g_string_free(url, FALSE);
 }
 
-gchar *
+char *
 topic_action_url(topic_action_e action)
 {
-    gchar *url;
-
-    /* pages online at www.wireshark.org */
-    url = g_strdup(topic_online_url(action));
-    if(url != NULL) {
-        return url;
-    }
+    char *url;
 
     switch(action) {
+    /* pages online at www.wireshark.org */
+    case(ONLINEPAGE_WIRESHARK_HOME):
+        url = g_strdup(WS_HOME_PAGE_URL);
+        break;
+    case(ONLINEPAGE_WIRESHARK_WIKI):
+        url = g_strdup(WS_WIKI_HOME_URL);
+        break;
+    case(ONLINEPAGE_WIRESHARK_DOWNLOAD):
+        url = g_strdup(WS_DOWNLOAD_URL);
+        break;
+    case(ONLINEPAGE_DOCS):
+        url = g_strdup(WS_DOCS_URL);
+        break;
+    case(ONLINEPAGE_USERGUIDE):
+        url = g_strdup(WS_DOCS_URL "wsug_html_chunked/");
+        break;
+    case(ONLINEPAGE_FAQ):
+        url = g_strdup(WS_FAQ_URL);
+        break;
+    case(ONLINEPAGE_ASK):
+        url = g_strdup(WS_Q_AND_A_URL);
+        break;
+    case(ONLINEPAGE_SAMPLE_FILES):
+        url = g_strdup(WS_WIKI_URL("SampleCaptures"));
+        break;
+    case(ONLINEPAGE_CAPTURE_SETUP):
+        url = g_strdup(WS_WIKI_URL("CaptureSetup"));
+        break;
+    case(ONLINEPAGE_NETWORK_MEDIA):
+        url = g_strdup(WS_WIKI_URL("CaptureSetup/NetworkMedia"));
+        break;
+    case(ONLINEPAGE_SAMPLE_CAPTURES):
+        url = g_strdup(WS_WIKI_URL("SampleCaptures"));
+        break;
+    case(ONLINEPAGE_SECURITY):
+        url = g_strdup(WS_WIKI_URL("Security"));
+        break;
+    case(ONLINEPAGE_DFILTER_REF):
+        url = g_strdup(WS_DOCS_URL "dfref/");
+        break;
+
+    /* pages online at stratoshark.org */
+    case(ONLINEPAGE_STRATOSHARK_HOME):
+        url = g_strdup(SS_HOME_PAGE_URL);
+        break;
+    case(ONLINEPAGE_STRATOSHARK_WIKI):
+        url = g_strdup(SS_WIKI_HOME_URL);
+        break;
+    case(ONLINEPAGE_STRATOSHARK_DOWNLOAD):
+        url = g_strdup(SS_DOWNLOAD_URL);
+        break;
+
     /* local manual pages */
     case(LOCALPAGE_MAN_WIRESHARK):
-        url = data_file_url("wireshark.html");
+        url = doc_file_url("wireshark.html");
+        break;
+    case(LOCALPAGE_MAN_STRATOSHARK):
+        url = doc_file_url("stratoshark.html");
         break;
     case(LOCALPAGE_MAN_WIRESHARK_FILTER):
-        url = data_file_url("wireshark-filter.html");
+        url = doc_file_url("wireshark-filter.html");
         break;
     case(LOCALPAGE_MAN_CAPINFOS):
-        url = data_file_url("capinfos.html");
+        url = doc_file_url("capinfos.html");
         break;
     case(LOCALPAGE_MAN_DUMPCAP):
-        url = data_file_url("dumpcap.html");
+        url = doc_file_url("dumpcap.html");
         break;
     case(LOCALPAGE_MAN_EDITCAP):
-        url = data_file_url("editcap.html");
+        url = doc_file_url("editcap.html");
         break;
     case(LOCALPAGE_MAN_MERGECAP):
-        url = data_file_url("mergecap.html");
+        url = doc_file_url("mergecap.html");
         break;
     case(LOCALPAGE_MAN_RAWSHARK):
-        url = data_file_url("rawshark.html");
+        url = doc_file_url("rawshark.html");
         break;
     case(LOCALPAGE_MAN_REORDERCAP):
-        url = data_file_url("reordercap.html");
+        url = doc_file_url("reordercap.html");
         break;
     case(LOCALPAGE_MAN_TEXT2PCAP):
-        url = data_file_url("text2pcap.html");
+        url = doc_file_url("text2pcap.html");
         break;
     case(LOCALPAGE_MAN_TSHARK):
-        url = data_file_url("tshark.html");
+        url = doc_file_url("tshark.html");
+        break;
+
+    /* Release Notes */
+    case(LOCALPAGE_WIRESHARK_RELEASE_NOTES):
+        url = doc_file_url("Wireshark Release Notes.html");
+        break;
+    case(LOCALPAGE_STRATOSHARK_RELEASE_NOTES):
+        url = doc_file_url("Stratoshark Release Notes.html");
         break;
 
     /* local help pages (User's Guide) */
     case(HELP_CONTENT):
         url = user_guide_url( "index.html");
         break;
-    case(HELP_CAPTURE_OPTIONS_DIALOG):
+    case(HELP_CAPTURE_OPTIONS):
         url = user_guide_url("ChCapCaptureOptions.html");
         break;
     case(HELP_CAPTURE_FILTERS_DIALOG):
@@ -213,6 +174,9 @@ topic_action_url(topic_action_e action)
         break;
     case(HELP_DISPLAY_FILTERS_DIALOG):
         url = user_guide_url("ChWorkDefineFilterSection.html");
+        break;
+    case(HELP_DISPLAY_MACRO_DIALOG):
+        url = user_guide_url("ChWorkDefineFilterMacrosSection.html");
         break;
     case(HELP_FILTER_EXPRESSION_DIALOG):
         url = user_guide_url("ChWorkFilterAddExpressionSection.html");
@@ -222,9 +186,6 @@ topic_action_url(topic_action_e action)
         break;
     case(HELP_CONFIG_PROFILES_DIALOG):
         url = user_guide_url("ChCustConfigProfilesSection.html");
-        break;
-    case (HELP_MANUAL_ADDR_RESOLVE_DIALOG):
-        url = user_guide_url("ChManualAddressResolveSection.html");
         break;
     case(HELP_PRINT_DIALOG):
         url = user_guide_url("ChIOPrintSection.html");
@@ -238,8 +199,8 @@ topic_action_url(topic_action_e action)
     case(HELP_GOTO_DIALOG):
         url = user_guide_url("ChWorkGoToPacketSection.html");
         break;
-    case(HELP_CAPTURE_INTERFACES_DIALOG):
-        url = user_guide_url("ChCapInterfaceSection.html");
+    case(HELP_CAPTURE_OPTIONS_DIALOG):
+        url = user_guide_url("ChCapCaptureOptions.html");
         break;
     case(HELP_CAPTURE_INFO_DIALOG):
         url = user_guide_url("ChCapRunningSection.html");
@@ -260,7 +221,7 @@ topic_action_url(topic_action_e action)
         url = user_guide_url("ChCustProtocolDissectionSection.html");
         break;
     case(HELP_FOLLOW_STREAM_DIALOG):
-        url = user_guide_url("ChAdvFollowTCPSection.html");
+        url = user_guide_url("ChAdvFollowStreamSection.html");
         break;
     case(HELP_SHOW_PACKET_BYTES_DIALOG):
         url = user_guide_url("ChAdvShowPacketBytes.html");
@@ -268,11 +229,9 @@ topic_action_url(topic_action_e action)
     case(HELP_EXPERT_INFO_DIALOG):
         url = user_guide_url("ChAdvExpert.html");
         break;
-#ifdef HAVE_EXTCAP
     case(HELP_EXTCAP_OPTIONS_DIALOG):
-        url = user_guide_url("ChExtcapOptions.html");
+        url = doc_file_url("extcap.html");
         break;
-#endif
     case(HELP_STATS_SUMMARY_DIALOG):
         url = user_guide_url("ChStatSummary.html");
         break;
@@ -288,26 +247,23 @@ topic_action_url(topic_action_e action)
     case(HELP_STATS_IO_GRAPH_DIALOG):
         url = user_guide_url("ChStatIOGraphs.html");
         break;
-    case(HELP_STATS_COMPARE_FILES_DIALOG):
-        url = user_guide_url("ChStatCompareCaptureFiles.html");
-        break;
     case(HELP_STATS_LTE_MAC_TRAFFIC_DIALOG):
-        url = user_guide_url("ChTelLTEMACTraffic.html");
+        url = user_guide_url("ChTelLTE.html#ChTelLTEMACTraffic");
         break;
     case(HELP_STATS_LTE_RLC_TRAFFIC_DIALOG):
-        url = user_guide_url("ChTelLTERLCTraffic.html");
+        url = user_guide_url("ChTelLTE.html#ChTelLTERLCTraffic");
+        break;
+    case(HELP_STATS_TCP_STREAM_GRAPHS_DIALOG):
+        url = user_guide_url("ChStatTCPStreamGraphs.html");
         break;
     case(HELP_STATS_WLAN_TRAFFIC_DIALOG):
-        url = user_guide_url("ChStatWLANTraffic.html");
+        url = user_guide_url("ChWirelessWLANTraffic.html");
         break;
     case(HELP_FILESET_DIALOG):
         url = user_guide_url("ChIOFileSetSection.html");
         break;
     case(HELP_CAPTURE_INTERFACE_OPTIONS_DIALOG):
         url = user_guide_url("ChCustPreferencesSection.html#ChCustInterfaceOptionsSection");
-        break;
-    case(HELP_CAPTURE_INTERFACES_DETAILS_DIALOG):
-        url = user_guide_url("ChCapInterfaceDetailsSection.html");
         break;
     case(HELP_PREFERENCES_DIALOG):
         url = user_guide_url("ChCustPreferencesSection.html");
@@ -317,8 +273,13 @@ topic_action_url(topic_action_e action)
         url = user_guide_url("ChIOExportSection.html");
         break;
     case(HELP_EXPORT_BYTES_DIALOG):
-    case(HELP_EXPORT_BYTES_WIN32_DIALOG):
         url = user_guide_url("ChIOExportSection.html#ChIOExportSelectedDialog");
+        break;
+    case(HELP_EXPORT_PDUS_DIALOG):
+        url = user_guide_url("ChIOExportSection.html#ChIOExportPDUSDialog");
+        break;
+    case(HELP_STRIP_HEADERS_DIALOG):
+        url = user_guide_url("ChIOExportSection.html#ChIOStripHeadersDialog");
         break;
     case(HELP_EXPORT_OBJECT_LIST):
         url = user_guide_url("ChIOExportSection.html#ChIOExportObjectsDialog");
@@ -341,14 +302,14 @@ topic_action_url(topic_action_e action)
     case(HELP_TIME_SHIFT_DIALOG):
         url = user_guide_url("ChWorkShiftTimePacketSection.html");
         break;
-    case(HELP_FILTER_SAVE_DIALOG):
-        url = user_guide_url("ChWorkFilterSaveSection.html");
-        break;
     case(HELP_TELEPHONY_VOIP_CALLS_DIALOG):
         url = user_guide_url("ChTelVoipCalls.html");
         break;
-    case(HELP_RTP_ANALYSIS_DIALOG):
-        url = user_guide_url("ChTelRTPAnalysis.html");
+    case(HELP_TELEPHONY_RTP_ANALYSIS_DIALOG):
+        url = user_guide_url("ChTelRTP.html#ChTelRTPAnalysis");
+        break;
+    case(HELP_TELEPHONY_RTP_STREAMS_DIALOG):
+        url = user_guide_url("ChTelRTP.html#ChTelRTPStreams");
         break;
     case(HELP_NEW_PACKET_DIALOG):
         url = user_guide_url("ChapterWork.html#ChWorkPacketSepView");
@@ -357,26 +318,20 @@ topic_action_url(topic_action_e action)
         url = user_guide_url("ChTelIAX2Analysis.html");
         break;
     case(HELP_TELEPHONY_RTP_PLAYER_DIALOG):
-        url = user_guide_url("ChTelRtpPlayer.html");
+        url = user_guide_url("ChTelRTP.html#ChTelRtpPlayer");
+        break;
+    case(HELP_STAT_FLOW_GRAPH):
+        url = user_guide_url("ChStatFlowGraph.html");
+        break;
+    case(HELP_STATS_PLOT_DIALOG):
+        url = user_guide_url("ChStatPlots.html");
         break;
 
     case(TOPIC_ACTION_NONE):
     default:
-        g_assert_not_reached();
+        url = g_strdup(WS_HOME_PAGE_URL);
+        ws_assert_not_reached();
     }
 
     return url;
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

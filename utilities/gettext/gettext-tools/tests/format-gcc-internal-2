@@ -7,12 +7,21 @@ cat <<\EOF > f-gi-2.data
 # Valid: %% doesn't count
 msgid  "abc%%def"
 msgstr "xyz"
-# Valid: %< doesn't count
-msgid  "abc%<def"
+# Valid: %< %> doesn't count
+msgid  "abc%<def%>ghi"
 msgstr "xyz"
-# Valid: %> doesn't count
-msgid  "abc%>def"
-msgstr "xyz"
+# Invalid: use of %< without %>
+msgid  "abc%<def%>ghi"
+msgstr "xyz%<"
+# Invalid: use of %> without %<
+msgid  "abc%<def%>ghi"
+msgstr "xyz%>"
+# Invalid: use of %r without %R
+msgid  "abc%rdef%Rghi"
+msgstr "xyz%r"
+# Invalid: use of %{ without %}
+msgid  "abc%{def%}ghi"
+msgstr "xyz%{"
 # Valid: %' doesn't count
 msgid  "abc%'def"
 msgstr "xyz"
@@ -26,11 +35,11 @@ msgstr "xyz%muvw"
 msgid  "abc%%def"
 msgstr "xyz%"
 # Valid: same arguments
-msgid  "abc%s%Hdef"
-msgstr "xyz%s%H"
+msgid  "abc%s%Ddef"
+msgstr "xyz%s%D"
 # Valid: same arguments, with different flags
-msgid  "abc%s%Hdef"
-msgstr "xyz%qs%qH"
+msgid  "abc%s%Ddef"
+msgstr "xyz%qs%qD"
 # Valid: same arguments, with different widths
 msgid  "abc%.*sdef"
 msgstr "xyz%i%s"
@@ -71,6 +80,159 @@ msgstr "xyz%u"
 msgid  "abc%u"
 msgstr "xyz%x"
 # Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%{%}"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%c"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%s"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%i"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%u"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%f"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%p"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%@"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%Z"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%E"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%F"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%T"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%r%R"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%c"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%s"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%i"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%u"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%f"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%p"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%@"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%Z"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%E"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%F"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%T"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%{%}"
+msgstr "xyz%L"
+# Invalid: type incompatibility
 msgid  "abc%c"
 msgstr "xyz%s"
 # Invalid: type incompatibility
@@ -81,13 +243,25 @@ msgid  "abc%c"
 msgstr "xyz%u"
 # Invalid: type incompatibility
 msgid  "abc%c"
+msgstr "xyz%f"
+# Invalid: type incompatibility
+msgid  "abc%c"
 msgstr "xyz%p"
 # Invalid: type incompatibility
 msgid  "abc%c"
-msgstr "xyz%H"
+msgstr "xyz%@"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%Z"
 # Invalid: type incompatibility
 msgid  "abc%c"
 msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%E"
 # Invalid: type incompatibility
 msgid  "abc%c"
 msgstr "xyz%F"
@@ -96,16 +270,19 @@ msgid  "abc%c"
 msgstr "xyz%T"
 # Invalid: type incompatibility
 msgid  "abc%c"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%c"
 msgstr "xyz%A"
 # Invalid: type incompatibility
 msgid  "abc%c"
-msgstr "xyz%C"
+msgstr "xyz%H"
 # Invalid: type incompatibility
 msgid  "abc%c"
-msgstr "xyz%E"
-# Invalid: type incompatibility
-msgid  "abc%c"
-msgstr "xyz%L"
+msgstr "xyz%I"
 # Invalid: type incompatibility
 msgid  "abc%c"
 msgstr "xyz%O"
@@ -117,7 +294,16 @@ msgid  "abc%c"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
 msgid  "abc%c"
-msgstr "xyz%V"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%L"
 # Invalid: type incompatibility
 msgid  "abc%s"
 msgstr "xyz%i"
@@ -126,13 +312,25 @@ msgid  "abc%s"
 msgstr "xyz%u"
 # Invalid: type incompatibility
 msgid  "abc%s"
+msgstr "xyz%f"
+# Invalid: type incompatibility
+msgid  "abc%s"
 msgstr "xyz%p"
 # Invalid: type incompatibility
 msgid  "abc%s"
-msgstr "xyz%H"
+msgstr "xyz%@"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%Z"
 # Invalid: type incompatibility
 msgid  "abc%s"
 msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%E"
 # Invalid: type incompatibility
 msgid  "abc%s"
 msgstr "xyz%F"
@@ -141,16 +339,19 @@ msgid  "abc%s"
 msgstr "xyz%T"
 # Invalid: type incompatibility
 msgid  "abc%s"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%s"
 msgstr "xyz%A"
 # Invalid: type incompatibility
 msgid  "abc%s"
-msgstr "xyz%C"
+msgstr "xyz%H"
 # Invalid: type incompatibility
 msgid  "abc%s"
-msgstr "xyz%E"
-# Invalid: type incompatibility
-msgid  "abc%s"
-msgstr "xyz%L"
+msgstr "xyz%I"
 # Invalid: type incompatibility
 msgid  "abc%s"
 msgstr "xyz%O"
@@ -162,19 +363,40 @@ msgid  "abc%s"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
 msgid  "abc%s"
-msgstr "xyz%V"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%L"
 # Invalid: type incompatibility
 msgid  "abc%i"
 msgstr "xyz%u"
 # Invalid: type incompatibility
 msgid  "abc%i"
+msgstr "xyz%f"
+# Invalid: type incompatibility
+msgid  "abc%i"
 msgstr "xyz%p"
 # Invalid: type incompatibility
 msgid  "abc%i"
-msgstr "xyz%H"
+msgstr "xyz%@"
+# Invalid: type incompatibility
+msgid  "abc%i"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%i"
+msgstr "xyz%Z"
 # Invalid: type incompatibility
 msgid  "abc%i"
 msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%i"
+msgstr "xyz%E"
 # Invalid: type incompatibility
 msgid  "abc%i"
 msgstr "xyz%F"
@@ -183,16 +405,19 @@ msgid  "abc%i"
 msgstr "xyz%T"
 # Invalid: type incompatibility
 msgid  "abc%i"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%i"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%i"
 msgstr "xyz%A"
 # Invalid: type incompatibility
 msgid  "abc%i"
-msgstr "xyz%C"
+msgstr "xyz%H"
 # Invalid: type incompatibility
 msgid  "abc%i"
-msgstr "xyz%E"
-# Invalid: type incompatibility
-msgid  "abc%i"
-msgstr "xyz%L"
+msgstr "xyz%I"
 # Invalid: type incompatibility
 msgid  "abc%i"
 msgstr "xyz%O"
@@ -204,34 +429,58 @@ msgid  "abc%i"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
 msgid  "abc%i"
-msgstr "xyz%V"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%i"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%i"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%i"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%f"
 # Invalid: type incompatibility
 msgid  "abc%u"
 msgstr "xyz%p"
 # Invalid: type incompatibility
 msgid  "abc%u"
+msgstr "xyz%@"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%Z"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%E"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%F"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%T"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%u"
 msgstr "xyz%H"
 # Invalid: type incompatibility
 msgid  "abc%u"
-msgstr "xyz%D"
-# Invalid: type incompatibility
-msgid  "abc%u"
-msgstr "xyz%F"
-# Invalid: type incompatibility
-msgid  "abc%u"
-msgstr "xyz%T"
-# Invalid: type incompatibility
-msgid  "abc%u"
-msgstr "xyz%A"
-# Invalid: type incompatibility
-msgid  "abc%u"
-msgstr "xyz%C"
-# Invalid: type incompatibility
-msgid  "abc%u"
-msgstr "xyz%E"
-# Invalid: type incompatibility
-msgid  "abc%u"
-msgstr "xyz%L"
+msgstr "xyz%I"
 # Invalid: type incompatibility
 msgid  "abc%u"
 msgstr "xyz%O"
@@ -243,76 +492,289 @@ msgid  "abc%u"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
 msgid  "abc%u"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%u"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%p"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%@"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%Z"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%E"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%F"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%T"
+# Invalid: type incompatibility
+msgid  "abc%f"
 msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%f"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%@"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%Z"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%E"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%F"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%T"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%A"
 # Invalid: type incompatibility
 msgid  "abc%p"
 msgstr "xyz%H"
 # Invalid: type incompatibility
 msgid  "abc%p"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%p"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%Z"
+# Invalid: type incompatibility
+msgid  "abc%@"
 msgstr "xyz%D"
 # Invalid: type incompatibility
-msgid  "abc%p"
-msgstr "xyz%F"
-# Invalid: type incompatibility
-msgid  "abc%p"
-msgstr "xyz%T"
-# Invalid: type incompatibility
-msgid  "abc%p"
-msgstr "xyz%A"
-# Invalid: type incompatibility
-msgid  "abc%p"
-msgstr "xyz%C"
-# Invalid: type incompatibility
-msgid  "abc%p"
+msgid  "abc%@"
 msgstr "xyz%E"
 # Invalid: type incompatibility
-msgid  "abc%p"
-msgstr "xyz%L"
+msgid  "abc%@"
+msgstr "xyz%F"
 # Invalid: type incompatibility
-msgid  "abc%p"
-msgstr "xyz%O"
+msgid  "abc%@"
+msgstr "xyz%T"
 # Invalid: type incompatibility
-msgid  "abc%p"
-msgstr "xyz%P"
-# Invalid: type incompatibility
-msgid  "abc%p"
-msgstr "xyz%Q"
-# Invalid: type incompatibility
-msgid  "abc%p"
+msgid  "abc%@"
 msgstr "xyz%V"
 # Invalid: type incompatibility
-msgid  "abc%H"
+msgid  "abc%@"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%@"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%Z"
+# Invalid: type incompatibility
+msgid  "abc%e"
 msgstr "xyz%D"
 # Invalid: type incompatibility
-msgid  "abc%H"
+msgid  "abc%e"
+msgstr "xyz%E"
+# Invalid: type incompatibility
+msgid  "abc%e"
 msgstr "xyz%F"
 # Invalid: type incompatibility
-msgid  "abc%H"
+msgid  "abc%e"
 msgstr "xyz%T"
 # Invalid: type incompatibility
-msgid  "abc%H"
+msgid  "abc%e"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%e"
 msgstr "xyz%A"
 # Invalid: type incompatibility
-msgid  "abc%H"
-msgstr "xyz%C"
+msgid  "abc%e"
+msgstr "xyz%H"
 # Invalid: type incompatibility
-msgid  "abc%H"
-msgstr "xyz%E"
+msgid  "abc%e"
+msgstr "xyz%I"
 # Invalid: type incompatibility
-msgid  "abc%H"
-msgstr "xyz%L"
-# Invalid: type incompatibility
-msgid  "abc%H"
+msgid  "abc%e"
 msgstr "xyz%O"
 # Invalid: type incompatibility
-msgid  "abc%H"
+msgid  "abc%e"
 msgstr "xyz%P"
 # Invalid: type incompatibility
-msgid  "abc%H"
+msgid  "abc%e"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
-msgid  "abc%H"
+msgid  "abc%e"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%D"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%E"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%F"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%T"
+# Invalid: type incompatibility
+msgid  "abc%Z"
 msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%Z"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%D"
+msgstr "xyz%E"
 # Invalid: type incompatibility
 msgid  "abc%D"
 msgstr "xyz%F"
@@ -321,16 +783,19 @@ msgid  "abc%D"
 msgstr "xyz%T"
 # Invalid: type incompatibility
 msgid  "abc%D"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%D"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%D"
 msgstr "xyz%A"
 # Invalid: type incompatibility
 msgid  "abc%D"
-msgstr "xyz%C"
+msgstr "xyz%H"
 # Invalid: type incompatibility
 msgid  "abc%D"
-msgstr "xyz%E"
-# Invalid: type incompatibility
-msgid  "abc%D"
-msgstr "xyz%L"
+msgstr "xyz%I"
 # Invalid: type incompatibility
 msgid  "abc%D"
 msgstr "xyz%O"
@@ -342,22 +807,76 @@ msgid  "abc%D"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
 msgid  "abc%D"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%D"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%D"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%D"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%F"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%T"
+# Invalid: type incompatibility
+msgid  "abc%E"
 msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%E"
+msgstr "xyz%L"
 # Invalid: type incompatibility
 msgid  "abc%F"
 msgstr "xyz%T"
 # Invalid: type incompatibility
 msgid  "abc%F"
+msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%F"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%F"
 msgstr "xyz%A"
 # Invalid: type incompatibility
 msgid  "abc%F"
-msgstr "xyz%C"
+msgstr "xyz%H"
 # Invalid: type incompatibility
 msgid  "abc%F"
-msgstr "xyz%E"
-# Invalid: type incompatibility
-msgid  "abc%F"
-msgstr "xyz%L"
+msgstr "xyz%I"
 # Invalid: type incompatibility
 msgid  "abc%F"
 msgstr "xyz%O"
@@ -369,97 +888,187 @@ msgid  "abc%F"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
 msgid  "abc%F"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%F"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%F"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%F"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%T"
 msgstr "xyz%V"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%v"
 # Invalid: type incompatibility
 msgid  "abc%T"
 msgstr "xyz%A"
 # Invalid: type incompatibility
 msgid  "abc%T"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%T"
 msgstr "xyz%C"
 # Invalid: type incompatibility
 msgid  "abc%T"
-msgstr "xyz%E"
-# Invalid: type incompatibility
-msgid  "abc%T"
 msgstr "xyz%L"
 # Invalid: type incompatibility
-msgid  "abc%T"
+msgid  "abc%V"
+msgstr "xyz%v"
+# Invalid: type incompatibility
+msgid  "abc%V"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%V"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%V"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%V"
 msgstr "xyz%O"
 # Invalid: type incompatibility
-msgid  "abc%T"
+msgid  "abc%V"
 msgstr "xyz%P"
 # Invalid: type incompatibility
-msgid  "abc%T"
+msgid  "abc%V"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
-msgid  "abc%T"
-msgstr "xyz%V"
+msgid  "abc%V"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%V"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%V"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%V"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%A"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%A"
+msgstr "xyz%H"
+# Invalid: type incompatibility
+msgid  "abc%A"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%A"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%A"
+msgstr "xyz%P"
+# Invalid: type incompatibility
+msgid  "abc%A"
+msgstr "xyz%Q"
+# Invalid: type incompatibility
+msgid  "abc%A"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%A"
+msgstr "xyz%X"
 # Invalid: type incompatibility
 msgid  "abc%A"
 msgstr "xyz%C"
 # Invalid: type incompatibility
 msgid  "abc%A"
-msgstr "xyz%E"
-# Invalid: type incompatibility
-msgid  "abc%A"
 msgstr "xyz%L"
 # Invalid: type incompatibility
-msgid  "abc%A"
+msgid  "abc%H"
+msgstr "xyz%I"
+# Invalid: type incompatibility
+msgid  "abc%H"
 msgstr "xyz%O"
 # Invalid: type incompatibility
-msgid  "abc%A"
+msgid  "abc%H"
 msgstr "xyz%P"
 # Invalid: type incompatibility
-msgid  "abc%A"
+msgid  "abc%H"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
-msgid  "abc%A"
-msgstr "xyz%V"
+msgid  "abc%H"
+msgstr "xyz%S"
 # Invalid: type incompatibility
-msgid  "abc%C"
-msgstr "xyz%E"
+msgid  "abc%H"
+msgstr "xyz%X"
 # Invalid: type incompatibility
-msgid  "abc%C"
+msgid  "abc%H"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%H"
 msgstr "xyz%L"
 # Invalid: type incompatibility
-msgid  "abc%C"
+msgid  "abc%I"
 msgstr "xyz%O"
 # Invalid: type incompatibility
-msgid  "abc%C"
+msgid  "abc%I"
 msgstr "xyz%P"
 # Invalid: type incompatibility
-msgid  "abc%C"
+msgid  "abc%I"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
-msgid  "abc%C"
-msgstr "xyz%V"
+msgid  "abc%I"
+msgstr "xyz%S"
 # Invalid: type incompatibility
-msgid  "abc%E"
+msgid  "abc%I"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%I"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%I"
 msgstr "xyz%L"
-# Invalid: type incompatibility
-msgid  "abc%E"
-msgstr "xyz%O"
-# Invalid: type incompatibility
-msgid  "abc%E"
-msgstr "xyz%P"
-# Invalid: type incompatibility
-msgid  "abc%E"
-msgstr "xyz%Q"
-# Invalid: type incompatibility
-msgid  "abc%E"
-msgstr "xyz%V"
-# Invalid: type incompatibility
-msgid  "abc%L"
-msgstr "xyz%O"
-# Invalid: type incompatibility
-msgid  "abc%L"
-msgstr "xyz%P"
-# Invalid: type incompatibility
-msgid  "abc%L"
-msgstr "xyz%Q"
-# Invalid: type incompatibility
-msgid  "abc%L"
-msgstr "xyz%V"
 # Invalid: type incompatibility
 msgid  "abc%O"
 msgstr "xyz%P"
@@ -468,16 +1077,61 @@ msgid  "abc%O"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
 msgid  "abc%O"
-msgstr "xyz%V"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%O"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%O"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%O"
+msgstr "xyz%L"
 # Invalid: type incompatibility
 msgid  "abc%P"
 msgstr "xyz%Q"
 # Invalid: type incompatibility
 msgid  "abc%P"
-msgstr "xyz%V"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%P"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%P"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%P"
+msgstr "xyz%L"
 # Invalid: type incompatibility
 msgid  "abc%Q"
-msgstr "xyz%V"
+msgstr "xyz%S"
+# Invalid: type incompatibility
+msgid  "abc%Q"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%Q"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%Q"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%S"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%S"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%S"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%X"
+msgstr "xyz%C"
+# Invalid: type incompatibility
+msgid  "abc%X"
+msgstr "xyz%L"
+# Invalid: type incompatibility
+msgid  "abc%C"
+msgstr "xyz%L"
 # Invalid: type incompatibility due to size
 msgid  "abc%i"
 msgstr "xyz%li"
@@ -488,14 +1142,41 @@ msgstr "xyz%lli"
 msgid  "abc%i"
 msgstr "xyz%wi"
 # Invalid: type incompatibility due to size
+msgid  "abc%i"
+msgstr "xyz%zi"
+# Invalid: type incompatibility due to size
+msgid  "abc%i"
+msgstr "xyz%ti"
+# Invalid: type incompatibility due to size
 msgid  "abc%li"
 msgstr "xyz%lli"
 # Invalid: type incompatibility due to size
 msgid  "abc%li"
 msgstr "xyz%wi"
 # Invalid: type incompatibility due to size
+msgid  "abc%li"
+msgstr "xyz%zi"
+# Invalid: type incompatibility due to size
+msgid  "abc%li"
+msgstr "xyz%ti"
+# Invalid: type incompatibility due to size
 msgid  "abc%lli"
 msgstr "xyz%wi"
+# Invalid: type incompatibility due to size
+msgid  "abc%lli"
+msgstr "xyz%zi"
+# Invalid: type incompatibility due to size
+msgid  "abc%lli"
+msgstr "xyz%ti"
+# Invalid: type incompatibility due to size
+msgid  "abc%wi"
+msgstr "xyz%zi"
+# Invalid: type incompatibility due to size
+msgid  "abc%wi"
+msgstr "xyz%ti"
+# Invalid: type incompatibility due to size
+msgid  "abc%zi"
+msgstr "xyz%ti"
 # Invalid: type incompatibility for width
 msgid  "abc%.*s"
 msgstr "xyz%u%s"

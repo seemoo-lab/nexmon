@@ -11,6 +11,7 @@ use Exporter;
 @EXPORT_OK = qw(DeclLevel);
 
 use strict;
+use warnings;
 use Parse::Pidl qw(warning error fatal);
 use Parse::Pidl::Typelist qw(mapTypeName scalar_is_reference);
 use Parse::Pidl::Util qw(ParseExpr has_property is_constant);
@@ -62,11 +63,11 @@ sub AllocOutVar($$$$$$$)
 		$l = $nl if ($nl->{TYPE} eq "ARRAY");
 	} elsif
 
-	# we don't support multi-dimentional arrays yet
+	# we don't support multi-dimensional arrays yet
 	($l->{TYPE} eq "ARRAY") {
 		my $nl = GetNextLevel($e, $l);
 		if ($nl->{TYPE} eq "ARRAY") {
-			fatal($e->{ORIGINAL},"multi-dimentional [out] arrays are not supported!");
+			fatal($e->{ORIGINAL},"multi-dimensional [out] arrays are not supported!");
 		}
 	} else {
 		# neither pointer nor array, no need to alloc something.
@@ -103,7 +104,7 @@ sub CallWithStruct($$$$$$)
 		if (grep(/out/, @{$_->{DIRECTION}})) { $hasout = 1; }
 	}
 
-	pidl "ZERO_STRUCT(r->out);" if ($hasout);
+	pidl "NDR_ZERO_STRUCT(r->out);" if ($hasout);
 
 	foreach (@{$fn->{ELEMENTS}}) {
 		my @dir = @{$_->{DIRECTION}};
@@ -252,7 +253,7 @@ sub ParseInterface($)
 
 	pidl "";
 	pidl "/* Tables */";
-	pidl "static struct api_struct api_$if->{NAME}_cmds[] = ";
+	pidl "static const struct api_struct api_$if->{NAME}_cmds[] = ";
 	pidl "{";
 	indent;
 
@@ -266,12 +267,12 @@ sub ParseInterface($)
 
 	pidl "";
 
-	pidl_hdr "void $if->{NAME}_get_pipe_fns(struct api_struct **fns, int *n_fns);";
-	pidl "void $if->{NAME}_get_pipe_fns(struct api_struct **fns, int *n_fns)";
+	pidl_hdr "const struct api_struct *$if->{NAME}_get_pipe_fns(int *n_fns);";
+	pidl "const struct api_struct *$if->{NAME}_get_pipe_fns(int *n_fns)";
 	pidl "{";
 	indent;
-	pidl "*fns = api_$if->{NAME}_cmds;";
 	pidl "*n_fns = sizeof(api_$if->{NAME}_cmds) / sizeof(struct api_struct);";
+	pidl "return api_$if->{NAME}_cmds;";
 	deindent;
 	pidl "}";
 	pidl "";

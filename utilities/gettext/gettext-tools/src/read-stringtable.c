@@ -1,7 +1,5 @@
 /* Reading NeXTstep/GNUstep .strings files.
-   Copyright (C) 2003, 2005-2007, 2009, 2015-2016 Free Software Foundation,
-   Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "read-stringtable.h"
@@ -30,13 +28,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "error.h"
-#include "error-progname.h"
+#include <error.h>
+#include "attribute.h"
 #include "read-catalog-abstract.h"
 #include "xalloc.h"
 #include "xvasprintf.h"
-#include "po-xerror.h"
+#include "xstrerror.h"
+#include "xerror-handler.h"
 #include "unistr.h"
+#include "c-ctype.h"
 #include "gettext.h"
 
 #define _(str) gettext (str)
@@ -67,7 +67,7 @@
 static const char *real_file_name;
 
 /* File name and line number.  */
-extern lex_pos_ty gram_pos;
+static lex_pos_ty pos;
 
 /* The input file stream.  */
 static FILE *fp;
@@ -80,25 +80,22 @@ static unsigned char phase1_pushback[4];
 static int phase1_pushback_length;
 
 static int
-phase1_getc ()
+phase1_getc (abstract_catalog_reader_ty *catr)
 {
-  int c;
-
   if (phase1_pushback_length)
     return phase1_pushback[--phase1_pushback_length];
 
-  c = getc (fp);
+  int c = getc (fp);
 
   if (c == EOF)
     {
       if (ferror (fp))
         {
-          const char *errno_description = strerror (errno);
-          po_xerror (PO_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
-                     xasprintf ("%s: %s",
-                                xasprintf (_("error while reading \"%s\""),
-                                           real_file_name),
-                                errno_description));
+          int err = errno;
+          catr->xeh->xerror (CAT_SEVERITY_FATAL_ERROR, NULL, NULL, 0, 0, false,
+                             xstrerror (xasprintf (_("error while reading \"%s\""),
+                                                   real_file_name),
+                                        err));
         }
       return EOF;
     }
@@ -138,7 +135,7 @@ enum enc
 static enum enc encoding;
 
 static int
-phase2_getc ()
+phase2_getc (abstract_catalog_reader_ty *catr)
 {
   if (phase2_pushback_length)
     return phase2_pushback[--phase2_pushback_length];
@@ -146,12 +143,10 @@ phase2_getc ()
   if (encoding == enc_undetermined)
     {
       /* Determine the input file's encoding.  */
-      int c0, c1;
-
-      c0 = phase1_getc ();
+      int c0 = phase1_getc (catr);
       if (c0 == EOF)
         return UEOF;
-      c1 = phase1_getc ();
+      int c1 = phase1_getc (catr);
       if (c1 == EOF)
         {
           phase1_ungetc (c0);
@@ -163,9 +158,7 @@ phase2_getc ()
         encoding = enc_ucs2le;
       else
         {
-          int c2;
-
-          c2 = phase1_getc ();
+          int c2 = phase1_getc (catr);
           if (c2 == EOF)
             {
               phase1_ungetc (c1);
@@ -189,12 +182,10 @@ phase2_getc ()
     case enc_ucs2be:
       /* Read an UCS-2BE encoded character.  */
       {
-        int c0, c1;
-
-        c0 = phase1_getc ();
+        int c0 = phase1_getc (catr);
         if (c0 == EOF)
           return UEOF;
-        c1 = phase1_getc ();
+        int c1 = phase1_getc (catr);
         if (c1 == EOF)
           return UEOF;
         return (c0 << 8) + c1;
@@ -203,12 +194,10 @@ phase2_getc ()
     case enc_ucs2le:
       /* Read an UCS-2LE encoded character.  */
       {
-        int c0, c1;
-
-        c0 = phase1_getc ();
+        int c0 = phase1_getc (catr);
         if (c0 == EOF)
           return UEOF;
-        c1 = phase1_getc ();
+        int c1 = phase1_getc (catr);
         if (c1 == EOF)
           return UEOF;
         return c0 + (c1 << 8);
@@ -219,10 +208,10 @@ phase2_getc ()
       {
         unsigned char buf[6];
         unsigned int count;
-        int c;
-        ucs4_t uc;
 
-        c = phase1_getc ();
+        int c;
+
+        c = phase1_getc (catr);
         if (c == EOF)
           return UEOF;
         buf[0] = c;
@@ -230,7 +219,7 @@ phase2_getc ()
 
         if (buf[0] >= 0xc0)
           {
-            c = phase1_getc ();
+            c = phase1_getc (catr);
             if (c == EOF)
               return UEOF;
             buf[1] = c;
@@ -239,7 +228,7 @@ phase2_getc ()
             if (buf[0] >= 0xe0
                 && ((buf[1] ^ 0x80) < 0x40))
               {
-                c = phase1_getc ();
+                c = phase1_getc (catr);
                 if (c == EOF)
                   return UEOF;
                 buf[2] = c;
@@ -248,7 +237,7 @@ phase2_getc ()
                 if (buf[0] >= 0xf0
                     && ((buf[2] ^ 0x80) < 0x40))
                   {
-                    c = phase1_getc ();
+                    c = phase1_getc (catr);
                     if (c == EOF)
                       return UEOF;
                     buf[3] = c;
@@ -257,7 +246,7 @@ phase2_getc ()
                     if (buf[0] >= 0xf8
                         && ((buf[3] ^ 0x80) < 0x40))
                       {
-                        c = phase1_getc ();
+                        c = phase1_getc (catr);
                         if (c == EOF)
                           return UEOF;
                         buf[4] = c;
@@ -266,7 +255,7 @@ phase2_getc ()
                         if (buf[0] >= 0xfc
                             && ((buf[4] ^ 0x80) < 0x40))
                           {
-                            c = phase1_getc ();
+                            c = phase1_getc (catr);
                             if (c == EOF)
                               return UEOF;
                             buf[5] = c;
@@ -277,15 +266,16 @@ phase2_getc ()
               }
           }
 
+        ucs4_t uc;
         u8_mbtouc (&uc, buf, count);
+
         return uc;
       }
 
     case enc_iso8859_1:
       /* Read an ISO-8859-1 encoded character.  */
       {
-        int c = phase1_getc ();
-
+        int c = phase1_getc (catr);
         if (c == EOF)
           return UEOF;
         return c;
@@ -307,12 +297,12 @@ phase2_ungetc (int c)
 /* Phase 3: Read an UCS-4 character, with line number handling.  */
 
 static int
-phase3_getc ()
+phase3_getc (abstract_catalog_reader_ty *catr)
 {
-  int c = phase2_getc ();
+  int c = phase2_getc (catr);
 
   if (c == '\n')
-    gram_pos.line_number++;
+    pos.line_number++;
 
   return c;
 }
@@ -321,7 +311,7 @@ static void
 phase3_ungetc (int c)
 {
   if (c == '\n')
-    --gram_pos.line_number;
+    --pos.line_number;
   phase2_ungetc (c);
 }
 
@@ -330,25 +320,21 @@ phase3_ungetc (int c)
 static char *
 conv_from_ucs4 (const int *buffer, size_t buflen)
 {
-  unsigned char *utf8_string;
-  size_t pos;
-  unsigned char *q;
 
   /* Each UCS-4 word needs 6 bytes at worst.  */
-  utf8_string = XNMALLOC (6 * buflen + 1, unsigned char);
-
-  for (pos = 0, q = utf8_string; pos < buflen; )
-    {
-      unsigned int uc;
-      int n;
-
-      uc = buffer[pos++];
-      n = u8_uctomb (q, uc, 6);
-      assert (n > 0);
-      q += n;
-    }
-  *q = '\0';
-  assert (q - utf8_string <= 6 * buflen);
+  unsigned char *utf8_string = XNMALLOC (6 * buflen + 1, unsigned char);
+  {
+    unsigned char *q = utf8_string;
+    for (size_t i = 0; i < buflen; )
+      {
+        unsigned int uc = buffer[i++];
+        int n = u8_uctomb (q, uc, 6);
+        assert (n > 0);
+        q += n;
+      }
+    *q = '\0';
+    assert (q - utf8_string <= 6 * buflen);
+  }
 
   return (char *) utf8_string;
 }
@@ -360,14 +346,17 @@ conv_from_ucs4 (const int *buffer, size_t buflen)
 static char *
 parse_escaped_string (const int *string, size_t length)
 {
-  static int *buffer;
-  static size_t bufmax;
-  static size_t buflen;
   const int *string_limit = string + length;
-  int c;
 
   if (string == string_limit)
     return NULL;
+
+  static int *buffer;
+  static size_t bufmax;
+  static size_t buflen;
+
+  int c;
+
   c = *string++;
   if (c != '"')
     return NULL;
@@ -387,8 +376,7 @@ parse_escaped_string (const int *string, size_t length)
           if (c >= '0' && c <= '7')
             {
               unsigned int n = 0;
-              int j = 0;
-              for (;;)
+              for (int j = 0;;)
                 {
                   n = n * 8 + (c - '0');
                   if (++j == 3)
@@ -405,8 +393,7 @@ parse_escaped_string (const int *string, size_t length)
           else if (c == 'u' || c == 'U')
             {
               unsigned int n = 0;
-              int j;
-              for (j = 0; j < 4; j++)
+              for (int j = 0; j < 4; j++)
                 {
                   if (string == string_limit)
                     break;
@@ -474,11 +461,11 @@ special_comment_add (const char *flag)
 }
 
 static inline void
-special_comment_finish ()
+special_comment_finish (abstract_catalog_reader_ty *catr)
 {
   if (special_comment != NULL)
     {
-      po_callback_comment_special (special_comment);
+      catalog_reader_seen_comment_special (catr, special_comment);
       free (special_comment);
       special_comment = NULL;
     }
@@ -513,11 +500,10 @@ comment_add (int c)
   buffer[buflen++] = c;
 }
 
-static inline void
-comment_line_end (size_t chars_to_remove, bool test_for_fuzzy_msgstr)
+static void
+comment_line_end (abstract_catalog_reader_ty *catr,
+                  size_t chars_to_remove, bool test_for_fuzzy_msgstr)
 {
-  char *line;
-
   buflen -= chars_to_remove;
   /* Drop trailing white space, but not EOLs.  */
   while (buflen >= 1
@@ -535,7 +521,7 @@ comment_line_end (size_t chars_to_remove, bool test_for_fuzzy_msgstr)
                                 buflen - (buffer[buflen - 1] == ';') - 2)))
     return;
 
-  line = conv_from_ucs4 (buffer, buflen);
+  char *line = conv_from_ucs4 (buffer, buflen);
 
   if (strcmp (line, "Flag: untranslated") == 0)
     {
@@ -548,7 +534,7 @@ comment_line_end (size_t chars_to_remove, bool test_for_fuzzy_msgstr)
     special_comment_add (line + 6);
   else if (strlen (line) >= 9 && memcmp (line, "Comment: ", 9) == 0)
     /* A comment extracted from the source.  */
-    po_callback_comment_dot (line + 9);
+    catalog_reader_seen_comment_dot (catr, line + 9);
   else
     {
       char *last_colon;
@@ -557,15 +543,15 @@ comment_line_end (size_t chars_to_remove, bool test_for_fuzzy_msgstr)
 
       if (strlen (line) >= 6 && memcmp (line, "File: ", 6) == 0
           && (last_colon = strrchr (line + 6, ':')) != NULL
-          && *(last_colon + 1) != '\0'
+          && c_isdigit (*(last_colon + 1))
           && (number = strtoul (last_colon + 1, &endp, 10), *endp == '\0'))
         {
           /* A "File: <filename>:<number>" type comment.  */
           *last_colon = '\0';
-          po_callback_comment_filepos (line + 6, number);
+          catalog_reader_seen_comment_filepos (catr, line + 6, number);
         }
       else
-        po_callback_comment (line);
+        catalog_reader_seen_comment (catr, line);
     }
 }
 
@@ -574,14 +560,14 @@ comment_line_end (size_t chars_to_remove, bool test_for_fuzzy_msgstr)
    character.  */
 
 static int
-phase4_getc ()
+phase4_getc (abstract_catalog_reader_ty *catr)
 {
   int c;
 
-  c = phase3_getc ();
+  c = phase3_getc (catr);
   if (c != '/')
     return c;
-  c = phase3_getc ();
+  c = phase3_getc (catr);
   switch (c)
     {
     default:
@@ -591,18 +577,14 @@ phase4_getc ()
     case '*':
       /* C style comment.  */
       {
-        bool last_was_star;
-        size_t trailing_stars;
-        bool seen_newline;
-
         comment_start ();
-        last_was_star = false;
-        trailing_stars = 0;
-        seen_newline = false;
+        bool last_was_star = false;
+        size_t trailing_stars = 0;
+        bool seen_newline = false;
         /* Drop additional stars at the beginning of the comment.  */
         for (;;)
           {
-            c = phase3_getc ();
+            c = phase3_getc (catr);
             if (c != '*')
               break;
             last_was_star = true;
@@ -610,7 +592,7 @@ phase4_getc ()
         phase3_ungetc (c);
         for (;;)
           {
-            c = phase3_getc ();
+            c = phase3_getc (catr);
             if (c == UEOF)
               break;
             /* We skip all leading white space, but not EOLs.  */
@@ -620,7 +602,7 @@ phase4_getc ()
               {
               case '\n':
                 seen_newline = true;
-                comment_line_end (1, false);
+                comment_line_end (catr, 1, false);
                 comment_start ();
                 last_was_star = false;
                 trailing_stars = 0;
@@ -635,12 +617,12 @@ phase4_getc ()
                 if (last_was_star)
                   {
                     /* Drop additional stars at the end of the comment.  */
-                    comment_line_end (trailing_stars + 1,
+                    comment_line_end (catr, trailing_stars + 1,
                                       expect_fuzzy_msgstr_as_c_comment
                                       && !seen_newline);
                     break;
                   }
-                /* FALLTHROUGH */
+                FALLTHROUGH;
 
               default:
                 last_was_star = false;
@@ -657,14 +639,14 @@ phase4_getc ()
       comment_start ();
       for (;;)
         {
-          c = phase3_getc ();
+          c = phase3_getc (catr);
           if (c == '\n' || c == UEOF)
             break;
           /* We skip all leading white space, but not EOLs.  */
           if (!(buflen == 0 && (c == ' ' || c == '\t')))
             comment_add (c);
         }
-      comment_line_end (0, expect_fuzzy_msgstr_as_cxx_comment);
+      comment_line_end (catr, 0, expect_fuzzy_msgstr_as_cxx_comment);
       return '\n';
     }
 }
@@ -706,49 +688,49 @@ is_quotable (int c)
 
 /* Read a key or value string.
    Return the string in UTF-8 encoding, or NULL if no string is seen.
-   Return the start position of the string in *pos.  */
+   Return the start position of the string in *start_pos.  */
 static char *
-read_string (lex_pos_ty *pos)
+read_string (abstract_catalog_reader_ty *catr, lex_pos_ty *start_pos)
 {
   static int *buffer;
   static size_t bufmax;
   static size_t buflen;
+
   int c;
 
   /* Skip whitespace before the string.  */
   do
-    c = phase4_getc ();
+    c = phase4_getc (catr);
   while (is_whitespace (c));
 
   if (c == UEOF)
     /* No more string.  */
     return NULL;
 
-  *pos = gram_pos;
+  *start_pos = pos;
   buflen = 0;
   if (c == '"')
     {
       /* Read a string enclosed in double-quotes.  */
       for (;;)
         {
-          c = phase3_getc ();
+          c = phase3_getc (catr);
           if (c == UEOF || c == '"')
             break;
           if (c == '\\')
             {
-              c = phase3_getc ();
+              c = phase3_getc (catr);
               if (c == UEOF)
                 break;
               if (c >= '0' && c <= '7')
                 {
                   unsigned int n = 0;
-                  int j = 0;
-                  for (;;)
+                  for (int j = 0;;)
                     {
                       n = n * 8 + (c - '0');
                       if (++j == 3)
                         break;
-                      c = phase3_getc ();
+                      c = phase3_getc (catr);
                       if (!(c >= '0' && c <= '7'))
                         {
                           phase3_ungetc (c);
@@ -760,10 +742,9 @@ read_string (lex_pos_ty *pos)
               else if (c == 'u' || c == 'U')
                 {
                   unsigned int n = 0;
-                  int j;
-                  for (j = 0; j < 4; j++)
+                  for (int j = 0; j < 4; j++)
                     {
-                      c = phase3_getc ();
+                      c = phase3_getc (catr);
                       if (c >= '0' && c <= '9')
                         n = n * 16 + (c - '0');
                       else if (c >= 'A' && c <= 'F')
@@ -798,18 +779,18 @@ read_string (lex_pos_ty *pos)
           buffer[buflen++] = c;
         }
       if (c == UEOF)
-        po_xerror (PO_SEVERITY_ERROR, NULL,
-                   real_file_name, gram_pos.line_number, (size_t)(-1), false,
-                   _("warning: unterminated string"));
+        catr->xeh->xerror (CAT_SEVERITY_ERROR, NULL,
+                           real_file_name, pos.line_number, (size_t)(-1), false,
+                           _("warning: unterminated string"));
     }
   else
     {
       /* Read a token outside quotes.  */
       if (is_quotable (c))
-        po_xerror (PO_SEVERITY_ERROR, NULL,
-                   real_file_name, gram_pos.line_number, (size_t)(-1), false,
-                   _("warning: syntax error"));
-      for (; c != UEOF && !is_quotable (c); c = phase4_getc ())
+        catr->xeh->xerror (CAT_SEVERITY_ERROR, NULL,
+                           real_file_name, pos.line_number, (size_t)(-1), false,
+                           _("warning: syntax error"));
+      for (; c != UEOF && !is_quotable (c); c = phase4_getc (catr))
         {
           if (buflen >= bufmax)
             {
@@ -827,25 +808,20 @@ read_string (lex_pos_ty *pos)
 /* Read a .strings file from a stream, and dispatch to the various
    abstract_catalog_reader_class_ty methods.  */
 static void
-stringtable_parse (abstract_catalog_reader_ty *pop, FILE *file,
-                   const char *real_filename, const char *logical_filename)
+stringtable_parse (abstract_catalog_reader_ty *catr, FILE *file,
+                   const char *real_filename, const char *logical_filename,
+                   bool is_pot_role, string_list_ty *arena)
 {
   fp = file;
   real_file_name = real_filename;
-  gram_pos.file_name = xstrdup (real_file_name);
-  gram_pos.line_number = 1;
+  pos.file_name = xstrdup (real_file_name);
+  pos.line_number = 1;
   encoding = enc_undetermined;
   expect_fuzzy_msgstr_as_c_comment = false;
   expect_fuzzy_msgstr_as_cxx_comment = false;
 
   for (;;)
     {
-      char *msgid;
-      lex_pos_ty msgid_pos;
-      char *msgstr;
-      lex_pos_ty msgstr_pos;
-      int c;
-
       /* Prepare for next msgid/msgstr pair.  */
       special_comment_reset ();
       next_is_obsolete = false;
@@ -853,45 +829,52 @@ stringtable_parse (abstract_catalog_reader_ty *pop, FILE *file,
       fuzzy_msgstr = NULL;
 
       /* Read the key and all the comments preceding it.  */
-      msgid = read_string (&msgid_pos);
+      lex_pos_ty msgid_pos;
+      char *msgid = read_string (catr, &msgid_pos);
       if (msgid == NULL)
         break;
 
-      special_comment_finish ();
+      special_comment_finish (catr);
+
+      int c;
 
       /* Skip whitespace.  */
       do
-        c = phase4_getc ();
+        c = phase4_getc (catr);
       while (is_whitespace (c));
 
       /* Expect a '=' or ';'.  */
       if (c == UEOF)
         {
-          po_xerror (PO_SEVERITY_ERROR, NULL,
-                     real_file_name, gram_pos.line_number, (size_t)(-1), false,
-                     _("warning: unterminated key/value pair"));
+          catr->xeh->xerror (CAT_SEVERITY_ERROR, NULL,
+                             real_file_name, pos.line_number, (size_t)(-1),
+                             false,
+                             _("warning: unterminated key/value pair"));
           break;
         }
       if (c == ';')
         {
           /* "key"; is an abbreviation for "key"=""; and does not
              necessarily designate an untranslated entry.  */
-          msgstr = xstrdup ("");
-          msgstr_pos = msgid_pos;
-          po_callback_message (NULL, msgid, &msgid_pos, NULL,
-                               msgstr, strlen (msgstr) + 1, &msgstr_pos,
-                               NULL, NULL, NULL,
-                               false, next_is_obsolete);
+          char *msgstr = xstrdup ("");
+          lex_pos_ty msgstr_pos = msgid_pos;
+          catalog_reader_seen_message (catr,
+                                       NULL, msgid, &msgid_pos, NULL,
+                                       msgstr, strlen (msgstr) + 1, &msgstr_pos,
+                                       NULL, NULL, NULL,
+                                       false, next_is_obsolete);
         }
       else if (c == '=')
         {
           /* Read the value.  */
-          msgstr = read_string (&msgstr_pos);
+          lex_pos_ty msgstr_pos;
+          char *msgstr = read_string (catr, &msgstr_pos);
           if (msgstr == NULL)
             {
-              po_xerror (PO_SEVERITY_ERROR, NULL,
-                         real_file_name, gram_pos.line_number, (size_t)(-1),
-                         false, _("warning: unterminated key/value pair"));
+              catr->xeh->xerror (CAT_SEVERITY_ERROR, NULL,
+                                 real_file_name, pos.line_number, (size_t)(-1),
+                                 false,
+                                 _("warning: unterminated key/value pair"));
               break;
             }
 
@@ -900,7 +883,7 @@ stringtable_parse (abstract_catalog_reader_ty *pop, FILE *file,
           expect_fuzzy_msgstr_as_c_comment = next_is_fuzzy;
           do
             {
-              c = phase4_getc ();
+              c = phase4_getc (catr);
               if (fuzzy_msgstr != NULL)
                 expect_fuzzy_msgstr_as_c_comment = false;
             }
@@ -915,12 +898,12 @@ stringtable_parse (abstract_catalog_reader_ty *pop, FILE *file,
               if (fuzzy_msgstr == NULL && next_is_fuzzy)
                 {
                   do
-                    c = phase3_getc ();
+                    c = phase3_getc (catr);
                   while (c == ' ');
                   phase3_ungetc (c);
 
                   expect_fuzzy_msgstr_as_cxx_comment = true;
-                  c = phase4_getc ();
+                  c = phase4_getc (catr);
                   phase4_ungetc (c);
                   expect_fuzzy_msgstr_as_cxx_comment = false;
                 }
@@ -928,33 +911,34 @@ stringtable_parse (abstract_catalog_reader_ty *pop, FILE *file,
                 msgstr = fuzzy_msgstr;
 
               /* A key/value pair.  */
-              po_callback_message (NULL, msgid, &msgid_pos, NULL,
-                                   msgstr, strlen (msgstr) + 1, &msgstr_pos,
-                                   NULL, NULL, NULL,
-                                   false, next_is_obsolete);
+              catalog_reader_seen_message (catr,
+                                           NULL, msgid, &msgid_pos, NULL,
+                                           msgstr, strlen (msgstr) + 1, &msgstr_pos,
+                                           NULL, NULL, NULL,
+                                           false, next_is_obsolete);
             }
           else
             {
-              po_xerror (PO_SEVERITY_ERROR, NULL,
-                         real_file_name, gram_pos.line_number, (size_t)(-1),
-                         false, _("\
-warning: syntax error, expected ';' after string"));
+              catr->xeh->xerror (CAT_SEVERITY_ERROR, NULL,
+                                 real_file_name, pos.line_number, (size_t)(-1),
+                                 false,
+                                 _("warning: syntax error, expected ';' after string"));
               break;
             }
         }
       else
         {
-          po_xerror (PO_SEVERITY_ERROR, NULL,
-                     real_file_name, gram_pos.line_number, (size_t)(-1), false,
-                     _("\
-warning: syntax error, expected '=' or ';' after string"));
+          catr->xeh->xerror (CAT_SEVERITY_ERROR, NULL,
+                             real_file_name, pos.line_number, (size_t)(-1),
+                             false,
+                             _("warning: syntax error, expected '=' or ';' after string"));
           break;
         }
     }
 
   fp = NULL;
   real_file_name = NULL;
-  gram_pos.line_number = 0;
+  pos.line_number = 0;
 }
 
 const struct catalog_input_format input_format_stringtable =

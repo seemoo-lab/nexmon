@@ -7,19 +7,7 @@
  *
  * Copied from packet-smb.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,10 +18,10 @@
 void proto_register_ypxfr(void);
 void proto_reg_handoff_ypxfr(void);
 
-static int proto_ypxfr = -1;
-static int hf_ypxfr_procedure_v1 = -1;
+static int proto_ypxfr;
+static int hf_ypxfr_procedure_v1;
 
-static gint ett_ypxfr = -1;
+static int ett_ypxfr;
 
 /* proc number, "proc name", dissect_request, dissect_reply */
 static const vsff ypxfr1_proc[] = {
@@ -62,7 +50,7 @@ proto_register_ypxfr(void)
 			VALS(ypxfr1_proc_vals), 0, NULL, HFILL }}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ypxfr
 	};
 
@@ -81,7 +69,7 @@ proto_reg_handoff_ypxfr(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

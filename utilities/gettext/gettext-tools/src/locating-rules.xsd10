@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <xsd:annotation>
+    <xsd:documentation>XML schema 1.0 of *.loc files, as understood by GNU gettext.
+
+Copyright (C) 2015-2026 Free Software Foundation, Inc.
+
+This file is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+
+This file is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
+
+Written by Bruno Haible.
+</xsd:documentation></xsd:annotation>
+
+  <xsd:element name="locatingRules" type="LocatingRulesType">
+    <xsd:annotation>
+      <xsd:documentation></xsd:documentation>
+    </xsd:annotation>
+  </xsd:element>
+
+  <xsd:complexType name="LocatingRulesType">
+    <xsd:annotation>
+      <xsd:documentation>Example:
+&lt;locatingRules&gt;
+  &lt;locatingRule name=&quot;Glade&quot; pattern=&quot;*.glade&quot;&gt;
+  &lt;documentRule localName=&quot;GTK-Interface&quot; target=&quot;glade1.its&quot;/&gt;
+  &lt;documentRule localName=&quot;glade-interface&quot; target=&quot;glade2.its&quot;/&gt;
+  &lt;documentRule localName=&quot;interface&quot; target=&quot;gtkbuilder.its&quot;/&gt;
+  &lt;/locatingRule&gt;
+  &lt;locatingRule name=&quot;Glade&quot; pattern=&quot;*.glade2&quot;&gt;
+  &lt;documentRule localName=&quot;glade-interface&quot; target=&quot;glade2.its&quot;/&gt;
+  &lt;/locatingRule&gt;
+  &lt;locatingRule name=&quot;Glade&quot; pattern=&quot;*.ui&quot;&gt;
+  &lt;documentRule localName=&quot;interface&quot; target=&quot;gtkbuilder.its&quot;/&gt;
+  &lt;/locatingRule&gt;
+&lt;/locatingRules&gt;
+</xsd:documentation></xsd:annotation>
+    <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+      <xsd:element name="locatingRule" type="LocatingRuleType">
+        <xsd:annotation>
+          <xsd:documentation></xsd:documentation>
+        </xsd:annotation></xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="LocatingRuleType">
+    <xsd:annotation>
+      <xsd:documentation>Example:
+&amp;lt;locatingRule name=&amp;quot;Glade&amp;quot; pattern=&amp;quot;*.glade&amp;quot;&amp;gt;
+  &amp;lt;documentRule localName=&amp;quot;GTK-Interface&amp;quot; target=&amp;quot;glade1.its&amp;quot;/&amp;gt;
+  &amp;lt;documentRule localName=&amp;quot;glade-interface&amp;quot; target=&amp;quot;glade2.its&amp;quot;/&amp;gt;
+  &amp;lt;documentRule localName=&amp;quot;interface&amp;quot; target=&amp;quot;gtkbuilder.its&amp;quot;/&amp;gt;
+&amp;lt;/locatingRule&amp;gt;
+
+Note: An instance should not have both the 'target' attribute and a 'documentRule' child at the same time.
+</xsd:documentation></xsd:annotation>
+    <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+      <xsd:element name="documentRule" type="DocumentRuleType"></xsd:element>
+    </xsd:sequence>
+    <xsd:attribute name="pattern" type="xsd:string" use="required"></xsd:attribute>
+    <xsd:attribute name="name" type="xsd:string" use="optional"></xsd:attribute>
+    <xsd:attribute name="target" type="xsd:string" use="optional"></xsd:attribute>
+    <!-- Valid in XML Schema 1.1 only:
+    <xsd:assert test="not(@target and documentRule)"/>
+    -->
+  </xsd:complexType>
+
+  <xsd:complexType name="DocumentRuleType">
+    <xsd:annotation>
+      <xsd:documentation>Example:
+&lt;documentRule localName=&quot;GTK-Interface&quot; target=&quot;glade1.its&quot;/&gt;
+</xsd:documentation>
+    </xsd:annotation>
+    <xsd:attribute name="target" type="xsd:string" use="required"></xsd:attribute>
+    <xsd:attribute name="ns" type="xsd:string" use="optional"></xsd:attribute>
+    <xsd:attribute name="localName" type="xsd:string" use="optional"></xsd:attribute>
+  </xsd:complexType>
+</xsd:schema>

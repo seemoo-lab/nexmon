@@ -5,22 +5,11 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
+#define WS_LOG_DOMAIN LOG_DOMAIN_EPAN
 
 #include <glib.h>
 
@@ -31,7 +20,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "packet.h"
+#include <epan/packet.h>
 #include "timestamp.h"
 
 #include "osi-utils.h"
@@ -41,21 +30,24 @@
 #include "tvbuff.h"
 #include "epan_dissect.h"
 
-#include "wmem/wmem.h"
+#include <epan/wmem_scopes.h>
 
+#include <epan/column-info.h>
 #include <epan/exceptions.h>
 #include <epan/reassemble.h>
 #include <epan/stream.h>
 #include <epan/expert.h>
+#include <epan/prefs.h>
 #include <epan/range.h>
-#include <epan/asm_utils.h>
 
 #include <wsutil/str_util.h>
+#include <wsutil/wslog.h>
+#include <wsutil/ws_assert.h>
 
-static gint proto_malformed = -1;
-static dissector_handle_t frame_handle = NULL;
-static dissector_handle_t file_handle = NULL;
-static dissector_handle_t data_handle = NULL;
+static int proto_malformed;
+static dissector_handle_t frame_handle;
+static dissector_handle_t file_handle;
+static dissector_handle_t data_handle;
 
 /**
  * A data source.
@@ -64,6 +56,7 @@ static dissector_handle_t data_handle = NULL;
 struct data_source {
 	tvbuff_t *tvb;
 	char *name;
+	data_source_media_type_e media_type;
 };
 
 /*
@@ -77,7 +70,17 @@ struct data_source {
  * used in that table; not all of them are necessarily in the table,
  * as they may be for protocols that don't have a fixed uint value,
  * e.g. for TCP or UDP port number tables and protocols with no fixed
- * port number.
+ * port number. It's only non-NULL for tables that allow "Decode As".
+ * After initial handoff registration, it's sorted by the filter name
+ * of the protocol associated with the handle (using an empty string
+ * if there is no protocol.) That's mostly for tshark -d error messages;
+ * the GUI re-sorts by the dissector handle description. (XXX - They
+ * could be sorted on first use, especially if that's the only user.)
+ *
+ * "da_descriptions" is a hash table, keyed by dissector handle description,
+ * of all the dissector handles that could be used for Decode As. The
+ * descriptions are what are presented in the GUI and what are written
+ * to the decode_as_entries UAT.
  *
  * "ui_name" is the name the dissector table has in the user interface.
  *
@@ -86,7 +89,7 @@ struct data_source {
  *
  * "param" is the base in which to display the uint value for that
  * dissector table, if it's a uint dissector table, or if it's a string
- * table, TRUE/FALSE to indicate case-insensitive or not.
+ * table, true/false to indicate case-insensitive or not.
  *
  * "protocol" is the protocol associated with the dissector table. Used
  * for determining dependencies.
@@ -94,59 +97,111 @@ struct data_source {
 struct dissector_table {
 	GHashTable	*hash_table;
 	GSList		*dissector_handles;
+	GHashTable	*da_descriptions;
 	const char	*ui_name;
 	ftenum_t	type;
 	int		param;
 	protocol_t	*protocol;
 	GHashFunc	hash_func;
-	gboolean	supports_decode_as;
+	bool	supports_decode_as;
 };
 
-static GHashTable *dissector_tables = NULL;
+/*
+ * Dissector tables. const char * -> dissector_table *
+ */
+static GHashTable *dissector_tables;
+static bool all_tables_handles_sorted = false;
+
+/*
+ * Dissector table aliases. const char * -> const char *
+ */
+static GHashTable *dissector_table_aliases;
 
 /*
  * List of registered dissectors.
  */
-static GHashTable *registered_dissectors = NULL;
+static GHashTable *registered_dissectors;
 
 /*
  * A dissector dependency list.
+ * XXX - These are protocol short names, not dissectors (which is likely
+ * what we want, as protocols are enabled and disabled, not dissectors
+ * other than heuristic dissectors.)
  */
 struct depend_dissector_list {
-	GSList		*dissectors;
+	GHashTable	*dissectors;
 };
 
-/* Maps char *dissector_name to depend_dissector_list_t */
-static GHashTable *depend_dissector_lists = NULL;
+/* Maps char * protocol short name to depend_dissector_list_t
+ * XXX - This doesn't get freed when proto_deregister_dissector
+ * is called. Might it make sense to store this information in
+ * the proto_t?
+ * XXX - Which direction should these be stored? Issue #1402 discusses,
+ * e.g., if HTTP is enabled then making sure that lower level protocols
+ * like TLS, TCP, IP, etc. are enabled. But here as registered the key
+ * is the protocol of the dissector that calls the other handle (whether
+ * via table or registered with _add_dependency.) That is, "TCP" and
+ * "TLS" are keys that have "HTTP" in their depend_dissector_list, rather
+ * than the other way around. Either use could be interesting (a bit moot
+ * since this isn't actually used yet.)
+ */
+static GHashTable *depend_dissector_lists;
+
+/* Allow protocols to register a "cleanup" routine to be
+ * run after the initial sequential run through the packets.
+ * Note that the file can still be open after this; this is not
+ * the final cleanup. */
+static GSList *postseq_cleanup_routines;
+
+/*
+ * Post-dissector information - handle for the dissector and a list
+ * of hfids for the fields the post-dissector wants.
+ */
+typedef struct {
+	dissector_handle_t handle;
+	GArray *wanted_hfids;
+} postdissector;
+
+/*
+ * Array of all postdissectors.
+ */
+static GArray *postdissectors;
+
+/*
+ * i-th element of that array.
+ */
+#define POSTDISSECTORS(i)	g_array_index(postdissectors, postdissector, i)
 
 static void
 destroy_depend_dissector_list(void *data)
 {
-	depend_dissector_list_t dissector_list = (depend_dissector_list_t)data;
-	GSList **list = &(dissector_list->dissectors);
+       depend_dissector_list_t dissector_list = (depend_dissector_list_t)data;
+       GHashTable *table = dissector_list->dissectors;
 
-	g_slist_foreach(*list, (GFunc)g_free, NULL);
-	g_slist_free(*list);
-	g_slice_free(struct depend_dissector_list, dissector_list);
+       g_hash_table_destroy(table);
+       g_slice_free(struct depend_dissector_list, dissector_list);
 }
 
 /*
  * A heuristics dissector list.
  */
 struct heur_dissector_list {
+	const char	*ui_name;
 	protocol_t	*protocol;
 	GSList		*dissectors;
 };
 
-static GHashTable *heur_dissector_lists = NULL;
+static GHashTable *heur_dissector_lists;
 
 /* Name hashtables for fast detection of duplicate names */
-static GHashTable* heuristic_short_names  = NULL;
+static GHashTable* heuristic_short_names;
 
 static void
-destroy_heuristic_dissector_entry(gpointer data, gpointer user_data _U_)
+destroy_heuristic_dissector_entry(void *data)
 {
-	g_free(((heur_dtbl_entry_t*)data)->list_name);
+	heur_dtbl_entry_t *hdtbl_entry = (heur_dtbl_entry_t *)data;
+	g_free(hdtbl_entry->list_name);
+	g_free(hdtbl_entry->short_name);
 	g_slice_free(heur_dtbl_entry_t, data);
 }
 
@@ -156,8 +211,7 @@ destroy_heuristic_dissector_list(void *data)
 	heur_dissector_list_t dissector_list = (heur_dissector_list_t)data;
 	GSList **list = &(dissector_list->dissectors);
 
-	g_slist_foreach(*list, destroy_heuristic_dissector_entry, NULL);
-	g_slist_free(*list);
+	g_slist_free_full(*list, destroy_heuristic_dissector_entry);
 	g_slice_free(struct heur_dissector_list, dissector_list);
 }
 
@@ -168,6 +222,8 @@ destroy_dissector_table(void *data)
 
 	g_hash_table_destroy(table->hash_table);
 	g_slist_free(table->dissector_handles);
+	if (table->da_descriptions)
+		g_hash_table_destroy(table->da_descriptions);
 	g_slice_free(struct dissector_table, data);
 }
 
@@ -176,6 +232,10 @@ packet_init(void)
 {
 	dissector_tables = g_hash_table_new_full(g_str_hash, g_str_equal,
 			NULL, destroy_dissector_table);
+	all_tables_handles_sorted = false;
+
+	dissector_table_aliases = g_hash_table_new_full(g_str_hash, g_str_equal,
+			NULL, NULL);
 
 	registered_dissectors = g_hash_table_new_full(g_str_hash, g_str_equal,
 			NULL, NULL);
@@ -186,33 +246,88 @@ packet_init(void)
 	heur_dissector_lists = g_hash_table_new_full(g_str_hash, g_str_equal,
 			NULL, destroy_heuristic_dissector_list);
 
-	heuristic_short_names  = g_hash_table_new(wrs_str_hash, g_str_equal);
+	heuristic_short_names  = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
 void
 packet_cache_proto_handles(void)
 {
 	frame_handle = find_dissector("frame");
-	g_assert(frame_handle != NULL);
+	ws_assert(frame_handle != NULL);
 
 	file_handle = find_dissector("file");
-	g_assert(file_handle != NULL);
+	ws_assert(file_handle != NULL);
 
 	data_handle = find_dissector("data");
-	g_assert(data_handle != NULL);
+	ws_assert(data_handle != NULL);
 
 	proto_malformed = proto_get_id_by_filter_name("_ws.malformed");
-	g_assert(proto_malformed != -1);
+	ws_assert(proto_malformed != -1);
+}
+
+/* List of routines that are called before we make a pass through a capture file
+ * and dissect all its packets. See register_init_routine, register_cleanup_routine
+ * and register_shutdown_routine in packet.h */
+/**
+ * List of "init" routines, which are called before we make a pass through
+ * a capture file and dissect all its packets (e.g., when we read in a
+ * new capture file, or run a "filter packets" or "colorize packets"
+ * pass over the current capture file or when the preferences are changed).
+ *
+ * See register_init_routine().
+ */
+static GSList *init_routines;
+
+/**
+ * List of "cleanup" routines, which are called after closing a capture
+ * file (or when preferences are changed; in that case these routines
+ * are called before the init routines are executed). They can be used
+ * to release resources that are allocated in an "init" routine.
+ *
+ * See register_cleanup_routine().
+ */
+static GSList *cleanup_routines;
+
+/*
+ * List of "shutdown" routines, which are called once, just before
+ * program exit.
+ *
+ * See register_shutdown_routine().
+ */
+static GSList *shutdown_routines;
+
+typedef void (*void_func_t)(void);
+
+/* Initialize all data structures used for dissection. */
+static void
+call_routine(void *routine, void *dummy _U_)
+{
+	void_func_t func = (void_func_t)routine;
+	(*func)();
 }
 
 void
 packet_cleanup(void)
 {
+	g_slist_free(init_routines);
+	g_slist_free(cleanup_routines);
+	g_slist_free(postseq_cleanup_routines);
 	g_hash_table_destroy(dissector_tables);
+	g_hash_table_destroy(dissector_table_aliases);
 	g_hash_table_destroy(registered_dissectors);
 	g_hash_table_destroy(depend_dissector_lists);
 	g_hash_table_destroy(heur_dissector_lists);
 	g_hash_table_destroy(heuristic_short_names);
+	g_slist_foreach(shutdown_routines, &call_routine, NULL);
+	g_slist_free(shutdown_routines);
+	if (postdissectors) {
+		for (unsigned i = 0; i < postdissectors->len; i++) {
+			if (POSTDISSECTORS(i).wanted_hfids) {
+				g_array_free(POSTDISSECTORS(i).wanted_hfids, true);
+			}
+		}
+		g_array_free(postdissectors, true);
+	}
 }
 
 /*
@@ -220,7 +335,7 @@ packet_cleanup(void)
  * of the tvbuff to reflect the specified length.
  */
 void
-set_actual_length(tvbuff_t *tvb, const guint specified_len)
+set_actual_length(tvbuff_t *tvb, const unsigned specified_len)
 {
 	if (specified_len < tvb_reported_length(tvb)) {
 		/* Adjust the length of this tvbuff to include only the specified
@@ -233,50 +348,40 @@ set_actual_length(tvbuff_t *tvb, const guint specified_len)
 	}
 }
 
-/* List of routines that are called before we make a pass through a capture file
- * and dissect all its packets. See register_init_routine and
- * register_cleanup_routine in packet.h */
-static GSList *init_routines;
-static GSList *cleanup_routines;
-
 void
 register_init_routine(void (*func)(void))
 {
-	init_routines = g_slist_prepend(init_routines, (gpointer)func);
+	init_routines = g_slist_prepend(init_routines, (void *)func);
 }
 
 void
 register_cleanup_routine(void (*func)(void))
 {
-	cleanup_routines = g_slist_prepend(cleanup_routines, (gpointer)func);
+	cleanup_routines = g_slist_prepend(cleanup_routines, (void *)func);
 }
 
-typedef void (*void_func_t)(void);
+/* register a new shutdown routine */
+void
+register_shutdown_routine(void (*func)(void))
+{
+	shutdown_routines = g_slist_prepend(shutdown_routines, (void *)func);
+}
 
 /* Initialize all data structures used for dissection. */
-static void
-call_routine(gpointer routine, gpointer dummy _U_)
-{
-	void_func_t func = (void_func_t)routine;
-	(*func)();
-}
-
 void
 init_dissection(void)
 {
-	wmem_enter_file_scope();
-
 	/*
-	 * Reinitialize resolution information. We do initialization here in
-	 * case we need to resolve between captures.
+	 * Reinitialize resolution information. Don't leak host entries from
+	 * one file to another (e.g. embarrassing-host-name.example.com from
+	 * file1.pcapng into a name resolution block in file2.pcapng).
 	 */
-	host_name_lookup_init();
+	host_name_lookup_reset();
+
+	wmem_enter_file_scope();
 
 	/* Initialize the table of conversations. */
 	epan_conversation_init();
-
-	/* Initialize the table of circuits. */
-	epan_circuit_init();
 
 	/* Initialize protocol-specific variables. */
 	g_slist_foreach(init_routines, &call_routine, NULL);
@@ -291,14 +396,6 @@ init_dissection(void)
 void
 cleanup_dissection(void)
 {
-	/* Cleanup the table of conversations. Do this before freeing seasonal
-	 * memory (at least until conversation's use of g_slist is changed).
-	 */
-	epan_conversation_cleanup();
-
-	/* Cleanup the table of circuits. */
-	epan_circuit_cleanup();
-
 	/* Cleanup protocol-specific variables. */
 	g_slist_foreach(cleanup_routines, &call_routine, NULL);
 
@@ -311,55 +408,59 @@ cleanup_dissection(void)
 	wmem_leave_file_scope();
 
 	/*
-	 * Reinitialize resolution information. We do initialization here in
-	 * case we need to resolve between captures.
+	 * Keep the name resolution info around until we start the next
+	 * dissection. Lua scripts may potentially do name resolution at
+	 * any time, even if we're not dissecting and have no capture
+	 * file open.
 	 */
-	host_name_lookup_cleanup();
 }
-
-/* Allow protocols to register a "cleanup" routine to be
- * run after the initial sequential run through the packets.
- * Note that the file can still be open after this; this is not
- * the final cleanup. */
-static GSList *postseq_cleanup_routines;
 
 void
 register_postseq_cleanup_routine(void_func_t func)
 {
 	postseq_cleanup_routines = g_slist_prepend(postseq_cleanup_routines,
-			(gpointer)func);
+			(void *)func);
 }
 
 /* Call all the registered "postseq_cleanup" routines. */
-static void
-call_postseq_cleanup_routine(gpointer routine, gpointer dummy _U_)
-{
-	void_func_t func = (void_func_t)routine;
-	(*func)();
-}
-
 void
 postseq_cleanup_all_protocols(void)
 {
 	g_slist_foreach(postseq_cleanup_routines,
-			&call_postseq_cleanup_routine, NULL);
+			&call_routine, NULL);
 }
 
 /*
  * Add a new data source to the list of data sources for a frame, given
  * the tvbuff for the data source and its name.
  */
-void
-add_new_data_source(packet_info *pinfo, tvbuff_t *tvb, const char *name)
+struct data_source *add_new_data_source(packet_info *pinfo, tvbuff_t *tvb, const char *name)
 {
 	struct data_source *src;
 
 	src = wmem_new(pinfo->pool, struct data_source);
 	src->tvb = tvb;
 	src->name = wmem_strdup(pinfo->pool, name);
+	src->media_type = DS_MEDIA_TYPE_APPLICATION_OCTET_STREAM;
 	/* This could end up slow, but we should never have that many data
 	 * sources so it probably doesn't matter */
 	pinfo->data_src = g_slist_append(pinfo->data_src, src);
+	return src;
+}
+
+void
+set_data_source_name(packet_info *pinfo, struct data_source *src, const char *name)
+{
+	if (src) {
+		src->name = wmem_strdup(pinfo->pool, name);
+	}
+}
+
+void set_data_source_media_type(struct data_source *src, data_source_media_type_e media_type)
+{
+	if (src) {
+		src->media_type = media_type;
+	}
 }
 
 void
@@ -372,9 +473,9 @@ remove_last_data_source(packet_info *pinfo)
 }
 
 char*
-get_data_source_name(const struct data_source *src)
+get_data_source_description(const struct data_source *src)
 {
-	guint length = tvb_captured_length(src->tvb);
+	unsigned length = tvb_captured_length(src->tvb);
 
 	return wmem_strdup_printf(NULL, "%s (%u byte%s)", src->name, length,
 				plurality(length, "", "s"));
@@ -383,8 +484,57 @@ get_data_source_name(const struct data_source *src)
 tvbuff_t *
 get_data_source_tvb(const struct data_source *src)
 {
-	return src->tvb;
+	if (src) {
+		return src->tvb;
+	}
+	return NULL;
 }
+
+/*
+ * Find and return data source with the given name.
+ */
+struct data_source *
+get_data_source_by_name(const packet_info *pinfo, const char *name)
+{
+	if (!pinfo) {
+		return NULL;
+	}
+	for (GSList *source = pinfo->data_src; source; source = source->next) {
+		struct data_source *this_source = (struct data_source *)source->data;
+		if (this_source->name && strcmp(this_source->name, name) == 0) {
+			return this_source;
+		}
+	}
+	return NULL;
+}
+
+/*
+ * Find and return the data source associated with a given tvb.
+ */
+struct data_source *
+get_data_source_by_tvb(const packet_info *pinfo, const tvbuff_t *tvb)
+{
+	if (!pinfo) {
+		return NULL;
+	}
+	for (GSList *source = pinfo->data_src; source; source = source->next) {
+		struct data_source *this_source = (struct data_source *)source->data;
+		if (this_source->tvb == tvb) {
+			return this_source;
+		}
+	}
+	return NULL;
+}
+
+
+data_source_media_type_e get_data_source_media_type(const struct data_source *src)
+{
+	if (src) {
+		return src->media_type;
+	}
+	return DS_MEDIA_TYPE_APPLICATION_OCTET_STREAM;
+}
+
 
 /*
  * Free up a frame's list of data sources.
@@ -399,11 +549,17 @@ free_data_sources(packet_info *pinfo)
 }
 
 void
-mark_frame_as_depended_upon(packet_info *pinfo, guint32 frame_num)
+mark_frame_as_depended_upon(frame_data *fd, uint32_t frame_num)
 {
 	/* Don't mark a frame as dependent on itself */
-	if (frame_num != pinfo->num) {
-		pinfo->dependent_frames = g_slist_prepend(pinfo->dependent_frames, GUINT_TO_POINTER(frame_num));
+	if (frame_num != fd->num) {
+		/* ws_assert(frame_num < fd->num) - we assume in several other
+		 * places in the code that frames don't depend on future
+		 * frames. */
+		if (fd->dependent_frames == NULL) {
+			fd->dependent_frames = g_hash_table_new(g_direct_hash, g_direct_equal);
+		}
+		g_hash_table_add(fd->dependent_frames, GUINT_TO_POINTER(frame_num));
 	}
 }
 
@@ -420,61 +576,31 @@ void
 register_final_registration_routine(void (*func)(void))
 {
 	final_registration_routines = g_slist_prepend(final_registration_routines,
-			(gpointer)func);
+			(void *)func);
 }
 
 /* Call all the registered "final_registration" routines. */
-static void
-call_final_registration_routine(gpointer routine, gpointer dummy _U_)
-{
-	void_func_t func = (void_func_t)routine;
-
-	(*func)();
-}
-
 void
 final_registration_all_protocols(void)
 {
 	g_slist_foreach(final_registration_routines,
-			&call_final_registration_routine, NULL);
+			&call_routine, NULL);
 }
 
 
-/* Creates the top-most tvbuff and calls dissect_frame() */
+/* Creates the top-most tvbuff and calls the "frame" dissector */
 void
-dissect_record(epan_dissect_t *edt, int file_type_subtype,
-    struct wtap_pkthdr *phdr, tvbuff_t *tvb, frame_data *fd, column_info *cinfo)
+dissect_record(epan_dissect_t *edt, int file_type_subtype, wtap_rec *rec,
+    frame_data *fd, column_info *cinfo)
 {
-	const char *volatile record_type;
 	frame_data_t frame_dissector_data;
 
-	switch (phdr->rec_type) {
-
-	case REC_TYPE_PACKET:
-		record_type = "Frame";
-		break;
-
-	case REC_TYPE_FT_SPECIFIC_EVENT:
-		record_type = "Event";
-		break;
-
-	case REC_TYPE_FT_SPECIFIC_REPORT:
-		record_type = "Report";
-		break;
-
-	case REC_TYPE_SYSCALL:
-		record_type = "System Call";
-		break;
-
-	default:
-		/*
-		 * XXX - if we add record types that shouldn't be
-		 * dissected and displayed, but that need to at
-		 * least be processed somewhere, we need to somehow
-		 * indicate that to our caller.
-		 */
-		g_assert_not_reached();
-		break;
+	if (!fd->visited) {
+		/* This is the first pass, so prime the epan_dissect_t with the
+		  hfids postdissectors want on the first pass. */
+		/* XXX - This can fail with an unhandled exception, e.g., if a
+		 * field was deregistered.  */
+		prime_epan_dissect_with_postdissector_wanted_hfids(edt);
 	}
 
 	if (cinfo != NULL)
@@ -485,44 +611,118 @@ dissect_record(epan_dissect_t *edt, int file_type_subtype,
 	edt->pi.cinfo = cinfo;
 	edt->pi.presence_flags = 0;
 	edt->pi.num = fd->num;
-	if (fd->flags.has_ts) {
+	/*
+	 * XXX - this doesn't check the wtap_rec because, for
+	 * some capture files, time stamps are supplied only
+	 * when reading sequentially, so we keep the time stamp
+	 * in the frame_data structure.
+	 */
+	if (fd->has_ts) {
 		edt->pi.presence_flags |= PINFO_HAS_TS;
 		edt->pi.abs_ts = fd->abs_ts;
 	}
-	edt->pi.pkt_encap     = phdr->pkt_encap;
+	switch (rec->rec_type) {
+
+	case REC_TYPE_PACKET:
+		edt->pi.pseudo_header = &rec->rec_header.packet_header.pseudo_header;
+		break;
+
+	case REC_TYPE_FT_SPECIFIC_EVENT:
+	case REC_TYPE_FT_SPECIFIC_REPORT:
+		edt->pi.pseudo_header = NULL;
+		break;
+
+	case REC_TYPE_SYSCALL:
+		edt->pi.pseudo_header = NULL;
+		break;
+
+	case REC_TYPE_SYSTEMD_JOURNAL_EXPORT:
+		edt->pi.pseudo_header = NULL;
+		break;
+
+	case REC_TYPE_CUSTOM_BLOCK:
+		edt->pi.pseudo_header = NULL;
+		break;
+
+	}
+
 	edt->pi.fd            = fd;
-	edt->pi.phdr          = phdr;
-	edt->pi.pseudo_header = &phdr->pseudo_header;
+	edt->pi.rec           = rec;
 	clear_address(&edt->pi.dl_src);
 	clear_address(&edt->pi.dl_dst);
 	clear_address(&edt->pi.net_src);
 	clear_address(&edt->pi.net_dst);
 	clear_address(&edt->pi.src);
 	clear_address(&edt->pi.dst);
-	edt->pi.ctype = CT_NONE;
 	edt->pi.noreassembly_reason = "";
 	edt->pi.ptype = PT_NONE;
+	edt->pi.use_conv_addr_port_endpoints = false;
+	edt->pi.conv_addr_port_endpoints = NULL;
+	edt->pi.conv_elements = NULL;
 	edt->pi.p2p_dir = P2P_DIR_UNKNOWN;
 	edt->pi.link_dir = LINK_DIR_UNKNOWN;
+	edt->pi.src_win_scale = -1; /* unknown Rcv.Wind.Shift */
+	edt->pi.dst_win_scale = -1; /* unknown Rcv.Wind.Shift */
 	edt->pi.layers = wmem_list_new(edt->pi.pool);
-	edt->tvb = tvb;
+	edt->tvb = NULL;
 
+	/*
+	 * This is time relative to the first frame in the capture,
+	 * regardless of what time reference frames precede it.
+	 *
+	 * XXX - should there be a field indicating whether the
+	 * frame *has* a relative time stamp?
+	 *
+	 * XXX - what is pinfo->rel_ts used for?  All times are
+	 * relative to some zero point on the t axis, so why
+	 * is pinfo->rel_ts used instead of pinfo->abs_ts?
+	 */
+	frame_rel_first_frame_time(edt->session, fd, &edt->pi.rel_ts);
 
-	frame_delta_abs_time(edt->session, fd, fd->frame_ref_num, &edt->pi.rel_ts);
+	if (rec->ts_rel_cap_valid) {
+		nstime_copy(&edt->pi.rel_cap_ts, &rec->ts_rel_cap);
+		edt->pi.rel_cap_ts_present = true;
+	}
 
-	/* pkt comment use first user, later from phdr */
-	if (fd->flags.has_user_comment)
-		frame_dissector_data.pkt_comment = epan_get_user_comment(edt->session, fd);
-	else if (fd->flags.has_phdr_comment)
-		frame_dissector_data.pkt_comment = phdr->opt_comment;
-	else
-		frame_dissector_data.pkt_comment = NULL;
+	/*
+	 * If the block has been modified, use the modified block,
+	 * otherwise use the block from the file.
+	 */
+	if (fd->has_modified_block) {
+		frame_dissector_data.pkt_block = epan_get_modified_block(edt->session, fd);
+	}
+	else {
+		frame_dissector_data.pkt_block = rec->block;
+	}
 	frame_dissector_data.file_type_subtype = file_type_subtype;
 	frame_dissector_data.color_edt = edt; /* Used strictly for "coloring rules" */
 
 	TRY {
+		/*
+		 * XXX - currently, the length arguments in
+		 * tvbuff structure are signed, but the captured
+		 * and reported length values are unsigned; this means
+		 * that length values > 2^31 - 1 will appear as
+		 * negative lengths
+		 *
+		 * Captured length values that large will already
+		 * have been filtered out by the Wiretap modules
+		 * (the file will be reported as corrupted), to
+		 * avoid trying to allocate large chunks of data.
+		 *
+		 * Reported length values will not have been
+		 * filtered out, and should not be filtered out,
+		 * as those lengths are not necessarily invalid.
+		 *
+		 * For now, we clip the reported length at INT_MAX
+		 *
+		 * (XXX, is this still a problem?) There was an exception when we call
+		 * tvb_new_real_data() now there's not.
+		 */
+		edt->tvb = tvb_new_real_data(ws_buffer_start_ptr(&rec->data),
+                    fd->cap_len, fd->pkt_len > INT_MAX ? INT_MAX : fd->pkt_len);
 		/* Add this tvbuffer into the data_src list */
-		add_new_data_source(&edt->pi, edt->tvb, record_type);
+		add_new_data_source(&edt->pi, edt->tvb, rec->rec_type_name);
 
 		/* Even though dissect_frame() catches all the exceptions a
 		 * sub-dissector can throw, dissect_frame() itself may throw
@@ -531,24 +731,32 @@ dissect_record(epan_dissect_t *edt, int file_type_subtype,
 		call_dissector_with_data(frame_handle, edt->tvb, &edt->pi, edt->tree, &frame_dissector_data);
 	}
 	CATCH(BoundsError) {
-		g_assert_not_reached();
+		ws_assert_not_reached();
 	}
 	CATCH2(FragmentBoundsError, ReportedBoundsError) {
 		proto_tree_add_protocol_format(edt->tree, proto_malformed, edt->tvb, 0, 0,
 					       "[Malformed %s: Packet Length]",
-					       record_type);
+					       rec->rec_type_name);
 	}
 	ENDTRY;
+	wtap_block_unref(rec->block);
+	rec->block = NULL;
 
-	fd->flags.visited = 1;
+	fd->visited = 1;
 }
 
-/* Creates the top-most tvbuff and calls dissect_file() */
+/* Creates the top-most tvbuff and calls the "file" dissector */
 void
-dissect_file(epan_dissect_t *edt, struct wtap_pkthdr *phdr,
-	       tvbuff_t *tvb, frame_data *fd, column_info *cinfo)
+dissect_file(epan_dissect_t *edt, wtap_rec *rec,
+    frame_data *fd, column_info *cinfo)
 {
 	file_data_t file_dissector_data;
+
+	if (!fd->visited) {
+	       /* This is the first pass, so prime the epan_dissect_t with the
+		  hfids postdissectors want on the first pass. */
+	       prime_epan_dissect_with_postdissector_wanted_hfids(edt);
+	}
 
 	if (cinfo != NULL)
 		col_init(cinfo, edt->session);
@@ -557,37 +765,41 @@ dissect_file(epan_dissect_t *edt, struct wtap_pkthdr *phdr,
 	edt->pi.current_proto = "<Missing Filetype Name>";
 	edt->pi.cinfo = cinfo;
 	edt->pi.fd    = fd;
-	edt->pi.phdr  = phdr;
-	edt->pi.pseudo_header = &phdr->pseudo_header;
+	edt->pi.rec   = rec;
+	edt->pi.pseudo_header = NULL;
 	clear_address(&edt->pi.dl_src);
 	clear_address(&edt->pi.dl_dst);
 	clear_address(&edt->pi.net_src);
 	clear_address(&edt->pi.net_dst);
 	clear_address(&edt->pi.src);
 	clear_address(&edt->pi.dst);
-	edt->pi.ctype = CT_NONE;
 	edt->pi.noreassembly_reason = "";
 	edt->pi.ptype = PT_NONE;
+	edt->pi.use_conv_addr_port_endpoints = false;
+	edt->pi.conv_addr_port_endpoints = NULL;
+	edt->pi.conv_elements = NULL;
 	edt->pi.p2p_dir = P2P_DIR_UNKNOWN;
 	edt->pi.link_dir = LINK_DIR_UNKNOWN;
 	edt->pi.layers = wmem_list_new(edt->pi.pool);
-	edt->tvb = tvb;
+	edt->tvb = NULL;
 
-
-	frame_delta_abs_time(edt->session, fd, fd->frame_ref_num, &edt->pi.rel_ts);
-
+	frame_rel_first_frame_time(edt->session, fd, &edt->pi.rel_ts);
 
 	TRY {
-		/* pkt comment use first user, later from phdr */
-		if (fd->flags.has_user_comment)
-			file_dissector_data.pkt_comment = epan_get_user_comment(edt->session, fd);
-		else if (fd->flags.has_phdr_comment)
-			file_dissector_data.pkt_comment = phdr->opt_comment;
-		else
-			file_dissector_data.pkt_comment = NULL;
+		/*
+		 * If the block has been modified, use the modified block,
+		 * otherwise use the block from the file.
+		 */
+		if (fd->has_modified_block) {
+			file_dissector_data.pkt_block = epan_get_modified_block(edt->session, fd);
+		}
+		else {
+			file_dissector_data.pkt_block = rec->block;
+		}
 		file_dissector_data.color_edt = edt; /* Used strictly for "coloring rules" */
 
-
+		edt->tvb = tvb_new_real_data(ws_buffer_start_ptr(&rec->data),
+                    fd->cap_len, fd->pkt_len > INT_MAX ? INT_MAX : fd->pkt_len);
 		/* Add this tvbuffer into the data_src list */
 		add_new_data_source(&edt->pi, edt->tvb, "File");
 
@@ -599,54 +811,134 @@ dissect_file(epan_dissect_t *edt, struct wtap_pkthdr *phdr,
 
 	}
 	CATCH(BoundsError) {
-		g_assert_not_reached();
+		ws_assert_not_reached();
 	}
-	CATCH2(FragmentBoundsError, ReportedBoundsError) {
+	CATCH3(FragmentBoundsError, ContainedBoundsError, ReportedBoundsError) {
 		proto_tree_add_protocol_format(edt->tree, proto_malformed, edt->tvb, 0, 0,
-					       "[Malformed Record: Packet Length]" );
+					       "[Malformed Record: Packet Length]");
 	}
 	ENDTRY;
+	wtap_block_unref(rec->block);
+	rec->block = NULL;
 
-	fd->flags.visited = 1;
+	fd->visited = 1;
 }
 
 /*********************** code added for sub-dissector lookup *********************/
+
+enum dissector_e {
+	DISSECTOR_TYPE_SIMPLE,
+	DISSECTOR_TYPE_CALLBACK
+};
 
 /*
  * A dissector handle.
  */
 struct dissector_handle {
 	const char	*name;		/* dissector name */
-	dissector_t	dissector;
+	const char	*description;	/* dissector description */
+	char            *pref_suffix;
+	enum dissector_e dissector_type;
+	union {
+		dissector_t	dissector_type_simple;
+		dissector_cb_t	dissector_type_callback;
+	} dissector_func;
+	void		*dissector_data;
 	protocol_t	*protocol;
 };
 
+static void
+add_layer(packet_info *pinfo, int proto_id)
+{
+	int *proto_layer_num_ptr;
+
+	pinfo->curr_layer_num++;
+	wmem_list_append(pinfo->layers, GINT_TO_POINTER(proto_id));
+
+	/* Increment layer number for this proto id. */
+	if (pinfo->proto_layers == NULL) {
+		pinfo->proto_layers = wmem_map_new(pinfo->pool, g_direct_hash, g_direct_equal);
+	}
+
+	proto_layer_num_ptr = wmem_map_lookup(pinfo->proto_layers, GINT_TO_POINTER(proto_id));
+	if (proto_layer_num_ptr == NULL) {
+		/* Insert new layer */
+		proto_layer_num_ptr = wmem_new(pinfo->pool, int);
+		*proto_layer_num_ptr = 1;
+		wmem_map_insert(pinfo->proto_layers, GINT_TO_POINTER(proto_id), proto_layer_num_ptr);
+	}
+	else {
+		/* Increment layer number */
+		(*proto_layer_num_ptr)++;
+	}
+	pinfo->curr_proto_layer_num = *proto_layer_num_ptr;
+}
+
+static void
+remove_last_layer(packet_info *pinfo, bool reduce_count)
+{
+	int *proto_layer_num_ptr;
+	wmem_list_frame_t *frame;
+	int proto_id;
+
+	if (reduce_count) {
+		pinfo->curr_layer_num--;
+	}
+
+	frame = wmem_list_tail(pinfo->layers);
+	proto_id = GPOINTER_TO_INT(wmem_list_frame_data(frame));
+	wmem_list_remove_frame(pinfo->layers, frame);
+
+	if (reduce_count) {
+		/* Reduce count for removed protocol layer. */
+		proto_layer_num_ptr = wmem_map_lookup(pinfo->proto_layers, GINT_TO_POINTER(proto_id));
+		if (proto_layer_num_ptr && *proto_layer_num_ptr > 0) {
+			(*proto_layer_num_ptr)--;
+		}
+	}
+}
+
+
 /* This function will return
- * old style dissector :
- *   length of the payload or 1 of the payload is empty
- * new dissector :
  *   >0  this protocol was successfully dissected and this was this protocol.
  *   0   this packet did not match this protocol.
  *
- * The only time this function will return 0 is if it is a new style dissector
- * and if the dissector rejected the packet.
+ * XXX - if the dissector only dissects metadata passed through the data
+ * pointer, and dissects none of the packet data, that's indistinguishable
+ * from "packet did not match this protocol".  See issues #12366 and
+ * #12368.
  */
 static int
 call_dissector_through_handle(dissector_handle_t handle, tvbuff_t *tvb,
 			      packet_info *pinfo, proto_tree *tree, void *data)
 {
 	const char *saved_proto;
+	int	    saved_proto_layer_num;
 	int         len;
 
 	saved_proto = pinfo->current_proto;
+	saved_proto_layer_num = pinfo->curr_proto_layer_num;
 
-	if (handle->protocol != NULL) {
+	if ((handle->protocol != NULL) && (!proto_is_pino(handle->protocol))) {
 		pinfo->current_proto =
 			proto_get_protocol_short_name(handle->protocol);
 	}
 
-	len = (*handle->dissector)(tvb, pinfo, tree, data);
+	switch (handle->dissector_type) {
+
+	case DISSECTOR_TYPE_SIMPLE:
+		len = (handle->dissector_func.dissector_type_simple)(tvb, pinfo, tree, data);
+		break;
+
+	case DISSECTOR_TYPE_CALLBACK:
+		len = (handle->dissector_func.dissector_type_callback)(tvb, pinfo, tree, data, handle->dissector_data);
+		break;
+
+	default:
+		ws_assert_not_reached();
+	}
 	pinfo->current_proto = saved_proto;
+	pinfo->curr_proto_layer_num = saved_proto_layer_num;
 
 	return len;
 }
@@ -665,14 +957,17 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 			  packet_info *pinfo_arg, proto_tree *tree, void *);
 
 static int
-call_dissector_work(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo_arg,
-		    proto_tree *tree, gboolean add_proto_name, void *data)
+call_dissector_work(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo,
+		    proto_tree *tree, bool add_proto_name, void *data)
 {
- 	packet_info *pinfo = pinfo_arg;
 	const char  *saved_proto;
-	guint16      saved_can_desegment;
+	int          saved_proto_layer_num;
+	uint16_t     saved_can_desegment;
 	int          len;
-	guint        saved_layers_len = 0;
+	unsigned     saved_layers_len = 0;
+	unsigned     saved_tree_count = tree ? tree->tree_data->count : 0;
+	unsigned     saved_desegment_len = pinfo->desegment_len;
+	bool         consumed_none;
 
 	if (handle->protocol != NULL &&
 	    !proto_is_protocol_enabled(handle->protocol)) {
@@ -683,13 +978,15 @@ call_dissector_work(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo
 	}
 
 	saved_proto = pinfo->current_proto;
+	saved_proto_layer_num = pinfo->curr_proto_layer_num;
 	saved_can_desegment = pinfo->can_desegment;
 	saved_layers_len = wmem_list_count(pinfo->layers);
+	DISSECTOR_ASSERT(saved_layers_len < prefs.gui_max_tree_depth);
 
 	/*
 	 * can_desegment is set to 2 by anyone which offers the
 	 * desegmentation api/service.
-	 * Then everytime a subdissector is called it is decremented
+	 * Then every time a subdissector is called it is decremented
 	 * by one.
 	 * Thus only the subdissector immediately on top of whoever
 	 * offers this service can use it.
@@ -700,17 +997,18 @@ call_dissector_work(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo
 	 */
 	pinfo->saved_can_desegment = saved_can_desegment;
 	pinfo->can_desegment = saved_can_desegment-(saved_can_desegment>0);
-	if (handle->protocol != NULL) {
+	if ((handle->protocol != NULL) && (!proto_is_pino(handle->protocol))) {
 		pinfo->current_proto =
 			proto_get_protocol_short_name(handle->protocol);
 
 		/*
-		 * Add the protocol name to the layers
-		 * if not told not to. Asn2wrs generated dissectors may be added multiple times otherwise.
+		 * Add the protocol name to the layers only if told to
+		 * do so. Asn2wrs generated dissectors may be added
+		 * multiple times otherwise.
 		 */
+		/* XXX Should we check for a duplicate layer here? */
 		if (add_proto_name) {
-			pinfo->curr_layer_num++;
-			wmem_list_append(pinfo->layers, GINT_TO_POINTER(proto_get_id(handle->protocol)));
+			add_layer(pinfo, proto_get_id(handle->protocol));
 		}
 	}
 
@@ -718,22 +1016,44 @@ call_dissector_work(dissector_handle_t handle, tvbuff_t *tvb, packet_info *pinfo
 		len = call_dissector_work_error(handle, tvb, pinfo, tree, data);
 	} else {
 		/*
- 		 * Just call the subdissector.
- 		 */
+		 * Just call the subdissector.
+		 */
 		len = call_dissector_through_handle(handle, tvb, pinfo, tree, data);
 	}
-	if (len == 0) {
+	consumed_none = len == 0 || (pinfo->desegment_len != saved_desegment_len && pinfo->desegment_offset == 0);
+	/* If len == 0, then the dissector didn't accept the packet.
+	 * In the latter case, the dissector accepted the packet, but didn't
+	 * consume any bytes because they all belong in a later segment.
+	 * In the latter case, we probably won't call a dissector here again
+	 * on the next pass, so removing the layer keeps any *further* layers
+	 * past this one the same on subsequent passes.
+	 *
+	 * XXX: DISSECTOR_ASSERT that the tree count didn't change? If the
+	 * dissector didn't consume any bytes but added items to the tree,
+	 * that's improper behavior and needs a rethink. We could also move the
+	 * test that the packet didn't change desegment_offset and desegment_len
+	 * while rejecting the packet from packet-tcp.c decode_tcp_ports to here.
+	 */
+	if (handle->protocol != NULL && !proto_is_pino(handle->protocol) && add_proto_name &&
+		(consumed_none || (tree && saved_tree_count == tree->tree_data->count))) {
 		/*
- 		 * That dissector didn't accept the packet, so
- 		 * remove its protocol's name from the list
- 		 * of protocols.
+		 * We've added a layer and either the dissector didn't
+		 * consume any data or we didn't add any items to the
+		 * tree. Remove it.
 		 */
 		while (wmem_list_count(pinfo->layers) > saved_layers_len) {
-			wmem_list_remove_frame(pinfo->layers, wmem_list_tail(pinfo->layers));
+			/*
+			 * Only reduce the layer number if the dissector didn't
+			 * consume any data. Since tree can be NULL on
+			 * the first pass, we cannot check it or it will
+			 * break dissectors that rely on a stable value.
+			 */
+			remove_last_layer(pinfo, consumed_none);
 		}
- 	}
- 	pinfo->current_proto = saved_proto;
- 	pinfo->can_desegment = saved_can_desegment;
+	}
+	pinfo->current_proto = saved_proto;
+	pinfo->curr_proto_layer_num = saved_proto_layer_num;
+	pinfo->can_desegment = saved_can_desegment;
 	return len;
 }
 
@@ -744,15 +1064,18 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 {
 	packet_info  *pinfo = pinfo_arg;
 	const char   *saved_proto;
-	guint16       saved_can_desegment;
+	uint16_t      saved_can_desegment;
 	volatile int  len = 0;
-	gboolean      save_writable;
+	bool          save_writable;
 	address       save_dl_src;
 	address       save_dl_dst;
 	address       save_net_src;
 	address       save_net_dst;
 	address       save_src;
 	address       save_dst;
+	uint32_t	      save_ptype;
+	uint32_t	      save_srcport;
+	uint32_t	      save_destport;
 
 	/*
 	* This isn't a packet being transported inside
@@ -775,13 +1098,16 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 	saved_can_desegment = pinfo->can_desegment;
 
 	save_writable = col_get_writable(pinfo->cinfo, -1);
-	col_set_writable(pinfo->cinfo, -1, FALSE);
+	col_set_writable(pinfo->cinfo, -1, false);
 	copy_address_shallow(&save_dl_src, &pinfo->dl_src);
 	copy_address_shallow(&save_dl_dst, &pinfo->dl_dst);
 	copy_address_shallow(&save_net_src, &pinfo->net_src);
 	copy_address_shallow(&save_net_dst, &pinfo->net_dst);
 	copy_address_shallow(&save_src, &pinfo->src);
 	copy_address_shallow(&save_dst, &pinfo->dst);
+	save_ptype = pinfo->ptype;
+	save_srcport = pinfo->srcport;
+	save_destport = pinfo->destport;
 
 	/* Dissect the contained packet. */
 	TRY {
@@ -789,7 +1115,7 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 	}
 	CATCH(BoundsError) {
 		/*
-		* Restore the column writability and addresses.
+		* Restore the column writability and addresses and ports.
 		*/
 		col_set_writable(pinfo->cinfo, -1, save_writable);
 		copy_address_shallow(&pinfo->dl_src, &save_dl_src);
@@ -798,6 +1124,9 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 		copy_address_shallow(&pinfo->net_dst, &save_net_dst);
 		copy_address_shallow(&pinfo->src, &save_src);
 		copy_address_shallow(&pinfo->dst, &save_dst);
+		pinfo->ptype = save_ptype;
+		pinfo->srcport = save_srcport;
+		pinfo->destport = save_destport;
 
 		/*
 		* Restore the current protocol, so any
@@ -818,7 +1147,7 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 		*/
 		RETHROW;
 	}
-	CATCH2(FragmentBoundsError, ReportedBoundsError) {
+	CATCH3(FragmentBoundsError, ContainedBoundsError, ReportedBoundsError) {
 		/*
 		* "ret" wasn't set because an exception was thrown
 		* before "call_dissector_through_handle()" returned.
@@ -840,6 +1169,9 @@ call_dissector_work_error(dissector_handle_t handle, tvbuff_t *tvb,
 	copy_address_shallow(&pinfo->net_dst, &save_net_dst);
 	copy_address_shallow(&pinfo->src, &save_src);
 	copy_address_shallow(&pinfo->dst, &save_dst);
+	pinfo->ptype = save_ptype;
+	pinfo->srcport = save_srcport;
+	pinfo->destport = save_destport;
 	pinfo->want_pdu_tracking = 0;
 	return len;
 }
@@ -856,12 +1188,22 @@ struct dtbl_entry {
 dissector_table_t
 find_dissector_table(const char *name)
 {
-	return (dissector_table_t)g_hash_table_lookup( dissector_tables, name );
+	dissector_table_t dissector_table = (dissector_table_t) g_hash_table_lookup(dissector_tables, name);
+	if (! dissector_table) {
+		const char *new_name = (const char *) g_hash_table_lookup(dissector_table_aliases, name);
+		if (new_name) {
+			dissector_table = (dissector_table_t) g_hash_table_lookup(dissector_tables, new_name);
+		}
+		if (dissector_table) {
+			ws_warning("%s is now %s", name, new_name);
+		}
+	}
+	return dissector_table;
 }
 
 /* Find an entry in a uint dissector table. */
 static dtbl_entry_t *
-find_uint_dtbl_entry(dissector_table_t sub_dissectors, const guint32 pattern)
+find_uint_dtbl_entry(dissector_table_t sub_dissectors, const uint32_t pattern)
 {
 	switch (sub_dissectors->type) {
 
@@ -873,13 +1215,16 @@ find_uint_dtbl_entry(dissector_table_t sub_dissectors, const guint32 pattern)
 		 * You can do a uint lookup in these tables.
 		 */
 		break;
+	case FT_NONE:
+		/* For now treat as uint */
+		break;
 
 	default:
 		/*
 		 * But you can't do a uint lookup in any other types
 		 * of tables.
 		 */
-		g_assert_not_reached();
+		ws_assert_not_reached();
 	}
 
 	/*
@@ -891,52 +1236,53 @@ find_uint_dtbl_entry(dissector_table_t sub_dissectors, const guint32 pattern)
 
 #if 0
 static void
-dissector_add_uint_sanity_check(const char *name, guint32 pattern, dissector_handle_t handle, dissector_table_t sub_dissectors)
+dissector_add_uint_sanity_check(const char *name, uint32_t pattern, dissector_handle_t handle, dissector_table_t sub_dissectors)
 {
 	dtbl_entry_t *dtbl_entry;
 
 	if (pattern == 0) {
-		g_warning("%s: %s registering using a pattern of 0",
+		ws_warning("%s: %s registering using a pattern of 0",
 			  name, proto_get_protocol_filter_name(proto_get_id(handle->protocol)));
 	}
 
 	dtbl_entry = g_hash_table_lookup(sub_dissectors->hash_table, GUINT_TO_POINTER(pattern));
 	if (dtbl_entry != NULL) {
-		g_warning("%s: %s registering using pattern %d already registered by %s",
+		ws_warning("%s: %s registering using pattern %d already registered by %s",
 			  name, proto_get_protocol_filter_name(proto_get_id(handle->protocol)),
 			  pattern, proto_get_protocol_filter_name(proto_get_id(dtbl_entry->initial->protocol)));
 	}
 }
 #endif
 
-/* Add an entry to a uint dissector table. */
-void
-dissector_add_uint(const char *name, const guint32 pattern, dissector_handle_t handle)
+/* Get and check subdissector table and handle
+ * @return true if subdissector and handle exist */
+static bool
+dissector_get_table_checked(const char *name, dissector_handle_t handle, dissector_table_t *sub_dissectors)
 {
-	dissector_table_t  sub_dissectors;
-	dtbl_entry_t      *dtbl_entry;
-
-	sub_dissectors = find_dissector_table(name);
+	*sub_dissectors = find_dissector_table(name);
 
 	/*
 	 * Make sure the handle and the dissector table exist.
 	 */
 	if (handle == NULL) {
-		fprintf(stderr, "OOPS: handle to register \"%s\" to doesn't exist\n",
+		ws_dissector_oops("handle to register \"%s\" to doesn't exist\n",
 		    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
-		return;
+		return false;
 	}
-	if (sub_dissectors == NULL) {
-		fprintf(stderr, "OOPS: dissector table \"%s\" doesn't exist\n",
-		    name);
-		fprintf(stderr, "Protocol being registered is \"%s\"\n",
-		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
-		return;
+	if (*sub_dissectors == NULL) {
+		ws_dissector_oops("dissector table \"%s\" doesn't exist\n"
+		    "Protocol being registered is \"%s\"\n",
+		    name, proto_get_protocol_long_name(handle->protocol));
+		return false;
 	}
+
+	return true;
+}
+
+static void
+dissector_add_uint_real(const char *name _U_, const uint32_t pattern, dissector_handle_t handle, dissector_table_t sub_dissectors)
+{
+	dtbl_entry_t      *dtbl_entry;
 
 	switch (sub_dissectors->type) {
 
@@ -954,20 +1300,32 @@ dissector_add_uint(const char *name, const guint32 pattern, dissector_handle_t h
 		 * But you can't do a uint lookup in any other types
 		 * of tables.
 		 */
-		g_assert_not_reached();
+		ws_assert_not_reached();
 	}
 
 #if 0
 	dissector_add_uint_sanity_check(name, pattern, handle, sub_dissectors);
 #endif
 
-	dtbl_entry = (dtbl_entry_t *)g_malloc(sizeof (dtbl_entry_t));
+	dtbl_entry = g_new(dtbl_entry_t, 1);
 	dtbl_entry->current = handle;
 	dtbl_entry->initial = dtbl_entry->current;
 
 	/* do the table insertion */
-	g_hash_table_insert( sub_dissectors->hash_table,
-			     GUINT_TO_POINTER( pattern), (gpointer)dtbl_entry);
+	g_hash_table_insert(sub_dissectors->hash_table,
+			     GUINT_TO_POINTER(pattern), (void *)dtbl_entry);
+}
+
+/* Add an entry to a uint dissector table. */
+void
+dissector_add_uint(const char *name, const uint32_t pattern, dissector_handle_t handle)
+{
+	dissector_table_t sub_dissectors;
+
+	if (!dissector_get_table_checked(name, handle, &sub_dissectors))
+		return;
+
+	dissector_add_uint_real(name, pattern, handle, sub_dissectors);
 
 	/*
 	 * Now, if this table supports "Decode As", add this handle
@@ -978,39 +1336,171 @@ dissector_add_uint(const char *name, const guint32 pattern, dissector_handle_t h
 		dissector_add_for_decode_as(name, handle);
 }
 
-
-
-void dissector_add_uint_range(const char *abbrev, range_t *range,
+void dissector_add_uint_range(const char *name, range_t *range,
 			      dissector_handle_t handle)
 {
-	guint32 i, j;
+	dissector_table_t  sub_dissectors;
+	uint32_t i, j;
 
 	if (range) {
+		if (!dissector_get_table_checked(name, handle, &sub_dissectors))
+			return;
+
 		for (i = 0; i < range->nranges; i++) {
 			for (j = range->ranges[i].low; j < range->ranges[i].high; j++)
-				dissector_add_uint(abbrev, j, handle);
-			dissector_add_uint(abbrev, range->ranges[i].high, handle);
+				dissector_add_uint_real(name, j, handle, sub_dissectors);
+			dissector_add_uint_real(name, range->ranges[i].high, handle, sub_dissectors);
+		}
+		/*
+		 * Even an empty range would want a chance for
+		 * Decode As, if the dissector table supports
+		 * it.
+		 */
+		if (sub_dissectors->supports_decode_as)
+			dissector_add_for_decode_as(name, handle);
+	}
+}
+
+static range_t*
+dissector_add_range_preference(const char *name, dissector_handle_t handle, const char* range_str)
+{
+	range_t** range;
+	module_t *module;
+	char *description, *title;
+	dissector_table_t  pref_dissector_table = find_dissector_table(name);
+	int proto_id = proto_get_id(handle->protocol);
+	uint32_t max_value = 0;
+
+	/* If a dissector is added for Decode As only, it's dissector
+		table value would default to 0.
+		Set up a preference value with that information
+	 */
+	range = wmem_new0(wmem_epan_scope(), range_t*);
+
+	/* If the dissector's protocol already has a preference module, use it */
+	const char* module_name = proto_get_protocol_filter_name(proto_id);
+	module = prefs_find_module(module_name);
+	if (module == NULL) {
+		/* Otherwise create a new one */
+		module = prefs_register_protocol(proto_id, NULL);
+	}
+
+	const char *pref_suffix = dissector_handle_get_pref_suffix(handle);
+	const char *fullname = wmem_strdup_printf(wmem_epan_scope(), "%s%s", name, pref_suffix);
+
+	/* Some preference callback functions use the proto_reg_handoff_
+		routine to apply preferences, which could duplicate the
+		registration of a preference.  Check for that here */
+	if (prefs_find_preference(module, fullname) == NULL) {
+		const char *handle_desc = dissector_handle_get_description(handle);
+		if (g_strcmp0(range_str, "") > 0) {
+			description = wmem_strdup_printf(wmem_epan_scope(), "%s %s(s) (default: %s)",
+									    handle_desc, pref_dissector_table->ui_name, range_str);
+		} else {
+			description = wmem_strdup_printf(wmem_epan_scope(), "%s %s(s)",
+									    handle_desc, pref_dissector_table->ui_name);
+		}
+		title = wmem_strdup_printf(wmem_epan_scope(), "%s %s(s)", handle_desc, pref_dissector_table->ui_name);
+
+		/* Max value is based on datatype of dissector table */
+		switch (pref_dissector_table->type) {
+
+		case FT_UINT8:
+			max_value = 0xFF;
+			break;
+		case FT_UINT16:
+			max_value = 0xFFFF;
+			break;
+		case FT_UINT24:
+			max_value = 0xFFFFFF;
+			break;
+		case FT_UINT32:
+			max_value = 0xFFFFFFFF;
+			break;
+
+		default:
+			ws_error("The dissector table %s (%s) is not an integer type - are you using a buggy plugin?", name, pref_dissector_table->ui_name);
+			ws_assert_not_reached();
+		}
+
+		range_convert_str(wmem_epan_scope(), range, range_str, max_value);
+		prefs_register_decode_as_range_preference(module, fullname, title, description, range, max_value, name, handle_desc);
+	} else {
+		/* We have a duplicate. This might just be the handoff routine
+		 * getting called twice, which isn't ideal but we can ignore
+		 * for now. Log it at a level that isn't printed by default.
+		 */
+		ws_info("Registering automatic preference %s in %s twice", fullname, module_name);
+		/* Check this is just registering the same handle to the same
+		 * preference, and not registering a different handle of the
+		 * same protocol and the same pref_suffix to the same table.
+		 */
+		dissector_handle_t dup_handle;
+		for (GSList *entry = pref_dissector_table->dissector_handles; entry != NULL; entry = g_slist_next(entry))
+		{
+			dup_handle = (dissector_handle_t)entry->data;
+			if (handle->protocol != dup_handle->protocol) {
+				continue;
+			}
+			if ((g_strcmp0(pref_suffix, dissector_handle_get_pref_suffix(dup_handle)) == 0) &&
+			    (handle != dup_handle))
+			{
+				const char *dissector_name = dissector_handle_get_dissector_name(handle);
+				if (dissector_name == NULL)
+					dissector_name = "(anonymous)";
+				const char *dup_dissector_name;
+				dup_dissector_name = dissector_handle_get_dissector_name(dup_handle);
+				if (dup_dissector_name == NULL) {
+					dup_dissector_name = "(anonymous)";
+				}
+				ws_dissector_bug("Dissectors %s and %s in dissector table %s would have the same Decode As preference\n",
+				    dissector_name,
+				    dup_dissector_name,
+				    name);
+			}
 		}
 	}
+
+	return *range;
+}
+
+void dissector_add_uint_with_preference(const char *name, const uint32_t pattern,
+    dissector_handle_t handle)
+{
+	char* range_str;
+
+	range_str = wmem_strdup_printf(NULL, "%d", pattern);
+	dissector_add_range_preference(name, handle, range_str);
+	wmem_free(NULL, range_str);
+	dissector_add_uint(name, pattern, handle);
+}
+
+void dissector_add_uint_range_with_preference(const char *name, const char* range_str,
+    dissector_handle_t handle)
+{
+	range_t* range;
+
+	range = dissector_add_range_preference(name, handle, range_str);
+	dissector_add_uint_range(name, range, handle);
 }
 
 /* Delete the entry for a dissector in a uint dissector table
    with a particular pattern. */
 
 /* NOTE: this doesn't use the dissector call variable. It is included to */
-/*	be consistant with the dissector_add_uint and more importantly to be used */
+/*	be consistent with the dissector_add_uint and more importantly to be used */
 /*	if the technique of adding a temporary dissector is implemented.  */
 /*	If temporary dissectors are deleted, then the original dissector must */
 /*	be available. */
 void
-dissector_delete_uint(const char *name, const guint32 pattern,
+dissector_delete_uint(const char *name, const uint32_t pattern,
 	dissector_handle_t handle _U_)
 {
-	dissector_table_t sub_dissectors = find_dissector_table( name);
+	dissector_table_t sub_dissectors = find_dissector_table(name);
 	dtbl_entry_t *dtbl_entry;
 
 	/* sanity check */
-	g_assert( sub_dissectors);
+	ws_assert(sub_dissectors);
 
 	/*
 	 * Find the entry.
@@ -1026,22 +1516,52 @@ dissector_delete_uint(const char *name, const guint32 pattern,
 	}
 }
 
-void dissector_delete_uint_range(const char *abbrev, range_t *range,
+void dissector_delete_uint_range(const char *name, range_t *range,
 				 dissector_handle_t handle)
 {
-	guint32 i, j;
+	uint32_t i, j;
 
 	if (range) {
 		for (i = 0; i < range->nranges; i++) {
 			for (j = range->ranges[i].low; j < range->ranges[i].high; j++)
-				dissector_delete_uint(abbrev, j, handle);
-			dissector_delete_uint(abbrev, range->ranges[i].high, handle);
+				dissector_delete_uint(name, j, handle);
+			dissector_delete_uint(name, range->ranges[i].high, handle);
 		}
 	}
 }
 
+/* Remove an entry from a guid dissector table. */
+void dissector_delete_guid(const char *name, guid_key* guid_val, dissector_handle_t handle)
+{
+	dissector_table_t  sub_dissectors;
+	dtbl_entry_t      *dtbl_entry;
+
+	sub_dissectors = find_dissector_table(name);
+
+	/* sanity check */
+	ws_assert(sub_dissectors);
+
+	/* Find the table entry */
+	dtbl_entry = (dtbl_entry_t *)g_hash_table_lookup(sub_dissectors->hash_table, guid_val);
+
+	if (dtbl_entry == NULL) {
+		fprintf(stderr, "OOPS: guid not found in dissector table \"%s\"\n", name);
+		return;
+	}
+
+	/* Make sure the handles match */
+	if (dtbl_entry->current != handle) {
+		fprintf(stderr, "OOPS: handle does not match for guid in dissector table \"%s\"\n", name);
+		return;
+	}
+
+	/* Remove the table entry */
+	g_hash_table_remove(sub_dissectors->hash_table, guid_val);
+}
+
+
 static gboolean
-dissector_delete_all_check (gpointer key _U_, gpointer value, gpointer user_data)
+dissector_delete_all_check (void *key _U_, void *value, void *user_data)
 {
 	dtbl_entry_t *dtbl_entry = (dtbl_entry_t *) value;
 	dissector_handle_t handle = (dissector_handle_t) user_data;
@@ -1061,7 +1581,7 @@ dissector_delete_all_check (gpointer key _U_, gpointer value, gpointer user_data
 void dissector_delete_all(const char *name, dissector_handle_t handle)
 {
 	dissector_table_t sub_dissectors = find_dissector_table(name);
-	g_assert (sub_dissectors);
+	ws_assert (sub_dissectors);
 
 	g_hash_table_foreach_remove (sub_dissectors->hash_table, dissector_delete_all_check, handle);
 }
@@ -1070,10 +1590,14 @@ static void
 dissector_delete_from_table(gpointer key _U_, gpointer value, gpointer user_data)
 {
 	dissector_table_t sub_dissectors = (dissector_table_t) value;
-	g_assert (sub_dissectors);
+	ws_assert (sub_dissectors);
+
+	dissector_handle_t handle = (dissector_handle_t) user_data;
 
 	g_hash_table_foreach_remove(sub_dissectors->hash_table, dissector_delete_all_check, user_data);
 	sub_dissectors->dissector_handles = g_slist_remove(sub_dissectors->dissector_handles, user_data);
+	if (sub_dissectors->da_descriptions)
+		g_hash_table_remove(sub_dissectors->da_descriptions, handle->description);
 }
 
 /* Delete handle from all tables and dissector_handles lists */
@@ -1086,19 +1610,28 @@ dissector_delete_from_all_tables(dissector_handle_t handle)
 /* Change the entry for a dissector in a uint dissector table
    with a particular pattern to use a new dissector handle. */
 void
-dissector_change_uint(const char *name, const guint32 pattern, dissector_handle_t handle)
+dissector_change_uint(const char *name, const uint32_t pattern, dissector_handle_t handle)
 {
-	dissector_table_t sub_dissectors = find_dissector_table( name);
+	dissector_table_t sub_dissectors = find_dissector_table(name);
 	dtbl_entry_t *dtbl_entry;
 
 	/* sanity check */
-	g_assert( sub_dissectors);
+	ws_assert(sub_dissectors);
 
 	/*
 	 * See if the entry already exists. If so, reuse it.
 	 */
 	dtbl_entry = find_uint_dtbl_entry(sub_dissectors, pattern);
 	if (dtbl_entry != NULL) {
+		/*
+		 * If there's no initial value, and the user said not
+		 * to decode it, just remove the entry to save memory.
+		 */
+		if (handle == NULL && dtbl_entry->initial == NULL) {
+			g_hash_table_remove(sub_dissectors->hash_table,
+					    GUINT_TO_POINTER(pattern));
+			return;
+		}
 		dtbl_entry->current = handle;
 		return;
 	}
@@ -1111,24 +1644,24 @@ dissector_change_uint(const char *name, const guint32 pattern, dissector_handle_
 	if (handle == NULL)
 		return;
 
-	dtbl_entry = (dtbl_entry_t *)g_malloc(sizeof (dtbl_entry_t));
+	dtbl_entry = g_new(dtbl_entry_t, 1);
 	dtbl_entry->initial = NULL;
 	dtbl_entry->current = handle;
 
 	/* do the table insertion */
-	g_hash_table_insert( sub_dissectors->hash_table,
-			     GUINT_TO_POINTER( pattern), (gpointer)dtbl_entry);
+	g_hash_table_insert(sub_dissectors->hash_table,
+			     GUINT_TO_POINTER(pattern), (void *)dtbl_entry);
 }
 
 /* Reset an entry in a uint dissector table to its initial value. */
 void
-dissector_reset_uint(const char *name, const guint32 pattern)
+dissector_reset_uint(const char *name, const uint32_t pattern)
 {
-	dissector_table_t  sub_dissectors = find_dissector_table( name);
+	dissector_table_t  sub_dissectors = find_dissector_table(name);
 	dtbl_entry_t      *dtbl_entry;
 
 	/* sanity check */
-	g_assert( sub_dissectors);
+	ws_assert(sub_dissectors);
 
 	/*
 	 * Find the entry.
@@ -1149,75 +1682,95 @@ dissector_reset_uint(const char *name, const guint32 pattern)
 	}
 }
 
+/* Return true if an entry in a uint dissector table is found and has been
+ * changed (i.e. dissector_change_uint() has been called, such as from
+ * Decode As, prefs registered via dissector_add_uint_[range_]with_preference),
+ * etc.), otherwise return false.
+ */
+bool
+dissector_is_uint_changed(dissector_table_t const sub_dissectors, const uint32_t uint_val)
+{
+	if (sub_dissectors != NULL) {
+		dtbl_entry_t *dtbl_entry = find_uint_dtbl_entry(sub_dissectors, uint_val);
+		if (dtbl_entry != NULL)
+			return (dtbl_entry->current != dtbl_entry->initial);
+	}
+	return false;
+}
+
 /* Look for a given value in a given uint dissector table and, if found,
-   call the dissector with the arguments supplied, and return TRUE,
-   otherwise return FALSE. */
+   call the dissector with the arguments supplied, and return the number
+   of bytes consumed by the dissector, otherwise return 0. */
 
 int
-dissector_try_uint_new(dissector_table_t sub_dissectors, const guint32 uint_val,
+dissector_try_uint_with_data(dissector_table_t sub_dissectors, const uint32_t uint_val,
 		       tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-		       const gboolean add_proto_name, void *data)
+		       const bool add_proto_name, void *data)
 {
 	dtbl_entry_t            *dtbl_entry;
 	struct dissector_handle *handle;
-	guint32                  saved_match_uint;
+	uint32_t                 saved_match_uint;
 	int len;
 
 	dtbl_entry = find_uint_dtbl_entry(sub_dissectors, uint_val);
-	if (dtbl_entry != NULL) {
+	if (dtbl_entry == NULL) {
 		/*
-		 * Is there currently a dissector handle for this entry?
+		 * There's no entry in the table for our value.
 		 */
-		handle = dtbl_entry->current;
-		if (handle == NULL) {
-			/*
-			 * No - pretend this dissector didn't exist,
-			 * so that other dissectors might have a chance
-			 * to dissect this packet.
-			 */
-			return 0;
-		}
-
-		/*
-		 * Save the current value of "pinfo->match_uint",
-		 * set it to the uint_val that matched, call the
-		 * dissector, and restore "pinfo->match_uint".
-		 */
-		saved_match_uint  = pinfo->match_uint;
-		pinfo->match_uint = uint_val;
-		len = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data);
-		pinfo->match_uint = saved_match_uint;
-
-		/*
-		 * If a new-style dissector returned 0, it means that
-		 * it didn't think this tvbuff represented a packet for
-		 * its protocol, and didn't dissect anything.
-		 *
-		 * Old-style dissectors can't reject the packet.
-		 *
-		 * 0 is also returned if the protocol wasn't enabled.
-		 *
-		 * If the packet was rejected, we return 0, so that
-		 * other dissectors might have a chance to dissect this
-		 * packet, otherwise we return the dissected length.
-		 */
-		return len;
+		return 0;
 	}
-	return 0;
+
+	/*
+	 * Is there currently a dissector handle for this entry?
+	 */
+	handle = dtbl_entry->current;
+	if (handle == NULL) {
+		/*
+		 * No - pretend this dissector didn't exist,
+		 * so that other dissectors might have a chance
+		 * to dissect this packet.
+		 */
+		return 0;
+	}
+
+	/*
+	 * Save the current value of "pinfo->match_uint",
+	 * set it to the uint_val that matched, call the
+	 * dissector, and restore "pinfo->match_uint".
+	 */
+	saved_match_uint  = pinfo->match_uint;
+	pinfo->match_uint = uint_val;
+	len = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data);
+	pinfo->match_uint = saved_match_uint;
+
+	/*
+	 * If a new-style dissector returned 0, it means that
+	 * it didn't think this tvbuff represented a packet for
+	 * its protocol, and didn't dissect anything.
+	 *
+	 * Old-style dissectors can't reject the packet.
+	 *
+	 * 0 is also returned if the protocol wasn't enabled.
+	 *
+	 * If the packet was rejected, we return 0, so that
+	 * other dissectors might have a chance to dissect this
+	 * packet, otherwise we return the dissected length.
+	 */
+	return len;
 }
 
 int
-dissector_try_uint(dissector_table_t sub_dissectors, const guint32 uint_val,
+dissector_try_uint(dissector_table_t sub_dissectors, const uint32_t uint_val,
 		   tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 
-	return dissector_try_uint_new(sub_dissectors, uint_val, tvb, pinfo, tree, TRUE, NULL);
+	return dissector_try_uint_with_data(sub_dissectors, uint_val, tvb, pinfo, tree, true, NULL);
 }
 
 /* Look for a given value in a given uint dissector table and, if found,
    return the dissector handle for that value. */
 dissector_handle_t
-dissector_get_uint_handle(dissector_table_t const sub_dissectors, const guint32 uint_val)
+dissector_get_uint_handle(dissector_table_t const sub_dissectors, const uint32_t uint_val)
 {
 	dtbl_entry_t *dtbl_entry;
 
@@ -1229,7 +1782,7 @@ dissector_get_uint_handle(dissector_table_t const sub_dissectors, const guint32 
 }
 
 dissector_handle_t
-dissector_get_default_uint_handle(const char *name, const guint32 uint_val)
+dissector_get_default_uint_handle(const char *name, const uint32_t uint_val)
 {
 	dissector_table_t sub_dissectors = find_dissector_table(name);
 
@@ -1243,7 +1796,7 @@ dissector_get_default_uint_handle(const char *name, const guint32 uint_val)
 
 /* Find an entry in a string dissector table. */
 static dtbl_entry_t *
-find_string_dtbl_entry(dissector_table_t const sub_dissectors, const gchar *pattern)
+find_string_dtbl_entry(dissector_table_t const sub_dissectors, const char *pattern)
 {
 	dtbl_entry_t *ret;
 	char *key;
@@ -1253,6 +1806,7 @@ find_string_dtbl_entry(dissector_table_t const sub_dissectors, const gchar *patt
 	case FT_STRING:
 	case FT_STRINGZ:
 	case FT_STRINGZPAD:
+	case FT_STRINGZTRUNC:
 		/*
 		 * You can do a string lookup in these tables.
 		 */
@@ -1263,10 +1817,10 @@ find_string_dtbl_entry(dissector_table_t const sub_dissectors, const gchar *patt
 		 * But you can't do a string lookup in any other types
 		 * of tables.
 		 */
-		g_assert_not_reached();
+		ws_assert_not_reached();
 	}
 
-	if (sub_dissectors->param == TRUE) {
+	if (sub_dissectors->param == STRING_CASE_INSENSITIVE) {
 		key = g_ascii_strdown(pattern, -1);
 	} else {
 		key = g_strdup(pattern);
@@ -1284,38 +1838,22 @@ find_string_dtbl_entry(dissector_table_t const sub_dissectors, const gchar *patt
 
 /* Add an entry to a string dissector table. */
 void
-dissector_add_string(const char *name, const gchar *pattern,
+dissector_add_string(const char *name, const char *pattern,
 		     dissector_handle_t handle)
 {
-	dissector_table_t  sub_dissectors = find_dissector_table( name);
+	dissector_table_t  sub_dissectors;
 	dtbl_entry_t      *dtbl_entry;
 	char *key;
 
-	/*
-	 * Make sure the handle and the dissector table exist.
-	 */
-	if (handle == NULL) {
-		fprintf(stderr, "OOPS: handle to register \"%s\" to doesn't exist\n",
-		    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
+	if (!dissector_get_table_checked(name, handle, &sub_dissectors))
 		return;
-	}
-	if (sub_dissectors == NULL) {
-		fprintf(stderr, "OOPS: dissector table \"%s\" doesn't exist\n",
-		    name);
-		fprintf(stderr, "Protocol being registered is \"%s\"\n",
-		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
-		return;
-	}
 
 	switch (sub_dissectors->type) {
 
 	case FT_STRING:
 	case FT_STRINGZ:
 	case FT_STRINGZPAD:
+	case FT_STRINGZTRUNC:
 		/*
 		 * You can do a string lookup in these tables.
 		 */
@@ -1326,22 +1864,22 @@ dissector_add_string(const char *name, const gchar *pattern,
 		 * But you can't do a string lookup in any other types
 		 * of tables.
 		 */
-		g_assert_not_reached();
+		ws_assert_not_reached();
 	}
 
-	dtbl_entry = (dtbl_entry_t *)g_malloc(sizeof (dtbl_entry_t));
+	dtbl_entry = g_new(dtbl_entry_t, 1);
 	dtbl_entry->current = handle;
 	dtbl_entry->initial = dtbl_entry->current;
 
-	if (sub_dissectors->param == TRUE) {
+	if (sub_dissectors->param == STRING_CASE_INSENSITIVE) {
 		key = g_ascii_strdown(pattern, -1);
 	} else {
 		key = g_strdup(pattern);
 	}
 
 	/* do the table insertion */
-	g_hash_table_insert( sub_dissectors->hash_table, (gpointer)key,
-			     (gpointer)dtbl_entry);
+	g_hash_table_insert(sub_dissectors->hash_table, (void *)key,
+			     (void *)dtbl_entry);
 
 	/*
 	 * Now, if this table supports "Decode As", add this handle
@@ -1356,20 +1894,20 @@ dissector_add_string(const char *name, const gchar *pattern,
    with a particular pattern. */
 
 /* NOTE: this doesn't use the dissector call variable. It is included to */
-/*	be consistant with the dissector_add_string and more importantly to */
+/*	be consistent with the dissector_add_string and more importantly to */
 /*      be used if the technique of adding a temporary dissector is */
 /*      implemented.  */
 /*	If temporary dissectors are deleted, then the original dissector must */
 /*	be available. */
 void
-dissector_delete_string(const char *name, const gchar *pattern,
+dissector_delete_string(const char *name, const char *pattern,
 	dissector_handle_t handle _U_)
 {
-	dissector_table_t  sub_dissectors = find_dissector_table( name);
+	dissector_table_t  sub_dissectors = find_dissector_table(name);
 	dtbl_entry_t      *dtbl_entry;
 
 	/* sanity check */
-	g_assert( sub_dissectors);
+	ws_assert(sub_dissectors);
 
 	/*
 	 * Find the entry.
@@ -1387,20 +1925,29 @@ dissector_delete_string(const char *name, const gchar *pattern,
 /* Change the entry for a dissector in a string dissector table
    with a particular pattern to use a new dissector handle. */
 void
-dissector_change_string(const char *name, const gchar *pattern,
+dissector_change_string(const char *name, const char *pattern,
 			dissector_handle_t handle)
 {
-	dissector_table_t  sub_dissectors = find_dissector_table( name);
+	dissector_table_t  sub_dissectors = find_dissector_table(name);
 	dtbl_entry_t      *dtbl_entry;
 
 	/* sanity check */
-	g_assert( sub_dissectors);
+	ws_assert(sub_dissectors);
 
 	/*
 	 * See if the entry already exists. If so, reuse it.
 	 */
 	dtbl_entry = find_string_dtbl_entry(sub_dissectors, pattern);
 	if (dtbl_entry != NULL) {
+		/*
+		 * If there's no initial value, and the user said not
+		 * to decode it, just remove the entry to save memory.
+		 */
+		if (handle == NULL && dtbl_entry->initial == NULL) {
+			g_hash_table_remove(sub_dissectors->hash_table,
+					    pattern);
+			return;
+		}
 		dtbl_entry->current = handle;
 		return;
 	}
@@ -1413,24 +1960,24 @@ dissector_change_string(const char *name, const gchar *pattern,
 	if (handle == NULL)
 		return;
 
-	dtbl_entry = (dtbl_entry_t *)g_malloc(sizeof (dtbl_entry_t));
+	dtbl_entry = g_new(dtbl_entry_t, 1);
 	dtbl_entry->initial = NULL;
 	dtbl_entry->current = handle;
 
 	/* do the table insertion */
-	g_hash_table_insert( sub_dissectors->hash_table, (gpointer)g_strdup(pattern),
-			     (gpointer)dtbl_entry);
+	g_hash_table_insert(sub_dissectors->hash_table, (void *)g_strdup(pattern),
+			     (void *)dtbl_entry);
 }
 
 /* Reset an entry in a string sub-dissector table to its initial value. */
 void
-dissector_reset_string(const char *name, const gchar *pattern)
+dissector_reset_string(const char *name, const char *pattern)
 {
-	dissector_table_t  sub_dissectors = find_dissector_table( name);
+	dissector_table_t  sub_dissectors = find_dissector_table(name);
 	dtbl_entry_t      *dtbl_entry;
 
 	/* sanity check */
-	g_assert( sub_dissectors);
+	ws_assert(sub_dissectors);
 
 	/*
 	 * Find the entry.
@@ -1450,17 +1997,33 @@ dissector_reset_string(const char *name, const gchar *pattern)
 	}
 }
 
+/* Return true if an entry in a uint dissector table is found and has been
+ * changed (i.e. dissector_change_uint() has been called, such as from
+ * Decode As, prefs registered via dissector_add_uint_[range_]with_preference),
+ * etc.), otherwise return false.
+ */
+bool
+dissector_is_string_changed(dissector_table_t const sub_dissectors, const char *string)
+{
+	if (sub_dissectors != NULL) {
+		dtbl_entry_t *dtbl_entry = find_string_dtbl_entry(sub_dissectors, string);
+		if (dtbl_entry != NULL)
+			return (dtbl_entry->current != dtbl_entry->initial);
+	}
+	return false;
+}
+
 /* Look for a given string in a given dissector table and, if found, call
    the dissector with the arguments supplied, and return length of dissected data,
    otherwise return 0. */
 int
-dissector_try_string(dissector_table_t sub_dissectors, const gchar *string,
-		     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+dissector_try_string_with_data(dissector_table_t sub_dissectors, const char *string,
+		     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data)
 {
 	dtbl_entry_t            *dtbl_entry;
 	struct dissector_handle *handle;
 	int                      len;
-	const gchar             *saved_match_string;
+	const char              *saved_match_string;
 
 	/* XXX ASSERT instead ? */
 	if (!string) return 0;
@@ -1486,7 +2049,7 @@ dissector_try_string(dissector_table_t sub_dissectors, const gchar *string,
 		 */
 		saved_match_string = pinfo->match_string;
 		pinfo->match_string = string;
-		len = call_dissector_work(handle, tvb, pinfo, tree, TRUE, data);
+		len = call_dissector_work(handle, tvb, pinfo, tree, add_proto_name, data);
 		pinfo->match_string = saved_match_string;
 
 		/*
@@ -1511,7 +2074,7 @@ dissector_try_string(dissector_table_t sub_dissectors, const gchar *string,
    return the dissector handle for that value. */
 dissector_handle_t
 dissector_get_string_handle(dissector_table_t sub_dissectors,
-			    const gchar *string)
+			    const char *string)
 {
 	dtbl_entry_t *dtbl_entry;
 
@@ -1525,7 +2088,7 @@ dissector_get_string_handle(dissector_table_t sub_dissectors,
 }
 
 dissector_handle_t
-dissector_get_default_string_handle(const char *name, const gchar *string)
+dissector_get_default_string_handle(const char *name, const char *string)
 {
 	dissector_table_t sub_dissectors;
 
@@ -1543,31 +2106,21 @@ dissector_get_default_string_handle(const char *name, const gchar *string)
 /* Add an entry to a "custom" dissector table. */
 void dissector_add_custom_table_handle(const char *name, void *pattern, dissector_handle_t handle)
 {
-	dissector_table_t  sub_dissectors = find_dissector_table( name);
+	dissector_table_t  sub_dissectors;
 	dtbl_entry_t      *dtbl_entry;
 
-	/*
-	 * Make sure the dissector table exists.
-	 */
-	if (sub_dissectors == NULL) {
-		fprintf(stderr, "OOPS: dissector table \"%s\" doesn't exist\n",
-		    name);
-		fprintf(stderr, "Protocol being registered is \"%s\"\n",
-		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
+	if (!dissector_get_table_checked(name, handle, &sub_dissectors))
 		return;
-	}
 
-	g_assert(sub_dissectors->type == FT_BYTES);
+	ws_assert(sub_dissectors->type == FT_BYTES);
 
-	dtbl_entry = (dtbl_entry_t *)g_malloc(sizeof (dtbl_entry_t));
+	dtbl_entry = g_new(dtbl_entry_t, 1);
 	dtbl_entry->current = handle;
 	dtbl_entry->initial = dtbl_entry->current;
 
 	/* do the table insertion */
-	g_hash_table_insert( sub_dissectors->hash_table, (gpointer)pattern,
-			     (gpointer)dtbl_entry);
+	g_hash_table_insert(sub_dissectors->hash_table, (void *)pattern,
+			     (void *)dtbl_entry);
 
 	/*
 	 * Now, if this table supports "Decode As", add this handle
@@ -1593,39 +2146,20 @@ void dissector_add_guid(const char *name, guid_key* guid_val, dissector_handle_t
 	dissector_table_t  sub_dissectors;
 	dtbl_entry_t      *dtbl_entry;
 
-	sub_dissectors = find_dissector_table(name);
-
-	/*
-	 * Make sure the handle and the dissector table exist.
-	 */
-	if (handle == NULL) {
-		fprintf(stderr, "OOPS: handle to register \"%s\" to doesn't exist\n",
-		    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
+	if (!dissector_get_table_checked(name, handle, &sub_dissectors))
 		return;
-	}
-	if (sub_dissectors == NULL) {
-		fprintf(stderr, "OOPS: dissector table \"%s\" doesn't exist\n",
-		    name);
-		fprintf(stderr, "Protocol being registered is \"%s\"\n",
-		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
-		return;
-	}
 
 	if (sub_dissectors->type != FT_GUID) {
-		g_assert_not_reached();
+		ws_assert_not_reached();
 	}
 
-	dtbl_entry = (dtbl_entry_t *)g_malloc(sizeof (dtbl_entry_t));
+	dtbl_entry = g_new(dtbl_entry_t, 1);
 	dtbl_entry->current = handle;
 	dtbl_entry->initial = dtbl_entry->current;
 
 	/* do the table insertion */
-	g_hash_table_insert( sub_dissectors->hash_table,
-			     guid_val, (gpointer)dtbl_entry);
+	g_hash_table_insert(sub_dissectors->hash_table,
+			     guid_val, (void *)dtbl_entry);
 
 	/*
 	 * Now, if this table supports "Decode As", add this handle
@@ -1637,10 +2171,10 @@ void dissector_add_guid(const char *name, guid_key* guid_val, dissector_handle_t
 }
 
 /* Look for a given value in a given guid dissector table and, if found,
-   call the dissector with the arguments supplied, and return TRUE,
-   otherwise return FALSE. */
-int dissector_try_guid_new(dissector_table_t sub_dissectors,
-    guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const gboolean add_proto_name, void *data)
+   call the dissector with the arguments supplied, and return true,
+   otherwise return false. */
+int dissector_try_guid_with_data(dissector_table_t sub_dissectors,
+    guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data)
 {
 	dtbl_entry_t            *dtbl_entry;
 	struct dissector_handle *handle;
@@ -1686,17 +2220,11 @@ int dissector_try_guid_new(dissector_table_t sub_dissectors,
 	return 0;
 }
 
-int dissector_try_guid(dissector_table_t sub_dissectors,
-    guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
-{
-    return dissector_try_guid_new(sub_dissectors, guid_val, tvb, pinfo, tree, TRUE, NULL);
-}
-
 /** Look for a given value in a given guid dissector table and, if found,
  * return the current dissector handle for that value.
  *
  * @param[in] sub_dissectors Dissector table to search.
- * @param[in] uint_val Value to match, e.g. the port number for the TCP dissector.
+ * @param[in] guid_val Value to match.
  * @return The matching dissector handle on success, NULL if no match is found.
  */
 dissector_handle_t dissector_get_guid_handle(
@@ -1711,6 +2239,36 @@ dissector_handle_t dissector_get_guid_handle(
 		return NULL;
 }
 
+/* Use the currently assigned payload dissector for the dissector table and,
+   if any, call the dissector with the arguments supplied, and return the
+   number of bytes consumed, otherwise return 0. */
+int dissector_try_payload_with_data(dissector_table_t sub_dissectors,
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data)
+{
+	return dissector_try_uint_with_data(sub_dissectors, 0, tvb, pinfo, tree, add_proto_name, data);
+}
+
+/* Change the entry for a dissector in a payload (FT_NONE) dissector table
+   with a particular pattern to use a new dissector handle. */
+void dissector_change_payload(const char *name, dissector_handle_t handle)
+{
+	dissector_change_uint(name, 0, handle);
+}
+
+/* Reset payload (FT_NONE) dissector table to its initial value. */
+void dissector_reset_payload(const char *name)
+{
+	dissector_reset_uint(name, 0);
+}
+
+/* Given a payload dissector table (type FT_NONE), return the handle of
+   the dissector that is currently active, i.e. that was selected via
+   Decode As. */
+dissector_handle_t
+dissector_get_payload_handle(dissector_table_t const dissector_table)
+{
+	return dissector_get_uint_handle(dissector_table, 0);
+}
 
 dissector_handle_t
 dtbl_entry_get_handle (dtbl_entry_t *dtbl_entry)
@@ -1718,13 +2276,13 @@ dtbl_entry_get_handle (dtbl_entry_t *dtbl_entry)
 	return dtbl_entry->current;
 }
 
-static gint
-dissector_compare_filter_name(gconstpointer dissector_a, gconstpointer dissector_b)
+static int
+dissector_compare_filter_name(const void *dissector_a, const void *dissector_b)
 {
 	const struct dissector_handle *a = (const struct dissector_handle *)dissector_a;
 	const struct dissector_handle *b = (const struct dissector_handle *)dissector_b;
 	const char *a_name, *b_name;
-	gint ret;
+	int ret;
 
 	if (a->protocol == NULL)
 		a_name = "";
@@ -1740,43 +2298,84 @@ dissector_compare_filter_name(gconstpointer dissector_a, gconstpointer dissector
 	return ret;
 }
 
+void
+packet_all_tables_sort_handles(void)
+{
+	GHashTableIter iter;
+	g_hash_table_iter_init(&iter, dissector_tables);
+	void *key, *value;
+	dissector_table_t table;
+	while (g_hash_table_iter_next(&iter, &key, &value)) {
+		table = (dissector_table_t)value;
+		table->dissector_handles = g_slist_sort(table->dissector_handles, (GCompareFunc)dissector_compare_filter_name);
+	}
+	/* Any handles added to a table after this (e.g., by a Lua dissector,
+	 * by reloading Lua dissectors, by a UAT or other preference) will
+	 * be added using g_slist_insert_sorted. */
+	all_tables_handles_sorted = true;
+}
+
 /* Add a handle to the list of handles that *could* be used with this
    table.  That list is used by the "Decode As"/"-d" code in the UI. */
 void
 dissector_add_for_decode_as(const char *name, dissector_handle_t handle)
 {
-	dissector_table_t  sub_dissectors = find_dissector_table( name);
-	GSList            *entry;
+	dissector_table_t  sub_dissectors;
 	dissector_handle_t dup_handle;
 
-	/*
-	 * Make sure the dissector table exists.
-	 */
-	if (sub_dissectors == NULL) {
-		fprintf(stderr, "OOPS: dissector table \"%s\" doesn't exist\n",
-		    name);
-		fprintf(stderr, "Protocol being registered is \"%s\"\n",
-		    proto_get_protocol_long_name(handle->protocol));
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
+	if (!dissector_get_table_checked(name, handle, &sub_dissectors))
 		return;
-	}
+
+	const char *dissector_name;
+	dissector_name = dissector_handle_get_dissector_name(handle);
+	if (dissector_name == NULL)
+		dissector_name = "(anonymous)";
 
 	/*
 	 * Make sure it supports Decode As.
 	 */
 	if (!sub_dissectors->supports_decode_as) {
-		const char *dissector_name;
-
-		dissector_name = dissector_handle_get_dissector_name(handle);
-		if (dissector_name == NULL)
-			dissector_name = "(anonymous)";
-		fprintf(stderr, "Registering dissector %s for protocol %s in dissector table %s, which doesn't support Decode As\n",
+		ws_dissector_bug("Registering dissector %s for protocol %s in dissector table %s, which doesn't support Decode As\n",
 				    dissector_name,
 				    proto_get_protocol_short_name(handle->protocol),
 				    name);
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-			abort();
+		return;
+	}
+
+	/* For Decode As selection to work, there has to be a description.
+	 * One is generated if there's a protocol (PINOs are used in some
+	 * cases to guarantee unique descriptions), but some dissectors are
+	 * registered without a protocol. That is allowed for fixed tables
+	 * that don't support Decode As.
+	 */
+	if (handle->description == NULL) {
+		ws_dissector_bug("Cannot register dissector %s in dissector table %s for Decode As without a protocol or description\n",
+		    dissector_name, name);
+		return;
+	}
+
+	/* Ensure that the description is unique in the table, so that Decode As
+	 * selection and UAT preference writing works.
+	 *
+	 * XXX - We could do the insert first and then check the return value,
+	 * saving on a hash comparison. (The failure mode would be slightly
+	 * different, as it would become last insertion wins.)
+	 */
+	dup_handle = g_hash_table_lookup(sub_dissectors->da_descriptions, handle->description);
+	if (dup_handle != NULL) {
+		/* Is this a different handle with the same description, or
+		 * just trying to insert the same handle a second time? */
+		if (dup_handle != handle) {
+			const char *dup_dissector_name;
+
+			dup_dissector_name = dissector_handle_get_dissector_name(dup_handle);
+			if (dup_dissector_name == NULL)
+				dup_dissector_name = "(anonymous)";
+			ws_dissector_bug("Dissectors %s and %s in dissector table %s have the same description %s\n",
+			    dissector_name,
+			    dup_dissector_name,
+			    name, handle->description);
+		}
 		return;
 	}
 
@@ -1786,48 +2385,27 @@ dissector_add_for_decode_as(const char *name, dissector_handle_t handle)
 	if (sub_dissectors->protocol != NULL)
 		register_depend_dissector(proto_get_protocol_short_name(sub_dissectors->protocol), proto_get_protocol_short_name(handle->protocol));
 
-	/* Is it already in this list? */
-	entry = g_slist_find(sub_dissectors->dissector_handles, (gpointer)handle);
-	if (entry != NULL) {
-		/*
-		 * Yes - don't insert it again.
-		 */
-		return;
-	}
-
-	/* Ensure the protocol is unique.  This prevents confusion when
-	   using Decode As with duplicative entries.
-
-	   FT_STRING can at least show the string value in the dialog,
-	   so we don't do the check for them. */
-	if (sub_dissectors->type != FT_STRING)
-	{
-		for (entry = sub_dissectors->dissector_handles; entry != NULL; entry = g_slist_next(entry))
-		{
-			dup_handle = (dissector_handle_t)entry->data;
-			if (dup_handle->protocol == handle->protocol)
-			{
-				const char *dissector_name, *dup_dissector_name;
-
-				dissector_name = dissector_handle_get_dissector_name(handle);
-				if (dissector_name == NULL)
-					dissector_name = "(anonymous)";
-				dup_dissector_name = dissector_handle_get_dissector_name(dup_handle);
-				if (dup_dissector_name == NULL)
-					dup_dissector_name = "(anonymous)";
-				fprintf(stderr, "Duplicate dissectors %s and %s for protocol %s in dissector table %s\n",
-				    dissector_name, dup_dissector_name,
-				    proto_get_protocol_short_name(handle->protocol),
-				    name);
-				if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
-					abort();
-			}
-		}
-	}
-
 	/* Add it to the list. */
-	sub_dissectors->dissector_handles =
-		g_slist_insert_sorted(sub_dissectors->dissector_handles, (gpointer)handle, (GCompareFunc)dissector_compare_filter_name);
+	g_hash_table_insert(sub_dissectors->da_descriptions, (void *)handle->description, handle);
+	if (all_tables_handles_sorted) {
+		sub_dissectors->dissector_handles =
+			g_slist_insert_sorted(sub_dissectors->dissector_handles, (void *)handle, (GCompareFunc)dissector_compare_filter_name);
+	} else {
+		sub_dissectors->dissector_handles =
+			g_slist_prepend(sub_dissectors->dissector_handles, (void *)handle);
+	}
+}
+
+void dissector_add_for_decode_as_with_preference(const char *name,
+    dissector_handle_t handle)
+{
+	/* If a dissector is added for Decode As only, it's dissector
+	   table value would default to 0.
+	   Set up a preference value with that information
+	 */
+	dissector_add_range_preference(name, handle, "");
+
+	dissector_add_for_decode_as(name, handle);
 }
 
 dissector_handle_t
@@ -1838,8 +2416,49 @@ dtbl_entry_get_initial_handle (dtbl_entry_t *dtbl_entry)
 
 GSList *
 dissector_table_get_dissector_handles(dissector_table_t dissector_table) {
-	if (!dissector_table) return NULL;
+	if (!dissector_table)
+		return NULL;
+
 	return dissector_table->dissector_handles;
+}
+
+/*
+ * Data structure used as user data when iterating dissector handles
+ */
+typedef struct lookup_entry {
+	const char* dissector_description;
+	dissector_handle_t handle;
+} lookup_entry_t;
+
+/*
+ * A callback function to changed a dissector_handle if matched
+ * This is used when iterating a dissector table
+ */
+static void
+find_dissector_in_table(void *item, void *user_data)
+{
+	dissector_handle_t handle = (dissector_handle_t)item;
+	lookup_entry_t * lookup = (lookup_entry_t *)user_data;
+	const char *description = dissector_handle_get_description(handle);
+	if (description && strcmp(lookup->dissector_description, description) == 0) {
+		lookup->handle = handle;
+	}
+}
+
+dissector_handle_t dissector_table_get_dissector_handle(dissector_table_t dissector_table, const char* description)
+{
+	/* Can this even be called for tables that don't support Decode As? */
+	if (dissector_table->da_descriptions) {
+		return g_hash_table_lookup(dissector_table->da_descriptions, description);
+	}
+
+	lookup_entry_t lookup;
+
+	lookup.dissector_description = description;
+	lookup.handle = NULL;
+
+	g_slist_foreach(dissector_table->dissector_handles, find_dissector_in_table, &lookup);
+	return lookup.handle;
 }
 
 ftenum_t
@@ -1851,25 +2470,33 @@ dissector_table_get_type(dissector_table_t dissector_table) {
 void
 dissector_table_allow_decode_as(dissector_table_t dissector_table)
 {
-	dissector_table->supports_decode_as = TRUE;
+	dissector_table->supports_decode_as = true;
+	if (dissector_table->da_descriptions == NULL) {
+		dissector_table->da_descriptions = g_hash_table_new(wmem_str_hash, g_str_equal);
+	}
 }
 
-static gint
-uuid_equal(gconstpointer k1, gconstpointer k2)
+bool
+dissector_table_supports_decode_as(dissector_table_t dissector_table)
 {
-    const guid_key *key1 = (const guid_key *)k1;
-    const guid_key *key2 = (const guid_key *)k2;
-    return ((memcmp(&key1->guid, &key2->guid, sizeof (e_guid_t)) == 0)
-            && (key1->ver == key2->ver));
+	return dissector_table->supports_decode_as;
 }
 
-static guint
-uuid_hash(gconstpointer k)
+static int
+uuid_equal(const void *k1, const void *k2)
 {
-    const guid_key *key = (const guid_key *)k;
-    /* This isn't perfect, but the Data1 part of these is almost always
-       unique. */
-    return key->guid.data1;
+	const guid_key *key1 = (const guid_key *)k1;
+	const guid_key *key2 = (const guid_key *)k2;
+	return ((memcmp(&key1->guid, &key2->guid, sizeof (e_guid_t)) == 0)
+		&& (key1->ver == key2->ver));
+}
+
+static unsigned
+uuid_hash(const void *k)
+{
+	const guid_key *key = (const guid_key *)k;
+	/* This isn't perfect, but the Data1 part of these is almost always unique. */
+	return key->guid.data1;
 }
 
 /**************************************************/
@@ -1879,10 +2506,10 @@ uuid_hash(gconstpointer k)
 /**************************************************/
 
 typedef struct dissector_foreach_info {
-	gpointer      caller_data;
+	void *        caller_data;
 	DATFunc       caller_func;
 	GHFunc        next_func;
-	const gchar  *table_name;
+	const char   *table_name;
 	ftenum_t      selector_type;
 } dissector_foreach_info_t;
 
@@ -1890,13 +2517,13 @@ typedef struct dissector_foreach_info {
  * Called for each entry in a dissector table.
  */
 static void
-dissector_table_foreach_func (gpointer key, gpointer value, gpointer user_data)
+dissector_table_foreach_func (void *key, void *value, void *user_data)
 {
 	dissector_foreach_info_t *info;
 	dtbl_entry_t             *dtbl_entry;
 
-	g_assert(value);
-	g_assert(user_data);
+	ws_assert(value);
+	ws_assert(user_data);
 
 	dtbl_entry = (dtbl_entry_t *)value;
 	if (dtbl_entry->current == NULL ||
@@ -1920,28 +2547,29 @@ dissector_table_foreach_func (gpointer key, gpointer value, gpointer user_data)
  * Called for each entry in the table of all dissector tables.
  */
 static void
-dissector_all_tables_foreach_func (gpointer key, gpointer value, gpointer user_data)
+dissector_all_tables_foreach_func (void *key, void *value, void *user_data)
 {
 	dissector_table_t         sub_dissectors;
 	dissector_foreach_info_t *info;
 
-	g_assert(value);
-	g_assert(user_data);
+	ws_assert(value);
+	ws_assert(user_data);
 
 	sub_dissectors = (dissector_table_t)value;
 	info = (dissector_foreach_info_t *)user_data;
-	info->table_name = (gchar*) key;
+	info->table_name = (char*) key;
 	info->selector_type = get_dissector_table_selector_type(info->table_name);
 	g_hash_table_foreach(sub_dissectors->hash_table, info->next_func, info);
 }
 
+#if 0
 /*
  * Walk all dissector tables calling a user supplied function on each
  * entry.
  */
 static void
 dissector_all_tables_foreach (DATFunc func,
-			      gpointer user_data)
+			      void *user_data)
 {
 	dissector_foreach_info_t info;
 
@@ -1950,6 +2578,7 @@ dissector_all_tables_foreach (DATFunc func,
 	info.next_func   = dissector_table_foreach_func;
 	g_hash_table_foreach(dissector_tables, dissector_all_tables_foreach_func, &info);
 }
+#endif
 
 /*
  * Walk one dissector table's hash table calling a user supplied function
@@ -1958,7 +2587,7 @@ dissector_all_tables_foreach (DATFunc func,
 void
 dissector_table_foreach (const char *table_name,
 			 DATFunc     func,
-			 gpointer    user_data)
+			 void *      user_data)
 {
 	dissector_foreach_info_t info;
 	dissector_table_t        sub_dissectors = find_dissector_table(table_name);
@@ -1977,27 +2606,27 @@ dissector_table_foreach (const char *table_name,
 void
 dissector_table_foreach_handle(const char     *table_name,
 			       DATFunc_handle  func,
-			       gpointer        user_data)
+			       void *          user_data)
 {
 	dissector_table_t sub_dissectors = find_dissector_table(table_name);
 	GSList *tmp;
 
 	for (tmp = sub_dissectors->dissector_handles; tmp != NULL;
 	     tmp = g_slist_next(tmp))
-        func(table_name, tmp->data, user_data);
+		func(table_name, tmp->data, user_data);
 }
 
 /*
  * Called for each entry in a dissector table.
  */
 static void
-dissector_table_foreach_changed_func (gpointer key, gpointer value, gpointer user_data)
+dissector_table_foreach_changed_func (void *key, void *value, void *user_data)
 {
 	dtbl_entry_t             *dtbl_entry;
 	dissector_foreach_info_t *info;
 
-	g_assert(value);
-	g_assert(user_data);
+	ws_assert(value);
+	ws_assert(user_data);
 
 	dtbl_entry = (dtbl_entry_t *)value;
 	if (dtbl_entry->initial == dtbl_entry->current) {
@@ -2018,7 +2647,7 @@ dissector_table_foreach_changed_func (gpointer key, gpointer value, gpointer use
  */
 void
 dissector_all_tables_foreach_changed (DATFunc  func,
-				      gpointer user_data)
+				      void *user_data)
 {
 	dissector_foreach_info_t info;
 
@@ -2035,7 +2664,7 @@ dissector_all_tables_foreach_changed (DATFunc  func,
 void
 dissector_table_foreach_changed (const char *table_name,
 				 DATFunc     func,
-				 gpointer    user_data)
+				 void *      user_data)
 {
 	dissector_foreach_info_t info;
 	dissector_table_t sub_dissectors = find_dissector_table(table_name);
@@ -2049,7 +2678,7 @@ dissector_table_foreach_changed (const char *table_name,
 }
 
 typedef struct dissector_foreach_table_info {
-	gpointer      caller_data;
+	void *        caller_data;
 	DATFunc_table caller_func;
 } dissector_foreach_table_info_t;
 
@@ -2058,14 +2687,14 @@ typedef struct dissector_foreach_table_info {
  * This is used if we directly process the hash table.
  */
 static void
-dissector_all_tables_foreach_table_func (gpointer key, gpointer value, gpointer user_data)
+dissector_all_tables_foreach_table_func (void *key, void *value, void *user_data)
 {
 	dissector_table_t               table;
 	dissector_foreach_table_info_t *info;
 
 	table = (dissector_table_t)value;
 	info  = (dissector_foreach_table_info_t *)user_data;
-	(*info->caller_func)((gchar *)key, table->ui_name, info->caller_data);
+	(*info->caller_func)((char *)key, table->ui_name, info->caller_data);
 }
 
 /*
@@ -2073,14 +2702,14 @@ dissector_all_tables_foreach_table_func (gpointer key, gpointer value, gpointer 
  * This is used if we get a list of table names, sort it, and process the list.
  */
 static void
-dissector_all_tables_foreach_list_func (gpointer key, gpointer user_data)
+dissector_all_tables_foreach_list_func (void *key, void *user_data)
 {
 	dissector_table_t               table;
 	dissector_foreach_table_info_t *info;
 
-	table = (dissector_table_t)g_hash_table_lookup( dissector_tables, key );
+	table = (dissector_table_t)g_hash_table_lookup(dissector_tables, key);
 	info  = (dissector_foreach_table_info_t *)user_data;
-	(*info->caller_func)((gchar*)key, table->ui_name, info->caller_data);
+	(*info->caller_func)((char*)key, table->ui_name, info->caller_data);
 }
 
 /*
@@ -2089,7 +2718,7 @@ dissector_all_tables_foreach_list_func (gpointer key, gpointer user_data)
  */
 void
 dissector_all_tables_foreach_table (DATFunc_table func,
-				    gpointer      user_data,
+				    void *        user_data,
 				    GCompareFunc  compare_key_func)
 {
 	dissector_foreach_table_info_t info;
@@ -2116,11 +2745,6 @@ register_dissector_table(const char *name, const char *ui_name, const int proto,
 {
 	dissector_table_t	sub_dissectors;
 
-	/* Make sure the registration is unique */
-	if(g_hash_table_lookup( dissector_tables, name )) {
-		g_error("The dissector table %s (%s) is already registered - are you using a buggy plugin?", name, ui_name);
-	}
-
 	/* Create and register the dissector table for this name; returns */
 	/* a pointer to the dissector table. */
 	sub_dissectors = g_slice_new(struct dissector_table);
@@ -2135,50 +2759,63 @@ register_dissector_table(const char *name, const char *ui_name, const int proto,
 		 * so we use "g_direct_hash()" and "g_direct_equal()".
 		 */
 		sub_dissectors->hash_func = g_direct_hash;
-		sub_dissectors->hash_table = g_hash_table_new_full( g_direct_hash,
+		sub_dissectors->hash_table = g_hash_table_new_full(g_direct_hash,
 							       g_direct_equal,
 							       NULL,
-							       &g_free );
+							       &g_free);
 		break;
 
 	case FT_STRING:
 	case FT_STRINGZ:
 	case FT_STRINGZPAD:
+	case FT_STRINGZTRUNC:
 		sub_dissectors->hash_func = g_str_hash;
-		sub_dissectors->hash_table = g_hash_table_new_full( g_str_hash,
+		sub_dissectors->hash_table = g_hash_table_new_full(g_str_hash,
 							       g_str_equal,
 							       &g_free,
-							       &g_free );
+							       &g_free);
 		break;
 	case FT_GUID:
-		sub_dissectors->hash_table = g_hash_table_new_full( uuid_hash,
+		sub_dissectors->hash_table = g_hash_table_new_full(uuid_hash,
 							       uuid_equal,
 							       NULL,
-							       &g_free );
+							       &g_free);
 		break;
+
+	case FT_NONE:
+		/* Dissector tables with FT_NONE don't have values associated with
+		   dissectors so this will always be a hash table size of 1 just
+		   to store the single dtbl_entry_t */
+		sub_dissectors->hash_func = g_direct_hash;
+		sub_dissectors->hash_table = g_hash_table_new_full(g_direct_hash,
+							       g_direct_equal,
+							       NULL,
+							       &g_free);
+		break;
+
 	default:
-		g_error("The dissector table %s (%s) is registering an unsupported type - are you using a buggy plugin?", name, ui_name);
-		g_assert_not_reached();
+		ws_error("The dissector table %s (%s) is registering an unsupported type - are you using a buggy plugin?", name, ui_name);
+		ws_assert_not_reached();
 	}
 	sub_dissectors->dissector_handles = NULL;
+	sub_dissectors->da_descriptions = NULL;
 	sub_dissectors->ui_name = ui_name;
 	sub_dissectors->type    = type;
 	sub_dissectors->param   = param;
-	sub_dissectors->protocol  = find_protocol_by_id(proto);
-	sub_dissectors->supports_decode_as = FALSE;
-	g_hash_table_insert( dissector_tables, (gpointer)name, (gpointer) sub_dissectors );
+	sub_dissectors->protocol  = (proto == -1) ? NULL : find_protocol_by_id(proto);
+	sub_dissectors->supports_decode_as = false;
+	/* Make sure the registration is unique */
+	if (!g_hash_table_insert(dissector_tables, (void *)name, (void *) sub_dissectors)) {
+		ws_error("The dissector table %s (%s) is already registered - are you using a buggy plugin?", name, ui_name);
+	}
 	return sub_dissectors;
 }
 
 dissector_table_t register_custom_dissector_table(const char *name,
-	const char *ui_name, const int proto, GHashFunc hash_func, GEqualFunc key_equal_func)
+	const char *ui_name, const int proto, GHashFunc hash_func, GEqualFunc key_equal_func,
+	GDestroyNotify key_destroy_func)
 {
 	dissector_table_t	sub_dissectors;
-
-	/* Make sure the registration is unique */
-	if(g_hash_table_lookup( dissector_tables, name )) {
-		g_error("The dissector table %s (%s) is already registered - are you using a buggy plugin?", name, ui_name);
-	}
 
 	/* Create and register the dissector table for this name; returns */
 	/* a pointer to the dissector table. */
@@ -2186,26 +2823,57 @@ dissector_table_t register_custom_dissector_table(const char *name,
 	sub_dissectors->hash_func = hash_func;
 	sub_dissectors->hash_table = g_hash_table_new_full(hash_func,
 							       key_equal_func,
-							       &g_free,
-							       &g_free );
+							       key_destroy_func,
+							       &g_free);
 
 	sub_dissectors->dissector_handles = NULL;
+	sub_dissectors->da_descriptions = NULL;
 	sub_dissectors->ui_name = ui_name;
 	sub_dissectors->type    = FT_BYTES; /* Consider key a "blob" of data, no need to really create new type */
 	sub_dissectors->param   = BASE_NONE;
-	sub_dissectors->protocol  = find_protocol_by_id(proto);
-	sub_dissectors->supports_decode_as = FALSE;
-	g_hash_table_insert( dissector_tables, (gpointer)name, (gpointer) sub_dissectors );
+	sub_dissectors->protocol  = (proto == -1) ? NULL : find_protocol_by_id(proto);
+	sub_dissectors->supports_decode_as = false;
+	/* Make sure the registration is unique */
+	if (!g_hash_table_insert(dissector_tables, (void *)name, (void *) sub_dissectors)) {
+		ws_error("The dissector table %s (%s) is already registered - are you using a buggy plugin?", name, ui_name);
+	}
 	return sub_dissectors;
+}
+
+void
+register_dissector_table_alias(dissector_table_t dissector_table, const char *alias_name) {
+	if (!dissector_table || !alias_name) return;
+
+	const char *name = NULL;
+	GList *list = g_hash_table_get_keys(dissector_tables);
+	for (GList *cur = list; cur; cur = cur->next) {
+		if (g_hash_table_lookup(dissector_tables, cur->data) == dissector_table) {
+			name = (const char *) cur->data;
+			break;
+		}
+	}
+	g_list_free(list);
+	if (!name) return;
+
+	g_hash_table_insert(dissector_table_aliases, (void *) alias_name, (void *) name);
 }
 
 void
 deregister_dissector_table(const char *name)
 {
-	dissector_table_t sub_dissectors = find_dissector_table(name);
+	dissector_table_t sub_dissectors = (dissector_table_t) g_hash_table_lookup(dissector_tables, name);
 	if (!sub_dissectors) return;
 
 	g_hash_table_remove(dissector_tables, name);
+
+	GList *list = g_hash_table_get_keys(dissector_table_aliases);
+	for (GList *cur = list; cur; cur = cur->next) {
+		void *alias_name = cur->data;
+		if (g_hash_table_lookup(dissector_table_aliases, alias_name) == name) {
+			g_hash_table_remove(dissector_table_aliases, alias_name);
+		}
+	}
+	g_list_free(list);
 }
 
 const char *
@@ -2235,6 +2903,16 @@ get_dissector_table_param(const char *name)
 	return sub_dissectors->param;
 }
 
+static void
+check_valid_heur_name_or_fail(const char *heur_name)
+{
+	if (proto_check_field_name_lower(heur_name)) {
+		ws_error("Heuristic Protocol internal name \"%s\" has one or more invalid characters."
+			" Allowed are lowercase, digits, '-', '_' and non-repeating '.'."
+			" This might be caused by an inappropriate plugin or a development error.", heur_name);
+	}
+}
+
 /* Finds a heuristic dissector table by table name. */
 heur_dissector_list_t
 find_heur_dissector_list(const char *name)
@@ -2242,8 +2920,8 @@ find_heur_dissector_list(const char *name)
 	return (heur_dissector_list_t)g_hash_table_lookup(heur_dissector_lists, name);
 }
 
-gboolean
-has_heur_dissector_list(const gchar *name) {
+bool
+has_heur_dissector_list(const char *name) {
 	return (find_heur_dissector_list(name) != NULL);
 }
 
@@ -2253,12 +2931,11 @@ heur_dtbl_entry_t* find_heur_dissector_by_unique_short_name(const char *short_na
 }
 
 void
-heur_dissector_add(const char *name, heur_dissector_t dissector, const char *display_name, const char *short_name, const int proto, heuristic_enable_e enable)
+heur_dissector_add(const char *name, heur_dissector_t dissector, const char *display_name, const char *internal_name, const int proto, heuristic_enable_e enable)
 {
 	heur_dissector_list_t  sub_dissectors = find_heur_dissector_list(name);
 	const char            *proto_name;
 	heur_dtbl_entry_t     *hdtbl_entry;
-	guint                  i, list_size;
 	GSList                *list_entry;
 
 	/*
@@ -2272,16 +2949,15 @@ heur_dissector_add(const char *name, heur_dissector_t dissector, const char *dis
 			fprintf(stderr, "Protocol being registered is \"%s\"\n",
 			    proto_name);
 		}
-		if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+		if (wireshark_abort_on_dissector_bug)
 			abort();
 		return;
 	}
 
 	/* Verify that sub-dissector is not already in the list */
-	list_size = g_slist_length(sub_dissectors->dissectors);
-	for (i = 0; i < list_size; i++)
+	for (list_entry = sub_dissectors->dissectors;
+		list_entry != NULL; list_entry = list_entry->next)
 	{
-		list_entry = g_slist_nth(sub_dissectors->dissectors, i);
 		hdtbl_entry = (heur_dtbl_entry_t *)list_entry->data;
 		if ((hdtbl_entry->dissector == dissector) &&
 			(hdtbl_entry->protocol == find_protocol_by_id(proto)))
@@ -2291,34 +2967,36 @@ heur_dissector_add(const char *name, heur_dissector_t dissector, const char *dis
 				fprintf(stderr, "Protocol %s is already registered in \"%s\" table\n",
 				    proto_name, name);
 			}
-			if (getenv("WIRESHARK_ABORT_ON_DISSECTOR_BUG") != NULL)
+			if (wireshark_abort_on_dissector_bug)
 				abort();
 			return;
 		}
 	}
 
-	/* Ensure short_name is unique */
-	if (g_hash_table_lookup(heuristic_short_names, short_name) != NULL) {
-		g_error("Duplicate heuristic short_name \"%s\"!"
-			" This might be caused by an inappropriate plugin or a development error.", short_name);
-	}
+	/* Make sure short_name is "parsing friendly" since it should only be used internally */
+	check_valid_heur_name_or_fail(internal_name);
 
 	hdtbl_entry = g_slice_new(heur_dtbl_entry_t);
 	hdtbl_entry->dissector = dissector;
 	hdtbl_entry->protocol  = find_protocol_by_id(proto);
 	hdtbl_entry->display_name = display_name;
-	hdtbl_entry->short_name = short_name;
+	hdtbl_entry->short_name = g_strdup(internal_name);
 	hdtbl_entry->list_name = g_strdup(name);
 	hdtbl_entry->enabled   = (enable == HEURISTIC_ENABLE);
+	hdtbl_entry->enabled_by_default = (enable == HEURISTIC_ENABLE);
 
 	/* do the table insertion */
-	g_hash_table_insert(heuristic_short_names, (gpointer)short_name, hdtbl_entry);
+	/* Ensure short_name is unique */
+	if (!g_hash_table_insert(heuristic_short_names, (void *)hdtbl_entry->short_name, hdtbl_entry)) {
+		ws_error("Duplicate heuristic short_name \"%s\"!"
+			" This might be caused by an inappropriate plugin or a development error.", internal_name);
+	}
 
 	sub_dissectors->dissectors = g_slist_prepend(sub_dissectors->dissectors,
-	    (gpointer)hdtbl_entry);
+	    (void *)hdtbl_entry);
 
 	/* XXX - could be optimized to pass hdtbl_entry directly */
-	proto_add_heuristic_dissector(hdtbl_entry->protocol, short_name);
+	proto_add_heuristic_dissector(hdtbl_entry->protocol, hdtbl_entry->short_name);
 
 	/* Add the dissector as a dependency
 	  (some heuristic tables don't have protocol association, so there is
@@ -2330,7 +3008,7 @@ heur_dissector_add(const char *name, heur_dissector_t dissector, const char *dis
 
 
 static int
-find_matching_heur_dissector( gconstpointer a, gconstpointer b) {
+find_matching_heur_dissector(const void *a, const void *b) {
 	const heur_dtbl_entry_t *hdtbl_entry_a = (const heur_dtbl_entry_t *) a;
 	const heur_dtbl_entry_t *hdtbl_entry_b = (const heur_dtbl_entry_t *) b;
 
@@ -2345,39 +3023,46 @@ heur_dissector_delete(const char *name, heur_dissector_t dissector, const int pr
 	GSList                *found_entry;
 
 	/* sanity check */
-	g_assert(sub_dissectors != NULL);
+	ws_assert(sub_dissectors != NULL);
 
 	hdtbl_entry.dissector = dissector;
 	hdtbl_entry.protocol  = find_protocol_by_id(proto);
 
 	found_entry = g_slist_find_custom(sub_dissectors->dissectors,
-	    (gpointer) &hdtbl_entry, find_matching_heur_dissector);
+	    (void *) &hdtbl_entry, find_matching_heur_dissector);
 
 	if (found_entry) {
 		heur_dtbl_entry_t *found_hdtbl_entry = (heur_dtbl_entry_t *)(found_entry->data);
-		g_free(found_hdtbl_entry->list_name);
+		proto_add_deregistered_data(found_hdtbl_entry->list_name);
 		g_hash_table_remove(heuristic_short_names, found_hdtbl_entry->short_name);
-		g_slice_free(heur_dtbl_entry_t, found_entry->data);
+		proto_add_deregistered_data(found_hdtbl_entry->short_name);
+		proto_add_deregistered_slice(sizeof(heur_dtbl_entry_t), found_hdtbl_entry);
 		sub_dissectors->dissectors = g_slist_delete_link(sub_dissectors->dissectors,
 		    found_entry);
 	}
 }
 
-gboolean
+bool
 dissector_try_heuristic(heur_dissector_list_t sub_dissectors, tvbuff_t *tvb,
 			packet_info *pinfo, proto_tree *tree, heur_dtbl_entry_t **heur_dtbl_entry, void *data)
 {
-	gboolean           status;
+	bool               status;
 	const char        *saved_curr_proto;
+	int                saved_proto_layer_num;
 	const char        *saved_heur_list_name;
 	GSList            *entry;
-	guint16            saved_can_desegment;
-	guint              saved_layers_len = 0;
+	GSList            *prev_entry = NULL;
+	uint16_t           saved_can_desegment;
+	unsigned           saved_layers_len = 0;
 	heur_dtbl_entry_t *hdtbl_entry;
 	int                proto_id;
+	int                len;
+	bool               consumed_none;
+	unsigned           saved_desegment_len;
+	unsigned           saved_tree_count = tree ? tree->tree_data->count : 0;
 
 	/* can_desegment is set to 2 by anyone which offers this api/service.
-	   then everytime a subdissector is called it is decremented by one.
+	   then every time a subdissector is called it is decremented by one.
 	   thus only the subdissector immediately ontop of whoever offers this
 	   service can use it.
 	   We save the current value of "can_desegment" for the
@@ -2389,12 +3074,15 @@ dissector_try_heuristic(heur_dissector_list_t sub_dissectors, tvbuff_t *tvb,
 	pinfo->saved_can_desegment = saved_can_desegment;
 	pinfo->can_desegment       = saved_can_desegment-(saved_can_desegment>0);
 
-	status      = FALSE;
+	status      = false;
 	saved_curr_proto = pinfo->current_proto;
+	saved_proto_layer_num = pinfo->curr_proto_layer_num;
 	saved_heur_list_name = pinfo->heur_list_name;
 
 	saved_layers_len = wmem_list_count(pinfo->layers);
 	*heur_dtbl_entry = NULL;
+
+	DISSECTOR_ASSERT(saved_layers_len < prefs.gui_max_tree_depth);
 
 	for (entry = sub_dissectors->dissectors; entry != NULL;
 	    entry = g_slist_next(entry)) {
@@ -2403,7 +3091,7 @@ dissector_try_heuristic(heur_dissector_list_t sub_dissectors, tvbuff_t *tvb,
 		hdtbl_entry = (heur_dtbl_entry_t *)entry->data;
 
 		if (hdtbl_entry->protocol != NULL &&
-			(!proto_is_protocol_enabled(hdtbl_entry->protocol)||(hdtbl_entry->enabled==FALSE))) {
+			(!proto_is_protocol_enabled(hdtbl_entry->protocol)||(hdtbl_entry->enabled==false))) {
 			/*
 			 * No - don't try this dissector.
 			 */
@@ -2421,50 +3109,73 @@ dissector_try_heuristic(heur_dissector_list_t sub_dissectors, tvbuff_t *tvb,
 			 * Add the protocol name to the layers; we'll remove it
 			 * if the dissector fails.
 			 */
-			wmem_list_append(pinfo->layers, GINT_TO_POINTER(proto_id));
+			add_layer(pinfo, proto_id);
 		}
 
 		pinfo->heur_list_name = hdtbl_entry->list_name;
 
-		if ((hdtbl_entry->dissector)(tvb, pinfo, tree, data)) {
-			*heur_dtbl_entry = hdtbl_entry;
-			status = TRUE;
-			break;
-		} else {
+		saved_desegment_len = pinfo->desegment_len;
+		len = (hdtbl_entry->dissector)(tvb, pinfo, tree, data);
+		consumed_none = len == 0 || (pinfo->desegment_len != saved_desegment_len && pinfo->desegment_offset == 0);
+		if (hdtbl_entry->protocol != NULL &&
+			(consumed_none || (tree && saved_tree_count == tree->tree_data->count))) {
 			/*
-			 * That dissector didn't accept the packet, so
-			 * remove its protocol's name from the list
-			 * of protocols.
+			 * We added a protocol layer above. The dissector
+			 * didn't consume any data or it didn't add any
+			 * items to the tree so remove it from the list.
 			 */
 			while (wmem_list_count(pinfo->layers) > saved_layers_len) {
-				wmem_list_remove_frame(pinfo->layers, wmem_list_tail(pinfo->layers));
+				/*
+				 * Only reduce the layer number if the dissector
+				 * didn't consume data. Since tree can be NULL on
+				 * the first pass, we cannot check it or it will
+				 * break dissectors that rely on a stable value.
+				 */
+				remove_last_layer(pinfo, consumed_none);
 			}
 		}
+		if (len) {
+			if (ws_log_msg_is_active(WS_LOG_DOMAIN, LOG_LEVEL_DEBUG)) {
+				ws_debug("Frame: %d | Layers: %s | Dissector: %s\n", pinfo->num, proto_list_layers(pinfo), hdtbl_entry->short_name);
+			}
+
+			*heur_dtbl_entry = hdtbl_entry;
+
+			/* Bubble the matched entry to the top for faster search next time. */
+			if (prev_entry != NULL) {
+				sub_dissectors->dissectors = g_slist_remove_link(sub_dissectors->dissectors, entry);
+				sub_dissectors->dissectors = g_slist_concat(entry, sub_dissectors->dissectors);
+			}
+			status = true;
+			break;
+		}
+		prev_entry = entry;
 	}
 
 	pinfo->current_proto = saved_curr_proto;
+	pinfo->curr_proto_layer_num = saved_proto_layer_num;
 	pinfo->heur_list_name = saved_heur_list_name;
 	pinfo->can_desegment = saved_can_desegment;
 	return status;
 }
 
 typedef struct heur_dissector_foreach_info {
-	gpointer      caller_data;
+	void *        caller_data;
 	DATFunc_heur  caller_func;
 	GHFunc        next_func;
-	const gchar  *table_name;
+	const char   *table_name;
 } heur_dissector_foreach_info_t;
 
 /*
  * Called for each entry in a heuristic dissector table.
  */
 static void
-heur_dissector_table_foreach_func (gpointer data, gpointer user_data)
+heur_dissector_table_foreach_func (void *data, void *user_data)
 {
 	heur_dissector_foreach_info_t *info;
 
-	g_assert(data);
-	g_assert(user_data);
+	ws_assert(data);
+	ws_assert(user_data);
 
 	info = (heur_dissector_foreach_info_t *)user_data;
 	info->caller_func(info->table_name, (heur_dtbl_entry_t *)data,
@@ -2478,10 +3189,11 @@ heur_dissector_table_foreach_func (gpointer data, gpointer user_data)
 void
 heur_dissector_table_foreach (const char  *table_name,
 			      DATFunc_heur func,
-			      gpointer     user_data)
+			      void *       user_data)
 {
 	heur_dissector_foreach_info_t info;
 	heur_dissector_list_t         sub_dissectors = find_heur_dissector_list(table_name);
+	DISSECTOR_ASSERT(sub_dissectors != NULL);
 
 	info.table_name    = table_name;
 	info.caller_func   = func;
@@ -2494,7 +3206,7 @@ heur_dissector_table_foreach (const char  *table_name,
  * Called for each entry in the table of all heuristic dissector tables.
  */
 typedef struct heur_dissector_foreach_table_info {
-	gpointer           caller_data;
+	void *             caller_data;
 	DATFunc_heur_table caller_func;
 } heur_dissector_foreach_table_info_t;
 
@@ -2503,12 +3215,12 @@ typedef struct heur_dissector_foreach_table_info {
  * This is used if we directly process the hash table.
  */
 static void
-dissector_all_heur_tables_foreach_table_func (gpointer key, gpointer value, gpointer user_data)
+dissector_all_heur_tables_foreach_table_func (void *key, void *value, void *user_data)
 {
 	heur_dissector_foreach_table_info_t *info;
 
 	info = (heur_dissector_foreach_table_info_t *)user_data;
-    (*info->caller_func)((gchar *)key, (struct heur_dissector_list *)value, info->caller_data);
+	(*info->caller_func)((char *)key, (struct heur_dissector_list *)value, info->caller_data);
 }
 
 /*
@@ -2516,14 +3228,14 @@ dissector_all_heur_tables_foreach_table_func (gpointer key, gpointer value, gpoi
  * This is used if we get a list of table names, sort it, and process the list.
  */
 static void
-dissector_all_heur_tables_foreach_list_func (gpointer key, gpointer user_data)
+dissector_all_heur_tables_foreach_list_func (void *key, void *user_data)
 {
-    struct heur_dissector_list          *list;
+	struct heur_dissector_list          *list;
 	heur_dissector_foreach_table_info_t *info;
 
-    list = (struct heur_dissector_list *)g_hash_table_lookup(heur_dissector_lists, key);
+	list = (struct heur_dissector_list *)g_hash_table_lookup(heur_dissector_lists, key);
 	info = (heur_dissector_foreach_table_info_t *)user_data;
-	(*info->caller_func)((gchar*)key, list, info->caller_data);
+	(*info->caller_func)((char*)key, list, info->caller_data);
 }
 
 /*
@@ -2532,7 +3244,7 @@ dissector_all_heur_tables_foreach_list_func (gpointer key, gpointer user_data)
  */
 void
 dissector_all_heur_tables_foreach_table (DATFunc_heur_table func,
-					 gpointer           user_data,
+					 void *             user_data,
 					 GCompareFunc       compare_key_func)
 {
 	heur_dissector_foreach_table_info_t info;
@@ -2555,18 +3267,21 @@ dissector_all_heur_tables_foreach_table (DATFunc_heur_table func,
 
 static void
 display_heur_dissector_table_entries(const char *table_name,
-    heur_dtbl_entry_t *hdtbl_entry, gpointer user_data _U_)
+    heur_dtbl_entry_t *hdtbl_entry, void *user_data _U_)
 {
 	if (hdtbl_entry->protocol != NULL) {
-		printf("%s\t%s\t%c\n",
+		printf("%s\t%s\t%c\t%c\t%s\t%s\n",
 		       table_name,
 		       proto_get_protocol_filter_name(proto_get_id(hdtbl_entry->protocol)),
-		       (proto_is_protocol_enabled(hdtbl_entry->protocol) && hdtbl_entry->enabled) ? 'T' : 'F');
+		       (proto_is_protocol_enabled(hdtbl_entry->protocol) && hdtbl_entry->enabled) ? 'T' : 'F',
+		       (proto_is_protocol_enabled_by_default(hdtbl_entry->protocol) && hdtbl_entry->enabled_by_default) ? 'T' : 'F',
+		       hdtbl_entry->short_name,
+		       hdtbl_entry->display_name);
 	}
 }
 
 static void
-dissector_dump_heur_decodes_display(const gchar *table_name, struct heur_dissector_list *listptr _U_, gpointer user_data _U_)
+dissector_dump_heur_decodes_display(const char *table_name, struct heur_dissector_list *listptr _U_, void *user_data _U_)
 {
 	heur_dissector_table_foreach(table_name, display_heur_dissector_table_entries, NULL);
 }
@@ -2582,23 +3297,45 @@ dissector_dump_heur_decodes(void)
 
 
 heur_dissector_list_t
-register_heur_dissector_list(const char *name, const int proto)
+register_heur_dissector_list_with_description(const char *name, const char *ui_name, const int proto)
 {
 	heur_dissector_list_t sub_dissectors;
-
-	/* Make sure the registration is unique */
-	if (g_hash_table_lookup(heur_dissector_lists, name) != NULL) {
-		g_error("The heuristic dissector list %s is already registered - are you using a buggy plugin?", name);
-	}
 
 	/* Create and register the dissector table for this name; returns */
 	/* a pointer to the dissector table. */
 	sub_dissectors = g_slice_new(struct heur_dissector_list);
-	sub_dissectors->protocol  = find_protocol_by_id(proto);
+	sub_dissectors->protocol  = (proto == -1) ? NULL : find_protocol_by_id(proto);
+	sub_dissectors->ui_name = ui_name;
 	sub_dissectors->dissectors = NULL;	/* initially empty */
-	g_hash_table_insert(heur_dissector_lists, (gpointer)name,
-			    (gpointer) sub_dissectors);
+	/* Make sure the registration is unique */
+	if (!g_hash_table_insert(heur_dissector_lists, (void *)name,
+			    (void *) sub_dissectors)) {
+		ws_error("The heuristic dissector list %s is already registered - are you using a buggy plugin?", name);
+	}
 	return sub_dissectors;
+}
+
+heur_dissector_list_t
+register_heur_dissector_list(const char *name, const int proto)
+{
+	return register_heur_dissector_list_with_description(name, NULL, proto);
+}
+
+void
+deregister_heur_dissector_list(const char *name)
+{
+	heur_dissector_list_t sub_dissectors = find_heur_dissector_list(name);
+	if (sub_dissectors == NULL) {
+		return;
+	}
+
+	g_hash_table_remove(heur_dissector_lists, name);
+}
+
+const char *
+heur_dissector_list_get_description(heur_dissector_list_t list)
+{
+	return list ? list->ui_name : NULL;
 }
 
 /*
@@ -2611,7 +3348,7 @@ register_heur_dissector_list(const char *name, const int proto)
 /* Get the long name of the protocol for a dissector handle, if it has
    a protocol. */
 const char *
-dissector_handle_get_long_name(const dissector_handle_t handle)
+dissector_handle_get_protocol_long_name(const dissector_handle_t handle)
 {
 	if (handle == NULL || handle->protocol == NULL) {
 		return NULL;
@@ -2622,18 +3359,30 @@ dissector_handle_get_long_name(const dissector_handle_t handle)
 /* Get the short name of the protocol for a dissector handle, if it has
    a protocol. */
 const char *
-dissector_handle_get_short_name(const dissector_handle_t handle)
+dissector_handle_get_protocol_short_name(const dissector_handle_t handle)
 {
-	if (handle->protocol == NULL) {
-		/*
-		 * No protocol (see, for example, the handle for
-		 * dissecting the set of protocols where the first
-		 * octet of the payload is an OSI network layer protocol
-		 * ID).
-		 */
+	if (handle == NULL || handle->protocol == NULL) {
 		return NULL;
 	}
 	return proto_get_protocol_short_name(handle->protocol);
+}
+
+/* For backwards source and binary compatibility */
+const char *
+dissector_handle_get_short_name(const dissector_handle_t handle)
+{
+	return dissector_handle_get_protocol_short_name(handle);
+}
+
+/* Get the description for what the dissector in the dissector handle
+   dissects, if it has one. */
+const char *
+dissector_handle_get_description(const dissector_handle_t handle)
+{
+	if (handle == NULL) {
+		return NULL;
+	}
+	return handle->description;
 }
 
 /* Get the index of the protocol for a dissector handle, if it has
@@ -2659,6 +3408,10 @@ dissector_handle_get_protocol_index(const dissector_handle_t handle)
 GList*
 get_dissector_names(void)
 {
+	if (!registered_dissectors) {
+		return NULL;
+	}
+
 	return g_hash_table_get_keys(registered_dissectors);
 }
 
@@ -2669,13 +3422,13 @@ find_dissector(const char *name)
 	return (dissector_handle_t)g_hash_table_lookup(registered_dissectors, name);
 }
 
-/** Find a dissector by name and add parent protocol as a depedency*/
+/** Find a dissector by name and add parent protocol as a dependency*/
 dissector_handle_t find_dissector_add_dependency(const char *name, const int parent_proto)
 {
 	dissector_handle_t handle = (dissector_handle_t)g_hash_table_lookup(registered_dissectors, name);
 	if ((handle != NULL) && (parent_proto > 0))
 	{
-		register_depend_dissector(proto_get_protocol_short_name(find_protocol_by_id(parent_proto)), dissector_handle_get_short_name(handle));
+		register_depend_dissector(proto_get_protocol_short_name(find_protocol_by_id(parent_proto)), dissector_handle_get_protocol_short_name(handle));
 	}
 
 	return handle;
@@ -2691,31 +3444,117 @@ dissector_handle_get_dissector_name(const dissector_handle_t handle)
 	return handle->name;
 }
 
+const char *
+dissector_handle_get_pref_suffix(const dissector_handle_t handle)
+{
+	if (handle == NULL) {
+		return "";
+	}
+	return handle->pref_suffix ? handle->pref_suffix : "";
+}
+
+static void
+check_valid_dissector_name_or_fail(const char *name)
+{
+	if (proto_check_field_name(name)) {
+		ws_error("Dissector name \"%s\" has one or more invalid characters."
+			" Allowed are letters, digits, '-', '_' and non-repeating '.'."
+			" This might be caused by an inappropriate plugin or a development error.", name);
+	}
+}
+
+static dissector_handle_t
+new_dissector_handle(const int proto, const char *name, const char *description)
+{
+	struct dissector_handle *handle;
+
+	/* Make sure name is "parsing friendly" - descriptions should be
+	 * used for complicated phrases. NULL for anonymous unregistered
+	 * dissectors is allowed; we check for that in various places.
+	 *
+	 * (It might be safer to have a default name used for anonymous
+	 * dissectors rather than NULL checks scattered in the code.)
+	 */
+	if (name) {
+		check_valid_dissector_name_or_fail(name);
+	}
+
+	handle			= wmem_new(wmem_epan_scope(), struct dissector_handle);
+	handle->name		= name;
+	handle->description	= description;
+	handle->protocol	= find_protocol_by_id(proto);
+	handle->pref_suffix     = NULL;
+
+	if (handle->description == NULL) {
+		/*
+		 * No description for what this dissector dissects
+		 * was supplied; use the short name for the protocol,
+		 * if we have the protocol.
+		 *
+		 * (We may have no protocol; see, for example, the handle
+		 * for dissecting the set of protocols where the first
+		 * octet of the payload is an OSI network layer protocol
+		 * ID.)
+		 */
+		if (handle->protocol != NULL)
+			handle->description = proto_get_protocol_short_name(handle->protocol);
+	} else {
+		if (name && g_strcmp0(name, proto_get_protocol_filter_name(proto)) != 0) {
+			handle->pref_suffix = ascii_strdown_inplace(wmem_strdup_printf(wmem_epan_scope(), ".%s", name));
+			char *pos = handle->pref_suffix;
+			while ((pos = strchr(pos, '-')) != NULL) {
+				*pos++ = '_';
+			}
+		}
+	}
+	return handle;
+}
+
+dissector_handle_t
+create_dissector_handle_with_name_and_description(dissector_t dissector,
+						const int proto,
+						const char* name,
+						const char* description)
+{
+	dissector_handle_t handle;
+
+	handle = new_dissector_handle(proto, name, description);
+	handle->dissector_type = DISSECTOR_TYPE_SIMPLE;
+	handle->dissector_func.dissector_type_simple = dissector;
+	handle->dissector_data = NULL;
+	return handle;
+}
+
+dissector_handle_t
+create_dissector_handle_with_name(dissector_t dissector,
+				const int proto, const char* name)
+{
+	return create_dissector_handle_with_name_and_description(dissector, proto, name, NULL);
+}
+
 /* Create an anonymous handle for a new dissector. */
 dissector_handle_t
 create_dissector_handle(dissector_t dissector, const int proto)
 {
-	struct dissector_handle *handle;
+	return create_dissector_handle_with_name_and_description(dissector, proto, NULL, NULL);
+}
 
-	handle			= wmem_new(wmem_epan_scope(), struct dissector_handle);
-	handle->name		= NULL;
-	handle->dissector	= dissector;
-	handle->protocol	= find_protocol_by_id(proto);
+static dissector_handle_t
+create_dissector_handle_with_name_and_data(dissector_cb_t dissector, const int proto, const char *name, void* cb_data)
+{
+	dissector_handle_t handle;
 
+	handle = new_dissector_handle(proto, name, NULL);
+	handle->dissector_type = DISSECTOR_TYPE_CALLBACK;
+	handle->dissector_func.dissector_type_callback = dissector;
+	handle->dissector_data = cb_data;
 	return handle;
 }
 
-dissector_handle_t create_dissector_handle_with_name(dissector_t dissector,
-    const int proto, const char* name)
+dissector_handle_t
+create_dissector_handle_with_data(dissector_cb_t dissector, const int proto, void* cb_data)
 {
-	struct dissector_handle *handle;
-
-	handle			= wmem_new(wmem_epan_scope(), struct dissector_handle);
-	handle->name		= name;
-	handle->dissector	= dissector;
-	handle->protocol	= find_protocol_by_id(proto);
-
-	return handle;
+	return create_dissector_handle_with_name_and_data(dissector, proto, NULL, cb_data);
 }
 
 /* Destroy an anonymous handle for a dissector. */
@@ -2726,48 +3565,72 @@ destroy_dissector_handle(dissector_handle_t handle)
 
 	dissector_delete_from_all_tables(handle);
 	deregister_postdissector(handle);
+	if (handle->pref_suffix) {
+		wmem_free(wmem_epan_scope(), handle->pref_suffix);
+	}
 	wmem_free(wmem_epan_scope(), handle);
+}
+
+static dissector_handle_t
+register_dissector_handle(const char *name, dissector_handle_t handle)
+{
+	bool new_entry;
+
+	/* A registered dissector should have a name. */
+	if (name == NULL || name[0] == '\0') {
+		ws_error("A registered dissector name cannot be NULL or the empty string."
+			" Anonymous dissector handles can be created with create_dissector_handle()."
+			" This might be caused by an inappropriate plugin or a development error.");
+	}
+
+	new_entry = g_hash_table_insert(registered_dissectors, (void *)name, handle);
+	if (!new_entry) {
+		/* Make sure the registration is unique */
+		ws_error("dissector handle name \"%s\" is already registered", name);
+	}
+
+	return handle;
 }
 
 /* Register a new dissector by name. */
 dissector_handle_t
 register_dissector(const char *name, dissector_t dissector, const int proto)
 {
-	struct dissector_handle *handle;
+	dissector_handle_t handle;
 
-	/* Make sure the registration is unique */
-	g_assert(g_hash_table_lookup(registered_dissectors, name) == NULL);
+	handle = create_dissector_handle_with_name(dissector, proto, name);
 
-	handle                = wmem_new(wmem_epan_scope(), struct dissector_handle);
-	handle->name          = name;
-	handle->dissector     = dissector;
-	handle->protocol      = find_protocol_by_id(proto);
-
-	g_hash_table_insert(registered_dissectors, (gpointer)name,
-			    (gpointer) handle);
-
-	return handle;
+	return register_dissector_handle(name, handle);
 }
 
-static gboolean
+dissector_handle_t
+register_dissector_with_description(const char *name, const char *description, dissector_t dissector, const int proto)
+{
+	dissector_handle_t handle;
+
+	handle = create_dissector_handle_with_name_and_description(dissector, proto, name, description);
+
+	return register_dissector_handle(name, handle);
+}
+
+dissector_handle_t
+register_dissector_with_data(const char *name, dissector_cb_t dissector, const int proto, void *cb_data)
+{
+	dissector_handle_t handle;
+
+	handle = create_dissector_handle_with_name_and_data(dissector, proto, name, cb_data);
+
+	return register_dissector_handle(name, handle);
+}
+
+static bool
 remove_depend_dissector_from_list(depend_dissector_list_t sub_dissectors, const char *dependent)
 {
-	GSList *found_entry;
-
-	found_entry = g_slist_find_custom(sub_dissectors->dissectors,
-		dependent, (GCompareFunc)strcmp);
-
-	if (found_entry) {
-		g_free(found_entry->data);
-		sub_dissectors->dissectors = g_slist_delete_link(sub_dissectors->dissectors, found_entry);
-		return TRUE;
-	}
-
-	return FALSE;
+	return g_hash_table_remove(sub_dissectors->dissectors, dependent);
 }
 
 static void
-remove_depend_dissector_ghfunc(gpointer key _U_, gpointer value, gpointer user_data)
+remove_depend_dissector_ghfunc(void *key _U_, void *value, void *user_data)
 {
 	depend_dissector_list_t sub_dissectors = (depend_dissector_list_t) value;
 	const char *dependent = (const char *)user_data;
@@ -2784,8 +3647,7 @@ deregister_dissector(const char *name)
 
 	g_hash_table_remove(registered_dissectors, name);
 	g_hash_table_remove(depend_dissector_lists, name);
-	g_hash_table_foreach(depend_dissector_lists, remove_depend_dissector_ghfunc, (gpointer)name);
-	g_hash_table_remove(heur_dissector_lists, name);
+	g_hash_table_foreach(depend_dissector_lists, remove_depend_dissector_ghfunc, (void *)name);
 
 	destroy_dissector_handle(handle);
 }
@@ -2799,8 +3661,8 @@ call_dissector_only(dissector_handle_t handle, tvbuff_t *tvb,
 {
 	int ret;
 
-	g_assert(handle != NULL);
-	ret = call_dissector_work(handle, tvb, pinfo, tree, TRUE, data);
+	DISSECTOR_ASSERT(handle != NULL);
+	ret = call_dissector_work(handle, tvb, pinfo, tree, true, data);
 	return ret;
 }
 
@@ -2819,9 +3681,7 @@ call_dissector_with_data(dissector_handle_t handle, tvbuff_t *tvb,
 		 * The protocol was disabled, or the dissector rejected
 		 * it.  Just dissect this packet as data.
 		 */
-		g_assert(data_handle->protocol != NULL);
-		call_dissector_work(data_handle, tvb, pinfo, tree, TRUE, NULL);
-		return tvb_captured_length(tvb);
+		return call_data_dissector(tvb, pinfo, tree);
 	}
 	return ret;
 }
@@ -2836,7 +3696,8 @@ call_dissector(dissector_handle_t handle, tvbuff_t *tvb,
 int
 call_data_dissector(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	return call_dissector_work(data_handle, tvb, pinfo, tree, TRUE, NULL);
+	DISSECTOR_ASSERT(data_handle->protocol != NULL);
+	return call_dissector_work(data_handle, tvb, pinfo, tree, true, NULL);
 }
 
 /*
@@ -2846,13 +3707,15 @@ void call_heur_dissector_direct(heur_dtbl_entry_t *heur_dtbl_entry, tvbuff_t *tv
 	packet_info *pinfo, proto_tree *tree, void *data)
 {
 	const char        *saved_curr_proto;
+	unsigned           saved_proto_layer_num;
 	const char        *saved_heur_list_name;
-	guint16            saved_can_desegment;
+	uint16_t           saved_can_desegment;
+	unsigned           saved_layers_len = 0;
 
-	g_assert(heur_dtbl_entry);
+	DISSECTOR_ASSERT(heur_dtbl_entry);
 
 	/* can_desegment is set to 2 by anyone which offers this api/service.
-	   then everytime a subdissector is called it is decremented by one.
+	   then every time a subdissector is called it is decremented by one.
 	   thus only the subdissector immediately ontop of whoever offers this
 	   service can use it.
 	   We save the current value of "can_desegment" for the
@@ -2865,12 +3728,15 @@ void call_heur_dissector_direct(heur_dtbl_entry_t *heur_dtbl_entry, tvbuff_t *tv
 	pinfo->can_desegment       = saved_can_desegment-(saved_can_desegment>0);
 
 	saved_curr_proto = pinfo->current_proto;
+	saved_proto_layer_num = pinfo->curr_proto_layer_num;
 	saved_heur_list_name = pinfo->heur_list_name;
+
+	saved_layers_len = wmem_list_count(pinfo->layers);
 
 	if (!heur_dtbl_entry->enabled ||
 		(heur_dtbl_entry->protocol != NULL && !proto_is_protocol_enabled(heur_dtbl_entry->protocol))) {
-		g_assert(data_handle->protocol != NULL);
-		call_dissector_work(data_handle, tvb, pinfo, tree, TRUE, NULL);
+		DISSECTOR_ASSERT(data_handle->protocol != NULL);
+		call_dissector_work(data_handle, tvb, pinfo, tree, true, NULL);
 		return;
 	}
 
@@ -2878,63 +3744,67 @@ void call_heur_dissector_direct(heur_dtbl_entry_t *heur_dtbl_entry, tvbuff_t *tv
 		/* do NOT change this behavior - wslua uses the protocol short name set here in order
 			to determine which Lua-based heuristic dissector to call */
 		pinfo->current_proto = proto_get_protocol_short_name(heur_dtbl_entry->protocol);
-		wmem_list_append(pinfo->layers, GINT_TO_POINTER(proto_get_id(heur_dtbl_entry->protocol)));
+		add_layer(pinfo, proto_get_id(heur_dtbl_entry->protocol));
 	}
 
 	pinfo->heur_list_name = heur_dtbl_entry->list_name;
 
 	/* call the dissector, in case of failure call data handle (might happen with exported PDUs) */
-	if(!(*heur_dtbl_entry->dissector)(tvb, pinfo, tree, data))
-		call_dissector_work(data_handle, tvb, pinfo, tree, TRUE, NULL);
+	if (!(*heur_dtbl_entry->dissector)(tvb, pinfo, tree, data)) {
+		/*
+		 * We added a protocol layer above. The dissector
+		 * didn't accept the packet or it didn't add any
+		 * items to the tree so remove it from the list.
+		 */
+		while (wmem_list_count(pinfo->layers) > saved_layers_len) {
+			remove_last_layer(pinfo, true);
+		}
+
+		call_dissector_work(data_handle, tvb, pinfo, tree, true, NULL);
+	}
+
+	/* XXX: Remove layers if it was accepted but didn't actually consume
+	 * data due to desegmentation? (Currently the only callers of this
+	 * are UDP and exported PDUs, so not yet necessary.)
+	 */
 
 	/* Restore info from caller */
 	pinfo->can_desegment = saved_can_desegment;
 	pinfo->current_proto = saved_curr_proto;
+	pinfo->curr_proto_layer_num = saved_proto_layer_num;
 	pinfo->heur_list_name = saved_heur_list_name;
 
 }
 
-gboolean register_depend_dissector(const char* parent, const char* dependent)
+bool register_depend_dissector(const char* parent, const char* dependent)
 {
-	guint                  i, list_size;
-	GSList                *list_entry;
-	const char            *protocol_name;
 	depend_dissector_list_t sub_dissectors;
 
 	if ((parent == NULL) || (dependent == NULL))
 	{
 		/* XXX - assert on parent? */
-		return FALSE;
+		return false;
 	}
 
 	sub_dissectors = find_depend_dissector_list(parent);
 	if (sub_dissectors == NULL) {
 		/* parent protocol doesn't exist, create it */
 		sub_dissectors = g_slice_new(struct depend_dissector_list);
-		sub_dissectors->dissectors = NULL;	/* initially empty */
-		g_hash_table_insert(depend_dissector_lists, (gpointer)g_strdup(parent), (gpointer) sub_dissectors);
+		sub_dissectors->dissectors = g_hash_table_new(g_str_hash, g_str_equal);	/* initially empty */
+		g_hash_table_insert(depend_dissector_lists, (void *)g_strdup(parent), (void *) sub_dissectors);
 	}
 
 	/* Verify that sub-dissector is not already in the list */
-	list_size = g_slist_length(sub_dissectors->dissectors);
-	for (i = 0; i < list_size; i++)
-	{
-		list_entry = g_slist_nth(sub_dissectors->dissectors, i);
-		protocol_name = (const char*)list_entry->data;
-		if (strcmp(dependent, protocol_name) == 0)
-			return TRUE; /* Dependency already exists */
-	}
-
-	sub_dissectors->dissectors = g_slist_prepend(sub_dissectors->dissectors, (gpointer)g_strdup(dependent));
-	return TRUE;
+	g_hash_table_add(sub_dissectors->dissectors, (void *)dependent);
+	return true;
 }
 
-gboolean deregister_depend_dissector(const char* parent, const char* dependent)
+bool deregister_depend_dissector(const char* parent, const char* dependent)
 {
 	depend_dissector_list_t  sub_dissectors = find_depend_dissector_list(parent);
 
 	/* sanity check */
-	g_assert(sub_dissectors != NULL);
+	ws_assert(sub_dissectors != NULL);
 
 	return remove_depend_dissector_from_list(sub_dissectors, dependent);
 }
@@ -2951,70 +3821,185 @@ depend_dissector_list_t find_depend_dissector_list(const char* name)
  * There is one record per line. The fields are tab-delimited.
  *
  * Field 1 = layer type, e.g. "tcp.port"
- * Field 2 = selector in decimal
+ * Field 2 = selector - decimal for integer tables, strings for string tables,
+ *           blank for payload tables. Custom and GUID tables aren't shown.
  * Field 3 = "decode as" name, e.g. "http"
+ *
+ * XXX - View -> Internals -> Dissector Tables in the GUI includes the UI name,
+ * and separates tables by category. We could add fields for the the UI name
+ * and category.
+ *
+ * The GUI doesn't display FT_NONE (it should) nor FT_GUID tables, but does
+ * FT_BYTES (Custom) tables with the handle description name as key.
+ * That may or may not be helpful.
  */
 
 
 static void
-dissector_dump_decodes_display(const gchar *table_name,
-			       ftenum_t selector_type _U_, gpointer key, gpointer value,
-			       gpointer user_data _U_)
+dissector_dump_decodes_display(const char *table_name,
+			       ftenum_t selector_type _U_, void *key, void *value)
 {
-	guint32             selector       = GPOINTER_TO_UINT (key);
 	dissector_table_t   sub_dissectors = find_dissector_table(table_name);
 	dtbl_entry_t       *dtbl_entry;
 	dissector_handle_t  handle;
-	gint                proto_id;
-	const gchar        *decode_as;
+	int                 proto_id;
+	const char         *decode_as;
+	char                fstring[32];
+	int                 field_width = 0;
 
-	g_assert(sub_dissectors);
+	ws_assert(sub_dissectors);
+
+	dtbl_entry = (dtbl_entry_t *)value;
+	ws_assert(dtbl_entry);
+
+	handle   = dtbl_entry->current;
+	/* current might be NULL, if there was an initial value but then
+	 * set to no handle via Decode As. */
+	if (!handle)
+		return;
+
+	proto_id = dissector_handle_get_protocol_index(handle);
+
+	if (proto_id != -1) {
+		decode_as = proto_get_protocol_filter_name(proto_id);
+		ws_assert(decode_as != NULL);
+		switch (sub_dissectors->type) {
+			case FT_UINT32:
+				field_width += 2;
+				// fallthrough
+			case FT_UINT24:
+				field_width += 2;
+				// fallthrough
+			case FT_UINT16:
+				field_width += 2;
+				// fallthrough
+			case FT_UINT8:
+				field_width += 2;
+				switch (sub_dissectors->param)
+				{
+					case BASE_OCT:
+						snprintf(fstring, 32, "%%s\t0%%o\t%%s\n");
+						break;
+
+					case BASE_HEX:
+						snprintf(fstring, 32, "%%s\t0x%%0%ux\t%%s\n", field_width);
+						break;
+
+					case BASE_DEC:
+					default:
+						snprintf(fstring, 32, "%%s\t%%u\t%%s\n");
+						break;
+				};
+
+				printf(fstring, table_name, GPOINTER_TO_UINT(key), decode_as);
+				break;
+
+			case FT_STRING:
+				printf("%s\t%s\t%s\n", table_name, (char*)key, decode_as);
+				break;
+
+			case FT_NONE:
+				printf("%s\t\t%s\n", table_name, decode_as);
+				break;
+
+			case FT_GUID:
+				// We could output something here with the guid_key
+				break;
+
+			case FT_BYTES:
+				// View->Internals->Dissector Tables uses the description,
+				// but that doesn't tell anything about how the table is
+				// configured. (This isn't a list of all possible handles.)
+				// Is it useful to output?
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
+static int compare_ints(const void *a, const void *b)
+{
+	uint32_t inta, intb;
+
+	inta = GPOINTER_TO_UINT(a);
+	intb = GPOINTER_TO_UINT(b);
+
+	if (inta < intb)
+		return -1;
+	if (inta > intb)
+		return 1;
+	return 0;
+}
+
+static void
+dissector_dump_table_decodes(const char *table_name, const char *ui_name _U_, void *user_data _U_)
+{
+	dissector_table_t   sub_dissectors = find_dissector_table(table_name);
+	GList *keys;
+
+	ws_assert(sub_dissectors);
+	keys = g_hash_table_get_keys(sub_dissectors->hash_table);
+
 	switch (sub_dissectors->type) {
-
 		case FT_UINT8:
 		case FT_UINT16:
 		case FT_UINT24:
 		case FT_UINT32:
-			dtbl_entry = (dtbl_entry_t *)value;
-			g_assert(dtbl_entry);
-
-			handle   = dtbl_entry->current;
-			g_assert(handle);
-
-			proto_id = dissector_handle_get_protocol_index(handle);
-
-			if (proto_id != -1) {
-				decode_as = proto_get_protocol_filter_name(proto_id);
-				g_assert(decode_as != NULL);
-				printf("%s\t%u\t%s\n", table_name, selector, decode_as);
-			}
+			keys = g_list_sort(keys, compare_ints);
 			break;
 
-	default:
-		break;
+		case FT_STRING:
+		case FT_STRINGZ:
+		case FT_UINT_STRING:
+		case FT_STRINGZPAD:
+		case FT_STRINGZTRUNC:
+			keys = g_list_sort(keys, (GCompareFunc)strcmp);
+			break;
+
+		/* FT_NONE we don't need to sort. We could do something for
+		 * FT_GUID and FT_BYTES (Custom) if we were to output them,
+		 * possibly with g_list_sort_with_data.
+		 */
+		default:
+			break;
 	}
+
+	for (GList *entry = g_list_first(keys); entry; entry = entry->next) {
+		void *key = entry->data;
+		void *value = g_hash_table_lookup(sub_dissectors->hash_table, key);
+		dissector_dump_decodes_display(table_name, sub_dissectors->type, key, value);
+	}
+
+	g_list_free(keys);
 }
 
 void
 dissector_dump_decodes(void)
 {
-	dissector_all_tables_foreach(dissector_dump_decodes_display, NULL);
+	dissector_all_tables_foreach_table(dissector_dump_table_decodes, NULL, (GCompareFunc)strcmp);
 }
 
 /*
- * Dumps the "layer type"/"decode as" associations to stdout, similar
- * to the proto_registrar_dump_*() routines.
+ * Dumps information about dissector tables to stdout.
  *
  * There is one record per line. The fields are tab-delimited.
  *
- * Field 1 = layer type, e.g. "tcp.port"
- * Field 2 = selector in decimal
- * Field 3 = "decode as" name, e.g. "http"
+ * Field 1 = dissector table name, e.g. "tcp.port"
+ * Field 2 = name used for the dissector table in the GUI
+ * Field 3 = type (textual representation of the ftenum type)
+ * Field 4 = base for display (for integer types)
+ * Field 5 = protocol name
+ * Field 6 = "decode as" support
+ *
+ * This does not dump the *individual entries* in the dissector tables,
+ * i.e. it doesn't show what dissector handles what particular value
+ * of the key in the dissector table.
  */
 
-
 static void
-dissector_dump_dissector_tables_display (gpointer key, gpointer user_data _U_)
+dissector_dump_dissector_tables_display (void *key, void *user_data _U_)
 {
 	const char		*table_name = (const char *)key;
 	dissector_table_t	table;
@@ -3041,12 +4026,8 @@ dissector_dump_dissector_tables_display (gpointer key, gpointer user_data _U_)
 			printf("\tBASE_HEX");
 			break;
 
-		case BASE_DEC_HEX:
-			printf("\tBASE_DEC_HEX");
-			break;
-
-		case BASE_HEX_DEC:
-			printf("\tBASE_HEX_DEC");
+		case BASE_OCT:
+			printf("\tBASE_OCT");
 			break;
 
 		default:
@@ -3058,11 +4039,42 @@ dissector_dump_dissector_tables_display (gpointer key, gpointer user_data _U_)
 	default:
 		break;
 	}
+	if (table->protocol != NULL) {
+		printf("\t%s",
+		    proto_get_protocol_short_name(table->protocol));
+	} else
+		printf("\t(no protocol)");
+	printf("\tDecode As %ssupported",
+	    table->supports_decode_as ? "" : "not ");
 	printf("\n");
 }
 
-static gint
-compare_dissector_key_name(gconstpointer dissector_a, gconstpointer dissector_b)
+/** The output format of this function is meant to parallel
+ * that of dissector_dump_dissector_tables_display().
+ * Field 3 is shown as "heuristic".
+ * Field 4 is omitted, as it is for FT_STRING dissector tables above.
+ * Field 6 is omitted since "Decode As" doesn't apply.
+ */
+
+static void
+dissector_dump_heur_dissector_tables_display (void *key, void *user_data _U_)
+{
+	const char		*list_name = (const char *)key;
+	heur_dissector_list_t	list;
+
+	list = (heur_dissector_list_t)g_hash_table_lookup(heur_dissector_lists, key);
+	printf("%s\t%s\theuristic", list_name, list->ui_name ? list->ui_name : list_name);
+
+	if (list->protocol != NULL) {
+		printf("\t%s",
+		    proto_get_protocol_short_name(list->protocol));
+	} else
+		printf("\t(no protocol)");
+	printf("\n");
+}
+
+static int
+compare_dissector_key_name(const void *dissector_a, const void *dissector_b)
 {
   return strcmp((const char*)dissector_a, (const char*)dissector_b);
 }
@@ -3076,62 +4088,204 @@ dissector_dump_dissector_tables(void)
 	list = g_list_sort(list, compare_dissector_key_name);
 	g_list_foreach(list, dissector_dump_dissector_tables_display, NULL);
 	g_list_free(list);
+
+	list = g_hash_table_get_keys(heur_dissector_lists);
+	list = g_list_sort(list, compare_dissector_key_name);
+	g_list_foreach(list, dissector_dump_heur_dissector_tables_display, NULL);
+	g_list_free(list);
 }
 
-static GPtrArray* post_dissectors = NULL;
-static guint num_of_postdissectors = 0;
+/*
+ * Dumps the entries in the table of registered dissectors.
+ *
+ * There is one record per line. The fields are tab-delimited.
+ *
+ * Field 1 = dissector name
+ * Field 2 = dissector description
+ */
+
+struct dissector_info {
+	const char *name;
+	const char *description;
+};
+
+static int
+compare_dissector_info_names(const void *arg1, const void *arg2)
+{
+	const struct dissector_info *info1 = (const struct dissector_info *) arg1;
+	const struct dissector_info *info2 = (const struct dissector_info *) arg2;
+
+	return strcmp(info1->name, info2->name);
+}
+
+void
+dissector_dump_dissectors(void)
+{
+	GHashTableIter iter;
+	struct dissector_info *dissectors_info;
+	unsigned num_protocols;
+	gpointer key, value;
+	unsigned proto_index;
+
+	g_hash_table_iter_init(&iter, registered_dissectors);
+	num_protocols = g_hash_table_size(registered_dissectors);
+	dissectors_info = g_new(struct dissector_info, num_protocols);
+	proto_index = 0;
+	while (g_hash_table_iter_next(&iter, &key, &value)) {
+		dissectors_info[proto_index].name = (const char *)key;
+		dissectors_info[proto_index].description =
+		    ((dissector_handle_t) value)->description;
+		proto_index++;
+	}
+	qsort(dissectors_info, num_protocols, sizeof(struct dissector_info),
+	    compare_dissector_info_names);
+	for (proto_index = 0; proto_index < num_protocols; proto_index++) {
+		printf("%s\t%s\n", dissectors_info[proto_index].name,
+		    dissectors_info[proto_index].description);
+	}
+	g_free(dissectors_info);
+}
 
 void
 register_postdissector(dissector_handle_t handle)
 {
-	if (!post_dissectors)
-		post_dissectors = g_ptr_array_new();
+	postdissector p;
 
-	g_ptr_array_add(post_dissectors, handle);
-	num_of_postdissectors++;
+	if (!postdissectors)
+		postdissectors = g_array_sized_new(false, false, (unsigned)sizeof(postdissector), 1);
+
+	p.handle = handle;
+	p.wanted_hfids = NULL;
+	postdissectors = g_array_append_val(postdissectors, p);
+}
+
+void
+set_postdissector_wanted_hfids(dissector_handle_t handle, GArray *wanted_hfids)
+{
+	unsigned i;
+
+	if (!postdissectors) return;
+
+	for (i = 0; i < postdissectors->len; i++) {
+		if (POSTDISSECTORS(i).handle == handle) {
+			if (POSTDISSECTORS(i).wanted_hfids) {
+				g_array_free(POSTDISSECTORS(i).wanted_hfids, true);
+			}
+			POSTDISSECTORS(i).wanted_hfids = wanted_hfids;
+			break;
+		}
+	}
 }
 
 void
 deregister_postdissector(dissector_handle_t handle)
 {
-    if (!post_dissectors) return;
+	unsigned i;
 
-    if (g_ptr_array_remove(post_dissectors, handle)) {
-        num_of_postdissectors--;
-    }
+	if (!postdissectors) return;
+
+	for (i = 0; i < postdissectors->len; i++) {
+		if (POSTDISSECTORS(i).handle == handle) {
+			if (POSTDISSECTORS(i).wanted_hfids) {
+				g_array_free(POSTDISSECTORS(i).wanted_hfids, true);
+			}
+			postdissectors = g_array_remove_index_fast(postdissectors, i);
+			break;
+		}
+	}
 }
 
-gboolean
+bool
 have_postdissector(void)
 {
-	guint i;
+	unsigned i;
 	dissector_handle_t handle;
 
-	for(i = 0; i < num_of_postdissectors; i++) {
-		handle = (dissector_handle_t) g_ptr_array_index(post_dissectors,i);
+	for (i = 0; i < postdissectors->len; i++) {
+		handle = POSTDISSECTORS(i).handle;
 
 		if (handle->protocol != NULL
 		    && proto_is_protocol_enabled(handle->protocol)) {
 			/* We have at least one enabled postdissector */
-			return TRUE;
+			return true;
 		}
 	}
-	return FALSE;
+	return false;
 }
 
 void
 call_all_postdissectors(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	guint i;
+	unsigned i;
 
-	for(i = 0; i < num_of_postdissectors; i++) {
-		call_dissector_only((dissector_handle_t) g_ptr_array_index(post_dissectors,i),
-				    tvb,pinfo,tree, NULL);
+	for (i = 0; i < postdissectors->len; i++) {
+		call_dissector_only(POSTDISSECTORS(i).handle,
+				    tvb, pinfo, tree, NULL);
 	}
 }
 
+bool
+postdissectors_want_hfids(void)
+{
+	unsigned i;
+
+	for (i = 0; i < postdissectors->len; i++) {
+		if (POSTDISSECTORS(i).wanted_hfids != NULL &&
+		    POSTDISSECTORS(i).wanted_hfids->len != 0 &&
+		    (POSTDISSECTORS(i).handle->protocol == NULL ||
+		     proto_is_protocol_enabled(POSTDISSECTORS(i).handle->protocol)))
+			return true;
+	}
+	return false;
+}
+
+void
+prime_epan_dissect_with_postdissector_wanted_hfids(epan_dissect_t *edt)
+{
+	unsigned i;
+
+	if (postdissectors == NULL) {
+		/*
+		 * No postdissector expressed an interest in any hfids.
+		 */
+		return;
+	}
+	for (i = 0; i < postdissectors->len; i++) {
+		if (POSTDISSECTORS(i).wanted_hfids != NULL &&
+		    POSTDISSECTORS(i).wanted_hfids->len != 0 &&
+		    (POSTDISSECTORS(i).handle->protocol == NULL ||
+		     proto_is_protocol_enabled(POSTDISSECTORS(i).handle->protocol)))
+			epan_dissect_prime_with_hfid_array(edt,
+			    POSTDISSECTORS(i).wanted_hfids);
+	}
+}
+
+void
+increment_dissection_depth_by_n(packet_info *pinfo, unsigned n) {
+	DISSECTOR_ASSERT_HINT(!ckd_add(&pinfo->dissection_depth, pinfo->dissection_depth, n),
+		"pinfo->dissection_depth overflowed!");
+	DISSECTOR_ASSERT(pinfo->dissection_depth < (int)prefs.gui_max_tree_depth);
+}
+
+void
+increment_dissection_depth(packet_info *pinfo) {
+	increment_dissection_depth_by_n(pinfo, 1);
+}
+
+void
+decrement_dissection_depth_by_n(packet_info *pinfo, unsigned n) {
+	DISSECTOR_ASSERT_HINT(!ckd_sub(&pinfo->dissection_depth, pinfo->dissection_depth, n),
+		"pinfo->dissection_depth underflowed!");
+	DISSECTOR_ASSERT(pinfo->dissection_depth >= 0);
+}
+
+void
+decrement_dissection_depth(packet_info *pinfo) {
+	decrement_dissection_depth_by_n(pinfo, 1);
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

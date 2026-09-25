@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <errno.h>
-#include <net/if.h>
 #include <strings.h>
+#include <unistd.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -15,8 +15,159 @@
 #include "nl80211.h"
 #include "iw.h"
 
+struct channels_ctx {
+	int last_band;
+	bool width_40;
+	bool width_80;
+	bool width_160;
+};
+
+static char *dfs_state_name(enum nl80211_dfs_state state)
+{
+	switch (state) {
+	case NL80211_DFS_USABLE:
+		return "usable";
+	case NL80211_DFS_AVAILABLE:
+		return "available";
+	case NL80211_DFS_UNAVAILABLE:
+		return "unavailable";
+	default:
+		return "unknown";
+	}
+}
+
+static int print_channels_handler(struct nl_msg *msg, void *arg)
+{
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct channels_ctx *ctx = arg;
+	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
+	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
+	struct nlattr *tb_freq[NL80211_FREQUENCY_ATTR_MAX + 1];
+	struct nlattr *nl_band;
+	struct nlattr *nl_freq;
+	int rem_band, rem_freq;
+
+	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (tb_msg[NL80211_ATTR_WIPHY_BANDS]) {
+		nla_for_each_nested(nl_band, tb_msg[NL80211_ATTR_WIPHY_BANDS], rem_band) {
+			if (ctx->last_band != nl_band->nla_type) {
+				printf("Band %d:\n", nl_band->nla_type + 1);
+				ctx->width_40 = false;
+				ctx->width_80 = false;
+				ctx->width_160 = false;
+				ctx->last_band = nl_band->nla_type;
+			}
+
+			nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band), nla_len(nl_band), NULL);
+
+			if (tb_band[NL80211_BAND_ATTR_HT_CAPA]) {
+				__u16 cap = nla_get_u16(tb_band[NL80211_BAND_ATTR_HT_CAPA]);
+
+				if (cap & BIT(1))
+					ctx->width_40 = true;
+			}
+
+			if (tb_band[NL80211_BAND_ATTR_VHT_CAPA]) {
+				__u32 capa;
+
+				ctx->width_80 = true;
+
+				capa = nla_get_u32(tb_band[NL80211_BAND_ATTR_VHT_CAPA]);
+				switch ((capa >> 2) & 3) {
+				case 2:
+					/* width_80p80 = true; */
+					/* fall through */
+				case 1:
+					ctx->width_160 = true;
+				break;
+				}
+			}
+
+			if (tb_band[NL80211_BAND_ATTR_FREQS]) {
+				nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
+					uint32_t freq;
+
+					nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(nl_freq), nla_len(nl_freq), NULL);
+
+					if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
+						continue;
+					freq = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
+					printf("\t* %d MHz [%d] ", freq, ieee80211_frequency_to_channel(freq));
+
+					if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED]) {
+						printf("(disabled)\n");
+						continue;
+					}
+					printf("\n");
+
+					if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER])
+						printf("\t  Maximum TX power: %.1f dBm\n", 0.01 * nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]));
+
+					/* If both flags are set assume an new kernel */
+					if (tb_freq[NL80211_FREQUENCY_ATTR_NO_IR] && tb_freq[__NL80211_FREQUENCY_ATTR_NO_IBSS]) {
+						printf("\t  No IR\n");
+					} else if (tb_freq[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN]) {
+						printf("\t  Passive scan\n");
+					} else if (tb_freq[__NL80211_FREQUENCY_ATTR_NO_IBSS]){
+						printf("\t  No IBSS\n");
+					}
+
+					if (tb_freq[NL80211_FREQUENCY_ATTR_RADAR])
+						printf("\t  Radar detection\n");
+
+					printf("\t  Channel widths:");
+					if (!tb_freq[NL80211_FREQUENCY_ATTR_NO_20MHZ])
+						printf(" 20MHz");
+					if (ctx->width_40 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_HT40_MINUS])
+						printf(" HT40-");
+					if (ctx->width_40 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_HT40_PLUS])
+						printf(" HT40+");
+					if (ctx->width_80 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_80MHZ])
+						printf(" VHT80");
+					if (ctx->width_160 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_160MHZ])
+						printf(" VHT160");
+					printf("\n");
+
+					if (!tb_freq[NL80211_FREQUENCY_ATTR_DISABLED] && tb_freq[NL80211_FREQUENCY_ATTR_DFS_STATE]) {
+						enum nl80211_dfs_state state = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_STATE]);
+						unsigned long time;
+
+						printf("\t  DFS state: %s", dfs_state_name(state));
+						if (tb_freq[NL80211_FREQUENCY_ATTR_DFS_TIME]) {
+							time = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_TIME]);
+							printf(" (for %lu sec)", time / 1000);
+						}
+						printf("\n");
+						if (tb_freq[NL80211_FREQUENCY_ATTR_DFS_CAC_TIME])
+							printf("\t  DFS CAC time: %u ms\n",
+							       nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_CAC_TIME]));
+					}
+				}
+			}
+		}
+	}
+
+	return NL_SKIP;
+}
+
+static int handle_channels(struct nl80211_state *state, struct nl_msg *msg,
+			   int argc, char **argv, enum id_input id)
+{
+	static struct channels_ctx ctx = {
+		.last_band = -1,
+	};
+
+	nla_put_flag(msg, NL80211_ATTR_SPLIT_WIPHY_DUMP);
+	nlmsg_hdr(msg)->nlmsg_flags |= NLM_F_DUMP;
+
+	register_handler(print_channels_handler, &ctx);
+
+	return 0;
+}
+TOPLEVEL(channels, NULL, NL80211_CMD_GET_WIPHY, 0, CIB_PHY, handle_channels, "Show available channels.");
+
 static int handle_name(struct nl80211_state *state,
-		       struct nl_cb *cb,
 		       struct nl_msg *msg,
 		       int argc, char **argv,
 		       enum id_input id)
@@ -33,146 +184,235 @@ static int handle_name(struct nl80211_state *state,
 COMMAND(set, name, "<new name>", NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_name,
 	"Rename this wireless device.");
 
-static int handle_freqs(struct nl_msg *msg, int argc, char **argv)
-{
-	static const struct {
-		const char *name;
-		unsigned int val;
-	} bwmap[] = {
-		{ .name = "20", .val = NL80211_CHAN_WIDTH_20, },
-		{ .name = "40", .val = NL80211_CHAN_WIDTH_40, },
-		{ .name = "80", .val = NL80211_CHAN_WIDTH_80, },
-		{ .name = "80+80", .val = NL80211_CHAN_WIDTH_80P80, },
-		{ .name = "160", .val = NL80211_CHAN_WIDTH_160, },
-	};
-	uint32_t freq;
-	int i, bwval = NL80211_CHAN_WIDTH_20_NOHT;
-	char *end;
-
-	if (argc < 1)
-		return 1;
-
-	for (i = 0; i < ARRAY_SIZE(bwmap); i++) {
-		if (strcasecmp(bwmap[i].name, argv[0]) == 0) {
-			bwval = bwmap[i].val;
-			break;
-		}
-	}
-
-	if (bwval == NL80211_CHAN_WIDTH_20_NOHT)
-		return 1;
-
-	NLA_PUT_U32(msg, NL80211_ATTR_CHANNEL_WIDTH, bwval);
-
-	if (argc == 1)
-		return 0;
-
-	/* center freq 1 */
-	if (!*argv[1])
-		return 1;
-	freq = strtoul(argv[1], &end, 10);
-	if (*end)
-		return 1;
-	NLA_PUT_U32(msg, NL80211_ATTR_CENTER_FREQ1, freq);
-
-	if (argc == 2)
-		return 0;
-
-	/* center freq 2 */
-	if (!*argv[2])
-		return 1;
-	freq = strtoul(argv[2], &end, 10);
-	if (*end)
-		return 1;
-	NLA_PUT_U32(msg, NL80211_ATTR_CENTER_FREQ2, freq);
-
-	return 0;
- nla_put_failure:
-	return -ENOBUFS;
-}
-
-static int handle_freqchan(struct nl_msg *msg, bool chan,
-			   int argc, char **argv)
-{
-	char *end;
-	static const struct {
-		const char *name;
-		unsigned int val;
-	} htmap[] = {
-		{ .name = "HT20", .val = NL80211_CHAN_HT20, },
-		{ .name = "HT40+", .val = NL80211_CHAN_HT40PLUS, },
-		{ .name = "HT40-", .val = NL80211_CHAN_HT40MINUS, },
-	};
-	unsigned int htval = NL80211_CHAN_NO_HT;
-	unsigned int freq;
-	int i;
-
-	if (!argc || argc > 4)
-		return 1;
-
-	if (!*argv[0])
-		return 1;
-	freq = strtoul(argv[0], &end, 10);
-	if (*end)
-		return 1;
-
-	if (chan) {
-		enum nl80211_band band;
-		band = freq <= 14 ? NL80211_BAND_2GHZ : NL80211_BAND_5GHZ;
-		freq = ieee80211_channel_to_frequency(freq, band);
-	}
-
-	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
-
-	if (argc > 2) {
-		return handle_freqs(msg, argc - 1, argv + 1);
-	} else if (argc == 2) {
-		for (i = 0; i < ARRAY_SIZE(htmap); i++) {
-			if (strcasecmp(htmap[i].name, argv[1]) == 0) {
-				htval = htmap[i].val;
-				break;
-			}
-		}
-		if (htval == NL80211_CHAN_NO_HT)
-			return handle_freqs(msg, argc - 1, argv + 1);
-	}
-
-	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, htval);
-
-	return 0;
- nla_put_failure:
-	return -ENOBUFS;
-}
-
-static int handle_freq(struct nl80211_state *state,
-		       struct nl_cb *cb, struct nl_msg *msg,
+static int handle_freq(struct nl80211_state *state, struct nl_msg *msg,
 		       int argc, char **argv,
 		       enum id_input id)
 {
-	return handle_freqchan(msg, false, argc, argv);
+	struct chandef chandef;
+	int res;
+
+	res = parse_freqchan(&chandef, false, argc, argv, NULL, false);
+	if (res)
+		return res;
+
+	return put_chandef(msg, &chandef);
 }
-COMMAND(set, freq, "<freq> [HT20|HT40+|HT40-]",
+
+COMMAND(set, freq, PARSE_FREQ_ARGS("", ""),
 	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_freq,
-	"Set frequency/channel the hardware is using, including HT\n"
-	"configuration.");
-COMMAND(set, freq, "<freq> [HT20|HT40+|HT40-]\n"
-		   "<control freq> [20|40|80|80+80|160] [<center freq 1>] [<center freq 2>]",
+	"Set frequency/channel configuration the hardware is using.");
+COMMAND(set, freq, PARSE_FREQ_ARGS("", ""),
 	NL80211_CMD_SET_WIPHY, 0, CIB_NETDEV, handle_freq, NULL);
 
-static int handle_chan(struct nl80211_state *state,
-		       struct nl_cb *cb, struct nl_msg *msg,
+static int handle_freq_khz(struct nl80211_state *state, struct nl_msg *msg,
 		       int argc, char **argv,
 		       enum id_input id)
 {
-	return handle_freqchan(msg, true, argc, argv);
+	struct chandef chandef;
+	int res;
+
+	res = parse_freqchan(&chandef, false, argc, argv, NULL, true);
+	if (res)
+		return res;
+
+	return put_chandef(msg, &chandef);
 }
-COMMAND(set, channel, "<channel> [HT20|HT40+|HT40-]",
+
+COMMAND(set, freq_khz, PARSE_FREQ_KHZ_ARGS("", ""),
+	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_freq_khz,
+	"Set frequency in kHz the hardware is using\n"
+	"configuration.");
+COMMAND(set, freq_khz, PARSE_FREQ_KHZ_ARGS("", ""),
+	NL80211_CMD_SET_WIPHY, 0, CIB_NETDEV, handle_freq_khz, NULL);
+
+static int handle_chan(struct nl80211_state *state, struct nl_msg *msg,
+		       int argc, char **argv,
+		       enum id_input id)
+{
+	struct chandef chandef;
+	int res;
+
+	res = parse_freqchan(&chandef, true, argc, argv, NULL, false);
+	if (res)
+		return res;
+
+	return put_chandef(msg, &chandef);
+}
+COMMAND(set, channel, PARSE_CHAN_ARGS(""),
 	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_chan, NULL);
-COMMAND(set, channel, "<channel> [HT20|HT40+|HT40-]",
+COMMAND(set, channel, PARSE_CHAN_ARGS(""),
 	NL80211_CMD_SET_WIPHY, 0, CIB_NETDEV, handle_chan, NULL);
 
+
+struct cac_event {
+	int ret;
+	uint32_t freq;
+};
+
+static int print_cac_event(struct nl_msg *msg, void *arg)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	enum nl80211_radar_event event_type;
+	struct cac_event *cac_event = arg;
+	uint32_t freq;
+
+	if (gnlh->cmd != NL80211_CMD_RADAR_DETECT)
+		return NL_SKIP;
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!tb[NL80211_ATTR_RADAR_EVENT] || !tb[NL80211_ATTR_WIPHY_FREQ])
+		return NL_SKIP;
+
+	freq = nla_get_u32(tb[NL80211_ATTR_WIPHY_FREQ]);
+	event_type = nla_get_u32(tb[NL80211_ATTR_RADAR_EVENT]);
+	if (freq != cac_event->freq)
+		return NL_SKIP;
+
+	switch (event_type) {
+	case NL80211_RADAR_DETECTED:
+		printf("%d MHz: radar detected\n", freq);
+		break;
+	case NL80211_RADAR_CAC_FINISHED:
+		printf("%d MHz: CAC finished\n", freq);
+		break;
+	case NL80211_RADAR_CAC_ABORTED:
+		printf("%d MHz: CAC was aborted\n", freq);
+		break;
+	case NL80211_RADAR_NOP_FINISHED:
+		printf("%d MHz: NOP finished\n", freq);
+		break;
+	default:
+		printf("%d MHz: unknown radar event\n", freq);
+	}
+	cac_event->ret = 0;
+
+	return NL_SKIP;
+}
+
+static int handle_cac_trigger(struct nl80211_state *state,
+			    struct nl_msg *msg,
+			    int argc, char **argv,
+			    enum id_input id)
+{
+	struct chandef chandef;
+	int res;
+
+	if (argc < 2)
+		return 1;
+
+	if (strcmp(argv[0], "channel") == 0) {
+		res = parse_freqchan(&chandef, true, argc - 1, argv + 1, NULL, false);
+	} else if (strcmp(argv[0], "freq") == 0) {
+		res = parse_freqchan(&chandef, false, argc - 1, argv + 1, NULL, false);
+	} else {
+		return 1;
+	}
+
+	if (res)
+		return res;
+
+	return put_chandef(msg, &chandef);
+}
+
+static int handle_cac_background(struct nl80211_state *state,
+				 struct nl_msg *msg,
+				 int argc, char **argv,
+				 enum id_input id)
+{
+	nla_put_flag(msg, NL80211_ATTR_RADAR_BACKGROUND);
+	return handle_cac_trigger(state, msg, argc, argv, id);
+}
+
+static int no_seq_check(struct nl_msg *msg, void *arg)
+{
+	return NL_OK;
+}
+
+static int handle_cac(struct nl80211_state *state,
+		      struct nl_msg *msg,
+		      int argc, char **argv,
+		      enum id_input id)
+{
+	int err;
+	struct nl_cb *radar_cb;
+	struct chandef chandef;
+	struct cac_event cac_event;
+	char **cac_trigger_argv = NULL;
+
+	radar_cb = nl_cb_alloc(iw_debug ? NL_CB_DEBUG : NL_CB_DEFAULT);
+	if (!radar_cb)
+		return 1;
+
+	if (argc < 3)
+		return 1;
+
+	if (strcmp(argv[2], "channel") == 0) {
+		err = parse_freqchan(&chandef, true, argc - 3, argv + 3, NULL, false);
+	} else if (strcmp(argv[2], "freq") == 0) {
+		err = parse_freqchan(&chandef, false, argc - 3, argv + 3, NULL, false);
+	} else {
+		err = 1;
+	}
+	if (err)
+		goto err_out;
+
+	cac_trigger_argv = calloc(argc + 1, sizeof(char*));
+	if (!cac_trigger_argv) {
+		err = -ENOMEM;
+		goto err_out;
+	}
+
+	cac_trigger_argv[0] = argv[0];
+	cac_trigger_argv[1] = "cac";
+	cac_trigger_argv[2] = "trigger";
+	memcpy(&cac_trigger_argv[3], &argv[2], (argc - 2) * sizeof(char*));
+
+	err = handle_cmd(state, id, argc + 1, cac_trigger_argv);
+	if (err)
+		goto err_out;
+
+	cac_event.ret = 1;
+	cac_event.freq = chandef.control_freq;
+
+	__prepare_listen_events(state);
+	nl_socket_set_cb(state->nl_sock, radar_cb);
+
+	/* need to turn off sequence number checking */
+	nl_cb_set(radar_cb, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, no_seq_check, NULL);
+	nl_cb_set(radar_cb, NL_CB_VALID, NL_CB_CUSTOM, print_cac_event, &cac_event);
+	while (cac_event.ret > 0)
+		nl_recvmsgs(state->nl_sock, radar_cb);
+
+	err = 0;
+err_out:
+	if (radar_cb)
+		nl_cb_put(radar_cb);
+	if (cac_trigger_argv)
+		free(cac_trigger_argv);
+	return err;
+}
+TOPLEVEL(cac, PARSE_CHAN_ARGS("channel ") "\n"
+              PARSE_FREQ_ARGS("freq ", ""),
+	 0, 0, CIB_NETDEV, handle_cac, NULL);
+COMMAND(cac, trigger,
+	PARSE_CHAN_ARGS("channel ") "\n"
+	PARSE_FREQ_ARGS("freq ", ""),
+	NL80211_CMD_RADAR_DETECT, 0, CIB_NETDEV, handle_cac_trigger,
+	"Start or trigger a channel availability check (CAC) looking to look for\n"
+	"radars on the given channel.");
+
+COMMAND(cac, background,
+	PARSE_CHAN_ARGS("channel ") "\n"
+	PARSE_FREQ_ARGS("freq ", ""),
+	NL80211_CMD_RADAR_DETECT, 0, CIB_NETDEV, handle_cac_background,
+	"Start background channel availability check (CAC) looking to look for\n"
+	"radars on the given channel.");
+
 static int handle_fragmentation(struct nl80211_state *state,
-				struct nl_cb *cb, struct nl_msg *msg,
+				struct nl_msg *msg,
 				int argc, char **argv,
 				enum id_input id)
 {
@@ -204,20 +444,19 @@ COMMAND(set, frag, "<fragmentation threshold|off>",
 	"Set fragmentation threshold.");
 
 static int handle_rts(struct nl80211_state *state,
-		      struct nl_cb *cb, struct nl_msg *msg,
+		      struct nl_msg *msg,
 		      int argc, char **argv,
 		      enum id_input id)
 {
 	unsigned int rts;
+	char *end;
 
-	if (argc != 1)
+	if (argc != 1 && argc != 3)
 		return 1;
 
 	if (strcmp("off", argv[0]) == 0)
 		rts = -1;
 	else {
-		char *end;
-
 		if (!*argv[0])
 			return 1;
 		rts = strtoul(argv[0], &end, 10);
@@ -227,16 +466,37 @@ static int handle_rts(struct nl80211_state *state,
 
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_RTS_THRESHOLD, rts);
 
+	argv++;
+	argc--;
+
+	if (argc > 1 && strcmp("radio", argv[0]) == 0) {
+		int radio_idx;
+
+		argv++;
+		argc--;
+
+		radio_idx = strtoul(argv[0], &end, 10);
+		if (*end != '\0')
+			return 1;
+
+		NLA_PUT_U8(msg, NL80211_ATTR_WIPHY_RADIO_INDEX, radio_idx);
+		argv++;
+		argc--;
+	}
+
+	if (argc)
+		return 1;
+
 	return 0;
  nla_put_failure:
 	return -ENOBUFS;
 }
-COMMAND(set, rts, "<rts threshold|off>",
+COMMAND(set, rts, "<rts threshold|off> [radio <radio index>]",
 	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_rts,
 	"Set rts threshold.");
 
 static int handle_retry(struct nl80211_state *state,
-			struct nl_cb *cb, struct nl_msg *msg,
+			struct nl_msg *msg,
 			int argc, char **argv, enum id_input id)
 {
 	unsigned int retry_short = 0, retry_long = 0;
@@ -302,7 +562,7 @@ COMMAND(set, retry, "[short <limit>] [long <limit>]",
 #ifndef NETNS_RUN_DIR
 #define NETNS_RUN_DIR "/var/run/netns"
 #endif
-int netns_get_fd(const char *name)
+static int netns_get_fd(const char *name)
 {
 	char pathbuf[MAXPATHLEN];
 	const char *path, *ptr;
@@ -318,13 +578,12 @@ int netns_get_fd(const char *name)
 }
 
 static int handle_netns(struct nl80211_state *state,
-			struct nl_cb *cb,
 			struct nl_msg *msg,
 			int argc, char **argv,
 			enum id_input id)
 {
 	char *end;
-	int fd;
+	int fd = -1;
 
 	if (argc < 1 || !*argv[0])
 		return 1;
@@ -352,6 +611,8 @@ static int handle_netns(struct nl80211_state *state,
 	return 1;
 
  nla_put_failure:
+	if (fd >= 0)
+		close(fd);
 	return -ENOBUFS;
 }
 COMMAND(set, netns, "{ <pid> | name <nsname> }",
@@ -362,7 +623,6 @@ COMMAND(set, netns, "{ <pid> | name <nsname> }",
 	"               or by absolute path (man ip-netns)\n");
 
 static int handle_coverage(struct nl80211_state *state,
-			struct nl_cb *cb,
 			struct nl_msg *msg,
 			int argc, char **argv,
 			enum id_input id)
@@ -394,7 +654,6 @@ COMMAND(set, coverage, "<coverage class>",
 	"Valid values: 0 - 255.");
 
 static int handle_distance(struct nl80211_state *state,
-			struct nl_cb *cb,
 			struct nl_msg *msg,
 			int argc, char **argv,
 			enum id_input id)
@@ -442,7 +701,6 @@ COMMAND(set, distance, "<auto|distance>",
 	"Valid values: 0 - 114750");
 
 static int handle_txpower(struct nl80211_state *state,
-			  struct nl_cb *cb,
 			  struct nl_msg *msg,
 			  int argc, char **argv,
 			  enum id_input id)
@@ -494,7 +752,6 @@ COMMAND(set, txpower, "<auto|fixed|limit> [<tx power in mBm>]",
 	"Specify transmit power level and setting type.");
 
 static int handle_antenna(struct nl80211_state *state,
-			  struct nl_cb *cb,
 			  struct nl_msg *msg,
 			  int argc, char **argv,
 			  enum id_input id)
@@ -532,3 +789,119 @@ COMMAND(set, antenna, "<bitmap> | all | <tx bitmap> <rx bitmap>",
 	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_antenna,
 	"Set a bitmap of allowed antennas to use for TX and RX.\n"
 	"The driver may reject antenna configurations it cannot support.");
+
+static int handle_set_txq(struct nl80211_state *state,
+			  struct nl_msg *msg,
+			  int argc, char **argv,
+			  enum id_input id)
+{
+	unsigned int argval;
+	char *end;
+
+	if (argc != 2)
+		return 1;
+
+	if (!*argv[0] || !*argv[1])
+		return 1;
+
+	argval = strtoul(argv[1], &end, 10);
+
+	if (*end)
+		return 1;
+
+	if (!argval)
+		return 1;
+
+	if (strcmp("limit", argv[0]) == 0)
+		NLA_PUT_U32(msg, NL80211_ATTR_TXQ_LIMIT, argval);
+	else if (strcmp("memory_limit", argv[0]) == 0)
+		NLA_PUT_U32(msg, NL80211_ATTR_TXQ_MEMORY_LIMIT, argval);
+	else if (strcmp("quantum", argv[0]) == 0)
+		NLA_PUT_U32(msg, NL80211_ATTR_TXQ_QUANTUM, argval);
+	else
+		return -1;
+
+	return 0;
+ nla_put_failure:
+	return -ENOBUFS;
+}
+COMMAND(set, txq, "limit <packets> | memory_limit <bytes> | quantum <bytes>",
+	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_set_txq,
+	"Set TXQ parameters. The limit and memory_limit are global queue limits\n"
+	"for the whole phy. The quantum is the DRR scheduler quantum setting.\n"
+	"Valid values: 1 - 2**32");
+
+static int print_txq_handler(struct nl_msg *msg, void *arg)
+{
+	struct nlattr *attrs[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	struct nlattr *txqstats_info[NL80211_TXQ_STATS_MAX + 1], *txqinfo;
+	static struct nla_policy txqstats_policy[NL80211_TXQ_STATS_MAX + 1] = {
+		[NL80211_TXQ_STATS_BACKLOG_PACKETS] = { .type = NLA_U32 },
+		[NL80211_TXQ_STATS_BACKLOG_BYTES] = { .type = NLA_U32 },
+		[NL80211_TXQ_STATS_OVERLIMIT] = { .type = NLA_U32 },
+		[NL80211_TXQ_STATS_OVERMEMORY] = { .type = NLA_U32 },
+		[NL80211_TXQ_STATS_COLLISIONS] = { .type = NLA_U32 },
+		[NL80211_TXQ_STATS_MAX_FLOWS] = { .type = NLA_U32 },
+	};
+
+	nla_parse(attrs, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+
+
+	if (attrs[NL80211_ATTR_TXQ_LIMIT])
+		printf("Packet limit:\t\t%u pkts\n",
+			nla_get_u32(attrs[NL80211_ATTR_TXQ_LIMIT]));
+	if (attrs[NL80211_ATTR_TXQ_MEMORY_LIMIT])
+		printf("Memory limit:\t\t%u bytes\n",
+			nla_get_u32(attrs[NL80211_ATTR_TXQ_MEMORY_LIMIT]));
+	if (attrs[NL80211_ATTR_TXQ_QUANTUM])
+		printf("Quantum:\t\t%u bytes\n",
+			nla_get_u32(attrs[NL80211_ATTR_TXQ_QUANTUM]));
+
+	if (attrs[NL80211_ATTR_TXQ_STATS]) {
+		if (nla_parse_nested(txqstats_info, NL80211_TXQ_STATS_MAX,
+				     attrs[NL80211_ATTR_TXQ_STATS],
+				     txqstats_policy)) {
+			printf("failed to parse nested TXQ stats attributes!");
+			return 0;
+		}
+		txqinfo = txqstats_info[NL80211_TXQ_STATS_MAX_FLOWS];
+		if (txqinfo)
+			printf("Number of queues:\t%u\n", nla_get_u32(txqinfo));
+
+		txqinfo = txqstats_info[NL80211_TXQ_STATS_BACKLOG_PACKETS];
+		if (txqinfo)
+			printf("Backlog:\t\t%u pkts\n", nla_get_u32(txqinfo));
+
+		txqinfo = txqstats_info[NL80211_TXQ_STATS_BACKLOG_BYTES];
+		if (txqinfo)
+			printf("Memory usage:\t\t%u bytes\n", nla_get_u32(txqinfo));
+
+		txqinfo = txqstats_info[NL80211_TXQ_STATS_OVERLIMIT];
+		if (txqinfo)
+			printf("Packet limit overflows:\t%u\n", nla_get_u32(txqinfo));
+
+		txqinfo = txqstats_info[NL80211_TXQ_STATS_OVERMEMORY];
+		if (txqinfo)
+			printf("Memory limit overflows:\t%u\n", nla_get_u32(txqinfo));
+		txqinfo = txqstats_info[NL80211_TXQ_STATS_COLLISIONS];
+		if (txqinfo)
+			printf("Hash collisions:\t%u\n", nla_get_u32(txqinfo));
+	}
+	return NL_SKIP;
+}
+
+static int handle_get_txq(struct nl80211_state *state,
+			  struct nl_msg *msg,
+			  int argc, char **argv,
+			  enum id_input id)
+{
+	nla_put_flag(msg, NL80211_ATTR_SPLIT_WIPHY_DUMP);
+	nlmsg_hdr(msg)->nlmsg_flags |= NLM_F_DUMP;
+	register_handler(print_txq_handler, NULL);
+	return 0;
+}
+COMMAND(get, txq, "",
+	NL80211_CMD_GET_WIPHY, 0, CIB_PHY, handle_get_txq,
+	"Get TXQ parameters.");

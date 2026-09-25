@@ -1,0 +1,154 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: UTF-8 characters and Unicode escapes.
+
+cat <<\EOF > xg-go-7.go
+package main
+
+import (
+	"fmt"
+	"github.com/leonelquinteros/gotext"
+)
+
+func main () {
+	// Specify localedir, domain.
+	gotext.Configure(".", "fr_FR", "hello")
+
+	fmt.Println(gotext.Get("Russian (Русский): Здравствуйте"))
+	fmt.Println(gotext.Get("Vietnamese (Tiếng Việt): Chào bạn"))
+	fmt.Println(gotext.Get("Japanese (日本語): こんにちは"))
+	fmt.Println(gotext.Get("Thai (ภาษาไทย): สวัสดีครับ"))
+	fmt.Println(gotext.Get("Script: 𝒞"))
+	fmt.Println(gotext.Get("Russian (\u0420\u0443\u0441\u0441\u043a\u0438\u0439): \u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435"))
+	fmt.Println(gotext.Get("Vietnamese (Ti\u1ebfng Vi\u1ec7t): Ch\u00e0o b\u1ea1n"))
+	fmt.Println(gotext.Get("Japanese (\u65e5\u672c\u8a9e): \u3053\u3093\u306b\u3061\u306f"))
+	fmt.Println(gotext.Get("Thai (\u0e20\u0e32\u0e29\u0e32\u0e44\u0e17\u0e22): \u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35\u0e04\u0e23\u0e31\u0e1a"))
+	fmt.Println(gotext.Get("Script: \U0001d49e"))
+	// And now a comment with Русский and 日本語 and Unicode escapes: B\u00f6se B\u00fcbchen
+	fmt.Println(gotext.Get("This string has a multilingual comment"))
+	// Unicode identifiers.
+	var あ string = ""
+	𐀀 := ""
+	fmt.Println(あ + 𐀀)
+	fmt.Println(gotext.Get("Embedded\nnewline"))
+	// Two backslashes (unlike in Java, where this is just one backslash).
+	fmt.Println(gotext.Get("\u005c\u005c"));
+	// A 6-character string (unlike in Java, where this is just one backslash).
+	fmt.Println(gotext.Get("\\u005c"));
+	// A single backslash.
+	fmt.Println(gotext.Get("\\"));
+	// Escape sequences in strings.
+	fmt.Println(gotext.Get("t -> \t, n -> \n, dquote -> \" ..."));
+	// Hex escapes are recognized.
+	fmt.Println(gotext.Get("bel: \x07\n"));
+	fmt.Println(gotext.Get // Recognized despite comments
+		( /* Even across multiline
+comment! */ "this is a single long line"));
+	// In raw string literals, no escape sequences are recognized.
+	fmt.Println(gotext.Get(`raw 2 \u005c \\ \t \n \"`));
+	// Rune literals are not extracted.
+	fmt.Println(gotext.Get('x'));
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -c -d xg-go-7.tmp xg-go-7.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-7.tmp.po > xg-go-7.po || Exit 1
+
+sed -e '/POT-Creation-Date/d' < xg-go-7.po > xg-go-7.pot
+
+cat <<\EOF > xg-go-7.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: xg-go-7.go:12 xg-go-7.go:17
+msgid "Russian (Русский): Здравствуйте"
+msgstr ""
+
+#: xg-go-7.go:13 xg-go-7.go:18
+msgid "Vietnamese (Tiếng Việt): Chào bạn"
+msgstr ""
+
+#: xg-go-7.go:14 xg-go-7.go:19
+msgid "Japanese (日本語): こんにちは"
+msgstr ""
+
+#: xg-go-7.go:15 xg-go-7.go:20
+msgid "Thai (ภาษาไทย): สวัสดีครับ"
+msgstr ""
+
+#: xg-go-7.go:16 xg-go-7.go:21
+msgid "Script: 𝒞"
+msgstr ""
+
+#. And now a comment with Русский and 日本語 and Unicode escapes: B\u00f6se B\u00fcbchen
+#: xg-go-7.go:23
+msgid "This string has a multilingual comment"
+msgstr ""
+
+#: xg-go-7.go:28
+msgid ""
+"Embedded\n"
+"newline"
+msgstr ""
+
+#. Two backslashes (unlike in Java, where this is just one backslash).
+#: xg-go-7.go:30
+msgid "\\\\"
+msgstr ""
+
+#. A 6-character string (unlike in Java, where this is just one backslash).
+#: xg-go-7.go:32
+msgid "\\u005c"
+msgstr ""
+
+#. A single backslash.
+#: xg-go-7.go:34
+msgid "\\"
+msgstr ""
+
+#. Escape sequences in strings.
+#: xg-go-7.go:36
+msgid ""
+"t -> \t, n -> \n"
+", dquote -> \" ..."
+msgstr ""
+
+#. Hex escapes are recognized.
+#: xg-go-7.go:38
+msgid "bel: \a\n"
+msgstr ""
+
+#. Recognized despite comments
+#. Even across multiline
+#. comment!
+#: xg-go-7.go:41
+msgid "this is a single long line"
+msgstr ""
+
+#. In raw string literals, no escape sequences are recognized.
+#: xg-go-7.go:43
+msgid "raw 2 \\u005c \\\\ \\t \\n \\\""
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-7.ok xg-go-7.pot || Exit 1
+
+exit 0

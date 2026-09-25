@@ -14,19 +14,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,6 +23,8 @@
 
 void proto_register_oicq(void);
 void proto_reg_handoff_oicq(void);
+
+static dissector_handle_t oicq_handle;
 
 /*
 	Protocol Flag:     8bit unsigned
@@ -48,19 +38,19 @@ void proto_reg_handoff_oicq(void);
  */
 
 /* By default, but can be completely different */
-#define UDP_PORT_OICQ	8000
+#define UDP_PORT_OICQ	8000 /* Not IANA registered */
 
-static int proto_oicq = -1;
+static int proto_oicq;
 
-static int hf_oicq_flag = -1;
-static int hf_oicq_version = -1;
-static int hf_oicq_command = -1;
-static int hf_oicq_seq = -1;
-static int hf_oicq_qqid = -1;
-static int hf_oicq_data = -1;
+static int hf_oicq_flag;
+static int hf_oicq_version;
+static int hf_oicq_command;
+static int hf_oicq_seq;
+static int hf_oicq_qqid;
+static int hf_oicq_data;
 
 
-static gint ett_oicq = -1;
+static int ett_oicq;
 
 static const value_string oicq_flag_vals[] = {
 	{ 0x02,	"Oicq packet" },
@@ -102,6 +92,7 @@ static const value_string oicq_command_vals[] = {
 	{ 0x0080,	"Receive system message" },
 	{ 0x0081,	"Get status of friend" },
 	{ 0x00b5,	"Get friend's status of group" },
+	{ 0x03f7,	"Withdraw message" },
 	{ 0,			NULL }
 };
 
@@ -121,7 +112,7 @@ dissect_oicq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 	/* heuristic: OICQ iff (([0] == STX) && ([3/4] == <valid_command>) ) */
 	/*  (Supposedly each OICQ message ends with an ETX so a test for     */
 	/*   same could also be part of the heuristic).                      */
-	if ( (try_val_to_str(tvb_get_guint8(tvb, 0), oicq_flag_vals)    == NULL) ||
+	if ( (try_val_to_str(tvb_get_uint8(tvb, 0), oicq_flag_vals)    == NULL) ||
 	     (try_val_to_str(tvb_get_ntohs(tvb, 3),  oicq_command_vals) == NULL) )
 		return 0;
 
@@ -150,7 +141,7 @@ dissect_oicq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 		proto_tree_add_item(oicq_tree, hf_oicq_qqid, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
 
-		proto_tree_add_item(oicq_tree, hf_oicq_data, tvb, offset, -1, ENC_ASCII|ENC_NA);
+		proto_tree_add_item(oicq_tree, hf_oicq_data, tvb, offset, -1, ENC_ASCII);
 
 
 	}
@@ -181,27 +172,25 @@ proto_register_oicq(void)
 			"Data", "oicq.data", FT_STRING, BASE_NONE,
 			NULL, 0, NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_oicq,
 	};
 
-	proto_oicq = proto_register_protocol("OICQ - IM software, popular in China", "OICQ",
-	    "oicq");
+	proto_oicq = proto_register_protocol("OICQ - IM software, popular in China", "OICQ", "oicq");
 	proto_register_field_array(proto_oicq, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	oicq_handle = register_dissector("oicq", dissect_oicq, proto_oicq);
 }
 
 void
 proto_reg_handoff_oicq(void)
 {
-	dissector_handle_t oicq_handle;
-
-	oicq_handle = create_dissector_handle(dissect_oicq, proto_oicq);
-	dissector_add_uint("udp.port", UDP_PORT_OICQ, oicq_handle);
+	dissector_add_uint_with_preference("udp.port", UDP_PORT_OICQ, oicq_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

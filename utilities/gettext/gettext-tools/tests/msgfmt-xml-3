@@ -1,0 +1,222 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test msgfmt --xml: the value of the xml:lang attribute.
+
+cat <<\EOF > mf.appdata.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop" xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0">
+  <id>org.gnome.Characters.desktop</id>
+  <name>GNOME Characters</name>
+  <summary>Character map application</summary>
+  <licence>CC0</licence>
+  <description>
+    <p>Happy new year!</p>
+  </description>
+</component>
+EOF
+
+test -d po || mkdir po
+
+cat <<\EOF > po/fr.po
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-17 07:36+0900\n"
+"PO-Revision-Date: 2014-03-17 08:40+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# ouais, je sais
+msgid "Happy new year!"
+msgstr "Conne année!"
+EOF
+
+cat <<\EOF > po/de.po
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-17 07:36+0900\n"
+"PO-Revision-Date: 2014-03-17 08:40+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Happy new year!"
+msgstr "Gutes neues Jahr!"
+EOF
+
+cat <<\EOF > po/he.po
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-17 07:36+0900\n"
+"PO-Revision-Date: 2014-03-17 08:40+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Pronounced as: shana tova!
+msgid "Happy new year!"
+msgstr "שנה טובה!"
+EOF
+
+cat <<\EOF > po/ku_TR.po
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-17 07:36+0900\n"
+"PO-Revision-Date: 2014-03-17 08:40+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Happy new year!"
+msgstr "Sersala ve mibarek be!"
+EOF
+
+cat <<\EOF > po/uz_UZ.po
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-17 07:36+0900\n"
+"PO-Revision-Date: 2014-03-17 08:40+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Happy new year!"
+msgstr "Yangi yil bilan!"
+EOF
+
+cat <<\EOF > po/uz_UZ@cyrillic.po
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-17 07:36+0900\n"
+"PO-Revision-Date: 2014-03-17 08:40+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Happy new year!"
+msgstr "Янги йил билан!"
+EOF
+
+cat <<\EOF > po/zh_HK.po
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-17 07:36+0900\n"
+"PO-Revision-Date: 2014-03-17 08:40+0900\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Happy new year!"
+msgstr "新年快樂！"
+EOF
+
+cat <<\EOF > po/LINGUAS
+fr de he ku_TR uz_UZ uz_UZ@cyrillic zh_HK
+EOF
+
+cat <<\EOF > mf.appdata.xml.ok
+<?xml version="1.0" encoding="UTF-8"?>
+<component xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0" type="desktop">
+  <id>org.gnome.Characters.desktop</id>
+  <name>GNOME Characters</name>
+  <summary>Character map application</summary>
+  <licence>CC0</licence>
+  <description>
+    <p>Happy new year!</p>
+    <p xml:lang="zh-Hant-HK">新年快樂！</p>
+    <p xml:lang="uz-Cyrl-UZ">Янги йил билан!</p>
+    <p xml:lang="uz-Latn-UZ">Yangi yil bilan!</p>
+    <p xml:lang="ku-Latn-TR">Sersala ve mibarek be!</p>
+    <p xml:lang="he">שנה טובה!</p>
+    <p xml:lang="de">Gutes neues Jahr!</p>
+    <p xml:lang="fr">Conne année!</p>
+  </description>
+</component>
+EOF
+
+unset LINGUAS
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} --xml --template=mf.appdata.xml -d po -o mf.appdata.xml.out || Exit 1
+
+: ${DIFF=diff}
+${DIFF} mf.appdata.xml.ok mf.appdata.xml.out
+test $? = 0 || Exit 1

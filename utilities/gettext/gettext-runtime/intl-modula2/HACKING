@@ -1,0 +1,81 @@
+All you need to know when hacking (modifying) this directory.
+
+
+Target platforms
+================
+
+Only GNU Modula-2 is supported. We don't care about other Modula-2
+implementations.
+
+All platforms supported by GNU Modula-2 are supported. IIRC, this
+means all platforms supported by GCC.
+
+
+Requirements
+============
+
+You will need reasonably recent versions of the build tools:
+
+* The GNU Modula-2 compiler and runtime.
+  + Homepage:
+    https://www.nongnu.org/gm2/about.html
+    https://gcc.gnu.org/
+  + Documentation:
+    https://gcc.gnu.org/onlinedocs/gm2/index.html
+  + Pre-built package name:
+    - On Debian and Debian-based systems: gm2,
+    - On Red Hat distributions: gcc-gm2, libgm2.
+    - Other: https://repology.org/project/gcc-gm2/versions
+
+
+Modula-2 dialects
+=================
+
+Essentially, there is PIM4 and ISO.
+<https://gcc.gnu.org/onlinedocs/gm2/Dialect.html>
+
+For GNU Modula-2, PIM4 is the default, and -fiso enables ISO extensions.
+
+You need to make sure that the code in this directory does not use ISO
+extensions. To do so, run
+  $ gm2 *.mod
+and
+  $ gm2 -fiso *.mod
+and verify that the result is identical in size.
+
+The ISO extensions or differences between PIM4 and ISO are essentially:
+  * Added data types LONGINT, LONGREAL, COMPLEX, LONGCOMPLEX.
+  * A LOOP control that is more general than WHILE and REPEAT.
+    An EXIT statement, like 'break' in C.
+  * Module definition syntax:
+      DEFINITION MODULE      ->  INTERFACE
+      IMPLEMENTATION MODULE  ->  IMPLEMENTATION
+  * More explicit control over visibility and re-exporting.
+  * Coroutines.
+  * Exceptions.
+  * Added and extended standard library modules.
+
+
+Language reference
+==================
+
+For PIM4: https://freepages.modula2.org/report4/modula-2.html
+
+
+Standard libraries
+==================
+
+PIM4 library reference:
+https://gcc.gnu.org/onlinedocs/gm2/Standard-procedures.html#Standard-procedures-and-functions-common-to-PIM-and-ISO
+https://gcc.gnu.org/onlinedocs/gm2/Base-libraries.html
+https://gcc.gnu.org/onlinedocs/gm2/The-PIM-system-module.html
+
+ISO library reference:
+https://gcc.gnu.org/onlinedocs/gm2/Standard-procedures.html#ISO-specific-standard-procedures-and-functions
+https://gcc.gnu.org/onlinedocs/gm2/M2-ISO-Libraries.html
+https://gcc.gnu.org/onlinedocs/gm2/The-ISO-system-module.html
+https://www.modula2.org/reference/isomodules/
+
+Implementation in GNU Modula-2:
+  - The default library is in gcc/m2/gm2-libs/.
+  - The ISO library is in gcc/m2/gm2-libs-iso/.

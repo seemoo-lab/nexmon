@@ -1,0 +1,40 @@
+(* Example for use of GNU gettext.
+   This file is in the public domain.
+
+   Source code of the Modula-2 program.  *)
+
+
+MODULE Hello;
+
+FROM DynamicStrings IMPORT String, Length, char;
+FROM Terminal IMPORT Write, WriteLn;
+FROM Libintl IMPORT SetLocale, LC_ALL, TextDomain, BindTextDomain, Gettext;
+FROM FormatStrings IMPORT Sprintf1;
+FROM libc IMPORT getpid;
+
+(* Like Terminal.WriteString, except that it takes a String, not an ARRAY OF CHAR. *)
+PROCEDURE WriteString (s: String);
+VAR
+  l, i: CARDINAL;
+BEGIN
+  l := Length(s);
+  i := 0;
+  WHILE i < l DO
+    Write(char(s, i));
+    INC (i);
+  END;
+END WriteString;
+
+BEGIN
+
+  SetLocale(LC_ALL, "");
+  TextDomain("hello-modula2");
+  BindTextDomain("hello-modula2", "@localedir@");
+
+  WriteString(Gettext("Hello, world!"));
+  WriteLn;
+
+  WriteString(Sprintf1(Gettext("This program is running as process number %d."), getpid()));
+  WriteLn;
+
+END Hello.

@@ -1,0 +1,18 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.startElement(html)
+SAX.startElement(body)
+SAX.startElement(p, tst='a&amp;b', tst2='a&amp;b', tst3='a &amp; b')
+SAX.characters(
+a, 2)
+SAX.characters(&amp;, 1)
+SAX.characters(b
+a&amp;b
+a &amp; b
+, 12)
+SAX.endElement(p)
+SAX.characters(
+, 1)
+SAX.endElement(body)
+SAX.endElement(html)
+SAX.endDocument()

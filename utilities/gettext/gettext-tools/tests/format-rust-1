@@ -1,0 +1,93 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test recognition of Rust format strings.
+
+cat <<\EOF > f-rs-1.data
+# Invalid: no argument
+"abc"
+# Invalid: escaped braces
+"abc{{}}"
+# Valid: a numeric argument
+"abc{0}"
+# Valid: a named argument
+"abc{value}"
+# Valid: an omitted number
+"abc{}"
+# Invalid: unterminated directive
+"abc{1"
+# Invalid: unterminated directive
+"abc{v"
+# Valid: a numeric argument and a named argument
+"abc{0}def{value}"
+# Valid: a numeric argument without number and a named argument
+"abc{}def{value}"
+# Valid: a named argument and a numeric argument
+"abc{value}def{0}"
+# Valid: a named argument and a numeric argument without number
+"abc{value}def{}"
+# Invalid: numeric arguments with and without number are unsupported
+"abc{}def{1}"
+# Invalid: numeric arguments with and without number are unsupported
+"abc{1}def{}"
+# Valid: format specifier
+"abc{1:0}"
+# Valid: format specifier
+"abc{value:0}"
+# Valid: format specifier
+"abc{1:<<-#012.34}"
+# Valid: format specifier
+"abc{value:<<-#012.34}"
+# Invalid: conversion in format specifier
+"abc{1:<<-#012.34e}"
+# Invalid: conversion in format specifier
+"abc{value:<<-#012.34e}"
+# Invalid: null precision
+"abc{1:.}"
+# Invalid: null precision
+"abc{1:8.}"
+# Invalid: null precision
+"abc{value:.}"
+# Invalid: null precision
+"abc{value:8.}"
+# Invalid: invalid format specifier
+"abc{1:<c>}"
+# Invalid: invalid format specifier
+"abc{value:<c>}"
+EOF
+
+: ${XGETTEXT=xgettext}
+n=0
+while read comment; do
+  read string
+  n=`expr $n + 1`
+  cat <<EOF > f-rs-1-$n.in
+gettext(${string});
+EOF
+  ${XGETTEXT} -L Rust -o f-rs-1-$n.po f-rs-1-$n.in || Exit 1
+  test -f f-rs-1-$n.po || Exit 1
+  fail=
+  if echo "$comment" | grep 'Valid:' > /dev/null; then
+    if grep rust-format f-rs-1-$n.po > /dev/null; then
+      :
+    else
+      fail=yes
+    fi
+  else
+    if grep rust-format f-rs-1-$n.po > /dev/null; then
+      fail=yes
+    else
+      :
+    fi
+  fi
+  if test -n "$fail"; then
+    echo "Format string recognition error:" 1>&2
+    cat f-rs-1-$n.in 1>&2
+    echo "Got:" 1>&2
+    cat f-rs-1-$n.po 1>&2
+    Exit 1
+  fi
+  rm -f f-rs-1-$n.in f-rs-1-$n.po
+done < f-rs-1.data
+
+Exit 0

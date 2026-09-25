@@ -39,9 +39,9 @@ msgstr ""
 #, c-format
 msgid "write error of a big result on a too small disk% s% s"
 msgstr ""
-"Fehler beim Schreiben eines großen Ergebnisses auf eine zu kleine Platte% s"
-"% smit der jederzeitigen Möglichkeit eines Fehlers in jedem Moment und an "
-"jeder Stelle"
+"Fehler beim Schreiben eines großen Ergebnisses auf eine zu kleine "
+"Platte% s% smit der jederzeitigen Möglichkeit eines Fehlers in jedem Moment "
+"und an jeder Stelle"
 EOF
 
 : ${DIFF=diff}

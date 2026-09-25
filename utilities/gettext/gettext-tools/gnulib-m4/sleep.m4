@@ -1,8 +1,10 @@
-# sleep.m4 serial 7
-dnl Copyright (C) 2007-2016 Free Software Foundation, Inc.
+# sleep.m4
+# serial 14
+dnl Copyright (C) 2007-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_SLEEP],
 [
@@ -32,7 +34,7 @@ handle_alarm (int sig)
 }
 ]], [[
     /* Failure to compile this test due to missing alarm is okay,
-       since all such platforms (mingw) also lack sleep.  */
+       since all such platforms (mingw, MSVC) also lack sleep.  */
     unsigned int pentecost = 50 * 24 * 60 * 60; /* 50 days.  */
     unsigned int remaining;
     signal (SIGALRM, handle_alarm);
@@ -46,10 +48,16 @@ handle_alarm (int sig)
     ]])],
       [gl_cv_func_sleep_works=yes], [gl_cv_func_sleep_works=no],
       [case "$host_os" in
-                 # Guess yes on glibc systems.
-         *-gnu*) gl_cv_func_sleep_works="guessing yes" ;;
-                 # If we don't know, assume the worst.
-         *)      gl_cv_func_sleep_works="guessing no" ;;
+                            # Guess yes on glibc systems.
+         *-gnu* | gnu*)     gl_cv_func_sleep_works="guessing yes" ;;
+                            # Guess yes on musl systems.
+         *-musl*)           gl_cv_func_sleep_works="guessing yes" ;;
+                            # Guess yes on systems that emulate the Linux system calls.
+         midipix*)          gl_cv_func_sleep_works="guessing yes" ;;
+                            # Guess no on native Windows.
+         mingw* | windows*) gl_cv_func_sleep_works="guessing no" ;;
+                            # If we don't know, obey --enable-cross-guesses.
+         *)                 gl_cv_func_sleep_works="$gl_cross_guess_normal" ;;
        esac
       ])])
     case "$gl_cv_func_sleep_works" in

@@ -1,5 +1,5 @@
 /* Determine the user's language preferences.
-   Copyright (C) 2004-2007, 2015-2016 Free Software Foundation, Inc.
+   Copyright (C) 2004-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -12,27 +12,34 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-/* Written by Bruno Haible <bruno@clisp.org>.
-   Win32 code originally by Michele Cicciotti <hackbunny@reactos.com>.  */
+/* Written by Bruno Haible.
+   Win32 code originally by Michele Cicciotti.  */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
 
+/* Specification.  */
+#include "gettextP.h"
+
 #include <stdlib.h>
 
-#if HAVE_CFPREFERENCESCOPYAPPVALUE
+#if HAVE_CFLOCALECOPYPREFERREDLANGUAGES || HAVE_CFPREFERENCESCOPYAPPVALUE
 # include <string.h>
-# include <CoreFoundation/CFPreferences.h>
+# if HAVE_CFLOCALECOPYPREFERREDLANGUAGES
+#  include <CoreFoundation/CFLocale.h>
+# elif HAVE_CFPREFERENCESCOPYAPPVALUE
+#  include <CoreFoundation/CFPreferences.h>
+# endif
 # include <CoreFoundation/CFPropertyList.h>
 # include <CoreFoundation/CFArray.h>
 # include <CoreFoundation/CFString.h>
-extern void _nl_locale_name_canonicalize (char *name);
+extern void gl_locale_name_canonicalize (char *name);
 #endif
 
-#if defined _WIN32 || defined __WIN32__
+#if defined _WIN32
 # define WIN32_NATIVE
 #endif
 
@@ -47,20 +54,20 @@ extern void _nl_locale_name_canonicalize (char *name);
 # define STATUS_BUFFER_OVERFLOW 0x80000005
 # endif
 
-extern void _nl_locale_name_canonicalize (char *name);
-extern const char *_nl_locale_name_from_win32_LANGID (LANGID langid);
-extern const char *_nl_locale_name_from_win32_LCID (LCID lcid);
+extern void gl_locale_name_canonicalize (char *name);
+extern const char *gl_locale_name_from_win32_LANGID (LANGID langid);
+extern const char *gl_locale_name_from_win32_LCID (LCID lcid);
 
 /* Get the preferences list through the MUI APIs. This works on Windows Vista
    and newer.  */
 static const char *
 _nl_language_preferences_win32_mui (HMODULE kernel32)
 {
-  /* DWORD GetUserPreferredUILanguages (ULONG dwFlags,
-                                        PULONG pulNumLanguages,
-                                        PWSTR pwszLanguagesBuffer,
-                                        PULONG pcchLanguagesBuffer);  */
-  typedef DWORD (WINAPI *GetUserPreferredUILanguages_func) (ULONG, PULONG, PWSTR, PULONG);
+  /* BOOL GetUserPreferredUILanguages (DWORD dwFlags,
+                                       PULONG pulNumLanguages,
+                                       PWSTR pwszLanguagesBuffer,
+                                       PULONG pcchLanguagesBuffer);  */
+  typedef BOOL (WINAPI *GetUserPreferredUILanguages_func) (DWORD, PULONG, PWSTR, PULONG);
   GetUserPreferredUILanguages_func p_GetUserPreferredUILanguages;
 
   p_GetUserPreferredUILanguages =
@@ -70,14 +77,13 @@ _nl_language_preferences_win32_mui (HMODULE kernel32)
     {
       ULONG num_languages;
       ULONG bufsize;
-      DWORD ret;
+      BOOL ret;
 
       bufsize = 0;
       ret = p_GetUserPreferredUILanguages (MUI_LANGUAGE_NAME,
                                            &num_languages,
                                            NULL, &bufsize);
-      if (ret == 0
-          && GetLastError () == STATUS_BUFFER_OVERFLOW
+      if ((ret || GetLastError () == STATUS_BUFFER_OVERFLOW)
           && bufsize > 0)
         {
           WCHAR *buffer = (WCHAR *) malloc (bufsize * sizeof (WCHAR));
@@ -123,7 +129,7 @@ _nl_language_preferences_win32_mui (HMODULE kernel32)
                             /* An unexpected Win32 locale name occurred.  */
                             break;
                           *q = '\0';
-                          _nl_locale_name_canonicalize (q2);
+                          gl_locale_name_canonicalize (q2);
                           q = q2 + strlen (q2);
                           p++;
                         }
@@ -155,7 +161,7 @@ _nl_language_preferences_win32_ME (HMODULE kernel32)
    (GetUserDefaultUILanguage_func)
    GetProcAddress (kernel32, "GetUserDefaultUILanguage");
   if (p_GetUserDefaultUILanguage != NULL)
-    return _nl_locale_name_from_win32_LANGID (p_GetUserDefaultUILanguage ());
+    return gl_locale_name_from_win32_LANGID (p_GetUserDefaultUILanguage ());
   return NULL;
 }
 
@@ -171,7 +177,7 @@ _nl_language_preferences_win32_95 ()
       == NO_ERROR)
     {
       DWORD type;
-      char data[8 + 1];
+      BYTE data[8 + 1];
       DWORD data_size = sizeof (data);
       DWORD ret;
 
@@ -194,9 +200,9 @@ _nl_language_preferences_win32_95 ()
               if (data_size < sizeof (data))
                 data[data_size] = '\0';
               /* Parse it as a hexadecimal number.  */
-              lcid = strtoul (data, &endp, 16);
-              if (endp > data && *endp == '\0')
-                return _nl_locale_name_from_win32_LCID (lcid);
+              lcid = strtoul ((char *) data, &endp, 16);
+              if (endp > (char *) data && *endp == '\0')
+                return gl_locale_name_from_win32_LCID (lcid);
             }
         }
     }
@@ -207,7 +213,7 @@ _nl_language_preferences_win32_95 ()
 static BOOL CALLBACK
 ret_first_language (HMODULE h, LPCSTR type, LPCSTR name, WORD lang, LONG_PTR param)
 {
-  *(const char **)param = _nl_locale_name_from_win32_LANGID (lang);
+  *(const char **)param = gl_locale_name_from_win32_LANGID (lang);
   return FALSE;
 }
 static const char *
@@ -233,7 +239,8 @@ _nl_language_preferences_win32_system (HMODULE kernel32)
 const char *
 _nl_language_preferences_default (void)
 {
-#if HAVE_CFPREFERENCESCOPYAPPVALUE /* MacOS X 10.2 or newer */
+#if HAVE_CFLOCALECOPYPREFERREDLANGUAGES || HAVE_CFPREFERENCESCOPYAPPVALUE
+  /* MacOS X 10.4 or newer */
   {
     /* Cache the preferences list, since CoreFoundation calls are expensive.  */
     static const char *cached_languages;
@@ -241,6 +248,9 @@ _nl_language_preferences_default (void)
 
     if (!cache_initialized)
       {
+# if HAVE_CFLOCALECOPYPREFERREDLANGUAGES /* MacOS X 10.5 or newer */
+        CFArrayRef prefArray = CFLocaleCopyPreferredLanguages ();
+# elif HAVE_CFPREFERENCESCOPYAPPVALUE /* MacOS X 10.4 or newer */
         CFTypeRef preferences =
           CFPreferencesCopyAppValue (CFSTR ("AppleLanguages"),
                                      kCFPreferencesCurrentApplication);
@@ -248,8 +258,11 @@ _nl_language_preferences_default (void)
             && CFGetTypeID (preferences) == CFArrayGetTypeID ())
           {
             CFArrayRef prefArray = (CFArrayRef)preferences;
+# endif
+
             int n = CFArrayGetCount (prefArray);
             char buf[256];
+            char buf2[256];
             size_t size = 0;
             int i;
 
@@ -262,14 +275,38 @@ _nl_language_preferences_default (void)
                                            buf, sizeof (buf),
                                            kCFStringEncodingASCII))
                   {
-                    _nl_locale_name_canonicalize (buf);
+                    strcpy (buf2, buf);
+                    gl_locale_name_canonicalize (buf);
                     size += strlen (buf) + 1;
+                    /* Mac OS X 10.12 or newer returns an array of elements of
+                       the form "ll-CC" or "ll-Scrp-CC" where ll is a language
+                       code, CC is a country code, and Scrp (optional) is a
+                       script code.
+                       gl_locale_name_canonicalize converts this to "ll_CC" or
+                       "ll_Scrp_CC".
+                       Sometimes ll and CC are unrelated, i.e. there is no
+                       translation for "ll_CC" but one for "ll".
+                       Similarly, in the case with a script, sometimes there is
+                       no translation for "ll_Scrp_CC" but one for "ll_Scrp"
+                       (after proper canonicalization).
+                       Therefore, in the result, we return "ll_CC" followed
+                       by "ll", or similarly for the case with a script.  */
+                    {
+                      char *last_minus = strrchr (buf2, '-');
+                      if (last_minus != NULL)
+                        {
+                          *last_minus = '\0';
+                          gl_locale_name_canonicalize (buf2);
+                          size += strlen (buf2) + 1;
+                        }
+                    }
                     /* Most GNU programs use msgids in English and don't ship
-                       an en.mo message catalog.  Therefore when we see "en"
-                       in the preferences list, arrange for gettext() to
-                       return the msgid, and ignore all further elements of
+                       an en.mo message catalog.  Therefore when we see "en" or
+                       "en-CC" in the preferences list, arrange for gettext()
+                       to return the msgid, and ignore all further elements of
                        the preferences list.  */
-                    if (strcmp (buf, "en") == 0)
+                    if (buf[0] == 'e' && buf[1] == 'n'
+                        && (buf[2] == '\0' || buf[2] == '_'))
                       break;
                   }
                 else
@@ -293,11 +330,24 @@ _nl_language_preferences_default (void)
                                                    buf, sizeof (buf),
                                                    kCFStringEncodingASCII))
                           {
-                            _nl_locale_name_canonicalize (buf);
+                            strcpy (buf2, buf);
+                            gl_locale_name_canonicalize (buf);
                             strcpy (p, buf);
                             p += strlen (buf);
                             *p++ = ':';
-                            if (strcmp (buf, "en") == 0)
+                            {
+                              char *last_minus = strrchr (buf2, '-');
+                              if (last_minus != NULL)
+                                {
+                                  *last_minus = '\0';
+                                  gl_locale_name_canonicalize (buf2);
+                                  strcpy (p, buf2);
+                                  p += strlen (buf2);
+                                  *p++ = ':';
+                                }
+                            }
+                            if (buf[0] == 'e' && buf[1] == 'n'
+                                 && (buf[2] == '\0' || buf[2] == '_'))
                               break;
                           }
                         else
@@ -308,7 +358,12 @@ _nl_language_preferences_default (void)
                     cached_languages = languages;
                   }
               }
+
+# if HAVE_CFLOCALECOPYPREFERREDLANGUAGES /* MacOS X 10.5 or newer */
+        CFRelease (prefArray);
+# elif HAVE_CFPREFERENCESCOPYAPPVALUE /* MacOS X 10.4 or newer */
           }
+# endif
         cache_initialized = 1;
       }
     if (cached_languages != NULL)

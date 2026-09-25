@@ -13,19 +13,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -40,91 +28,118 @@
 void proto_register_slsk(void);
 void proto_reg_handoff_slsk(void);
 
+static dissector_handle_t slsk_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_slsk = -1;
+static int proto_slsk;
 
-static int hf_slsk_integer = -1;
-static int hf_slsk_string = -1;
-static int hf_slsk_byte = -1;
-static int hf_slsk_message_length = -1;
-static int hf_slsk_message_code = -1;
-static int hf_slsk_client_ip = -1;
-/* static int hf_slsk_server_ip = -1; */
-static int hf_slsk_string_length = -1;
-static int hf_slsk_directory_name = -1;
-static int hf_slsk_username = -1;
-static int hf_slsk_password = -1;
-static int hf_slsk_version = -1;
-static int hf_slsk_login_successful = -1;
-static int hf_slsk_login_message = -1;
-static int hf_slsk_port = -1;
-static int hf_slsk_ip = -1;
-static int hf_slsk_user_exists = -1;
-static int hf_slsk_status_code = -1;
-static int hf_slsk_room = -1;
-static int hf_slsk_chat_message = -1;
-static int hf_slsk_users_in_room = -1;
-static int hf_slsk_token = -1;
-static int hf_slsk_connection_type = -1;
-static int hf_slsk_chat_message_id = -1;
-static int hf_slsk_timestamp = -1;
-static int hf_slsk_search_text = -1;
-static int hf_slsk_folder_count = -1;
-static int hf_slsk_file_count = -1;
-static int hf_slsk_average_speed = -1;
-static int hf_slsk_download_number = -1;
-static int hf_slsk_files = -1;
-static int hf_slsk_directories = -1;
-static int hf_slsk_slotsfull = -1;
-static int hf_slsk_place_in_queue = -1;
-static int hf_slsk_number_of_rooms = -1;
-static int hf_slsk_filename = -1;
-static int hf_slsk_filename_ext = -1;
-static int hf_slsk_directory = -1;
-static int hf_slsk_size = -1;
-/* static int hf_slsk_checksum = -1; */
-static int hf_slsk_code = -1;
-static int hf_slsk_number_of_users = -1;
-static int hf_slsk_number_of_days = -1;
-static int hf_slsk_transfer_direction = -1;
-static int hf_slsk_user_description = -1;
-static int hf_slsk_picture_exists = -1;
-static int hf_slsk_picture = -1;
-/* static int hf_slsk_user_uploads = -1; */
-static int hf_slsk_total_uploads = -1;
-static int hf_slsk_queued_uploads = -1;
-static int hf_slsk_slots_available = -1;
-static int hf_slsk_allowed = -1;
-static int hf_slsk_compr_packet = -1;
-static int hf_slsk_parent_min_speed = -1;
-static int hf_slsk_parent_speed_connection_ratio = -1;
-static int hf_slsk_seconds_parent_inactivity_before_disconnect = -1;
-static int hf_slsk_seconds_server_inactivity_before_disconnect = -1;
-static int hf_slsk_nodes_in_cache_before_disconnect = -1;
-static int hf_slsk_seconds_before_ping_children = -1;
-static int hf_slsk_recommendation = -1;
-static int hf_slsk_user = -1;
-static int hf_slsk_ranking = -1;
-
+static int hf_slsk_integer;
+static int hf_slsk_string;
+static int hf_slsk_byte;
+static int hf_slsk_message_length;
+static int hf_slsk_message_code;
+static int hf_slsk_embedded_message_type;
+static int hf_slsk_client_ip;
+/* static int hf_slsk_server_ip; */
+static int hf_slsk_directory_name;
+static int hf_slsk_username;
+static int hf_slsk_password;
+static int hf_slsk_version;
+static int hf_slsk_login_successful;
+static int hf_slsk_login_message;
+static int hf_slsk_port;
+static int hf_slsk_ip;
+static int hf_slsk_user_exists;
+static int hf_slsk_status_code;
+static int hf_slsk_room;
+static int hf_slsk_chat_message;
+static int hf_slsk_users_in_room;
+static int hf_slsk_token;
+static int hf_slsk_connection_type;
+static int hf_slsk_chat_message_id;
+static int hf_slsk_timestamp;
+static int hf_slsk_search_text;
+static int hf_slsk_folder_count;
+static int hf_slsk_file_count;
+static int hf_slsk_average_speed;
+static int hf_slsk_download_number;
+static int hf_slsk_files;
+static int hf_slsk_directories;
+static int hf_slsk_slotsfull;
+static int hf_slsk_place_in_queue;
+static int hf_slsk_number_of_rooms;
+static int hf_slsk_filename;
+static int hf_slsk_filename_ext;
+static int hf_slsk_directory;
+static int hf_slsk_size;
+/* static int hf_slsk_checksum; */
+static int hf_slsk_code;
+static int hf_slsk_number_of_users;
+static int hf_slsk_number_of_days;
+static int hf_slsk_transfer_direction;
+static int hf_slsk_user_description;
+static int hf_slsk_picture_exists;
+static int hf_slsk_picture;
+/* static int hf_slsk_user_uploads; */
+static int hf_slsk_total_uploads;
+static int hf_slsk_queued_uploads;
+static int hf_slsk_slots_available;
+static int hf_slsk_allowed;
+static int hf_slsk_compr_packet;
+static int hf_slsk_parent_min_speed;
+static int hf_slsk_parent_speed_connection_ratio;
+static int hf_slsk_seconds_parent_inactivity_before_disconnect;
+static int hf_slsk_seconds_server_inactivity_before_disconnect;
+static int hf_slsk_nodes_in_cache_before_disconnect;
+static int hf_slsk_seconds_before_ping_children;
+static int hf_slsk_recommendation;
+static int hf_slsk_user;
+static int hf_slsk_ranking;
+static int hf_slsk_compressed_packet_length;
+static int hf_slsk_uncompressed_packet_length;
+static int hf_slsk_num_directories;
+static int hf_slsk_upload_speed;
+static int hf_slsk_in_queue;
+static int hf_slsk_num_slotsfull_records;
+static int hf_slsk_num_recommendations;
+static int hf_slsk_num_files;
+static int hf_slsk_num_strings;
+static int hf_slsk_file_code;
+static int hf_slsk_file_size1;
+static int hf_slsk_file_size2;
+static int hf_slsk_file_num_attributes;
+static int hf_slsk_file_attribute_type;
+static int hf_slsk_file_attribute_value;
+static int hf_slsk_free_upload_slots;
+static int hf_slsk_bytes;
+static int hf_slsk_same_recommendation;
+static int hf_slsk_number_of_priv_users;
+static int hf_slsk_num_parent_address;
 
 /* Initialize the subtree pointers */
-static gint ett_slsk = -1;
-static gint ett_slsk_compr_packet = -1;
+static int ett_slsk;
+static int ett_slsk_compr_packet;
+static int ett_slsk_directory;
+static int ett_slsk_file;
+static int ett_slsk_file_attribute;
+static int ett_slsk_user;
+static int ett_slsk_recommendation;
+static int ett_slsk_room;
+static int ett_slsk_string;
 
-static expert_field ei_slsk_unknown_data = EI_INIT;
-static expert_field ei_slsk_zlib_decompression_failed = EI_INIT;
+static expert_field ei_slsk_unknown_data;
+static expert_field ei_slsk_zlib_decompression_failed;
+static expert_field ei_slsk_decompression_failed;
 
-#define TCP_PORT_SLSK_1       2234
-#define TCP_PORT_SLSK_2       5534
-#define TCP_PORT_SLSK_3       2240
+#define SLSK_TCP_PORT_RANGE   "2234,2240,5534"
 
 
 /* desegmentation of SoulSeek Message over TCP */
-static gboolean slsk_desegment = TRUE;
-#ifdef HAVE_ZLIB
-static gboolean slsk_decompress = TRUE;
+static bool slsk_desegment = true;
+#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
+static bool slsk_decompress = true;
 #else
-static gboolean slsk_decompress = FALSE;
+static bool slsk_decompress;
 #endif
 
 static const value_string slsk_tcp_msgs[] = {
@@ -230,10 +245,11 @@ static const char* connection_type(char con_type[]) {
   return "Unknown";
 }
 
-static gboolean check_slsk_format(tvbuff_t *tvb, int offset, const char format[]){
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool check_slsk_format(tvbuff_t *tvb, packet_info *pinfo, int offset, const char format[]){
 
   /*
-  * Returns TRUE if tvbuff beginning at offset matches a certain format
+  * Returns true if tvbuff beginning at offset matches a certain format
   * The format is given by an array of characters standing for a special field type
   *     i - integer  (4 bytes)
   *     b - byte  (1 byte)
@@ -244,47 +260,50 @@ static gboolean check_slsk_format(tvbuff_t *tvb, int offset, const char format[]
 
   switch ( format[0] ) {
     case 'i':
-      if (tvb_captured_length_remaining(tvb, offset) < 4) return FALSE;
+      if (tvb_captured_length_remaining(tvb, offset) < 4) return false;
       offset += 4;
     break;
     case 'b':
-      if (tvb_captured_length_remaining(tvb, offset) < 1) return FALSE;
+      if (tvb_captured_length_remaining(tvb, offset) < 1) return false;
       offset += 1;
     break;
     case 's':
-      if (tvb_captured_length_remaining(tvb, offset) < 4) return FALSE;
-      if (tvb_captured_length_remaining(tvb, offset) < (int)tvb_get_letohl(tvb, offset)+4) return FALSE;
+      if (tvb_captured_length_remaining(tvb, offset) < 4) return false;
+      if (tvb_captured_length_remaining(tvb, offset) < (int)tvb_get_letohl(tvb, offset)+4) return false;
       offset += tvb_get_letohl(tvb, offset)+4;
     break;
     case '*':
-      return TRUE;
+      return true;
     default:
-      return FALSE;
+      return false;
   }
 
   if (format[1] == '\0' ) {
     if (tvb_captured_length_remaining(tvb, offset) > 0) /* Checks for additional bytes at the end */
-      return FALSE;
-    return TRUE;
+      return false;
+    return true;
   }
-  return check_slsk_format(tvb, offset, &format[1]);
+  increment_dissection_depth(pinfo);
+  bool valid = check_slsk_format(tvb, pinfo, offset, &format[1]);
+  decrement_dissection_depth(pinfo);
+  return valid;
 
 }
 
-static const char* get_message_type(tvbuff_t *tvb) {
+static const char* get_message_type(tvbuff_t *tvb, packet_info *pinfo) {
   /*
   * Checks if the Message Code is known.
   * If unknown checks if the Message Code is stored in a byte.
   * Returns the Message Type.
   */
   int msg_code = tvb_get_letohl(tvb, 4);
-  const gchar *message_type =  try_val_to_str(msg_code, slsk_tcp_msgs);
+  const char *message_type =  try_val_to_str(msg_code, slsk_tcp_msgs);
   if (message_type == NULL) {
-    if (check_slsk_format(tvb, 4, "bisis"))
+    if (check_slsk_format(tvb, pinfo, 4, "bisis"))
       message_type = "Distributed Search";
-    else if (check_slsk_format(tvb, 4, "bssi"))
+    else if (check_slsk_format(tvb, pinfo, 4, "bssi"))
       message_type = "Peer Init";
-    else if (check_slsk_format(tvb, 4, "bi"))
+    else if (check_slsk_format(tvb, pinfo, 4, "bi"))
       message_type = "Pierce Fw";
     else
       message_type = "Unknown";
@@ -292,10 +311,10 @@ static const char* get_message_type(tvbuff_t *tvb) {
   return message_type;
 }
 
-static guint get_slsk_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+static unsigned get_slsk_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                               int offset, void *data _U_)
 {
-  guint32 msg_len;
+  uint32_t msg_len;
   msg_len = tvb_get_letohl(tvb, offset);
   /* That length doesn't include the length field itself; add that in. */
   msg_len += 4;
@@ -308,27 +327,17 @@ static int dissect_slsk_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 {
 
 /* Set up structures needed to add the protocol subtree and manage it */
-  proto_item *ti, *ti_len=NULL;
-  proto_tree *slsk_tree;
+  proto_item *ti, *ti_len, *ti_subtree, *ti_subtree2;
+  proto_tree *slsk_tree, *subtree, *subtree2, *subtree3;
 
-  int offset, i, j;
-  guint32 msg_len, msg_code;
-  const gchar *message_type;
-  guint8 *str;
+  int offset = 0, i, j;
+  uint32_t msg_len, msg_code;
+  uint8_t *str;
+  int str_len, start_offset, start_offset2;
 
-  int comprlen = 0;
-  int uncomprlen = 0;
-  int uncompr_tvb_offset = 0;
-  int i2 = 0;
-  int j2 = 0;
-  int i3 = 0;
-  int j3 = 0;
-
-  offset = 0;
-
-  msg_len = tvb_get_letohl(tvb, offset);
-  msg_code = tvb_get_letohl(tvb, offset+4);
-  message_type = get_message_type(tvb);
+  int comprlen = 0, uncomprlen = 0, uncompr_tvb_offset = 0;
+  int i2 = 0, j2 = 0;
+  int i3 = 0, j3 = 0;
 
 /* Make entries in Protocol column and Info column on summary display */
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "slsk");
@@ -337,9 +346,7 @@ static int dissect_slsk_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
   col_set_str(pinfo->cinfo, COL_INFO, "SoulSeek Message");
 
-  col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", message_type);
-
-  if (tree) {
+  col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", get_message_type(tvb, pinfo));
 
 /* create display subtree for the protocol */
     ti = proto_tree_add_item(tree, proto_slsk, tvb, 0, -1, ENC_NA);
@@ -347,133 +354,116 @@ static int dissect_slsk_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 /* Continue adding tree items to process the packet here */
 
-    ti_len = proto_tree_add_uint(slsk_tree, hf_slsk_message_length, tvb, offset, 4, msg_len);
+    ti_len = proto_tree_add_item_ret_uint(slsk_tree, hf_slsk_message_length, tvb, offset, 4, ENC_LITTLE_ENDIAN, &msg_len);
     offset += 4;
+    msg_code = tvb_get_letohl(tvb, offset);
 
     switch (msg_code) {
 
       case  1:
-        if (check_slsk_format(tvb, offset, "issi")) {
+        if (check_slsk_format(tvb, pinfo, offset, "issi")) {
           /* Client-to-Server */
-          message_type = "Login";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Login (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_password, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_version, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_password, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_version, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "ibs") || check_slsk_format(tvb, offset, "ibsi")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "ibs") || check_slsk_format(tvb, pinfo, offset, "ibsi")) {
           /* Server-to-Client */
-          message_type = "Login Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Login Reply (Code: %02d)", msg_code);
           offset += 4;
-          i=tvb_get_guint8(tvb, offset);
-          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_login_successful, tvb, offset, 1, tvb_get_guint8(tvb, offset),
-            "%s (Byte: %d)", val_to_str_const(tvb_get_guint8(tvb, offset), slsk_yes_no, "Unknown"), tvb_get_guint8(tvb, offset));
+          i=tvb_get_uint8(tvb, offset);
+          proto_tree_add_item(slsk_tree, hf_slsk_login_successful, tvb, offset, 1, ENC_NA);
           offset += 1;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_login_message, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_login_message, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
           if (i == 1){
-            proto_tree_add_ipv4(slsk_tree, hf_slsk_client_ip, tvb, offset, 4, tvb_get_ntohl(tvb, offset));
+            proto_tree_add_item(slsk_tree, hf_slsk_client_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
             offset += 4;
           }
         }
       break;
 
       case  2:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Client-to-Server */
-          message_type = "Set Wait Port";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Set Wait Port (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_port, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_port, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case  3:
-        if (check_slsk_format(tvb, offset, "isii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isii")) {
           /* Server-to-Client */
-          message_type = "Get Peer Address Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Peer Address Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_ipv4(slsk_tree, hf_slsk_ip, tvb, offset, 4, tvb_get_ntohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_port, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_port, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "is")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "Get Peer Address";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Peer Address (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 4:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Client */
-          message_type = "Get Shared File List";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Shared File List (Code: %02d)", msg_code);
           offset += 4;
         }
       break;
 
       case  5:
-        if (check_slsk_format(tvb, offset, "isb")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isb")) {
           /* Server-to-Client */
-          message_type = "User Exists Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "User Exists Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_user_exists, tvb, offset, 1, tvb_get_guint8(tvb, offset),
-            "%s (Byte: %d)", val_to_str_const(tvb_get_guint8(tvb, offset), slsk_yes_no, "Unknown"), tvb_get_guint8(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_user_exists, tvb, offset, 1, ENC_NA);
           offset += 1;
         }
-        else if (check_slsk_format(tvb, offset, "is")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "User Exists Request";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "User Exists Request (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "i*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "i*")) {
           /* Client-to-Client */
-          message_type = "Shared File List";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Shared File List (Code: %02d)", msg_code);
           offset += 4;
 
           /* [zlib compressed] */
           comprlen = tvb_captured_length_remaining(tvb, offset);
 
-          if (slsk_decompress == TRUE){
+          if (slsk_decompress == true){
 
-            tvbuff_t *uncompr_tvb = tvb_child_uncompress(tvb, tvb, offset, comprlen);
+            tvbuff_t *uncompr_tvb = tvb_child_uncompress_zlib(tvb, tvb, offset, comprlen);
 
             if (uncompr_tvb == NULL) {
               proto_tree_add_expert(slsk_tree, pinfo, &ei_slsk_zlib_decompression_failed, tvb, offset, -1);
@@ -482,515 +472,405 @@ static int dissect_slsk_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
               proto_item *ti2 = proto_tree_add_item(slsk_tree, hf_slsk_compr_packet, tvb, offset, -1, ENC_NA);
               proto_tree *slsk_compr_packet_tree = proto_item_add_subtree(ti2, ett_slsk_compr_packet);
+              proto_item_set_generated(ti2);
 
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-                "(  compressed packet length: %d)", comprlen);
+              ti = proto_tree_add_uint(slsk_tree, hf_slsk_compressed_packet_length, tvb, offset, 0, comprlen);
+              proto_item_set_generated(ti);
               uncomprlen = tvb_reported_length_remaining(uncompr_tvb, 0);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-                "(uncompressed packet length: %d)", uncomprlen);
+              ti = proto_tree_add_uint(slsk_tree, hf_slsk_uncompressed_packet_length, tvb, offset, 0, uncomprlen);
+              proto_item_set_generated(ti);
 
-              add_new_data_source(pinfo, uncompr_tvb,
-                  "Uncompressed SoulSeek data");
+              add_new_data_source(pinfo, uncompr_tvb, "Uncompressed SoulSeek data");
               uncompr_tvb_offset = 0;
-              if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "i*")) {
-                i=0;
-                j = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb, uncompr_tvb_offset, 4, j,
-                  "Number of directories: %u", j);
+              if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "i*")) {
+                proto_tree_add_item_ret_int(slsk_compr_packet_tree, hf_slsk_num_directories, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN, &j);
                 uncompr_tvb_offset += 4;
-                while (i<j){
-                  if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "si*")) {
-                    guint32 len;
-
-                    len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length, uncompr_tvb,
-                      uncompr_tvb_offset, 4, len,
-                      "Directory #%d String Length: %u", i+1, len);
-                    str = tvb_format_text(uncompr_tvb, uncompr_tvb_offset+4, len);
-                    proto_tree_add_string_format(slsk_compr_packet_tree, hf_slsk_directory_name, uncompr_tvb, uncompr_tvb_offset+4, len, str,
-                      "Directory #%d Name: %s", i+1, str);
-                    uncompr_tvb_offset += 4+len;
-                    i2=0;
-                    j2 = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb,
-                      uncompr_tvb_offset, 4, j2,
-                      "Directory #%d Number of files: %u", i+1, j2);
+                for (i = 0; i < j; i++) {
+                  if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "si*")) {
+                    start_offset = uncompr_tvb_offset;
+                    subtree = proto_tree_add_subtree_format(slsk_compr_packet_tree, uncompr_tvb, uncompr_tvb_offset, 1, ett_slsk_directory, &ti_subtree, "Directory #%d", i+1);
+                    proto_tree_add_item_ret_length(subtree, hf_slsk_directory_name, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+                    uncompr_tvb_offset += str_len;
+                    proto_tree_add_item_ret_int(subtree, hf_slsk_num_files, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN, &j2);
                     uncompr_tvb_offset += 4;
-                    while (i2<j2){
-                      if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "bsiisi*")) {
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_byte, uncompr_tvb,
-                          uncompr_tvb_offset, 1, tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset),
-                          "Dir #%d File #%d Code: %d", i+1, i2+1, tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset));
+                    for (i2 = 0; i2 < j2; i2++) {
+                      if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "bsiisi*")) {
+                        start_offset2 = uncompr_tvb_offset;
+                        subtree2 = proto_tree_add_subtree_format(subtree, uncompr_tvb, uncompr_tvb_offset, 1, ett_slsk_file, &ti_subtree2, "File #%d", i2+1);
+                        proto_tree_add_item(subtree2, hf_slsk_file_code, uncompr_tvb, uncompr_tvb_offset, 1, ENC_NA);
                         uncompr_tvb_offset += 1;
-                        len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length,
-                          uncompr_tvb, uncompr_tvb_offset, 4, len,
-                          "Dir #%d File #%d String Length: %u", i+1, i2+1, len);
-                        str = tvb_format_text(uncompr_tvb, uncompr_tvb_offset+4, len);
-                        proto_tree_add_string_format(slsk_compr_packet_tree, hf_slsk_filename, uncompr_tvb, uncompr_tvb_offset+4, len, str,
-                          "Dir #%d File #%d Filename: %s", i+1, i2+1, str);
-                        uncompr_tvb_offset += 4+len;
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer,
-                          uncompr_tvb, uncompr_tvb_offset, 4,
-                          tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                          "Dir #%d File #%d Size1: %u", i+1, i2+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                        proto_tree_add_item_ret_length(subtree2, hf_slsk_filename, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+                        uncompr_tvb_offset += str_len;
+                        proto_tree_add_item(subtree2, hf_slsk_file_size1, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                         uncompr_tvb_offset += 4;
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer,
-                          uncompr_tvb, uncompr_tvb_offset, 4,
-                          tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                          "Dir #%d File #%d Size2: %d", i+1, i2+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                        proto_tree_add_item(subtree2, hf_slsk_file_size2, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                         uncompr_tvb_offset += 4;
-                        len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length,
-                          uncompr_tvb, uncompr_tvb_offset, 4, len,
-                          "Dir #%d File #%d String Length: %u", i+1, i2+1, len);
-                        str = tvb_format_text(uncompr_tvb, uncompr_tvb_offset+4, len);
-                        proto_tree_add_string_format(slsk_compr_packet_tree, hf_slsk_filename_ext, uncompr_tvb, uncompr_tvb_offset+4, len, str,
-                          "Dir #%d File #%d ext: %s", i+1, i2+1, str);
-                        uncompr_tvb_offset += 4+len;
-                        i3=0;
-                        j3 = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer,
-                          uncompr_tvb, uncompr_tvb_offset, 4,
-                          tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                          "Dir #%d File #%d Number of attributes: %d", i+1, i2+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                        proto_tree_add_item_ret_length(subtree2, hf_slsk_filename_ext, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+                        uncompr_tvb_offset += str_len;
+                        proto_tree_add_item_ret_int(subtree2, hf_slsk_file_num_attributes, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN, &j3);
                         uncompr_tvb_offset += 4;
-                        while (i3<j3){
-                          if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "ii*")) {
-                            proto_tree_add_uint_format(slsk_compr_packet_tree,
-                              hf_slsk_integer, uncompr_tvb,
-                              uncompr_tvb_offset, 4,
-                              tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                              "Dir #%d File #%d Attr #%d type: %s (Code: %d)", i+1, i2+1, i3+1, val_to_str_const(tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset), slsk_attr_type, "Unknown"), tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                        for (i3 = 0; i3 < j3; i3++) {
+                          if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "ii*")) {
+                            subtree3 = proto_tree_add_subtree_format(subtree2, uncompr_tvb, uncompr_tvb_offset, 8, ett_slsk_file_attribute, NULL, "Attribute #%d", i3+1);
+                            proto_tree_add_item(subtree3, hf_slsk_file_attribute_type, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                             uncompr_tvb_offset += 4;
-                            proto_tree_add_uint_format(slsk_compr_packet_tree,
-                              hf_slsk_integer, uncompr_tvb,
-                              uncompr_tvb_offset, 4,
-                              tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                              "Dir #%d File #%d Attr #%d value: %d", i+1, i2+1, i3+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                            proto_tree_add_item(subtree3, hf_slsk_file_attribute_value, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                             uncompr_tvb_offset += 4;
-                            i3++;
+                          } else {
+                            break; /* invalid format */
                           }
                         }
+                        proto_item_set_len(ti_subtree2, uncompr_tvb_offset-start_offset2);
+                      } else {
+                        break; /* invalid format */
                       }
-                      i2++;
                     }
+                    proto_item_set_len(ti_subtree, uncompr_tvb_offset-start_offset);
+                  } else {
+                    break; /* invalid format */
                   }
-                  i++;
                 }
               }
             }
           }else {
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-              "[zlib compressed packet]");
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 0, 0,
-              "(  compressed packet length: %d)", comprlen);
+            ti = proto_tree_add_item(slsk_tree, hf_slsk_compr_packet, tvb, offset, -1, ENC_NA);
+            proto_item_set_generated(ti);
+            ti = proto_tree_add_uint(slsk_tree, hf_slsk_compressed_packet_length, tvb, offset, 0, comprlen);
+            proto_item_set_generated(ti);
             offset += tvb_captured_length_remaining(tvb, offset);
           }
         }
       break;
 
       case  7:
-        if (check_slsk_format(tvb, offset, "isi")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isi")) {
           /* Server-to-Client */
-          message_type = "Get User Status Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get User Status Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_status_code, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Status: %s (Code: %d)", val_to_str_const(tvb_get_letohl(tvb, offset), slsk_status_codes, "Unknown"), tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_status_code, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "is")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "Get User Status";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get User Status (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 9:
-        if (check_slsk_format(tvb, offset, "i*")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i*")) {
           /* Client-to-Client */
-          message_type = "File Search Result";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "File Search Result (Code: %02d)", msg_code);
           offset += 4;
 
           /* [zlib compressed] */
           comprlen = tvb_captured_length_remaining(tvb, offset);
 
-          if (slsk_decompress == TRUE){
+          if (slsk_decompress == true){
 
-            tvbuff_t *uncompr_tvb = tvb_child_uncompress(tvb, tvb, offset, comprlen);
+            tvbuff_t *uncompr_tvb = tvb_child_uncompress_zlib(tvb, tvb, offset, comprlen);
 
             if (uncompr_tvb == NULL) {
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, tvb_captured_length_remaining(tvb, offset), 0,
-                "[zlib compressed packet]");
+              ti = proto_tree_add_item(slsk_tree, hf_slsk_compr_packet, tvb, offset, tvb_captured_length_remaining(tvb, offset), ENC_NA);
+              proto_item_set_generated(ti);
               offset += tvb_captured_length_remaining(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, 0, 0, 0,
-                "(uncompression failed !)");
+              expert_add_info(pinfo, ti, &ei_slsk_decompression_failed);
             } else {
 
               proto_item *ti2 = proto_tree_add_item(slsk_tree, hf_slsk_compr_packet, tvb, offset, -1, ENC_NA);
               proto_tree *slsk_compr_packet_tree = proto_item_add_subtree(ti2, ett_slsk_compr_packet);
+              proto_item_set_generated(ti2);
 
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-                "(  compressed packet length: %d)", comprlen);
+              ti = proto_tree_add_uint(slsk_tree, hf_slsk_compressed_packet_length, tvb, offset, 0, comprlen);
+              proto_item_set_generated(ti);
               uncomprlen = tvb_captured_length_remaining(uncompr_tvb, 0);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-                "(uncompressed packet length: %d)", uncomprlen);
+              ti = proto_tree_add_uint(slsk_tree, hf_slsk_uncompressed_packet_length, tvb, offset, 0, uncomprlen);
+              proto_item_set_generated(ti);
 
-              add_new_data_source(pinfo, uncompr_tvb,
-                  "Uncompressed SoulSeek data");
+              add_new_data_source(pinfo, uncompr_tvb, "Uncompressed SoulSeek data");
               uncompr_tvb_offset = 0;
-              if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "sii*")) {
-                guint32 len;
-
-                len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                proto_tree_add_uint(slsk_compr_packet_tree, hf_slsk_string_length, uncompr_tvb, uncompr_tvb_offset, 4, len);
-                proto_tree_add_item(slsk_compr_packet_tree, hf_slsk_username, uncompr_tvb, uncompr_tvb_offset+4, len, ENC_ASCII|ENC_NA);
-                uncompr_tvb_offset += 4+len;
+              if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "sii*")) {
+                proto_tree_add_item_ret_length(slsk_compr_packet_tree, hf_slsk_username, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_NA, &str_len);
+                uncompr_tvb_offset += str_len;
                 proto_tree_add_item(slsk_compr_packet_tree, hf_slsk_token, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                 uncompr_tvb_offset += 4;
-                i=0; j = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb, uncompr_tvb_offset, 4, j,
-                  "Number of files: %d", j);
+                proto_tree_add_item_ret_int(slsk_compr_packet_tree, hf_slsk_num_files, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN, &j);
                 uncompr_tvb_offset += 4;
-                while (i<j){
-                  if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "bsiisi*")) {
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_byte, uncompr_tvb, 0, 0, tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset),
-                      "File #%d Code: %d", i+1, tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset));
+                for (i = 0; i < j; i++) {
+                  if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "bsiisi*")) {
+                    start_offset2 = uncompr_tvb_offset;
+                    subtree2 = proto_tree_add_subtree_format(slsk_compr_packet_tree, uncompr_tvb, uncompr_tvb_offset, 1, ett_slsk_file, &ti_subtree2, "File #%d", i+1);
+                    proto_tree_add_item(subtree2, hf_slsk_file_code, uncompr_tvb, uncompr_tvb_offset, 1, ENC_NA);
                     uncompr_tvb_offset += 1;
-                    len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length, uncompr_tvb,
-                      uncompr_tvb_offset, 4, len,
-                      "File #%d String Length: %u", i+1, len);
-                    str = tvb_format_text(uncompr_tvb, uncompr_tvb_offset+4, len);
-                    proto_tree_add_string_format(slsk_compr_packet_tree, hf_slsk_filename, uncompr_tvb, uncompr_tvb_offset+4, len, str,
-                      "File #%d Filename: %s", i+1, str);
-                    uncompr_tvb_offset += 4+len;
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb,
-                      uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                      "File #%d Size1: %d", i+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                    proto_tree_add_item_ret_length(subtree2, hf_slsk_filename, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+                    uncompr_tvb_offset += str_len;
+                    proto_tree_add_item(subtree2, hf_slsk_file_size1, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                     uncompr_tvb_offset += 4;
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb,
-                      uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                      "File #%d Size2: %d", i+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                    proto_tree_add_item(subtree2, hf_slsk_file_size2, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                     uncompr_tvb_offset += 4;
-                    len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length, uncompr_tvb,
-                      uncompr_tvb_offset, 4, len,
-                      "File #%d String Length: %d", i+1, len);
-                    str = tvb_format_text(uncompr_tvb, uncompr_tvb_offset+4, len);
-                    proto_tree_add_string_format(slsk_compr_packet_tree, hf_slsk_filename_ext, uncompr_tvb, uncompr_tvb_offset+4, len, str,
-                      "File #%d ext: %s", i+1, str);
-                    uncompr_tvb_offset += 4+len;
-                    i2=0;
-                    j2 = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb,
-                      uncompr_tvb_offset, 4, j,
-                      "File #%d Number of attributes: %d", i+1, j);
+                    proto_tree_add_item_ret_length(subtree2, hf_slsk_filename_ext, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+                    uncompr_tvb_offset += str_len;
+                    proto_tree_add_item_ret_int(subtree2, hf_slsk_file_num_attributes, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN, &j2);
                     uncompr_tvb_offset += 4;
-                    while (i2<j2){
-                      if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "ii*")) {
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer,
-                          uncompr_tvb, uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                          "File #%d Attr #%d type: %s (Code: %d)", i+1, i2+1, val_to_str_const(tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset), slsk_attr_type, "Unknown"), tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                    for (i2 = 0; i2 < j2; i2++) {
+                      if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "ii*")) {
+                        subtree3 = proto_tree_add_subtree_format(subtree2, uncompr_tvb, uncompr_tvb_offset, 8, ett_slsk_file_attribute, NULL, "Attribute #%d", i2+1);
+                        proto_tree_add_item(subtree3, hf_slsk_file_attribute_type, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                         uncompr_tvb_offset += 4;
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer,
-                          uncompr_tvb, uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                          "File #%d Attr #%d value: %d", i+1, i2+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                        proto_tree_add_item(subtree3, hf_slsk_file_attribute_value, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                         uncompr_tvb_offset += 4;
+                      } else {
+                        break; /* invalid format */
                       }
-                      i2++;
                     }
+                    proto_item_set_len(ti_subtree2, uncompr_tvb_offset-start_offset2);
+                  } else {
+                    break; /* invalid format */
                   }
-                  i++;
                 }
-                proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_byte, uncompr_tvb, uncompr_tvb_offset, 1, tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset),
-                  "Free upload slots: %s (Byte: %d)", val_to_str_const(tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset), slsk_yes_no, "Unknown"), tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset));
+
+                proto_tree_add_item(slsk_compr_packet_tree, hf_slsk_free_upload_slots, uncompr_tvb, uncompr_tvb_offset, 1, ENC_LITTLE_ENDIAN);
                 uncompr_tvb_offset += 1;
-                proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb, uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                  "Upload speed: %d", tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                proto_tree_add_item(slsk_compr_packet_tree, hf_slsk_upload_speed, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                 uncompr_tvb_offset += 4;
-                proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb, uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                  "In Queue: %d", tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                proto_tree_add_item(slsk_compr_packet_tree, hf_slsk_in_queue, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
               }
             }
           }else {
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-              "[zlib compressed packet]");
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-              "(  compressed packet length: %d)", comprlen);
+            ti = proto_tree_add_item(slsk_tree, hf_slsk_compr_packet, tvb, offset, -1, ENC_NA);
+            proto_item_set_generated(ti);
+            ti = proto_tree_add_uint(slsk_tree, hf_slsk_compressed_packet_length, tvb, offset, 0, comprlen);
+            proto_item_set_generated(ti);
             offset += tvb_captured_length_remaining(tvb, offset);
           }
         }
       break;
 
       case 13:
-        if (check_slsk_format(tvb, offset, "isss")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isss")) {
           /* Server-to-Client */
-          message_type = "Say ChatRoom";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Say ChatRoom (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_chat_message, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_chat_message, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "iss")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "iss")) {
           /* Client-to-Server */
-          message_type = "Say ChatRoom";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Say ChatRoom (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_chat_message, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_chat_message, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 14:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "Join/Add Room";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Join/Add Room (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "isi*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "isi*")) {
           /* Server-to-Client */
-          message_type = "Join Room User List";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Join Room User List (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "s*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_user, tvb, offset+4, len, str, "User #%d: %s", i+1, str);
-              offset += 4+len;
-            }
-            i++;
-          }
-          if (check_slsk_format(tvb, offset, "i*")) {
-            i=0; j = tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-            offset += 4;
-            while (i<j){
-              if (check_slsk_format(tvb, offset, "i*")) {
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_status_code, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Status of User #%d: %s (Code: %d)", i+1, val_to_str_const(tvb_get_letohl(tvb, offset), slsk_status_codes, "Unknown"), tvb_get_letohl(tvb, offset));
-                offset += 4;
-              }
-              i++;
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "s*")) {
+              proto_tree_add_item_ret_length(slsk_tree, hf_slsk_user, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+            } else {
+              break; /* invalid format */
             }
           }
-          if (check_slsk_format(tvb, offset, "i*")) {
-            i=0; j = tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+            proto_tree_add_item_ret_int(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
             offset += 4;
-            while (i<j){
-              if (check_slsk_format(tvb, offset, "iiiii*")) {
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Average Speed of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+            if (j > tvb_reported_length_remaining(tvb, offset))
+              break;
+            for (i = 0; i < j; i++) {
+              if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+                proto_tree_add_item(slsk_tree, hf_slsk_status_code, tvb, offset, 4, ENC_LITTLE_ENDIAN);
                 offset += 4;
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Downloadnum of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
-                offset += 4;
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Something of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
-                offset += 4;
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Files of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
-                offset += 4;
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Folders of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
-                offset += 4;
+              } else {
+                break; /* invalid format */
               }
-              i++;
             }
           }
-          if (check_slsk_format(tvb, offset, "i*")) {
-            i=0; j = tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-              "Number of Slotsfull Records: %d", tvb_get_letohl(tvb, offset));
+          if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+            proto_tree_add_item_ret_int(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
             offset += 4;
-            while (i<j){
-              if (check_slsk_format(tvb, offset, "i*")) {
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Slots full of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+            if (j > tvb_reported_length_remaining(tvb, offset))
+              break;
+            for (i = 0; i < j; i++) {
+              if (check_slsk_format(tvb, pinfo, offset, "iiiii*")) {
+                subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 20, ett_slsk_user, NULL, "User #%d", i+1);
+                proto_tree_add_item(subtree, hf_slsk_average_speed, tvb, offset, 4, ENC_LITTLE_ENDIAN);
                 offset += 4;
+                proto_tree_add_item(subtree, hf_slsk_download_number, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(subtree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(subtree, hf_slsk_files, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(subtree, hf_slsk_directories, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+              } else {
+                break; /* invalid format */
               }
-              i++;
+            }
+          }
+          if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+            proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_slotsfull_records, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
+            offset += 4;
+            if (j > tvb_reported_length_remaining(tvb, offset))
+              break;
+            for (i = 0; i < j; i++) {
+              if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+                subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 4, ett_slsk_user, NULL, "User #%d", i+1);
+                proto_tree_add_item(subtree, hf_slsk_slotsfull, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+              } else {
+                break; /* invalid format */
+              }
             }
           }
         }
       break;
 
       case 15:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server & Server-to-Client */
-          message_type = "Leave Room";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Leave Room (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "i")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Client */
-          message_type = "User Info Request";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "User Info Request (Code: %02d)", msg_code);
           offset += 4;
         }
       break;
 
       case 16:
-        if (check_slsk_format(tvb, offset, "issiiiiiii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "issiiiiiii")) {
           /* Server-to-Client */
-          message_type = "User Joined Room";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "User Joined Room (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_total_uploads, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_total_uploads, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_average_speed, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_average_speed, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_download_number, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_download_number, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_files, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_files, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_directories, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_directories, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_slotsfull, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_slotsfull, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "isbiib") || check_slsk_format(tvb, offset, "isbsiib")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "isbiib") || check_slsk_format(tvb, pinfo, offset, "isbsiib")) {
           /* Client-to-Client */
-          message_type = "User Info Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "User Info Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_user_description, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_picture_exists, tvb, offset, 1, tvb_get_guint8(tvb, offset),
-            "Picture exists: %s (Byte: %d)", val_to_str_const(tvb_get_guint8(tvb, offset), slsk_yes_no, "Unknown"), tvb_get_guint8(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_user_description, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_picture_exists, tvb, offset, 1, ENC_NA);
           offset += 1;
-          if ( tvb_get_guint8(tvb, offset -1 ) == 1 ) {
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-              "Picture Size: %d", tvb_get_letohl(tvb, offset));
-            proto_tree_add_item(slsk_tree, hf_slsk_picture, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-            offset += 4+tvb_get_letohl(tvb, offset);
+          if ( tvb_get_uint8(tvb, offset -1 ) == 1 ) {
+            proto_tree_add_item_ret_length(slsk_tree, hf_slsk_picture, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+            offset += str_len;
           }
-          proto_tree_add_uint(slsk_tree, hf_slsk_total_uploads, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_total_uploads, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_queued_uploads, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_queued_uploads, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_slots_available, tvb, offset, 1, tvb_get_guint8(tvb, offset),
-            "Upload Slots available: %s (Byte: %d)", val_to_str_const(tvb_get_guint8(tvb, offset), slsk_yes_no, "Unknown"), tvb_get_guint8(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_slots_available, tvb, offset, 1, ENC_NA);
           offset += 1;
         }
       break;
 
       case 17:
-        if (check_slsk_format(tvb, offset, "iss")) {
+        if (check_slsk_format(tvb, pinfo, offset, "iss")) {
           /* Server-to-Client */
-          message_type = "User Left Room";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "User Left Room (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 18:
-        if (check_slsk_format(tvb, offset, "iiss")) {
+        if (check_slsk_format(tvb, pinfo, offset, "iiss")) {
           /* Client-to-Server */
-          guint32 len;
+          uint32_t len;
 
-          message_type = "Connect To Peer";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Connect To Peer (Code: %02d)", msg_code);
           offset += 4;
           proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
           len = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len);
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, len, ENC_ASCII|ENC_NA);
-          offset += 4+len;
-          len = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len);
-          str = tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, len, ENC_ASCII);
-          proto_tree_add_string_format_value(slsk_tree, hf_slsk_connection_type, tvb, offset+4, len, str,
+          str = tvb_get_string_enc(pinfo->pool, tvb, offset+4, len, ENC_ASCII);
+          proto_tree_add_string_format_value(slsk_tree, hf_slsk_connection_type, tvb, offset, 4+len, str,
             "%s (Char: %s)", connection_type(str),
-            format_text(str, len));
+            format_text(pinfo->pool, str, len));
           offset += 4+len;
         }
-        else if (check_slsk_format(tvb, offset, "issiii")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "issiii")) {
           /* Server-to-Client */
-          guint32 len;
+          uint32_t len;
 
-          message_type = "Connect To Peer";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Connect To Peer (Code: %02d)", msg_code);
           offset += 4;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
           len = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len);
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, len, ENC_ASCII|ENC_NA);
-          offset += 4+len;
-          len = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len);
-          str = tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, len, ENC_ASCII);
-          proto_tree_add_string_format_value(slsk_tree, hf_slsk_connection_type, tvb, offset+4, len, str,
+          str = tvb_get_string_enc(pinfo->pool, tvb, offset+4, len, ENC_ASCII);
+          proto_tree_add_string_format_value(slsk_tree, hf_slsk_connection_type, tvb, offset, 4+len, str,
             "%s (Char: %s)", connection_type(str),
-            format_text(str, len));
+            format_text(pinfo->pool, str, len));
           offset += 4+len;
           proto_tree_add_item(slsk_tree, hf_slsk_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
           offset += 4;
@@ -1002,177 +882,155 @@ static int dissect_slsk_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
       break;
 
       case 22:
-        if (check_slsk_format(tvb, offset, "iss")) {
+        if (check_slsk_format(tvb, pinfo, offset, "iss")) {
           /* Client-to-Server */
-          message_type = "Message User Send";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Message User Send (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_chat_message, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_chat_message, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "iiiss")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "iiiss")) {
           /* Server-to-Client */
-          message_type = "Message User Receive";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Message User Receive (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_chat_message_id, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_chat_message_id, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_timestamp, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_timestamp, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_chat_message, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_chat_message, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 23:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Client-to-Server */
-          message_type = "Message User Receive Ack";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Message User Receive Ack (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_chat_message_id, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_chat_message_id, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 26:
-        if (check_slsk_format(tvb, offset, "iis")) {
+        if (check_slsk_format(tvb, pinfo, offset, "iis")) {
           /* Client-to-Server */
-          message_type = "File Search";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "File Search (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_search_text, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_search_text, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 28:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Client-to-Server */
-          message_type = "Set Status";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Set Status (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_status_code, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Status: %s (Code: %d)", val_to_str_const(tvb_get_letohl(tvb, offset), slsk_status_codes, "Unknown"), tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_status_code, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 32:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Ping";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Ping (Code: %02d)", msg_code);
           offset += 4;
         }
       break;
 
       case 34:
-        if (check_slsk_format(tvb, offset, "isi")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isi")) {
           /* Client-to-Server */
-          message_type = "Update Upload Speed";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Update Upload Speed (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_average_speed, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_average_speed, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 35:
-        if (check_slsk_format(tvb, offset, "iii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "iii")) {
           /* Client-to-Server */
-          message_type = "Shared Files & Folders ";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Shared Files & Folders (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_folder_count, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_folder_count, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_file_count, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_file_count, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 36:
-        if (check_slsk_format(tvb, offset, "isiiiii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isiiiii")) {
           /* Server-to-Client */
-          message_type = "Get User Stats Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get User Stats Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_average_speed, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_average_speed, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_download_number, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_download_number, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_files, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_files, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_directories, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_directories, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "is")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Client */
           /* Client-to-Server: send after login successful */
-          message_type = "Get User Stats";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get User Stats (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "iis")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "iis")) {
           /* Client-to-Client */
-          message_type = "Folder Contents Request";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Folder Contents Request (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_directory, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_directory, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 37:
-        if (check_slsk_format(tvb, offset, "i*")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i*")) {
           /* Client-to-Client */
-          message_type = "Folder Contents Response";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Folder Contents Response (Code: %02d)", msg_code);
           offset += 4;
 
           /* [zlib compressed] */
           comprlen = tvb_captured_length_remaining(tvb, offset);
 
-          if (slsk_decompress == TRUE){
+          if (slsk_decompress == true){
 
-            tvbuff_t *uncompr_tvb = tvb_child_uncompress(tvb, tvb, offset, comprlen);
+            tvbuff_t *uncompr_tvb = tvb_child_uncompress_zlib(tvb, tvb, offset, comprlen);
 
             if (uncompr_tvb == NULL) {
               proto_tree_add_expert(slsk_tree, pinfo, &ei_slsk_zlib_decompression_failed, tvb, offset, -1);
@@ -1181,152 +1039,109 @@ static int dissect_slsk_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
               proto_item *ti2 = proto_tree_add_item(slsk_tree, hf_slsk_compr_packet, tvb, offset, -1, ENC_NA);
               proto_tree *slsk_compr_packet_tree = proto_item_add_subtree(ti2, ett_slsk_compr_packet);
+              proto_item_set_generated(ti2);
 
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-                "[compressed packet length: %d]", comprlen);
+              ti = proto_tree_add_uint(slsk_tree, hf_slsk_compressed_packet_length, tvb, offset, 0, comprlen);
+              proto_item_set_generated(ti);
               uncomprlen = tvb_captured_length_remaining(uncompr_tvb, 0);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-                "[uncompressed packet length: %d]", uncomprlen);
+              ti = proto_tree_add_uint(slsk_tree, hf_slsk_uncompressed_packet_length, tvb, offset, 0, uncomprlen);
+              proto_item_set_generated(ti);
+              add_new_data_source(pinfo, uncompr_tvb, "Uncompressed SoulSeek data");
 
-              add_new_data_source(pinfo, uncompr_tvb,
-                  "Uncompressed SoulSeek data");
               uncompr_tvb_offset = 0;
-              if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "isi*")) {
-                guint32 len;
+              if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "isi*")) {
+                uint32_t len;
 
-                proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb,
-                  uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                  "Token: %d", tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                proto_tree_add_item(slsk_compr_packet_tree, hf_slsk_token, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                 uncompr_tvb_offset += 4;
-                len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length,
-                  uncompr_tvb, uncompr_tvb_offset, 4, len,
-                  "Directory Name String Length: %u", len);
-                proto_tree_add_item(slsk_compr_packet_tree, hf_slsk_directory_name, uncompr_tvb, uncompr_tvb_offset+4, len, ENC_ASCII|ENC_NA);
-                uncompr_tvb_offset += 4+len;
+                proto_tree_add_item_ret_length(slsk_compr_packet_tree, hf_slsk_directory_name, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &len);
+                uncompr_tvb_offset += len;
 
-                i=0; j = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb,
-                  uncompr_tvb_offset, 4, j,
-                  "Number of directories: %d", j);
+                proto_tree_add_item_ret_int(slsk_compr_packet_tree, hf_slsk_num_directories, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN, &j);
                 uncompr_tvb_offset += 4;
-                while (i<j){
-                  if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "si*")) {
-                    len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length,
-                      uncompr_tvb, uncompr_tvb_offset, 4, len,
-                      "Directory #%d Name String Length: %u", i+1, len);
-                    str = tvb_format_text(uncompr_tvb, uncompr_tvb_offset+4, len);
-                    proto_tree_add_string_format(slsk_compr_packet_tree, hf_slsk_directory_name, uncompr_tvb, uncompr_tvb_offset+4, len,
-                      str, "Directory #%d Name: %s", i+1, str);
-                    uncompr_tvb_offset += 4+len;
-                    i2 = 0;
-                    j2 = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                    proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb,
-                      uncompr_tvb_offset, 4, j2,
-                      "Directory #%d Number of files: %d", i+1, j2);
+                for (i = 0; i < j; i++) {
+                  if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "si*")) {
+                    start_offset = uncompr_tvb_offset;
+                    subtree = proto_tree_add_subtree_format(slsk_compr_packet_tree, uncompr_tvb, uncompr_tvb_offset, 1, ett_slsk_directory, &ti_subtree, "Directory #%d", i+1);
+                    proto_tree_add_item_ret_length(subtree, hf_slsk_directory_name, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+                    uncompr_tvb_offset += str_len;
+                    proto_tree_add_item_ret_int(subtree, hf_slsk_num_files, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN, &j2);
                     uncompr_tvb_offset += 4;
-                    while (i2<j2){
-                      if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "bsiisi*")) {
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_byte,
-                          uncompr_tvb, uncompr_tvb_offset, 1, tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset),
-                          "Dir #%d File #%d Code: %d", i+1, i2+1, tvb_get_guint8(uncompr_tvb, uncompr_tvb_offset));
+                    for (i2 = 0; i2 < j2; i2++) {
+                      if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "bsiisi*")) {
+                        start_offset2 = uncompr_tvb_offset;
+                        subtree2 = proto_tree_add_subtree_format(subtree, uncompr_tvb, uncompr_tvb_offset, 1, ett_slsk_file, &ti_subtree2, "File #%d", i2+1);
+                        proto_tree_add_item(subtree2, hf_slsk_file_code, uncompr_tvb, uncompr_tvb_offset, 1, ENC_NA);
                         uncompr_tvb_offset += 1;
-                        len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length,
-                          uncompr_tvb, uncompr_tvb_offset, 4, len,
-                          "Dir #%d File #%d String Length: %d", i+1, i2+1, len);
-                        str = tvb_format_text(uncompr_tvb, uncompr_tvb_offset+4, len);
-                        proto_tree_add_string_format(slsk_compr_packet_tree, hf_slsk_filename, uncompr_tvb, uncompr_tvb_offset+4, len, str,
-                          "Dir #%d File #%d Filename: %s", i+1, i2+1, str);
-                        uncompr_tvb_offset += 4+len;
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer,
-                          uncompr_tvb, uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                          "Dir #%d File #%d Size1: %d", i+1, i2+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                        proto_tree_add_item_ret_length(subtree2, hf_slsk_filename, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+                        uncompr_tvb_offset += str_len;
+                        proto_tree_add_item(subtree2, hf_slsk_file_size1, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                         uncompr_tvb_offset += 4;
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer,
-                          uncompr_tvb, uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                          "Dir #%d File #%d Size2: %d", i+1, i2+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                        proto_tree_add_item(subtree2, hf_slsk_file_size2, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                         uncompr_tvb_offset += 4;
-                        len = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_string_length,
-                          uncompr_tvb, uncompr_tvb_offset, 4, len,
-                          "Dir #%d File #%d String Length: %d", i+1, i2+1, len);
-                        str = tvb_format_text(uncompr_tvb, uncompr_tvb_offset+4, len);
-                        proto_tree_add_string_format(slsk_compr_packet_tree, hf_slsk_filename_ext, uncompr_tvb, uncompr_tvb_offset+4, len, str,
-                          "Dir #%d File #%d ext: %s", i+1, i2+1, str);
-                        uncompr_tvb_offset += 4+len;
-                        i3 = 0;
-                        j3 = tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset);
-                        proto_tree_add_uint_format(slsk_compr_packet_tree, hf_slsk_integer, uncompr_tvb,
-                          uncompr_tvb_offset, 4, j3,
-                          "Dir #%d File #%d Number of attributes: %d", i+1, i2+1, j3);
+                        proto_tree_add_item_ret_length(subtree2, hf_slsk_filename_ext, uncompr_tvb, uncompr_tvb_offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+                        uncompr_tvb_offset += str_len;
+                        proto_tree_add_item_ret_int(subtree2, hf_slsk_file_num_attributes, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN, &j3);
                         uncompr_tvb_offset += 4;
-                        while (i3<j3){
-                          if (check_slsk_format(uncompr_tvb, uncompr_tvb_offset, "ii*")) {
-                            proto_tree_add_uint_format(slsk_compr_packet_tree,
-                              hf_slsk_integer, uncompr_tvb,
-                              uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                              "Dir #%d File #%d Attr #%d type: %s (Code: %d)", i+1, i2+1, i3+1, val_to_str_const(tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset), slsk_attr_type, "Unknown"), tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                        for (i3 = 0; i3 < j3; i3++) {
+                          if (check_slsk_format(uncompr_tvb, pinfo, uncompr_tvb_offset, "ii*")) {
+                            subtree3 = proto_tree_add_subtree_format(subtree2, uncompr_tvb, uncompr_tvb_offset, 8, ett_slsk_file_attribute, NULL, "Attribute #%d", i3+1);
+                            proto_tree_add_item(subtree3, hf_slsk_file_attribute_type, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                             uncompr_tvb_offset += 4;
-                            proto_tree_add_uint_format(slsk_compr_packet_tree,
-                              hf_slsk_integer, uncompr_tvb,
-                              uncompr_tvb_offset, 4, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset),
-                              "Dir #%d File #%d Attr #%d value: %d", i+1, i2+1, i3+1, tvb_get_letohl(uncompr_tvb, uncompr_tvb_offset));
+                            proto_tree_add_item(subtree3, hf_slsk_file_attribute_value, uncompr_tvb, uncompr_tvb_offset, 4, ENC_LITTLE_ENDIAN);
                             uncompr_tvb_offset += 4;
+                          } else {
+                            break; /* invalid format */
                           }
-                          i3++;
                         }
+                        proto_item_set_len(ti_subtree2, uncompr_tvb_offset-start_offset2);
+                      } else {
+                        break; /* invalid format */
                       }
-                      i2++;
                     }
+                    proto_item_set_len(ti_subtree, uncompr_tvb_offset-start_offset);
+                  } else {
+                    break; /* invalid format */
                   }
-                  i++;
                 }
               }
             }
           }else {
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-              "[zlib compressed packet]");
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, -1, 0,
-              "(  compressed packet length: %d)", comprlen);
+            ti = proto_tree_add_item(slsk_tree, hf_slsk_compr_packet, tvb, offset, -1, ENC_NA);
+            proto_item_set_generated(ti);
+            ti = proto_tree_add_uint(slsk_tree, hf_slsk_compressed_packet_length, tvb, offset, 0, comprlen);
+            proto_item_set_generated(ti);
             offset += tvb_captured_length_remaining(tvb, offset);
           }
         }
       break;
 
       case 40:
-        if (check_slsk_format(tvb, offset, "isi")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isi")) {
           /* Server-to-Client */
-          message_type = "Queued Downloads";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Queued Downloads (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_slotsfull, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_slotsfull, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "iiis") || check_slsk_format(tvb, offset, "iiisii")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "iiis") || check_slsk_format(tvb, pinfo, offset, "iiisii")) {
           /* Client-to-Client */
-          message_type = "Transfer Request";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Transfer Request (Code: %02d)", msg_code);
           offset += 4;
-          i = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_transfer_direction, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Transfer Direction: %s (Code: %d)", val_to_str_const(tvb_get_letohl(tvb, offset), slsk_transfer_direction, "Unknown"), tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_transfer_direction, tvb, offset, 4, ENC_LITTLE_ENDIAN, &i);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
           if (i == 1){
-            proto_tree_add_uint(slsk_tree, hf_slsk_size, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+            proto_tree_add_item(slsk_tree, hf_slsk_size, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
-            proto_tree_add_uint(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+            proto_tree_add_item(slsk_tree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
           }
         }
@@ -1334,1040 +1149,889 @@ static int dissect_slsk_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
       break;
 
       case 41:
-        if (check_slsk_format(tvb, offset, "iibs") || check_slsk_format(tvb, offset, "iibii") || check_slsk_format(tvb, offset, "iib")) {
+        if (check_slsk_format(tvb, pinfo, offset, "iibs") || check_slsk_format(tvb, pinfo, offset, "iibii") || check_slsk_format(tvb, pinfo, offset, "iib")) {
           /* Client-to-Client */
-          message_type = "Transfer Response";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Transfer Response (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          i = tvb_get_guint8(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_allowed, tvb, offset, 1, tvb_get_guint8(tvb, offset),
-            "Download allowed: %s (Byte: %d)", val_to_str_const(tvb_get_guint8(tvb, offset), slsk_yes_no, "Unknown"), tvb_get_guint8(tvb, offset));
+          i = tvb_get_uint8(tvb, offset);
+          proto_tree_add_item(slsk_tree, hf_slsk_allowed, tvb, offset, 1, ENC_NA);
           offset += 1;
           if ( i == 1 ) {
             if ( tvb_reported_length_remaining(tvb, offset) == 8 ) {
-              proto_tree_add_uint(slsk_tree, hf_slsk_size, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+              proto_tree_add_item(slsk_tree, hf_slsk_size, tvb, offset, 4, ENC_LITTLE_ENDIAN);
               offset += 4;
-              proto_tree_add_uint(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+              proto_tree_add_item(slsk_tree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
               offset += 4;
             }
           } else {
-            proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-            proto_tree_add_item(slsk_tree, hf_slsk_string, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-            offset += 4+tvb_get_letohl(tvb, offset);
+            proto_tree_add_item_ret_length(slsk_tree, hf_slsk_string, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+            offset += str_len;
           }
         }
       break;
 
       case 42:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Client */
-          message_type = "Placehold Upload";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Placehold Upload (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 43:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Client */
-          message_type = "Queue Upload";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Queue Upload (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 44:
-        if (check_slsk_format(tvb, offset, "isi")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isi")) {
           /* Client-to-Client */
-          message_type = "Place In Queue";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Place In Queue (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_place_in_queue, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_place_in_queue, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 46:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Client */
-          message_type = "Upload Failed";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Upload Failed (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 50:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "Make Own Recommendation";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Make Own Recommendation (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_recommendation, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "isi")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "isi")) {
           /* Client-to-Server */
-          message_type = "Remove Own Recommendation";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Remove Own Recommendation (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_recommendation, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_ranking, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_ranking, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "iss")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "iss")) {
           /* Client-to-Client */
-          message_type = "Queue Failed";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Queue Failed (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_string, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_string, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 51:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server: "Add Things I like" */
           /* Client-to-Client:  "Place In Queue Request" */
-          message_type = "Add Things I like / Place In Queue Request";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Add Things I like / Place In Queue Request (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 52:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "Remove Things I like";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Remove Things I like (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 54:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Get Recommendations";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Recommendations (Code: %02d)", msg_code);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "ii*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "ii*")) {
           /* Server-to-Client */
-          message_type = "Get Recommendations Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Recommendations Reply (Code: %02d)", msg_code);
           offset += 4;
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Number of Recommendations: %d", tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_recommendations, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "si*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_recommendation, tvb, offset+4, len, str,
-                "Recommendation #%d: %s", i+1, str);
-              offset += 4+len;
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_ranking, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                "Ranking #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "si*")) {
+              start_offset = offset;
+              subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 1, ett_slsk_recommendation, &ti_subtree, "Recommendation #%d", i+1);
+              proto_tree_add_item_ret_length(subtree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+              proto_tree_add_item(subtree, hf_slsk_ranking, tvb, offset, 4, ENC_LITTLE_ENDIAN);
               offset += 4;
+              proto_item_set_len(ti_subtree, offset-start_offset);
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 55:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Type 55";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Type 55 (Code: %02d)", msg_code);
           offset += 4;
         }
       break;
 
       case 56:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Get Global Rankings";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Global Rankings (Code: %02d)", msg_code);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "ii*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "ii*")) {
           /* Server-to-Client */
-          message_type = "Get Global Rankings Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Global Rankings Reply (Code: %02d)", msg_code);
           offset += 4;
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Number of Recommendations: %d", tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_recommendations, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "si*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_recommendation, tvb, offset+4, len, str,
-                "Recommendation #%d: %s", i+1, str);
-              offset += 4+len;
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_ranking, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                "Ranking #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "si*")) {
+              start_offset = offset;
+              subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 1, ett_slsk_recommendation, &ti_subtree, "Recommendation #%d", i+1);
+              proto_tree_add_item_ret_length(subtree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+              proto_tree_add_item(subtree, hf_slsk_ranking, tvb, offset, 4, ENC_LITTLE_ENDIAN);
               offset += 4;
+              proto_item_set_len(ti_subtree, offset-start_offset);
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 57:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "Get User Recommendations";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get User Recommendations (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "isi*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "isi*")) {
           /* Server-to-Client */
-          message_type = "Get User Recommendations Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get User Recommendations Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Number of Recommendations: %d", tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_recommendations, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "s*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_recommendation, tvb, offset+4, len, str,
-                "Recommendation #%d: %s", i+1, str);
-              offset += 4+len;
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "s*")) {
+              start_offset = offset;
+              subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 1, ett_slsk_recommendation, &ti_subtree, "Recommendation #%d", i+1);
+              proto_tree_add_item_ret_length(subtree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+              proto_item_set_len(ti_subtree, offset-start_offset);
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 58:
-        if (check_slsk_format(tvb, offset, "isi*")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isi*")) {
           /* Client-to-Server */
-          message_type = "Admin Command";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Admin Command (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_string, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_number_of_users, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Number of Strings: %d", tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_string, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_strings, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "s*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_string, tvb, offset+4, len, str,
-                "String #%d: %s", i+1, str);
-              offset += 4+len;
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "s*")) {
+              start_offset = offset;
+              subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 1, ett_slsk_string, &ti_subtree, "String #%d", i+1);
+              proto_tree_add_item_ret_length(subtree, hf_slsk_string, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+              proto_item_set_len(ti_subtree, offset-start_offset);
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 60:
-        if (check_slsk_format(tvb, offset, "isii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isii")) {
           /* Client-to-Server & Server-to-Client */
-          message_type = "Place In Line Response";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Place In Line Response (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_place_in_queue, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_place_in_queue, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 62:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Server-to-Client */
-          message_type = "Room Added";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Room Added (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 63:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Server-to-Client */
-          message_type = "Room Removed";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Room Removed (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 64:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Room List Request";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Room List Request (Code: %02d)", msg_code);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "ii*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "ii*")) {
           /* Server-to-Client */
-          message_type = "Room List";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Room List (Code: %02d)", msg_code);
           offset += 4;
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_number_of_rooms, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_number_of_rooms, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "s*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_room, tvb, offset+4, len, str,
-                "Room #%d: %s", i+1, str);
-              offset += 4+len;
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "s*")) {
+              start_offset = offset;
+              subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 1, ett_slsk_room, &ti_subtree, "Room #%d", i+1);
+              proto_tree_add_item_ret_length(subtree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+              proto_item_set_len(ti_subtree, offset-start_offset);
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
-          if (check_slsk_format(tvb, offset, "i*")) {
-            i=0;
-            proto_tree_add_uint(slsk_tree, hf_slsk_number_of_rooms, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+            proto_tree_add_item_ret_int(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
             offset += 4;
-            while (i<j){
-              if (check_slsk_format(tvb, offset, "i*")) {
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Users in Room #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+            for (i = 0; i < j; i++) {
+              if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+                subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 4, ett_slsk_room, &ti_subtree, "Room #%d", i+1);
+                proto_tree_add_item(subtree, hf_slsk_users_in_room, tvb, offset, 4, ENC_LITTLE_ENDIAN);
                 offset += 4;
+              } else {
+                break; /* invalid format */
               }
-              i++;
             }
           }
         }
       break;
 
       case 65:
-        if (check_slsk_format(tvb, offset, "isissiii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "isissiii")) {
           /* Server-to-Client */
-          message_type = "Exact File Search";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Exact File Search (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_directory, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 16, 0,
-            "(+12 0 bytes)");
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_directory, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_bytes, tvb, offset, 16, ENC_NA);
           offset += 12;
         }
-        else if (check_slsk_format(tvb, offset, "iissiiib")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "iissiiib")) {
           /* Client-to-Server */
-          message_type = "Exact File Search";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Exact File Search (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_filename, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_directory, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 13, 0,
-            "(+13 0 bytes)");
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_filename, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_directory, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_bytes, tvb, offset, 13, ENC_NA);
           offset += 13;
         }
       break;
 
       case 66:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Server-to-Client */
-          message_type = "Admin Message";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Admin Message (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_chat_message, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_chat_message, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 67:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Global User List Request";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Global User List Request (Code: %02d)", msg_code);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "isi*")) {     /* same as case 14 */
+        else if (check_slsk_format(tvb, pinfo, offset, "isi*")) {     /* same as case 14 */
           /* Server-to-Client */
-          message_type = "Global User List";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Global User List (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_room, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_room, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "s*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_user, tvb, offset+4, len, str, "User #%d: %s", i+1, str);
-              offset += 4+len;
-            }
-            i++;
-          }
-          if (check_slsk_format(tvb, offset, "i*")) {
-            i=0; j = tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, j);
-            offset += 4;
-            while (i<j){
-              if (check_slsk_format(tvb, offset, "i*")) {
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_status_code, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Status of User #%d: %s (Code: %d)", i+1, val_to_str_const(tvb_get_letohl(tvb, offset), slsk_status_codes, "Unknown"), tvb_get_letohl(tvb, offset));
-                offset += 4;
-              }
-              i++;
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "s*")) {
+              proto_tree_add_item_ret_length(slsk_tree, hf_slsk_user, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+            } else {
+              break; /* invalid format */
             }
           }
-          if (check_slsk_format(tvb, offset, "i*")) {
-            i=0; j = tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+            proto_tree_add_item_ret_int(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
             offset += 4;
-            while (i<j){
-              if (check_slsk_format(tvb, offset, "iiiii*")) {
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Average Speed of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+            for (i = 0; i < j; i++) {
+              if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+                proto_tree_add_item(slsk_tree, hf_slsk_status_code, tvb, offset, 4, ENC_LITTLE_ENDIAN);
                 offset += 4;
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Downloadnum of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
-                offset += 4;
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Something of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
-                offset += 4;
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Files of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
-                offset += 4;
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Folders of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
-                offset += 4;
+              } else {
+                break; /* invalid format */
               }
-              i++;
             }
           }
-          if (check_slsk_format(tvb, offset, "i*")) {
-            i=0; j = tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-              "Number of Slotsfull Records: %d", tvb_get_letohl(tvb, offset));
+          if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+            proto_tree_add_item_ret_int(slsk_tree, hf_slsk_users_in_room, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
             offset += 4;
-            while (i<j){
-              if (check_slsk_format(tvb, offset, "i*")) {
-                proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                  "Slots full of User #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+            if (j > tvb_reported_length_remaining(tvb, offset))
+              break;
+            for (i = 0; i < j; i++) {
+              if (check_slsk_format(tvb, pinfo, offset, "iiiii*")) {
+                subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 20, ett_slsk_user, NULL, "User #%d", i+1);
+                proto_tree_add_item(subtree, hf_slsk_average_speed, tvb, offset, 4, ENC_LITTLE_ENDIAN);
                 offset += 4;
+                proto_tree_add_item(subtree, hf_slsk_download_number, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(subtree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(subtree, hf_slsk_files, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(subtree, hf_slsk_directories, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+              } else {
+                break; /* invalid format */
               }
-              i++;
+            }
+          }
+          if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+            proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_slotsfull_records, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
+            offset += 4;
+            if (j > tvb_reported_length_remaining(tvb, offset))
+              break;
+            for (i = 0; i < j; i++) {
+              if (check_slsk_format(tvb, pinfo, offset, "i*")) {
+                subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 4, ett_slsk_user, NULL, "User #%d", i+1);
+                proto_tree_add_item(subtree, hf_slsk_slotsfull, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+              } else {
+                break; /* invalid format */
+              }
             }
           }
         }
       break;
 
       case 68:
-        if (check_slsk_format(tvb, offset, "isiiiis")) {
-          message_type = "Tunneled Message";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+        if (check_slsk_format(tvb, pinfo, offset, "isiiiis")) {
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Tunneled Message (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint(slsk_tree, hf_slsk_code, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item(slsk_tree, hf_slsk_code, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_ipv4(slsk_tree, hf_slsk_ip, tvb, offset, 4, tvb_get_ntohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_port, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_port, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_chat_message, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_chat_message, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 69:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Privileged User List Request";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Privileged User List Request (Code: %02d)", msg_code);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "ii*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "ii*")) {
           /* Server-to-Client */
-          message_type = "Privileged User List";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Privileged User List (Code: %02d)", msg_code);
           offset += 4;
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_number_of_users, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Number of Privileged Users: %d", tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_number_of_priv_users, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "s*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_user, tvb, offset+4, len, str,
-                "User #%d: %s", i+1, str);
-              offset += 4+len;
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "s*")) {
+              proto_tree_add_item_ret_length(slsk_tree, hf_slsk_user, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 71:
-        if (check_slsk_format(tvb, offset, "ib")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ib")) {
           /* Client-to-Server */
-          message_type = "Get Parent List";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Parent List (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_byte, tvb, offset, 1, tvb_get_guint8(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_byte, tvb, offset, 1, ENC_NA);
           offset += 1;
         }
       break;
 
       case 73:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Client-to-Server */
-          message_type = "Type 73";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Type 73 (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 83:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Parent Min Speed";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Parent Min Speed (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_parent_min_speed, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_parent_min_speed, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 84:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Parent Speed Connection Ratio";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Parent Speed Connection Ratio (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_parent_speed_connection_ratio, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_parent_speed_connection_ratio, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 86:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Parent Inactivity Before Disconnect";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Parent Inactivity Before Disconnect (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_seconds_parent_inactivity_before_disconnect, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_seconds_parent_inactivity_before_disconnect, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 87:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Server Inactivity Before Disconnect";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Server Inactivity Before Disconnect (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_seconds_server_inactivity_before_disconnect, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_seconds_server_inactivity_before_disconnect, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 88:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Nodes In Cache Before Disconnect";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Nodes In Cache Before Disconnect (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_nodes_in_cache_before_disconnect, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_nodes_in_cache_before_disconnect, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 90:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Seconds Before Ping Children";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Seconds Before Ping Children (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_seconds_before_ping_children, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_seconds_before_ping_children, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 91:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Server-to-Client */
-          message_type = "Add To Privileged";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Add To Privileged (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 92:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Check Privileges";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Check Privileges (Code: %02d)", msg_code);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "ii")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Check Privileges Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Check Privileges Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_number_of_days, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_number_of_days, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 93:
-        if (check_slsk_format(tvb, offset, "ibisis")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ibisis")) {
           /* Server-to-Client */
-          message_type = "Embedded Message";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Embedded Message (Code: %02d)", msg_code);
           offset += 4;
-          if ( tvb_get_guint8(tvb, offset) == 3 ){
+          if ( tvb_get_uint8(tvb, offset) == 3 ){
             /* Client-to-Client */
-            message_type = "Distributed Search";
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 1, msg_code,
-                       "Embedded Message Type: %s (Byte: %d)", message_type, 3);
+            proto_tree_add_uint_format_value(slsk_tree, hf_slsk_embedded_message_type, tvb, offset, 1, msg_code,
+                       "Distributed Search (Byte: %d)", 3);
             offset += 1;
-            proto_tree_add_uint(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+            proto_tree_add_item(slsk_tree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
-            proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-            proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-            offset += 4+tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+            proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+            offset += str_len;
+            proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
-            proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-            proto_tree_add_item(slsk_tree, hf_slsk_search_text, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-            offset += 4+tvb_get_letohl(tvb, offset);
+            proto_tree_add_item_ret_length(slsk_tree, hf_slsk_search_text, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+            offset += str_len;
           }
         }
       break;
 
       case 100:
-        if (check_slsk_format(tvb, offset, "ib")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ib")) {
           /* Client-to-Server */
-          message_type = "Become Parent";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Become Parent (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_byte, tvb, offset, 1, tvb_get_guint8(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_byte, tvb, offset, 1, ENC_NA);
           offset += 1;
         }
       break;
 
       case 102:
-        if (check_slsk_format(tvb, offset, "ii*")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii*")) {
           /* Server-to-Client */
-          message_type = "Random Parent Addresses";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Random Parent Addresses (Code: %02d)", msg_code);
           offset += 4;
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_number_of_users, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Number of Parent Addresses: %d", tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_parent_address, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "sii*")) {
-              guint32 len;
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "sii*")) {
 
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_user, tvb, offset+4, len, str,
-                "User #%d: %s", i+1, str);
-              offset += 4+len;
+              proto_tree_add_item_ret_length(slsk_tree, hf_slsk_user, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
               proto_tree_add_item(slsk_tree, hf_slsk_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
               offset += 4;
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_port, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                "Port Number #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+              proto_tree_add_item(slsk_tree, hf_slsk_port, tvb, offset, 4, ENC_LITTLE_ENDIAN);
               offset += 4;
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 103:
-        if (check_slsk_format(tvb, offset, "iis")) {
+        if (check_slsk_format(tvb, pinfo, offset, "iis")) {
           /* Server-to-Client */
-          message_type = "Send Wishlist Entry";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Send Wishlist Entry (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_search_text, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_search_text, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
       break;
 
       case 104:
-        if (check_slsk_format(tvb, offset, "ii")) {
+        if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Type 104";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Type 104 (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       case 110:
-        if (check_slsk_format(tvb, offset, "i")) {
+        if (check_slsk_format(tvb, pinfo, offset, "i")) {
           /* Client-to-Server */
-          message_type = "Get Similar Users";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Similar Users (Code: %02d)", msg_code);
           offset += 4;
         }
-        else if (check_slsk_format(tvb, offset, "ii*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "ii*")) {
           /* Server-to-Client */
-          message_type = "Get Similar Users Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Similar Users Reply (Code: %02d)", msg_code);
           offset += 4;
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_item(slsk_tree, hf_slsk_number_of_users, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_number_of_users, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "si*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_user, tvb, offset+4, len, str,
-                "User #%d: %s", i+1, str);
-              offset += 4+len;
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                "Same Recommendations #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "si*")) {
+              start_offset = offset;
+              subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 4, ett_slsk_user, &ti_subtree, "User #%d", i+1);
+              proto_tree_add_item_ret_length(subtree, hf_slsk_user, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+              proto_tree_add_item(subtree, hf_slsk_same_recommendation, tvb, offset, 4, ENC_LITTLE_ENDIAN);
               offset += 4;
+              proto_item_set_len(ti_subtree, offset-start_offset);
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 111:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "Get Recommendations for Item";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Recommendations for Item (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_recommendation, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "isi*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "isi*")) {
           /* Server-to-Client */
-          message_type = "Get Recommendations for Item Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Recommendations for Item Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_recommendation, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Number of Recommendations: %d", tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_recommendations, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "si*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_recommendation, tvb, offset+4, len, str,
-                "Recommendation #%d: %s", i+1, str);
-              offset += 4+len;
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_ranking, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-                "Ranking #%d: %d", i+1, tvb_get_letohl(tvb, offset));
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "si*")) {
+              start_offset = offset;
+              subtree = proto_tree_add_subtree_format(slsk_tree, tvb, offset, 1, ett_slsk_recommendation, &ti_subtree, "Recommendation #%d", i+1);
+              proto_tree_add_item_ret_length(subtree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+              proto_tree_add_item(subtree, hf_slsk_ranking, tvb, offset, 4, ENC_LITTLE_ENDIAN);
               offset += 4;
+              proto_item_set_len(ti_subtree, offset-start_offset);
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 112:
-        if (check_slsk_format(tvb, offset, "is")) {
+        if (check_slsk_format(tvb, pinfo, offset, "is")) {
           /* Client-to-Server */
-          message_type = "Get Similar Users for Item";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Similar Users for Item (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_recommendation, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "isi*")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "isi*")) {
           /* Server-to-Client */
-          message_type = "Get Similar Users for Item Reply";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Get Similar Users for Item Reply (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_item(slsk_tree, hf_slsk_string_length, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-          proto_tree_add_item(slsk_tree, hf_slsk_recommendation, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
-          i=0; j = tvb_get_letohl(tvb, offset);
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset),
-            "Number of Recommendations: %d", tvb_get_letohl(tvb, offset));
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_recommendation, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
+          proto_tree_add_item_ret_int(slsk_tree, hf_slsk_num_recommendations, tvb, offset, 4, ENC_LITTLE_ENDIAN, &j);
           offset += 4;
-          while (i<j){
-            if (check_slsk_format(tvb, offset, "s*")) {
-              guint32 len;
-
-              len = tvb_get_letohl(tvb, offset);
-              proto_tree_add_uint_format(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len,
-                "String #%d Length: %d", i+1, len);
-              str = tvb_format_text(tvb, offset+4, len);
-              proto_tree_add_string_format(slsk_tree, hf_slsk_username, tvb, offset+4, len, str,
-                "Username #%d: %s", i+1, str);
-              offset += 4+len;
+          if (j > tvb_reported_length_remaining(tvb, offset))
+            break;
+          for (i = 0; i < j; i++) {
+            if (check_slsk_format(tvb, pinfo, offset, "s*")) {
+              proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+              offset += str_len;
+            } else {
+              break; /* invalid format */
             }
-            i++;
           }
         }
       break;
 
       case 1001:
-        if (check_slsk_format(tvb, offset, "iis")) {
+        if (check_slsk_format(tvb, pinfo, offset, "iis")) {
           /* Client-to-Server */
-          message_type = "Can't Connect To Peer";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Can't Connect To Peer (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-          proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-          offset += 4+tvb_get_letohl(tvb, offset);
+          proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+          offset += str_len;
         }
-        else if (check_slsk_format(tvb, offset, "ii")) {
+        else if (check_slsk_format(tvb, pinfo, offset, "ii")) {
           /* Server-to-Client */
-          message_type = "Can't Connect To Peer";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Can't Connect To Peer (Code: %02d)", msg_code);
           offset += 4;
-          proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+          proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
           offset += 4;
         }
       break;
 
       default:
-        if (check_slsk_format(tvb, offset, "bisis")) {
-          if ( tvb_get_guint8(tvb, offset) == 3 ){
+        if (check_slsk_format(tvb, pinfo, offset, "bisis")) {
+          if ( tvb_get_uint8(tvb, offset) == 3 ){
             /* Client-to-Client */
-            message_type = "Distributed Search";
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 1, msg_code,
-                       "Message Type: %s (Byte: %d)", message_type, 3);
+            proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 1, msg_code,
+                       "Distributed Search (Byte: %d)", 3);
             offset += 1;
-            proto_tree_add_uint(slsk_tree, hf_slsk_integer, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+            proto_tree_add_item(slsk_tree, hf_slsk_integer, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
-            proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-            proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-            offset += 4+tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+            proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+            offset += str_len;
+            proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
-            proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, tvb_get_letohl(tvb, offset));
-            proto_tree_add_item(slsk_tree, hf_slsk_search_text, tvb, offset+4, tvb_get_letohl(tvb, offset), ENC_ASCII|ENC_NA);
-            offset += 4+tvb_get_letohl(tvb, offset);
+            proto_tree_add_item_ret_length(slsk_tree, hf_slsk_search_text, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+            offset += str_len;
           }
         }
-        else if (check_slsk_format(tvb, offset, "bssi")) {
-          if ( tvb_get_guint8(tvb, offset) == 1 ){
+        else if (check_slsk_format(tvb, pinfo, offset, "bssi")) {
+          if ( tvb_get_uint8(tvb, offset) == 1 ){
             /* Client-to-Client */
-            guint32 len;
+            uint32_t len;
 
-            message_type = "Peer Init";
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 1, msg_code,
-                       "Message Type: %s (Byte: %d)", message_type, 1);
+            proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 1, msg_code,
+                       "Peer Init (Byte: %d)", 1);
             offset += 1;
+            proto_tree_add_item_ret_length(slsk_tree, hf_slsk_username, tvb, offset, 4, ENC_ASCII|ENC_LITTLE_ENDIAN, &str_len);
+            offset += str_len;
             len = tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len);
-            proto_tree_add_item(slsk_tree, hf_slsk_username, tvb, offset+4, len, ENC_ASCII|ENC_NA);
-            offset += 4+len;
-            len = tvb_get_letohl(tvb, offset);
-            proto_tree_add_uint(slsk_tree, hf_slsk_string_length, tvb, offset, 4, len);
-            str = tvb_get_string_enc(wmem_packet_scope(), tvb, offset+4, len, ENC_ASCII);
-            proto_tree_add_string_format_value(slsk_tree, hf_slsk_connection_type, tvb, offset+4, len, str,
+            str = tvb_get_string_enc(pinfo->pool, tvb, offset+4, len, ENC_ASCII);
+            proto_tree_add_string_format_value(slsk_tree, hf_slsk_connection_type, tvb, offset, 4+len, str,
               "%s (Char: %s)", connection_type(str),
-              format_text(str, len));
+              format_text(pinfo->pool, str, len));
             offset += 4+len;
-            proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+            proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
           }
         }
-        else if (check_slsk_format(tvb, offset, "bi")) {
-          if ( tvb_get_guint8(tvb, offset) == 0 ){
+        else if (check_slsk_format(tvb, pinfo, offset, "bi")) {
+          if ( tvb_get_uint8(tvb, offset) == 0 ){
             /* Client-to-Client */
-            message_type = "Pierce Fw";
-            proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 1, msg_code,
-                       "Message Type: %s (Byte: %d)", message_type, 0);
+            proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 1, msg_code,
+                       "Pierce Fw (Byte: %d)", 0);
             offset += 1;
-            proto_tree_add_uint(slsk_tree, hf_slsk_token, tvb, offset, 4, tvb_get_letohl(tvb, offset));
+            proto_tree_add_item(slsk_tree, hf_slsk_token, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
           }
         }
         else {
-          message_type = "Unknown";
-          proto_tree_add_uint_format(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
-                     "Message Type: %s (Code: %02d)", message_type, msg_code);
+          proto_tree_add_uint_format_value(slsk_tree, hf_slsk_message_code, tvb, offset, 4, msg_code,
+                     "Unknown (Code: %02d)", msg_code);
           offset += 4;
         }
       break;
 
     }
 
-  }
   if(offset < (int)msg_len){
    expert_add_info(pinfo, ti_len, &ei_slsk_unknown_data);
   }
@@ -2396,7 +2060,7 @@ proto_register_slsk(void)
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_string,
       { "String", "slsk.string",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_byte,
       { "Byte", "slsk.byte",
       FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
@@ -2404,7 +2068,10 @@ proto_register_slsk(void)
       { "Message Length", "slsk.message.length",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_message_code,
-      { "Message Code", "slsk.message.code",
+      { "Message Type", "slsk.message.code",
+      FT_UINT32, BASE_DEC, NULL, 0, "Message Code with type string", HFILL } },
+    { &hf_slsk_embedded_message_type,
+      { "Embedded Message Type", "slsk.embedded_message.code",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_client_ip,
       { "Client IP", "slsk.client.ip",
@@ -2414,27 +2081,24 @@ proto_register_slsk(void)
       { "SoulSeek Server IP", "slsk.server.ip",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
 #endif
-    { &hf_slsk_string_length,
-      { "String Length", "slsk.string.length",
-      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_directory_name,
       { "Directory name", "slsk.directory_name",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_username,
       { "Username", "slsk.username",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_password,
       { "Password", "slsk.password",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_version,
       { "Version", "slsk.version",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_login_successful,
       { "Login successful", "slsk.login.successful",
-      FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      FT_UINT8, BASE_DEC, VALS(slsk_yes_no), 0, NULL, HFILL } },
     { &hf_slsk_login_message,
       { "Login Message", "slsk.login.message",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_port,
       { "Port Number", "slsk.port.number",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
@@ -2443,19 +2107,19 @@ proto_register_slsk(void)
       FT_IPv4, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_user_exists,
       { "User exists", "slsk.user.exists",
-      FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      FT_UINT8, BASE_DEC, VALS(slsk_yes_no), 0, NULL, HFILL } },
     { &hf_slsk_status_code,
       { "Status Code", "slsk.status.code",
-      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+      FT_UINT32, BASE_DEC, VALS(slsk_status_codes), 0, NULL, HFILL } },
     { &hf_slsk_room,
       { "Room", "slsk.room",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_chat_message,
       { "Chat Message", "slsk.chat.message",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_users_in_room,
       { "Users in Room", "slsk.room.users",
-      FT_UINT32, BASE_DEC, NULL, 0, "Number of Users in Room", HFILL } },
+      FT_INT32, BASE_DEC, NULL, 0, "Number of Users in Room", HFILL } },
     { &hf_slsk_token,
       { "Token", "slsk.token",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
@@ -2470,7 +2134,7 @@ proto_register_slsk(void)
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_search_text,
       { "Search Text", "slsk.search.text",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_folder_count,
       { "Folder Count", "slsk.folder.count",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
@@ -2497,16 +2161,16 @@ proto_register_slsk(void)
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_number_of_rooms,
       { "Number of Rooms", "slsk.room.count",
-      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_filename,
       { "Filename", "slsk.filename",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_filename_ext,
       { "Filename ext", "slsk.filename_ext",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_directory,
       { "Directory", "slsk.directory",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_size,
       { "Size", "slsk.size",
       FT_UINT32, BASE_DEC, NULL, 0, "File Size", HFILL } },
@@ -2520,22 +2184,22 @@ proto_register_slsk(void)
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_number_of_users,
       { "Number of Users", "slsk.user.count",
-      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_number_of_days,
       { "Number of Days", "slsk.day.count",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_transfer_direction,
       { "Transfer Direction", "slsk.transfer.direction",
-      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+      FT_INT32, BASE_DEC, VALS(slsk_transfer_direction), 0, NULL, HFILL } },
     { &hf_slsk_user_description,
       { "User Description", "slsk.user.description",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_picture_exists,
       { "Picture exists", "slsk.user.picture.exists",
-      FT_UINT8, BASE_DEC, NULL, 0, "User has a picture", HFILL } },
+      FT_UINT8, BASE_DEC, VALS(slsk_yes_no), 0, "User has a picture", HFILL } },
     { &hf_slsk_picture,
-      { "Picture", "slsk.user.picture",
-      FT_STRING, BASE_NONE, NULL, 0, "User Picture", HFILL } },
+      { "User Picture", "slsk.user.picture",
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
 #if 0
     { &hf_slsk_user_uploads,
       { "User uploads", "slsk.uploads.user",
@@ -2549,13 +2213,13 @@ proto_register_slsk(void)
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_slots_available,
       { "Upload Slots available", "slsk.uploads.available",
-      FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      FT_UINT8, BASE_DEC, VALS(slsk_yes_no), 0, NULL, HFILL } },
     { &hf_slsk_allowed,
       { "Download allowed", "slsk.user.allowed",
-      FT_UINT8, BASE_DEC, NULL, 0, "allowed", HFILL } },
+      FT_UINT8, BASE_DEC, VALS(slsk_yes_no), 0, NULL, HFILL } },
     { &hf_slsk_compr_packet,
-      { "[zlib compressed packet]", "slsk.compr.packet",
-      FT_NONE, BASE_NONE, NULL, 0, "zlib compressed packet", HFILL } },
+      { "zlib compressed packet", "slsk.compr.packet",
+      FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_parent_min_speed,
       { "Parent Min Speed", "slsk.parent.min.speed",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
@@ -2576,24 +2240,93 @@ proto_register_slsk(void)
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
     { &hf_slsk_recommendation,
       { "Recommendation", "slsk.recommendation",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_user,
       { "User", "slsk.user",
-      FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      FT_UINT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
     { &hf_slsk_ranking,
       { "Ranking", "slsk.ranking",
       FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_compressed_packet_length,
+      { "Compressed packet length", "slsk.compressed_packet_length",
+      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_uncompressed_packet_length,
+      { "Uncompressed packet length", "slsk.uncompressed_packet_length",
+      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_num_directories,
+      { "Number of directories", "slsk.num_directories",
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_upload_speed,
+      { "Upload speed", "slsk.upload_speed",
+      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_in_queue,
+      { "In Queue", "slsk.in_queue",
+      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_num_slotsfull_records,
+      { "Number of Slotsfull Records", "slsk.num_slotsfull_records",
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_num_recommendations,
+      { "Number of Recommendations", "slsk.num_recommendations",
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_num_files,
+      { "Number of Files", "slsk.num_files",
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_num_strings,
+      { "Number of strings", "slsk.num_strings",
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_file_code,
+      { "Code", "slsk.file_code",
+      FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_file_size1,
+      { "Size1", "slsk.file_size1",
+      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_file_size2,
+      { "Size2", "slsk.file_size2",
+      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_file_num_attributes,
+      { "Number of attributes", "slsk.file_num_attributes",
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_file_attribute_type,
+      { "File attribute type", "slsk.file_attribute_type",
+      FT_UINT32, BASE_DEC, VALS(slsk_attr_type), 0, NULL, HFILL } },
+    { &hf_slsk_file_attribute_value,
+      { "File attribute value", "slsk.file_attribute_value",
+      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_free_upload_slots,
+      { "Free upload slots", "slsk.free_upload_slots",
+      FT_UINT32, BASE_DEC, VALS(slsk_yes_no), 0, NULL, HFILL } },
+    { &hf_slsk_bytes,
+      { "Bytes", "slsk.bytes",
+      FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_same_recommendation,
+      { "Same Recommendation", "slsk.same_recommendation",
+      FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_number_of_priv_users,
+      { "Number of Privileged Users", "slsk.priv_user.count",
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+    { &hf_slsk_num_parent_address,
+      { "Number of Parent Addresses", "slsk.parent_addr.count",
+      FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+
   };
 
 /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_slsk,
     &ett_slsk_compr_packet,
+    &ett_slsk_directory,
+    &ett_slsk_file,
+    &ett_slsk_file_attribute,
+    &ett_slsk_user,
+    &ett_slsk_recommendation,
+    &ett_slsk_room,
+    &ett_slsk_string,
   };
 
   static ei_register_info ei[] = {
      { &ei_slsk_unknown_data, { "slsk.unknown_data", PI_UNDECODED, PI_WARN, "Unknown Data (not interpreted)", EXPFILL }},
      { &ei_slsk_zlib_decompression_failed, { "slsk.zlib_decompression_failed", PI_PROTOCOL, PI_WARN, "zlib compressed packet failed to decompress", EXPFILL }},
+     { &ei_slsk_decompression_failed, { "slsk.decompression_failed", PI_PROTOCOL, PI_WARN, "decompression failed", EXPFILL }},
   };
 
   module_t *slsk_module;
@@ -2608,15 +2341,17 @@ proto_register_slsk(void)
   expert_slsk = expert_register_protocol(proto_slsk);
   expert_register_field_array(expert_slsk, ei, array_length(ei));
 
-  slsk_module = prefs_register_protocol(proto_slsk, NULL);
+  /* Register the dissector handle */
+  slsk_handle = register_dissector("slsk", dissect_slsk, proto_slsk);
 
 /* Registers the options in the menu preferences */
+  slsk_module = prefs_register_protocol(proto_slsk, NULL);
   prefs_register_bool_preference(slsk_module, "desegment",
       "Reassemble SoulSeek messages spanning multiple TCP segments",
       "Whether the SoulSeek dissector should reassemble messages spanning multiple TCP segments."
       " To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
       &slsk_desegment);
-#ifdef HAVE_ZLIB
+#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
   prefs_register_bool_preference(slsk_module, "decompress",
       "Decompress zlib compressed packets inside SoulSeek messages",
       "Whether the SoulSeek dissector should decompress all zlib compressed packets inside messages",
@@ -2629,16 +2364,11 @@ proto_register_slsk(void)
 void
 proto_reg_handoff_slsk(void)
 {
-  dissector_handle_t slsk_handle;
-
-  slsk_handle = create_dissector_handle(dissect_slsk, proto_slsk);
-  dissector_add_uint("tcp.port", TCP_PORT_SLSK_1, slsk_handle);
-  dissector_add_uint("tcp.port", TCP_PORT_SLSK_2, slsk_handle);
-  dissector_add_uint("tcp.port", TCP_PORT_SLSK_3, slsk_handle);
+  dissector_add_uint_range_with_preference("tcp.port", SLSK_TCP_PORT_RANGE, slsk_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

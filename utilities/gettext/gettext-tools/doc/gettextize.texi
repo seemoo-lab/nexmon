@@ -1,3 +1,7 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2024 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
 The @code{gettextize} program is an interactive tool that helps the
 maintainer of a package internationalized through GNU @code{gettext}.
 It is used for two purposes:
@@ -48,15 +52,6 @@ and accepts the following options:
 @opindex -f@r{, @code{gettextize} option}
 @opindex --force@r{, @code{gettextize} option}
 Force replacement of files which already exist.
-
-@item --intl
-@opindex --intl@r{, @code{gettextize} option}
-Install the libintl sources in a subdirectory named @file{intl/}.
-This libintl will be used to provide internationalization on systems
-that don't have GNU libintl installed.  If this option is omitted,
-the call to @code{AM_GNU_GETTEXT} in @file{configure.ac} should read:
-@samp{AM_GNU_GETTEXT([external])}, and internationalization will not
-be enabled on systems lacking GNU gettext.
 
 @item --po-dir=@var{dir}
 @opindex --po-dir@r{, @code{gettextize} option}
@@ -109,13 +104,10 @@ no existing file will be replaced unless the option @code{--force}
 @enumerate
 @item
 The @file{ABOUT-NLS} file is copied in the main directory of your package,
-the one being at the top level.  This file gives the main indications
-about how to install and use the Native Language Support features
-of your program.  You might elect to use a more recent copy of this
-@file{ABOUT-NLS} file than the one provided through @code{gettextize},
-if you have one handy.  You may also fetch a more recent copy of file
-@file{ABOUT-NLS} from Translation Project sites, and from most GNU
-archive sites.
+the one being at the top level.  This file contains a reference to the
+GNU gettext documentation.  It also avoids an error from Automake in
+packages that use the Automake option @samp{gnits}:
+``error: required file './ABOUT-NLS' not found''.
 
 @item
 A @file{po/} directory is created for eventually holding
@@ -128,13 +120,6 @@ the auxiliary files will be overwritten.
 
 If @samp{--po-dir} has been specified, this holds for every directory
 specified through @samp{--po-dir}, instead of @file{po/}.
-
-@item
-Only if @samp{--intl} has been specified:
-A @file{intl/} directory is created and filled with most of the files
-originally in the @file{intl/} directory of the GNU @code{gettext}
-distribution.  Also, if option @code{--force} (@code{-f}) is given,
-the @file{intl/} directory is emptied first.
 
 @item
 The file @file{config.rpath} is copied into the directory containing
@@ -161,19 +146,16 @@ in each affected directory, as well as the top level @file{configure.ac}
 or @file{configure.in} file.
 
 It is interesting to understand that most new files for supporting
-GNU @code{gettext} facilities in one package go in @file{intl/},
-@file{po/} and @file{m4/} subdirectories.  One distinction between
-@file{intl/} and the two other directories is that @file{intl/} is
-meant to be completely identical in all packages using GNU @code{gettext},
-while the other directories will mostly contain package dependent
-files.
+GNU @code{gettext} facilities in one package go in @file{po/} and
+@file{m4/} subdirectories.  Still, these directories will mostly
+contain package dependent files.
 
 The @code{gettextize} program makes backup files for all files it
 replaces or changes, and also write ChangeLog entries about these
 changes.  This way, the careful maintainer can check after running
 @code{gettextize} whether its changes are acceptable to him, and
 possibly adjust them.  An exception to this rule is the @file{intl/}
-directory, which is added or replaced or removed as a whole.
+directory, which is removed as a whole if it still existed.
 
 It is important to understand that @code{gettextize} can not do the
 entire job of adapting a package for using GNU @code{gettext}.  The

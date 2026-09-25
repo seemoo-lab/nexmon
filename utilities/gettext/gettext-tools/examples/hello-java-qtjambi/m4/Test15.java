@@ -1,5 +1,9 @@
 // Test for Java 1.5 or newer.
+// This file is in the public domain.
 import java.util.*;
+/**
+ * @author Bruno Haible
+ */
 public class Test15 {
   public static void main (String[] args) {
     try {

@@ -38,15 +38,18 @@
 #include "fileconf.h"
 #include "log.h"
 
+#include "win32-svc.h"	// for Win32 service stuff
+
 static SERVICE_STATUS_HANDLE service_status_handle;
 static SERVICE_STATUS service_status;
 
 static void WINAPI svc_main(DWORD argc, char **argv);
+static void WINAPI svc_control_handler(DWORD Opcode);
 static void update_svc_status(DWORD state, DWORD progress_indicator);
 
-int svc_start(void)
+BOOL svc_start(void)
 {
-	int rc;
+	BOOL rc;
 	SERVICE_TABLE_ENTRY ste[] =
 	{
 		{ PROGRAM_NAME, svc_main },
@@ -57,7 +60,7 @@ int svc_start(void)
 	// This call is blocking. A new thread is created which will launch
 	// the svc_main() function
 	if ((rc = StartServiceCtrlDispatcher(ste)) == 0) {
-		pcap_fmt_errmsg_for_win32_err(string, sizeof (string),
+		pcapint_fmt_errmsg_for_win32_err(string, sizeof (string),
 		    GetLastError(), "StartServiceCtrlDispatcher() failed");
 		rpcapd_log(LOGPRIO_ERROR, "%s", string);
 	}
@@ -65,7 +68,8 @@ int svc_start(void)
 	return rc; // FALSE if this is not started as a service
 }
 
-void WINAPI svc_control_handler(DWORD Opcode)
+static void WINAPI
+svc_control_handler(DWORD Opcode)
 {
 	switch(Opcode)
 	{
@@ -130,7 +134,8 @@ void WINAPI svc_control_handler(DWORD Opcode)
 	return;
 }
 
-void WINAPI svc_main(DWORD argc, char **argv)
+static void WINAPI
+svc_main(DWORD argc, char **argv)
 {
 	service_status_handle = RegisterServiceCtrlHandler(PROGRAM_NAME, svc_control_handler);
 

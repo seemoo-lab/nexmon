@@ -1,0 +1,3 @@
+./test/schematron/zvon10_0.xml:1: element AAA: schematron error : /AAA line 1:  CCC element is not present
+./test/schematron/zvon10_0.xml:1: element AAA: schematron error : /AAA line 1:  CCC element is not present
+./test/schematron/zvon10_0.xml fails to validate

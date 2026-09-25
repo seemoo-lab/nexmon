@@ -1,7 +1,7 @@
 all: libs/armeabi/iperf
 
 libs/armeabi/iperf: Android.mk
-	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21
+	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-28
 
 install: libs/armeabi/iperf
 	adb push $< /sdcard/

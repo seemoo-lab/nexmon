@@ -1,4 +1,4 @@
-.TH AIREPLAY-NG 8 "February 2016" "Version 1.2-rc4"
+.TH AIREPLAY-NG 8 "May 2022" "Version 1.7.0"
 
 .SH NAME
 aireplay-ng - inject packets into a wireless network to generate traffic
@@ -13,9 +13,9 @@ The primary function is to generate traffic for the later use in aircrack-ng for
 .PP
 .B aireplay-ng
 supports single-NIC injection/monitor.
-.br
+.PP
 This feature needs driver patching.
-.br
+.PP
 .SH OPTIONS
 .TP
 .I -H, --help
@@ -82,7 +82,7 @@ Change ring buffer size (default: 8 packets). The minimum is 1.
 Choose first matching packet.
 .TP
 .I -e <essid>
-Fake Authentication attack: Set target SSID (see below). For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
+Fake Authentication attack: Set target SSID (see below). For SSID containing special characters, see https://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc_in_ap_names
 .TP
 .I -o <npackets>
 Fake Authentication attack: Set the number of packets for every authentication and association attempt (Default: 1). 0 means auto
@@ -100,7 +100,7 @@ Fake Authentication attack: Specifies the keystream file for fake shared key aut
 Fake Authentication attack: Exit if fake authentication fails \(aqn\(aq time(s).
 .TP
 .I -j
-ARP Replay attack : inject FromDS pakets (see below).
+ARP Replay attack : inject FromDS packets (see below).
 .TP
 .I -k <IP>
 Fragmentation attack: Set destination IP in fragments.
@@ -129,6 +129,9 @@ disable /dev/rtc usage.
 .I --ignore-negative-one
 if the interface\(aqs channel can\(aqt be determined ignore the mismatch, needed for unpatched cfg80211
 .PP
+.I --deauth-rc <rc>, -Z <rc>
+Provide a reason code when doing deauthication (between 0 and 255). By default, 7 is used: Class 3 frame received from unassociated STA. 0 is a reserved value. Reason codes explanations can be found in the IEEE802.11 standard or in https://mrncciew.com/2014/10/11/802-11-mgmt-deauth-disassociation-frames/
+.PP
 .TP
 .B Attack modes:          
 .TP
@@ -149,7 +152,7 @@ This attack allows you to choose a specific packet for replaying (injecting). Th
 The classic ARP request replay attack is the most effective way to generate new initialization vectors (IVs), and works very reliably. The program listens for an ARP packet then retransmits it back to the access point. This, in turn, causes the access point to repeat the ARP packet with a new IV. The program retransmits the same ARP packet over and over. However, each ARP packet repeated by the access point has a new IVs. It is all these new IVs which allow you to determine the WEP key.
 .TP
 .I -4, --chopchop
-This attack, when successful, can decrypt a WEP data packet without knowing the key. It can even work against dynamic WEP. This attack does not recover the WEP key itself, but merely reveals the plaintext. However, some access points are not vulnerable to this attack. Some may seem vulnerable at first but actually drop data packets shorter that 60 bytes. If the access point drops packets shorter than 42 bytes, aireplay tries to guess the rest of the missing data, as far as the headers are predictable. If an IP packet is captured, it additionally checks if the checksum of the header is correct after guessing the missing parts of it. This attack requires at least one WEP data packet.
+This attack, when successful, can decrypt a WEP data packet without knowing the key. It can even work against dynamic WEP. This attack does not recover the WEP key itself, but merely reveals the plaintext. However, some access points are not vulnerable to this attack. Some may seem vulnerable at first but actually drop data packets shorter than 60 bytes. If the access point drops packets shorter than 42 bytes, aireplay-ng tries to guess the rest of the missing data, as far as the headers are predictable. If an IP packet is captured, it additionally checks if the checksum of the header is correct after guessing the missing parts of it. This attack requires at least one WEP data packet.
 .TP
 .I -5, --fragment
 This attack, when successful, can obtain 1500 bytes of PRGA (pseudo random generation algorithm). This attack does not recover the WEP key itself, but merely obtains the PRGA. The PRGA can then be used to generate packets with packetforge-ng which are in turn used for various injection attacks. It requires at least one data packet to be received from the access point in order to initiate the attack.
@@ -249,3 +252,5 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .B packetforge-ng(1)
 .br
 .B wpaclean(1)
+.br
+.B airventriloquist(8)

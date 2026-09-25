@@ -4,19 +4,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 2004 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 PIDL = ../../../../tools/pidl/pidl --ws-parser
 
@@ -25,6 +13,7 @@ pidl_inc = --includedir ..
 
 SUBDIRS = \
 	atsvc		\
+	clusapi		\
 	dfs		\
 	dnsserver	\
 	dssetup		\
@@ -32,21 +21,29 @@ SUBDIRS = \
 	eventlog	\
 	frsrpc		\
 	frstrans	\
+	fsrvp		\
 	initshutdown	\
+	iwbemlevel1login	\
+	iwbemloginclientid	\
+	iwbemloginclientidex	\
+	iwbemservices	\
 	lsa		\
 	mapi		\
 	mdssvc		\
 	misc		\
 	nspi		\
+	rcg		\
 	rfr		\
 	samr		\
+	svcctl		\
 	winreg		\
+	winspool	\
 	witness		\
+	wkssvc          \
 	wzcsvc
 
 DONT_BUILD_SUBDIRS = \
-	srvsvc	\
-	wkssvc
+	srvsvc
 
 all: $(SUBDIRS)
 
@@ -56,6 +53,11 @@ $(SUBDIRS) $(DONT_BUILD_SUBDIRS): %: ../packet-dcerpc-%.c ../packet-dcerpc-%.h
 
 ../packet-dcerpc-atsvc.c \
 ../packet-dcerpc-atsvc.h: atsvc/atsvc.idl atsvc/atsvc.cnf
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
+../packet-dcerpc-clusapi.c \
+../packet-dcerpc-clusapi.h: clusapi/clusapi.idl clusapi/clusapi.cnf \
+				clusapi/clusapi.idl
 	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
 
 ../packet-dcerpc-dfs.c \
@@ -89,10 +91,39 @@ $(SUBDIRS) $(DONT_BUILD_SUBDIRS): %: ../packet-dcerpc-%.c ../packet-dcerpc-%.h
 				misc/misc.idl idl_types.h
 	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
 
+../packet-dcerpc-fsrvp.c \
+../packet-dcerpc-fsrvp.h: fsrvp/fsrvp.idl fsrvp/fsrvp.cnf \
+				idl_types.h
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
 ../packet-dcerpc-initshutdown.c \
 ../packet-dcerpc-initshutdown.h: initshutdown/initshutdown.idl \
 					initshutdown/initshutdown.cnf \
 					lsa/lsa.idl idl_types.h
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
+../packet-dcerpc-iwbemlevel1login.c \
+../packet-dcerpc-iwbemlevel1login.h: iwbemlevel1login/iwbemlevel1login.idl \
+					iwbemlevel1login/iwbemlevel1login.cnf \
+					idl_types.h
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
+../packet-dcerpc-iwbemloginclientid.c \
+../packet-dcerpc-iwbemloginclientid.h: iwbemloginclientid/iwbemloginclientid.idl \
+					iwbemloginclientid/iwbemloginclientid.cnf \
+					idl_types.h
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
+../packet-dcerpc-iwbemloginclientidex.c \
+../packet-dcerpc-iwbemloginclientidex.h: iwbemloginclientidex/iwbemloginclientidex.idl \
+					iwbemloginclientidex/iwbemloginclientidex.cnf \
+					idl_types.h
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
+../packet-dcerpc-iwbemservices.c \
+../packet-dcerpc-iwbemservices.h: iwbemservices/iwbemservices.idl \
+					iwbemservices/iwbemservices.cnf \
+					idl_types.h
 	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
 
 ../packet-dcerpc-lsa.c \
@@ -101,7 +132,6 @@ $(SUBDIRS) $(DONT_BUILD_SUBDIRS): %: ../packet-dcerpc-%.c ../packet-dcerpc-%.h
 
 ../packet-dcerpc-mapi.c \
 ../packet-dcerpc-mapi.h: mapi/mapi.idl mapi/mapi.cnf \
-				mapi/request.cnf.c mapi/response.cnf.c \
 				idl_types.h mapicodes_enum.h mapitags_enum.h
 	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
 
@@ -119,6 +149,11 @@ $(SUBDIRS) $(DONT_BUILD_SUBDIRS): %: ../packet-dcerpc-%.c ../packet-dcerpc-%.h
 				idl_types.h mapicodes_enum.h mapitags_enum.h
 	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
 
+../packet-dcerpc-rcg.c \
+../packet-dcerpc-rcg.h: rcg/rcg.idl rcg/rcg.cnf \
+				idl_types.h  mapicodes_enum.h
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
 ../packet-dcerpc-rfr.c \
 ../packet-dcerpc-rfr.h: rfr/rfr.idl rfr/rfr.cnf \
 				idl_types.h  mapicodes_enum.h
@@ -132,8 +167,17 @@ $(SUBDIRS) $(DONT_BUILD_SUBDIRS): %: ../packet-dcerpc-%.c ../packet-dcerpc-%.h
 ../packet-dcerpc-srvsvc.h: srvsvc/srvsvc.idl srvsvc/srvsvc.cnf idl_types.h
 	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
 
+../packet-dcerpc-svcctl.c \
+../packet-dcerpc-svcctl.h: svcctl/svcctl.idl svcctl/svcctl.cnf
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
 ../packet-dcerpc-winreg.c \
 ../packet-dcerpc-winreg.h: winreg/winreg.idl winreg/winreg.cnf \
+				misc/misc.idl
+	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
+
+../packet-dcerpc-winspool.c \
+../packet-dcerpc-winspool.h: winspool/winspool.idl winspool/winspool.cnf \
 				misc/misc.idl
 	cd $(<D) && $(PIDL) $(pidl_out) $(pidl_inc) -- $(<F)
 

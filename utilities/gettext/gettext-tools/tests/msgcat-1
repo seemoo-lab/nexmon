@@ -4,7 +4,7 @@
 # Verify that msgcat doesn't introduce alternative syntax if all translations
 # have the same msgstr.
 
-cat <<EOF > mcat-test1.in1
+cat <<\EOF > mcat-test1.in1
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -21,7 +21,7 @@ msgid "1"
 msgstr "eins"
 EOF
 
-cat <<EOF > mcat-test1.in2
+cat <<\EOF > mcat-test1.in2
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"

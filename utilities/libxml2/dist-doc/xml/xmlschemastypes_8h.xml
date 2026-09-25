@@ -1,0 +1,1833 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlschemastypes_8h" kind="file" language="C++">
+    <compoundname>xmlschemastypes.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="schemasInternals_8h" local="no">libxml/schemasInternals.h</includes>
+    <includes refid="xmlschemas_8h" local="no">libxml/xmlschemas.h</includes>
+    <includedby refid="relaxng_8c" local="no">/builds/GNOME/libxml2/relaxng.c</includedby>
+    <includedby refid="threads_8c" local="no">/builds/GNOME/libxml2/threads.c</includedby>
+    <includedby refid="xmlschemas_8c" local="no">/builds/GNOME/libxml2/xmlschemas.c</includedby>
+    <includedby refid="xmlschemastypes_8c" local="no">/builds/GNOME/libxml2/xmlschemastypes.c</includedby>
+    <incdepgraph>
+      <node id="24">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/schemasInternals.h</label>
+        <link refid="schemasInternals_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/xmlschemas.h</label>
+        <link refid="xmlschemas_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>xmlschemastypes.h</label>
+        <link refid="xmlschemastypes_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="13">
+        <label>limits.h</label>
+      </node>
+      <node id="8">
+        <label>stdarg.h</label>
+      </node>
+      <node id="11">
+        <label>stddef.h</label>
+      </node>
+      <node id="6">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSchemaWhitespaceValueType</name>
+        <enumvalue id="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208aca6ba4b251fd75df831d7ba5d65028bf" prot="public">
+          <name>XML_SCHEMA_WHITESPACE_UNKNOWN</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208a274f6ba89fc745d07c4e3e7c8c652dfc" prot="public">
+          <name>XML_SCHEMA_WHITESPACE_PRESERVE</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208afe3797452bdae2f7a106763316714e91" prot="public">
+          <name>XML_SCHEMA_WHITESPACE_REPLACE</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208aa90fd6440e69861513193a85030563c0" prot="public">
+          <name>XML_SCHEMA_WHITESPACE_COLLAPSE</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Schema whitespace value type. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="32" column="1" bodyfile="xmlschemastypes.h" bodystart="32" bodyend="37"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xmlschemastypes_8h_1a70b7b4e449a9c69a97f2dbe077dbc0f1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaInitTypes</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlSchemaInitTypes</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Initialize the default XML Schemas type library. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>0 on success, -1 on error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="40" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="538" bodyend="883" declfile="xmlschemastypes.h" declline="40" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a72d8b81113d4cc0eb340b894854272cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaCleanupTypes</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlSchemaCleanupTypes</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Cleanup the default XML Schemas type library. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000430"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function will be made private. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have to call cleanup functions at all.</para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="43" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="895" bodyend="902" declfile="xmlschemastypes.h" declline="43" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a6a1ce2cb61dd2b66645dfcbd32f215cd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+        <definition>xmlSchemaType * xmlSchemaGetPredefinedType</definition>
+        <argsstring>(const xmlChar *name, const xmlChar *ns)</argsstring>
+        <name>xmlSchemaGetPredefinedType</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Lookup a type in the default XML Schemas type library. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the type name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI of the namespace usually &quot;http://www.w3.org/2001/XMLSchema&quot; </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the type if found, NULL otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="45" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1324" bodyend="1330" declfile="xmlschemastypes.h" declline="45" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a089638c1722ca65cb9f51fe45856bf74" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidatePredefinedType</definition>
+        <argsstring>(xmlSchemaType *type, const xmlChar *value, xmlSchemaVal **val)</argsstring>
+        <name>xmlSchemaValidatePredefinedType</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> **</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+<para>Check that a value conforms to the lexical space of the predefined type. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>if true a value is computed and returned in <computeroutput>val</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the predefined type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value to check </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the return computed value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if this validates, a positive error code number otherwise and -1 in case of internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="48" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="3667" bodyend="3670" declfile="xmlschemastypes.h" declline="48" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1ad502351831f2db11396f2c5673618748" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValPredefTypeNode</definition>
+        <argsstring>(xmlSchemaType *type, const xmlChar *value, xmlSchemaVal **val, xmlNode *node)</argsstring>
+        <name>xmlSchemaValPredefTypeNode</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> **</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Check that a value conforms to the lexical space of the predefined type. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>if true a value is computed and returned in <computeroutput>val</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the predefined type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value to check </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the return computed value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node containing the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if this validates, a positive error code number otherwise and -1 in case of internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="52" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="3631" bodyend="3635" declfile="xmlschemastypes.h" declline="52" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a93bb37f3450809b82c5ca4c74da0fc7e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateFacet</definition>
+        <argsstring>(xmlSchemaType *base, xmlSchemaFacet *facet, const xmlChar *value, xmlSchemaVal *val)</argsstring>
+        <name>xmlSchemaValidateFacet</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>base</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+          <declname>facet</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+<para>Check a value against a facet condition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>base</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the base type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>facet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the facet to check </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the lexical repr of the value to validate </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precomputed value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the element is schemas valid, a positive error code number otherwise and -1 in case of internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="57" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5698" bodyend="5717" declfile="xmlschemastypes.h" declline="57" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a25f8ed86120772ff0ed4a1a3629fd66e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateFacetWhtsp</definition>
+        <argsstring>(xmlSchemaFacet *facet, xmlSchemaWhitespaceValueType fws, xmlSchemaValType valType, const xmlChar *value, xmlSchemaVal *val, xmlSchemaWhitespaceValueType ws)</argsstring>
+        <name>xmlSchemaValidateFacetWhtsp</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+          <declname>facet</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208" kindref="member">xmlSchemaWhitespaceValueType</ref></type>
+          <declname>fws</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcd" kindref="member">xmlSchemaValType</ref></type>
+          <declname>valType</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208" kindref="member">xmlSchemaWhitespaceValueType</ref></type>
+          <declname>ws</declname>
+        </param>
+        <briefdescription>
+<para>Check a value against a facet condition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This takes value normalization according to the specified whitespace types into account. Note that <computeroutput>value</computeroutput> needs to be the <emphasis>normalized</emphasis> value if the facet is of type &quot;pattern&quot;.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>facet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the facet to check </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>fws</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the whitespace type of the facet&apos;s value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>valType</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the built-in type of the value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the lexical (or normalized for pattern) repr of the value to validate </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precomputed value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ws</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the whitespace type of the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the element is schemas valid, a positive error code number otherwise and -1 in case of internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="62" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5735" bodyend="5744" declfile="xmlschemastypes.h" declline="62" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1aff3ab8f0482bc12215d896fc6c4ef819" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaFreeValue</definition>
+        <argsstring>(xmlSchemaVal *val)</argsstring>
+        <name>xmlSchemaFreeValue</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+          <defname>value</defname>
+        </param>
+        <briefdescription>
+<para>Cleanup the default XML Schemas type library. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value to free </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="69" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1252" bodyend="1314" declfile="xmlschemastypes.h" declline="69" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a1d73dd916f04a9adba6e0d4f54c98666" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+        <definition>xmlSchemaFacet * xmlSchemaNewFacet</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlSchemaNewFacet</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Allocate a new Facet structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>the newly allocated structure or NULL in case or error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="71" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="3292" bodyend="3303" declfile="xmlschemastypes.h" declline="71" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a3e27b1e9a1c9975b31d662c2c222b70b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaCheckFacet</definition>
+        <argsstring>(xmlSchemaFacet *facet, xmlSchemaType *typeDecl, xmlSchemaParserCtxt *ctxt, const xmlChar *name)</argsstring>
+        <name>xmlSchemaCheckFacet</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+          <declname>facet</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>typeDecl</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+          <defname>pctxt</defname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Checks and computes the values of facets. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>facet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the facet </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>typeDecl</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema type definition </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parser context or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the optional name of the type </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if valid, a positive error code if not valid and -1 in case of an internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="73" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="18233" bodyend="18431" declfile="xmlschemastypes.h" declline="73" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1afba90e6eb30e31964468b9261e525622" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaFreeFacet</definition>
+        <argsstring>(xmlSchemaFacet *facet)</argsstring>
+        <name>xmlSchemaFreeFacet</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+          <declname>facet</declname>
+        </param>
+        <briefdescription>
+<para>Deallocate a Schema Facet structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>facet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema facet structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="78" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="3883" bodyend="3894" declfile="xmlschemastypes.h" declline="78" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a21c99eaaa8651f33cbc8eebb13e0f2cb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaCompareValues</definition>
+        <argsstring>(xmlSchemaVal *x, xmlSchemaVal *y)</argsstring>
+        <name>xmlSchemaCompareValues</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>x</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>y</declname>
+        </param>
+        <briefdescription>
+<para>Compare 2 values. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>x</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a first value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>y</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a second value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 if x &lt; y, 0 if x == y, 1 if x &gt; y, 2 if x &lt;&gt; y, and -2 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="80" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5102" bodyend="5123" declfile="xmlschemastypes.h" declline="80" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1acd8b0ca8bb93c7acf6f9d11e912fd911" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+        <definition>xmlSchemaType * xmlSchemaGetBuiltInListSimpleTypeItemType</definition>
+        <argsstring>(xmlSchemaType *type)</argsstring>
+        <name>xmlSchemaGetBuiltInListSimpleTypeItemType</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <briefdescription>
+<para>Lookup function. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the built-in simple type. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the item type of <computeroutput>type</computeroutput> as defined by the built-in datatype hierarchy of XML Schema Part 2: Datatypes, or NULL in case of an error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="83" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1340" bodyend="1354" declfile="xmlschemastypes.h" declline="83" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1aa714f0ba5db957d10aa39f22c155998a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateListSimpleTypeFacet</definition>
+        <argsstring>(xmlSchemaFacet *facet, const xmlChar *value, unsigned long actualLen, unsigned long *expectedLen)</argsstring>
+        <name>xmlSchemaValidateListSimpleTypeFacet</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+          <declname>facet</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type>unsigned long</type>
+          <declname>actualLen</declname>
+        </param>
+        <param>
+          <type>unsigned long *</type>
+          <declname>expectedLen</declname>
+        </param>
+        <briefdescription>
+<para>Checks the value of a list simple type against a facet. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>facet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the facet to check </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the lexical repr of the value to validate </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>actualLen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of list items </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>expectedLen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the resulting expected number of list items </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the value is valid, a positive error code number otherwise and -1 in case of an internal error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="85" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5248" bodyend="5285" declfile="xmlschemastypes.h" declline="85" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1ad3515738f7330f3f96e08c40f62a08ab" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+        <definition>xmlSchemaType * xmlSchemaGetBuiltInType</definition>
+        <argsstring>(xmlSchemaValType type)</argsstring>
+        <name>xmlSchemaGetBuiltInType</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcd" kindref="member">xmlSchemaValType</ref></type>
+          <declname>type</declname>
+        </param>
+        <briefdescription>
+<para>Gives you the type struct for a built-in type by its type id. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the type of the built in type </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the type if found, NULL otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="90" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="990" bodyend="1091" declfile="xmlschemastypes.h" declline="90" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a16155c38b9b547dba72bc72b26e29923" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaIsBuiltInTypeFacet</definition>
+        <argsstring>(xmlSchemaType *type, int facetType)</argsstring>
+        <name>xmlSchemaIsBuiltInTypeFacet</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>facetType</declname>
+        </param>
+        <briefdescription>
+<para>Evaluates if a specific facet can be used in conjunction with a type. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the built-in type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>facetType</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the facet type </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if the facet can be used with the given built-in type, 0 otherwise and -1 in case the type is not a built-in type. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="92" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="914" bodyend="980" declfile="xmlschemastypes.h" declline="92" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1ae53bbf3f979c75fc62322399da3fcb45" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlSchemaCollapseString</definition>
+        <argsstring>(const xmlChar *value)</argsstring>
+        <name>xmlSchemaCollapseString</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Removes and normalize white spaces in the string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new string or NULL if no change was required. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="95" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="2242" bodyend="2283" declfile="xmlschemastypes.h" declline="95" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1abec9e60f86abf971b567e0f497c3e33e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlSchemaWhiteSpaceReplace</definition>
+        <argsstring>(const xmlChar *value)</argsstring>
+        <name>xmlSchemaWhiteSpaceReplace</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Replaces 0xd, 0x9 and 0xa with a space. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new string or NULL if no change was required. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="97" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="2209" bodyend="2233" declfile="xmlschemastypes.h" declline="97" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a3e74db35ecb48c99c0b4b806ab03110f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned long</type>
+        <definition>unsigned long xmlSchemaGetFacetValueAsULong</definition>
+        <argsstring>(xmlSchemaFacet *facet)</argsstring>
+        <name>xmlSchemaGetFacetValueAsULong</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+          <declname>facet</declname>
+        </param>
+        <briefdescription>
+<para>Extract the value of a facet. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>facet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an schemas type facet </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the value as a long </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="99" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5226" bodyend="5235" declfile="xmlschemastypes.h" declline="99" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a9f93f07c975b4b41ee0424c1c7ac8348" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateLengthFacet</definition>
+        <argsstring>(xmlSchemaType *type, xmlSchemaFacet *facet, const xmlChar *value, xmlSchemaVal *val, unsigned long *length)</argsstring>
+        <name>xmlSchemaValidateLengthFacet</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+          <declname>facet</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type>unsigned long *</type>
+          <declname>length</declname>
+        </param>
+        <briefdescription>
+<para>Checka a value against a &quot;length&quot;, &quot;minLength&quot; and &quot;maxLength&quot; facet; sets <computeroutput>length</computeroutput> to the computed length of <computeroutput>value</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the built-in type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>facet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the facet to check </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the lexical repr. of the value to be validated </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precomputed value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>length</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the actual length of the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the value is valid, a positive error code otherwise and -1 in case of an internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="101" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5415" bodyend="5426" declfile="xmlschemastypes.h" declline="101" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1ab22822bbb452791acee2e3aada879a55" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateLengthFacetWhtsp</definition>
+        <argsstring>(xmlSchemaFacet *facet, xmlSchemaValType valType, const xmlChar *value, xmlSchemaVal *val, unsigned long *length, xmlSchemaWhitespaceValueType ws)</argsstring>
+        <name>xmlSchemaValidateLengthFacetWhtsp</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+          <declname>facet</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcd" kindref="member">xmlSchemaValType</ref></type>
+          <declname>valType</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type>unsigned long *</type>
+          <declname>length</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208" kindref="member">xmlSchemaWhitespaceValueType</ref></type>
+          <declname>ws</declname>
+        </param>
+        <briefdescription>
+<para>Checka a value against a &quot;length&quot;, &quot;minLength&quot; and &quot;maxLength&quot; facet; sets <computeroutput>length</computeroutput> to the computed length of <computeroutput>value</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>facet</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the facet to check </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>valType</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the built-in type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the lexical repr. of the value to be validated </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precomputed value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ws</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the whitespace type of the value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>length</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the actual length of the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the value is valid, a positive error code otherwise and -1 in case of an internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="107" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5442" bodyend="5451" declfile="xmlschemastypes.h" declline="107" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a3fb6bf6dd3eeb56446a087138258e6dd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValPredefTypeNodeNoNorm</definition>
+        <argsstring>(xmlSchemaType *type, const xmlChar *value, xmlSchemaVal **val, xmlNode *node)</argsstring>
+        <name>xmlSchemaValPredefTypeNodeNoNorm</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> **</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Check that a value conforms to the lexical space of the predefined type. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>if true a value is computed and returned in <computeroutput>val</computeroutput>. This one does apply any normalization to the value.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the predefined type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value to check </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the return computed value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node containing the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if this validates, a positive error code number otherwise and -1 in case of internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="114" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="3650" bodyend="3654" declfile="xmlschemastypes.h" declline="114" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1ac6faa9a2a534feb30a5b46e205a8c188" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaGetCanonValue</definition>
+        <argsstring>(xmlSchemaVal *val, const xmlChar **retValue)</argsstring>
+        <name>xmlSchemaGetCanonValue</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>retValue</declname>
+        </param>
+        <briefdescription>
+<para>Get the canonical lexical representation of the value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The caller has to FREE the returned retValue.</para>
+<para>WARNING: Some value types are not supported yet, resulting in a <computeroutput>retValue</computeroutput> of &quot;???&quot;.</para>
+<para>TODO: XML Schema 1.0 does not define canonical representations for: duration, gYearMonth, gYear, gMonthDay, gMonth, gDay, anyURI, QName, NOTATION. This will be fixed in XML Schema 1.1.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precomputed value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>retValue</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the returned value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the value could be built, 1 if the value type is not supported yet and -1 in case of API errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="119" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5764" bodyend="6081" declfile="xmlschemastypes.h" declline="119" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a9dde7b1c17fde1151bf413df174218d9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaGetCanonValueWhtsp</definition>
+        <argsstring>(xmlSchemaVal *val, const xmlChar **retValue, xmlSchemaWhitespaceValueType ws)</argsstring>
+        <name>xmlSchemaGetCanonValueWhtsp</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>retValue</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208" kindref="member">xmlSchemaWhitespaceValueType</ref></type>
+          <declname>ws</declname>
+        </param>
+        <briefdescription>
+<para>Get the canonical representation of the value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The caller has to free the returned <computeroutput>retValue</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precomputed value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>retValue</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the returned value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ws</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the whitespace type of the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the value could be built, 1 if the value type is not supported yet and -1 in case of API errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="122" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="6094" bodyend="6132" declfile="xmlschemastypes.h" declline="122" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1aff5ec20d3df49745b759df4213e4b97a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValueAppend</definition>
+        <argsstring>(xmlSchemaVal *prev, xmlSchemaVal *cur)</argsstring>
+        <name>xmlSchemaValueAppend</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>prev</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Appends a next sibling to a list of computed values. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>prev</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value to be appended </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if succeeded and -1 on API errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="126" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1101" bodyend="1107" declfile="xmlschemastypes.h" declline="126" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a792681c1b8c6614d56806e177b3f597b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+        <definition>xmlSchemaVal * xmlSchemaValueGetNext</definition>
+        <argsstring>(xmlSchemaVal *cur)</argsstring>
+        <name>xmlSchemaValueGetNext</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Accessor for the next sibling of a list of computed values. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the next value or NULL if there was none, or on API errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="129" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1117" bodyend="1122" declfile="xmlschemastypes.h" declline="129" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1ab06b824ec20d55d645324fd060a58ac6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlSchemaValueGetAsString</definition>
+        <argsstring>(xmlSchemaVal *val)</argsstring>
+        <name>xmlSchemaValueGetAsString</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+<para>Accessor for the string value of a computed value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the string value or NULL if there was none, or on API errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="131" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1132" bodyend="1154" declfile="xmlschemastypes.h" declline="131" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a43abb84ef3180159e329507e469a1e01" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValueGetAsBoolean</definition>
+        <argsstring>(xmlSchemaVal *val)</argsstring>
+        <name>xmlSchemaValueGetAsBoolean</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+<para>Accessor for the boolean value of a computed value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if true and 0 if false, or in case of an error. Hmm. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="133" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1163" bodyend="1168" declfile="xmlschemastypes.h" declline="133" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a1e635abde5139db755f79bd90df009e6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+        <definition>xmlSchemaVal * xmlSchemaNewStringValue</definition>
+        <argsstring>(xmlSchemaValType type, const xmlChar *value)</argsstring>
+        <name>xmlSchemaNewStringValue</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcd" kindref="member">xmlSchemaValType</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Allocate a new simple type value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The type can be of XML_SCHEMAS_STRING. WARNING: This one is intended to be expanded for other string based types. We need this for anySimpleType as well. The given value is consumed and freed with the struct.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the new value or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="135" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1182" bodyend="1197" declfile="xmlschemastypes.h" declline="135" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1aa02262b37cac7d9499a8fc635bade5a9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+        <definition>xmlSchemaVal * xmlSchemaNewNOTATIONValue</definition>
+        <argsstring>(const xmlChar *name, const xmlChar *ns)</argsstring>
+        <name>xmlSchemaNewNOTATIONValue</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Allocate a new NOTATION value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The given values are consumed and freed with the struct.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the notation name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the notation namespace name or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the new value or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="138" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1208" bodyend="1221" declfile="xmlschemastypes.h" declline="138" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a86883a225957f5b19630b1c7661403eb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+        <definition>xmlSchemaVal * xmlSchemaNewQNameValue</definition>
+        <argsstring>(const xmlChar *namespaceName, const xmlChar *localName)</argsstring>
+        <name>xmlSchemaNewQNameValue</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>namespaceName</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>localName</declname>
+        </param>
+        <briefdescription>
+<para>Allocate a new QName value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The given values are consumed and freed with the struct.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>namespaceName</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>localName</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the local name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the new value or NULL in case of an error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="141" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="1232" bodyend="1244" declfile="xmlschemastypes.h" declline="141" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1af3a4922a267e8aa1e65fd720365b5054" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaCompareValuesWhtsp</definition>
+        <argsstring>(xmlSchemaVal *x, xmlSchemaWhitespaceValueType xws, xmlSchemaVal *y, xmlSchemaWhitespaceValueType yws)</argsstring>
+        <name>xmlSchemaCompareValuesWhtsp</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>x</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208" kindref="member">xmlSchemaWhitespaceValueType</ref></type>
+          <declname>xws</declname>
+        </param>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>y</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemastypes_8h_1a82afafaa84f566619d5a7728ee086208" kindref="member">xmlSchemaWhitespaceValueType</ref></type>
+          <declname>yws</declname>
+        </param>
+        <briefdescription>
+<para>Compare 2 values. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>x</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a first value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>xws</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the whitespace value of x </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>y</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a second value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>yws</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the whitespace value of y </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 if x &lt; y, 0 if x == y, 1 if x &gt; y, 2 if x &lt;&gt; y, and -2 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="144" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="5136" bodyend="5145" declfile="xmlschemastypes.h" declline="144" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1af5d0297c5c86f9ebbff10f0235f73169" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+        <definition>xmlSchemaVal * xmlSchemaCopyValue</definition>
+        <argsstring>(xmlSchemaVal *val)</argsstring>
+        <name>xmlSchemaCopyValue</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+<para>Copies the precomputed value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This duplicates any string within.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the precomputed value to be copied </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the copy or NULL if a copy for a data-type is not implemented. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="149" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="3820" bodyend="3917" declfile="xmlschemastypes.h" declline="149" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemastypes_8h_1a1dcf9a0e3fb35af05ca8ec944d2c911c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcd" kindref="member">xmlSchemaValType</ref></type>
+        <definition>xmlSchemaValType xmlSchemaGetValType</definition>
+        <argsstring>(xmlSchemaVal *val)</argsstring>
+        <name>xmlSchemaGetValType</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+<para>Accessor for the type of a value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schemas value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the <ref refid="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcd" kindref="member">xmlSchemaValType</ref> of the value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemastypes.h" line="151" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="6141" bodyend="6146" declfile="xmlschemastypes.h" declline="151" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>implementation of XML Schema Datatypes </para>
+    </briefdescription>
+    <detaileddescription>
+<para>module providing the XML Schema Datatypes implementation both definition and validity checking</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xmlschemastypes.h"/>
+  </compounddef>
+</doxygen>

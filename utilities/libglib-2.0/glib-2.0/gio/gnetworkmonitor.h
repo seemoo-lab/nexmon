@@ -2,10 +2,12 @@
  *
  * Copyright 2011 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,7 +33,7 @@ G_BEGIN_DECLS
  * G_NETWORK_MONITOR_EXTENSION_POINT_NAME:
  *
  * Extension point for network status monitoring functionality.
- * See [Extending GIO][extending-gio].
+ * See [Extending GIO](overview.html#extending-gio).
  *
  * Since: 2.30
  */
@@ -48,7 +50,7 @@ struct _GNetworkMonitorInterface {
   GTypeInterface g_iface;
 
   void     (*network_changed)  (GNetworkMonitor      *monitor,
-				gboolean              available);
+				gboolean              network_available);
 
   gboolean (*can_reach)        (GNetworkMonitor      *monitor,
 				GSocketConnectable   *connectable,
@@ -64,32 +66,32 @@ struct _GNetworkMonitorInterface {
 				GError              **error);
 };
 
-GLIB_AVAILABLE_IN_2_32
-GType                 g_network_monitor_get_type              (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
+GType                 g_network_monitor_get_type              (void);
+GIO_AVAILABLE_IN_2_32
 GNetworkMonitor      *g_network_monitor_get_default           (void);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean              g_network_monitor_get_network_available (GNetworkMonitor     *monitor);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 gboolean              g_network_monitor_get_network_metered   (GNetworkMonitor     *monitor);
 
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 GNetworkConnectivity  g_network_monitor_get_connectivity      (GNetworkMonitor     *monitor);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean              g_network_monitor_can_reach             (GNetworkMonitor     *monitor,
                                                                GSocketConnectable  *connectable,
                                                                GCancellable        *cancellable,
                                                                GError             **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 void                  g_network_monitor_can_reach_async       (GNetworkMonitor     *monitor,
                                                                GSocketConnectable  *connectable,
                                                                GCancellable        *cancellable,
                                                                GAsyncReadyCallback  callback,
                                                                gpointer             user_data);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean              g_network_monitor_can_reach_finish      (GNetworkMonitor     *monitor,
                                                                GAsyncResult        *result,
                                                                GError             **error);

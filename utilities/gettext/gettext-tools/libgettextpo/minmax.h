@@ -1,27 +1,32 @@
 /* MIN, MAX macros.
-   Copyright (C) 1995, 1998, 2001, 2003, 2005, 2009-2016 Free Software
+   Copyright (C) 1995, 1998, 2001, 2003, 2005, 2009-2026 Free Software
    Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _MINMAX_H
 #define _MINMAX_H
 
 /* Note: MIN, MAX are also defined in <sys/param.h> on some systems
-   (glibc, IRIX, HP-UX, OSF/1).  Therefore you might get warnings about
-   MIN, MAX macro redefinitions on some systems; the workaround is to
+   (glibc, HP-UX).  Therefore you might get warnings about MIN, MAX
+   macro redefinitions on some systems; the workaround is to
    #include this file as the last one among the #include list.  */
+
+/* This file uses HAVE_MINMAX_IN_LIMITS_H, HAVE_MINMAX_IN_SYS_PARAM_H.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
 
 /* Before we define the following symbols we get the <limits.h> file
    since otherwise we get redefinitions on some systems if <limits.h> is

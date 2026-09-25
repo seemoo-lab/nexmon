@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 2001 Matthias Clasen <matthiasc@poet.de>
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,7 +34,7 @@ typedef struct {
   gboolean valid;
 } Test;
 
-Test test[] = {
+static Test global_test[] = {
   /* some tests to check max_len handling */
   /* length 1 */
   { "abcde", -1, 5, TRUE },
@@ -79,8 +81,9 @@ Test test[] = {
   { "\xed\x9f\xbf", -1, 3, TRUE },
   { "\xee\x80\x80", -1, 3, TRUE },
   { "\xef\xbf\xbd", -1, 3, TRUE },
+  { "\xf1\x80\x80\x80", -1, 4, TRUE },
   { "\xf4\x8f\xbf\xbf", -1, 4, TRUE },
-  { "\xf4\x90\x80\x80", -1, 0, FALSE },
+  { "\xf4\x90\x80\x80", -1, 0, FALSE }, /* bigger than U+10FFFF */
   /* malformed sequences */
   /* continuation bytes */
   { "\x80", -1, 0, FALSE },
@@ -92,6 +95,18 @@ Test test[] = {
   { "\x80\xbf\x80\xbf\x80", -1, 0, FALSE },
   { "\x80\xbf\x80\xbf\x80\xbf", -1, 0, FALSE },
   { "\x80\xbf\x80\xbf\x80\xbf\x80", -1, 0, FALSE },
+  { "\xe0\xa0\x20", -1, 0, FALSE },
+  { "\xe1\x80\x20", -1, 0, FALSE },
+  { "\xed\x80\x20", -1, 0, FALSE },
+  { "\xf0\xc0\x80\x80", -1, 0, FALSE },
+  { "\xf0\x90\x20\x80", -1, 0, FALSE },
+  { "\xf0\x90\x80\x20", -1, 0, FALSE },
+  { "\xf1\x20\x80\x80", -1, 0, FALSE },
+  { "\xf1\x80\x20\x80", -1, 0, FALSE },
+  { "\xf1\x80\x80\x20", -1, 0, FALSE },
+  { "\xf4\x7f\x80\x80", -1, 0, FALSE },
+  { "\xf4\x80\x20\x80", -1, 0, FALSE },
+  { "\xf4\x80\x80\x20", -1, 0, FALSE },
 
   /* all possible continuation byte */
   { "\x80", -1, 0, FALSE },
@@ -251,6 +266,9 @@ Test test[] = {
   { "\x20\xf0\x80\x80\x80\x20", -1, 1, FALSE },
   { "\x20\xf8\x80\x80\x80\x80\x20", -1, 1, FALSE },
   { "\x20\xfc\x80\x80\x80\x80\x80\x20", -1, 1, FALSE },
+  { "\xe0\x9f\x80", -1, 0, FALSE },
+  { "\xe0\xc0\x80", -1, 0, FALSE },
+  { "\xf0\x8f\x80\x80", -1, 0, FALSE },
   /* illegal code positions */
   { "\x20\xed\xa0\x80\x20", -1, 1, FALSE },
   { "\x20\xed\xad\xbf\x20", -1, 1, FALSE },
@@ -268,7 +286,15 @@ Test test[] = {
   { "\x20\xed\xaf\xbf\xed\xb0\x80\x20", -1, 1, FALSE },
   { "\x20\xed\xaf\xbf\xed\xbf\xbf\x20", -1, 1, FALSE },
 
-  { NULL, }
+  /* ASCII boundaries */
+  { "\x00", 1, 0, FALSE },
+  { "\x01", -1, 1, TRUE },
+  { "\x02", -1, 1, TRUE },
+  { "\x7d", -1, 1, TRUE },
+  { "\x7e", -1, 1, TRUE },
+  { "\x7f", -1, 1, TRUE },
+
+  { NULL, 0, 0, 0 }
 };
 
 static void
@@ -280,15 +306,79 @@ do_test (gconstpointer d)
 
   result = g_utf8_validate (test->text, test->max_len, &end);
 
-  g_assert (result == test->valid);
-  g_assert (end - test->text == test->offset);
+  g_assert_true (result == test->valid);
+  g_assert_cmpint (end - test->text, ==, test->offset);
 
   if (test->max_len < 0)
     {
       result = g_utf8_validate (test->text, strlen (test->text), &end);
 
-      g_assert (result == test->valid);
-      g_assert (end - test->text == test->offset);
+      g_assert_true (result == test->valid);
+      g_assert_cmpint (end - test->text, ==, test->offset);
+    }
+  else
+    {
+      result = g_utf8_validate_len (test->text, test->max_len, &end);
+
+      g_assert_true (result == test->valid);
+      g_assert_cmpint (end - test->text, ==, test->offset);
+    }
+}
+
+/* Test the behaviour of g_utf8_get_char_validated() with various inputs and
+ * length restrictions. */
+static void
+test_utf8_get_char_validated (void)
+{
+  const struct {
+    const gchar *buf;
+    gssize max_len;
+    gunichar expected_result;
+  } test_vectors[] = {
+    /* Bug #780095: */
+    { "\xC0\x00_45678", 8, (gunichar) -2 },
+    { "\xC0\x00_45678", -1, (gunichar) -2 },
+    /* It seems odd that the return value differs with the length input, but
+     * that’s how it’s documented: */
+    { "", 0, (gunichar) -2 },
+    { "", -1, (gunichar) 0 },
+    { "\0", 1, (gunichar) -2 },
+    { "AB\0", 3, 'A' },
+    { "A\0B", 3, 'A' },
+    { "\0AB", 3, (gunichar) -2 },
+    { "\xD8\0", 2, (gunichar) -2 },
+    /* Normal inputs: */
+    { "hello", 5, (gunichar) 'h' },
+    { "hello", -1, (gunichar) 'h' },
+    { "\xD8\x9F", 2, 0x061F },
+    { "\xD8\x9F", -1, 0x061F },
+    { "\xD8\x9Fmore", 6, 0x061F },
+    { "\xD8\x9Fmore", -1, 0x061F },
+    { "\xD8\x9F\0", 3, 0x061F },
+    { "\xE2\x96\xB3", 3, 0x25B3 },
+    { "\xE2\x96\xB3", -1, 0x25B3 },
+    { "\xE2\x96\xB3more", 7, 0x25B3 },
+    { "\xE2\x96\xB3more", -1, 0x25B3 },
+    { "\xF0\x9F\x92\xA9", 4, 0x1F4A9 },
+    { "\xF0\x9F\x92\xA9", -1, 0x1F4A9 },
+    { "\xF0\x9F\x92\xA9more", 8, 0x1F4A9 },
+    { "\xF0\x9F\x92\xA9more", -1, 0x1F4A9 },
+    /* Partial unichars: */
+    { "\xD8", -1, (gunichar) -2 },
+    { "\xD8\x9F", 1, (gunichar) -2 },
+    { "\xCE", -1, (gunichar) -2 },
+    { "\xCE", 1, (gunichar) -2 },
+  };
+  gsize i;
+
+  for (i = 0; i < G_N_ELEMENTS (test_vectors); i++)
+    {
+      gunichar actual_result;
+
+      g_test_message ("Vector %" G_GSIZE_FORMAT, i);
+      actual_result = g_utf8_get_char_validated (test_vectors[i].buf,
+                                                 test_vectors[i].max_len);
+      g_assert_cmpint (actual_result, ==, test_vectors[i].expected_result);
     }
 }
 
@@ -300,12 +390,14 @@ main (int argc, char *argv[])
 
   g_test_init (&argc, &argv, NULL);
 
-  for (i = 0; test[i].text; i++)
+  for (i = 0; global_test[i].text; i++)
     {
       path = g_strdup_printf ("/utf8/validate/%d", i);
-      g_test_add_data_func (path, &test[i], do_test);
+      g_test_add_data_func (path, &global_test[i], do_test);
       g_free (path);
     }
+
+  g_test_add_func ("/utf8/get-char-validated", test_utf8_get_char_validated);
 
   return g_test_run ();
 }

@@ -1,0 +1,6 @@
+ELEMENT 'foo'
+tab=" "
+END 'foo'
+ELEMENT 'bar'
+tab_character_reference="	"
+END 'bar'

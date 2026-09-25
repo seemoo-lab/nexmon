@@ -316,6 +316,8 @@ CSISO2022JP, ei_iso2022_jp
 ISO-2022-JP-1, ei_iso2022_jp1
 ISO-2022-JP-2, ei_iso2022_jp2
 CSISO2022JP2, ei_iso2022_jp2
+ISO-2022-JP-MS, ei_iso2022_jpms
+CP50221, ei_iso2022_jpms
 EUC-CN, ei_euc_cn
 EUCCN, ei_euc_cn
 GB2312, ei_euc_cn
@@ -326,7 +328,9 @@ GBK, ei_ces_gbk
 CP936, ei_cp936
 MS936, ei_cp936
 WINDOWS-936, ei_cp936
-GB18030, ei_gb18030
+GB18030, ei_gb18030_2005
+GB18030:2005, ei_gb18030_2005
+GB18030:2022, ei_gb18030_2022
 ISO-2022-CN, ei_iso2022_cn
 CSISO2022CN, ei_iso2022_cn
 ISO-2022-CN-EXT, ei_iso2022_cn_ext

@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,15 +27,17 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gpollableinputstream
- * @short_description: Interface for pollable input streams
- * @include: gio/gio.h
- * @see_also: #GInputStream, #GPollableOutputStream, #GFileDescriptorBased
+ * GPollableInputStream:
  *
- * #GPollableInputStream is implemented by #GInputStreams that
+ * `GPollableInputStream` is implemented by [class@Gio.InputStream]s that
  * can be polled for readiness to read. This can be used when
  * interfacing with a non-GIO API that expects
  * UNIX-file-descriptor-style asynchronous I/O rather than GIO-style.
+ *
+ * Some classes may implement `GPollableInputStream` but have only certain
+ * instances of that class be pollable. If [method@Gio.PollableInputStream.can_poll]
+ * returns false, then the behavior of other `GPollableInputStream` methods is
+ * undefined.
  *
  * Since: 2.28
  */
@@ -96,6 +100,9 @@ g_pollable_input_stream_can_poll (GPollableInputStream *stream)
  * g_pollable_input_stream_read_nonblocking(), which will return a
  * %G_IO_ERROR_WOULD_BLOCK error rather than blocking.
  *
+ * The behaviour of this method is undefined if
+ * g_pollable_input_stream_can_poll() returns %FALSE for @stream.
+ *
  * Returns: %TRUE if @stream is readable, %FALSE if not. If an error
  *   has occurred on @stream, this will result in
  *   g_pollable_input_stream_is_readable() returning %TRUE, and the
@@ -114,7 +121,7 @@ g_pollable_input_stream_is_readable (GPollableInputStream *stream)
 /**
  * g_pollable_input_stream_create_source:
  * @stream: a #GPollableInputStream.
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  *
  * Creates a #GSource that triggers when @stream can be read, or
  * @cancellable is triggered or an error occurs. The callback on the
@@ -124,6 +131,9 @@ g_pollable_input_stream_is_readable (GPollableInputStream *stream)
  * the stream may not actually be readable even after the source
  * triggers, so you should use g_pollable_input_stream_read_nonblocking()
  * rather than g_input_stream_read() from the callback.
+ *
+ * The behaviour of this method is undefined if
+ * g_pollable_input_stream_can_poll() returns %FALSE for @stream.
  *
  * Returns: (transfer full): a new #GSource
  *
@@ -157,12 +167,12 @@ g_pollable_input_stream_default_read_nonblocking (GPollableInputStream  *stream,
 }
 
 /**
- * g_pollable_input_stream_read_nonblocking:
+ * g_pollable_input_stream_read_nonblocking: (virtual read_nonblocking)
  * @stream: a #GPollableInputStream
- * @buffer: (array length=count) (element-type guint8): a buffer to
- *     read data into (which should be at least @count bytes long).
- * @count: the number of bytes you want to read
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @buffer: (array length=count) (element-type guint8) (out caller-allocates): a
+ *     buffer to read data into (which should be at least @count bytes long).
+ * @count: (in): the number of bytes you want to read
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: #GError for error reporting, or %NULL to ignore.
  *
  * Attempts to read up to @count bytes from @stream into @buffer, as
@@ -177,7 +187,9 @@ g_pollable_input_stream_default_read_nonblocking (GPollableInputStream  *stream,
  * may happen if you call this method after a source triggers due
  * to having been cancelled.
  *
- * Virtual: read_nonblocking
+ * The behaviour of this method is undefined if
+ * g_pollable_input_stream_can_poll() returns %FALSE for @stream.
+ *
  * Returns: the number of bytes read, or -1 on error (including
  *   %G_IO_ERROR_WOULD_BLOCK).
  */

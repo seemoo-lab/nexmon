@@ -1,22 +1,10 @@
-/* packet_range_group_box.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_RANGE_GROUP_BOX_H
@@ -24,17 +12,19 @@
 
 #include <config.h>
 
-#include <glib.h>
+#include <ui/packet_range.h>
 
-#include "epan/packet-range.h"
-
-#include "syntax_line_edit.h"
+#include <ui/qt/widgets/syntax_line_edit.h>
 #include <QGroupBox>
 
 namespace Ui {
 class PacketRangeGroupBox;
 }
 
+/**
+ * UI element for controlling a range selection. The range provided in
+ * "initRange" is not owned by this class but will be modified.
+ */
 class PacketRangeGroupBox : public QGroupBox
 {
     Q_OBJECT
@@ -42,7 +32,7 @@ class PacketRangeGroupBox : public QGroupBox
 public:
     explicit PacketRangeGroupBox(QWidget *parent = 0);
     ~PacketRangeGroupBox();
-    void initRange(packet_range_t *range);
+    void initRange(packet_range_t *range, QString selRange = QString());
     bool isValid();
 
 signals:
@@ -73,6 +63,7 @@ private slots:
     void on_capturedButton_toggled(bool checked);
     void on_displayedButton_toggled(bool checked);
     void on_ignoredCheckBox_toggled(bool checked);
+    void on_dependedCheckBox_toggled(bool checked);
 };
 
 #endif // PACKET_RANGE_GROUP_BOX_H

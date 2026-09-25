@@ -1,5 +1,5 @@
 ## Makefile for the gettext-runtime/intl-csharp subdirectory of GNU gettext
-## Copyright (C) 2003, 2006, 2015-2016 Free Software Foundation, Inc.
+## Copyright (C) 2003-2024 Free Software Foundation, Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -12,7 +12,7 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## Process this file with automake to produce Makefile.in.
 
@@ -24,6 +24,8 @@ RM = rm -f
 
 CSHARPCOMP = $(SHELL) ../csharpcomp.sh
 CSHARPCOMPFLAGS = @CSHARPCOMPFLAGS@
+
+pkglibdir = $(libdir)/gettext
 
 
 all-local: all-dll all-doc
@@ -43,20 +45,29 @@ GNU.Gettext.dll: intl.cs
 
 EXTRA_DIST += intl.cs
 
-CLEANFILES += GNU.Gettext.dll GNU.Gettext.dll.mdb
+CLEANFILES += GNU.Gettext.dll GNU.Gettext.dll.mdb GNU.Gettext.pdb
 
+# Install GNU.Gettext.dll
+#   - in $(libdir), as a user-visible package-independent location,
+#   - in $(pkglibdir), because msgunfmt.net.exe will be installed there
+#     and its needs all its dependency DLLs in the same directory.
 install-dll: install-dll-@BUILDCSHARP@
 install-dll-no:
 	$(MKDIR_P) $(DESTDIR)$(libdir)
+	$(MKDIR_P) $(DESTDIR)$(pkglibdir)
 install-dll-yes: all-dll-yes
 	$(MKDIR_P) $(DESTDIR)$(libdir)
+	$(MKDIR_P) $(DESTDIR)$(pkglibdir)
 	$(INSTALL_DATA) GNU.Gettext.dll $(DESTDIR)$(libdir)/GNU.Gettext.dll
+	$(INSTALL_DATA) GNU.Gettext.dll $(DESTDIR)$(pkglibdir)/GNU.Gettext.dll
 
 installdirs-dll:
 	$(MKDIR_P) $(DESTDIR)$(libdir)
+	$(MKDIR_P) $(DESTDIR)$(pkglibdir)
 
 uninstall-dll:
 	$(RM) $(DESTDIR)$(libdir)/GNU.Gettext.dll
+	$(RM) $(DESTDIR)$(pkglibdir)/GNU.Gettext.dll
 
 
 # C# reference documentation. Requires the pnet tools.
@@ -64,7 +75,7 @@ uninstall-dll:
 doc:
 	test -d doc || mkdir doc
 	csdoc -flibrary-name=GNU.Gettext intl.cs | \
-	csdoc2html -o doc -fmulti-file -f<frames -fcombine-members -fno-namespace-directories -
+	csdoc2html -o doc -fmulti-file -fframes -fcombine-members -fno-namespace-directories -
 
 intl-csharp.texi: intl.cs
 	csdoc -flibrary-name=GNU.Gettext intl.cs | \

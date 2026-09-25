@@ -1,25 +1,12 @@
-#!/bin/env python
+#!/bin/env python3
 #
 # Wireshark - Network traffic analyzer
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import sys
-import os
 import fnmatch
 
 IGNORE_CONF = "pre-commit-ignore.conf"
@@ -40,10 +27,9 @@ def load_checkignore(path):
         with open(path) as f:
             patterns = f.read()
     except OSError as err:
-        print(str(err))
-        return []
-    ign = [l.strip() for l in patterns.splitlines()]
-    ign = [l for l in ign if l and not l.startswith("#")]
+        sys.exit(str(err))
+    ign = [line.strip() for line in patterns.splitlines()]
+    ign = [line for line in ign if line and not line.startswith("#")]
     return ign
 
 ignore_list = load_checkignore(ignore_path)

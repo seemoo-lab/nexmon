@@ -5,10 +5,12 @@
  *
  * Copyright 2001 Hans Breuer
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -47,19 +49,10 @@ void                     g_dir_rewind         (GDir         *dir);
 GLIB_AVAILABLE_IN_ALL
 void                     g_dir_close          (GDir         *dir);
 
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#define g_dir_open      g_dir_open_utf8
-#define g_dir_read_name g_dir_read_name_utf8
-
-GLIB_AVAILABLE_IN_ALL
-GDir        *g_dir_open_utf8      (const gchar  *path,
-                                   guint         flags,
-                                   GError      **error);
-GLIB_AVAILABLE_IN_ALL
-const gchar *g_dir_read_name_utf8 (GDir         *dir);
-#endif /* G_OS_WIN32 */
-#endif /* __GTK_DOC_IGNORE__ */
+GLIB_AVAILABLE_IN_2_80
+GDir *                   g_dir_ref             (GDir        *dir);
+GLIB_AVAILABLE_IN_2_80
+void                     g_dir_unref           (GDir        *dir);
 
 G_END_DECLS
 

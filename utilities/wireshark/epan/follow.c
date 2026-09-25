@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  */
 
@@ -39,23 +27,17 @@ struct register_follow {
     follow_index_filter_func index_filter; /* generate stream/index filter to follow */
     follow_address_filter_func address_filter; /* generate address filter to follow */
     follow_port_to_display_func port_to_display; /* port to name resolution for follow type */
-    follow_tap_func tap_handler; /* tap listener handler */
+    tap_packet_cb tap_handler; /* tap listener handler */
+    follow_stream_count_func stream_count; /* maximum stream count, used for UI */
+    follow_sub_stream_id_func sub_stream_id; /* sub-stream id, used for UI */
 };
 
-static GSList *registered_followers = NULL;
-
-static gint
-insert_sorted_by_name(gconstpointer aparam, gconstpointer bparam)
-{
-    const register_follow_t *a = (const register_follow_t *)aparam;
-    const register_follow_t *b = (const register_follow_t *)bparam;
-
-    return g_ascii_strcasecmp(proto_get_protocol_short_name(find_protocol_by_id(a->proto_id)), proto_get_protocol_short_name(find_protocol_by_id(b->proto_id)));
-}
+static wmem_tree_t *registered_followers;
 
 void register_follow_stream(const int proto_id, const char* tap_listener,
                             follow_conv_filter_func conv_filter, follow_index_filter_func index_filter, follow_address_filter_func address_filter,
-                            follow_port_to_display_func port_to_display, follow_tap_func tap_handler)
+                            follow_port_to_display_func port_to_display, tap_packet_cb tap_handler,
+                            follow_stream_count_func stream_count, follow_sub_stream_id_func sub_stream_id)
 {
   register_follow_t *follower;
   DISSECTOR_ASSERT(tap_listener);
@@ -65,7 +47,7 @@ void register_follow_stream(const int proto_id, const char* tap_listener,
   DISSECTOR_ASSERT(port_to_display);
   DISSECTOR_ASSERT(tap_handler);
 
-  follower = g_new(register_follow_t,1);
+  follower = wmem_new(wmem_epan_scope(), register_follow_t);
 
   follower->proto_id       = proto_id;
   follower->tap_listen_str = tap_listener;
@@ -74,8 +56,13 @@ void register_follow_stream(const int proto_id, const char* tap_listener,
   follower->address_filter = address_filter;
   follower->port_to_display = port_to_display;
   follower->tap_handler    = tap_handler;
+  follower->stream_count   = stream_count;
+  follower->sub_stream_id  = sub_stream_id;
 
-  registered_followers = g_slist_insert_sorted(registered_followers, follower, insert_sorted_by_name);
+  if (registered_followers == NULL)
+    registered_followers = wmem_tree_new(wmem_epan_scope());
+
+  wmem_tree_insert_string(registered_followers, proto_get_protocol_short_name(find_protocol_by_id(proto_id)), follower, 0);
 }
 
 int get_follow_proto_id(register_follow_t* follower)
@@ -114,35 +101,42 @@ follow_port_to_display_func get_follow_port_to_display(register_follow_t* follow
   return follower->port_to_display;
 }
 
-follow_tap_func get_follow_tap_handler(register_follow_t* follower)
+tap_packet_cb get_follow_tap_handler(register_follow_t* follower)
 {
   return follower->tap_handler;
 }
 
+follow_stream_count_func get_follow_stream_count_func(register_follow_t* follower)
+{
+  return follower->stream_count;
+}
+
+follow_sub_stream_id_func get_follow_sub_stream_id_func(register_follow_t* follower)
+{
+  return follower->sub_stream_id;
+}
 
 register_follow_t* get_follow_by_name(const char* proto_short_name)
 {
-  guint i, size = g_slist_length(registered_followers);
-  register_follow_t *follower;
-  GSList   *slist;
+  return (register_follow_t*)wmem_tree_lookup_string(registered_followers, proto_short_name, 0);
+}
 
-  for (i = 0; i < size; i++) {
-    slist = g_slist_nth(registered_followers, i);
-    follower = (register_follow_t*)slist->data;
-
-    if (strcmp(proto_short_name, proto_get_protocol_short_name(find_protocol_by_id(follower->proto_id))) == 0)
-      return follower;
+register_follow_t* get_follow_by_proto_id(const int proto_id)
+{
+  protocol_t *protocol = find_protocol_by_id(proto_id);
+  if (protocol == NULL) {
+        return NULL;
   }
 
-  return NULL;
+  return (register_follow_t*)wmem_tree_lookup_string(registered_followers, proto_get_protocol_short_name(protocol), 0);
 }
 
-void follow_iterate_followers(GFunc func, gpointer user_data)
+void follow_iterate_followers(wmem_foreach_func func, void *user_data)
 {
-    g_slist_foreach(registered_followers, func, user_data);
+    wmem_tree_foreach(registered_followers, func, user_data);
 }
 
-gchar* follow_get_stat_tap_string(register_follow_t* follower)
+char* follow_get_stat_tap_string(register_follow_t* follower)
 {
     GString *cmd_str = g_string_new("follow,");
     g_string_append(cmd_str, proto_get_protocol_filter_name(follower->proto_id));
@@ -155,59 +149,66 @@ gchar* follow_get_stat_tap_string(register_follow_t* follower)
 void
 follow_reset_stream(follow_info_t* info)
 {
+    GList *cur;
+    follow_record_t *follow_record;
+
     info->bytes_written[0] = info->bytes_written[1] = 0;
     info->client_port = 0;
     info->server_port = 0;
-    info->client_ip.type = FT_NONE;
-    info->client_ip.len = 0;
-    info->server_ip.type = FT_NONE;
-    info->server_ip.len = 0;
+
+    free_address(&info->client_ip);
+    free_address(&info->server_ip);
+
+    for (cur = info->payload; cur; cur = g_list_next(cur)) {
+        follow_record = (follow_record_t *)cur->data;
+        if(follow_record->data)
+            g_byte_array_free(follow_record->data, true);
+
+        g_free(follow_record);
+    }
+    g_list_free(info->payload);
+    info->payload = NULL;
+
+    //Only TCP stream uses fragments
+    for (cur = info->fragments[0]; cur; cur = g_list_next(cur)) {
+        follow_record = (follow_record_t *)cur->data;
+        if(follow_record->data) {
+            g_byte_array_free(follow_record->data, true);
+        }
+        g_free(follow_record);
+    }
+    for (cur = info->fragments[1]; cur; cur = g_list_next(cur)) {
+        follow_record = (follow_record_t *)cur->data;
+        if(follow_record->data) {
+            g_byte_array_free(follow_record->data, true);
+        }
+        g_free(follow_record);
+    }
     info->fragments[0] = info->fragments[1] = NULL;
     info->seq[0] = info->seq[1] = 0;
+
+    g_free(info->filter_out_filter);
+    info->filter_out_filter = NULL;
+
+    /* Don't reset the substream_id - that's used by followers for
+     * for determining which tvbs match, and we don't want to clear
+     * it when the taps are reset due to a retap.
+     */
+#if 0
+    info->substream_id = SUBSTREAM_UNUSED;
+#endif
 }
 
 void
 follow_info_free(follow_info_t* follow_info)
 {
-    GList *cur;
-    follow_record_t *follow_record;
-
-    for(cur = follow_info->payload; cur; cur = g_list_next(cur)) {
-        if(cur->data) {
-            follow_record = (follow_record_t *)cur->data;
-            if(follow_record->data)
-                g_byte_array_free(follow_record->data, TRUE);
-
-            g_free(follow_record);
-        }
-    }
-    g_list_free(follow_info->payload);
-
-    /* Only TCP stream uses fragments */
-    for (cur = follow_info->fragments[0]; cur; cur = g_list_next(cur)) {
-        follow_record = (follow_record_t *)cur->data;
-        if(follow_record->data) {
-            g_byte_array_free(follow_record->data, TRUE);
-        }
-        g_free(follow_record);
-    }
-    for (cur = follow_info->fragments[1]; cur; cur = g_list_next(cur)) {
-        follow_record = (follow_record_t *)cur->data;
-        if(follow_record->data) {
-            g_byte_array_free(follow_record->data, TRUE);
-        }
-        g_free(follow_record);
-    }
-
-    free_address(&follow_info->client_ip);
-    free_address(&follow_info->server_ip);
-    g_free(follow_info->filter_out_filter);
+    follow_reset_stream(follow_info);
     g_free(follow_info);
 }
 
-gboolean
+tap_packet_status
 follow_tvb_tap_listener(void *tapdata, packet_info *pinfo,
-                      epan_dissect_t *edt _U_, const void *data)
+                      epan_dissect_t *edt _U_, const void *data, tap_flags_t flags _U_)
 {
     follow_record_t *follow_record;
     follow_info_t *follow_info = (follow_info_t *)tapdata;
@@ -220,6 +221,7 @@ follow_tvb_tap_listener(void *tapdata, packet_info *pinfo,
                                               tvb_get_ptr(next_tvb, 0, -1),
                                               tvb_captured_length(next_tvb));
     follow_record->packet_num = pinfo->fd->num;
+    follow_record->abs_ts = pinfo->fd->abs_ts;
 
     if (follow_info->client_port == 0) {
         follow_info->client_port = pinfo->srcport;
@@ -229,19 +231,19 @@ follow_tvb_tap_listener(void *tapdata, packet_info *pinfo,
     }
 
     if (addresses_equal(&follow_info->client_ip, &pinfo->src) && follow_info->client_port == pinfo->srcport)
-        follow_record->is_server = FALSE;
+        follow_record->is_server = false;
     else
-        follow_record->is_server = TRUE;
+        follow_record->is_server = true;
 
     /* update stream counter */
     follow_info->bytes_written[follow_record->is_server] += follow_record->data->len;
 
-    follow_info->payload = g_list_append(follow_info->payload, follow_record);
-    return FALSE;
+    follow_info->payload = g_list_prepend(follow_info->payload, follow_record);
+    return TAP_PACKET_DONT_REDRAW;
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

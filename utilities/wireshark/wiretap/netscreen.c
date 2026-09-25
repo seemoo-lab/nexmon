@@ -7,24 +7,12 @@
  * Wiretap Library
  * Copyright (c) 1998 by Gilbert Ramirez <gram@alumni.rice.edu>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-#include "wtap-int.h"
 #include "netscreen.h"
+#include "wtap_module.h"
 #include "file_wrappers.h"
 
 #include <stdlib.h>
@@ -35,19 +23,19 @@
  * o  Construct a list of interfaces, with interface names, give
  *    them link-layer types based on the interface name and packet
  *    data, and supply interface IDs with each packet (i.e., make
- *    this supply a pcap-ng-style set of interfaces and associate
+ *    this supply a pcapng-style set of interfaces and associate
  *    packets with interfaces).  This is probably the right way
  *    to "Pass the interface names and the traffic direction to either
  *    the frame-structure, a pseudo-header or use PPI."  See the
  *    message at
  *
- *        http://www.wireshark.org/lists/wireshark-dev/200708/msg00029.html
+ *        https://lists.wireshark.org/archives/wireshark-dev/200708/msg00029.html
  *
  *    to see whether any further discussion is still needed. I suspect
- *    it doesn't; pcap-NG existed at the time, as per the final
+ *    it doesn't; pcapng existed at the time, as per the final
  *    message in that thread:
  *
- *        http://www.wireshark.org/lists/wireshark-dev/200708/msg00039.html
+ *        https://lists.wireshark.org/archives/wireshark-dev/200708/msg00039.html
  *
  *    but I don't think we fully *supported* it at that point.  Now
  *    that we do, we have the infrastructure to support this, except
@@ -56,27 +44,34 @@
  *    information as part of the packet metadata from Wiretap modules.
  *    That should be fixed so that we can show interface information,
  *    such as the interface name, in packet dissections from, for example,
- *    pcap-NG captures.
+ *    pcapng captures.
  */
 
-static gboolean info_line(const gchar *line);
-static gint64 netscreen_seek_next_packet(wtap *wth, int *err, gchar **err_info,
+static bool info_line(const char *line);
+static int64_t netscreen_seek_next_packet(wtap *wth, int *err, char **err_info,
 	char *hdr);
-static gboolean netscreen_check_file_type(wtap *wth, int *err,
-	gchar **err_info);
-static gboolean netscreen_read(wtap *wth, int *err, gchar **err_info,
-	gint64 *data_offset);
-static gboolean netscreen_seek_read(wtap *wth, gint64 seek_off,
-	struct wtap_pkthdr *phdr, Buffer *buf,
-	int *err, gchar **err_info);
-static gboolean parse_netscreen_packet(FILE_T fh, struct wtap_pkthdr *phdr,
-	Buffer* buf, char *line, int *err, gchar **err_info);
-static int parse_single_hex_dump_line(char* rec, guint8 *buf,
-	guint byte_offset);
+static bool netscreen_check_file_type(wtap *wth, int *err,
+	char **err_info);
+static bool netscreen_read(wtap *wth, wtap_rec *rec,
+	int *err, char **err_info, int64_t *data_offset);
+static bool netscreen_seek_read(wtap *wth, int64_t seek_off,
+	wtap_rec *rec, int *err, char **err_info);
+static bool parse_netscreen_packet(FILE_T fh, wtap_rec *rec,
+	char *line, int *err, char **err_info);
+static int parse_single_hex_dump_line(char* rec, Buffer *buf);
 
-/* Returns TRUE if the line appears to be a line with protocol info.
-   Otherwise it returns FALSE. */
-static gboolean info_line(const gchar *line)
+/* Error returns from parse_single_hex_dump_line() */
+#define PARSE_LINE_INVALID_CHARACTER	-1
+#define PARSE_LINE_NO_BYTES_SEEN	-2
+#define PARSE_LINE_TOO_MANY_BYTES_SEEN	-3
+
+static int netscreen_file_type_subtype = -1;
+
+void register_netscreen(void);
+
+/* Returns true if the line appears to be a line with protocol info.
+   Otherwise it returns false. */
+static bool info_line(const char *line)
 {
 	int i=NETSCREEN_SPACES_ON_INFO_LINE;
 
@@ -85,20 +80,20 @@ static gboolean info_line(const gchar *line)
 			line++;
 			continue;
 		} else {
-			return FALSE;
+			return false;
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 /* Seeks to the beginning of the next packet, and returns the
    byte offset. Copy the header line to hdr. Returns -1 on failure,
    and sets "*err" to the error and sets "*err_info" to null or an
    additional error string. */
-static gint64 netscreen_seek_next_packet(wtap *wth, int *err, gchar **err_info,
+static int64_t netscreen_seek_next_packet(wtap *wth, int *err, char **err_info,
     char *hdr)
 {
-	gint64 cur_off;
+	int64_t cur_off;
 	char buf[NETSCREEN_LINE_LENGTH];
 
 	while (1) {
@@ -115,7 +110,7 @@ static gint64 netscreen_seek_next_packet(wtap *wth, int *err, gchar **err_info,
 		}
 		if (strstr(buf, NETSCREEN_REC_MAGIC_STR1) ||
 		    strstr(buf, NETSCREEN_REC_MAGIC_STR2)) {
-			g_strlcpy(hdr, buf, NETSCREEN_LINE_LENGTH);
+			(void) g_strlcpy(hdr, buf, NETSCREEN_LINE_LENGTH);
 			return cur_off;
 		}
 	}
@@ -125,14 +120,14 @@ static gint64 netscreen_seek_next_packet(wtap *wth, int *err, gchar **err_info,
 /* Look through the first part of a file to see if this is
  * NetScreen snoop output.
  *
- * Returns TRUE if it is, FALSE if it isn't or if we get an I/O error;
+ * Returns true if it is, false if it isn't or if we get an I/O error;
  * if we get an I/O error, "*err" will be set to a non-zero value and
  * "*err_info" is set to null or an additional error string.
  */
-static gboolean netscreen_check_file_type(wtap *wth, int *err, gchar **err_info)
+static bool netscreen_check_file_type(wtap *wth, int *err, char **err_info)
 {
 	char	buf[NETSCREEN_LINE_LENGTH];
-	guint	reclen, line;
+	unsigned	reclen, line;
 
 	buf[NETSCREEN_LINE_LENGTH-1] = '\0';
 
@@ -140,26 +135,25 @@ static gboolean netscreen_check_file_type(wtap *wth, int *err, gchar **err_info)
 		if (file_gets(buf, NETSCREEN_LINE_LENGTH, wth->fh) == NULL) {
 			/* EOF or error. */
 			*err = file_error(wth->fh, err_info);
-			return FALSE;
+			return false;
 		}
 
-		reclen = (guint) strlen(buf);
-		if (reclen < strlen(NETSCREEN_HDR_MAGIC_STR1) ||
-			reclen < strlen(NETSCREEN_HDR_MAGIC_STR2)) {
+		reclen = (unsigned) strlen(buf);
+		if (reclen < MIN(strlen(NETSCREEN_HDR_MAGIC_STR1), strlen(NETSCREEN_HDR_MAGIC_STR2))) {
 			continue;
 		}
 
 		if (strstr(buf, NETSCREEN_HDR_MAGIC_STR1) ||
 		    strstr(buf, NETSCREEN_HDR_MAGIC_STR2)) {
-			return TRUE;
+			return true;
 		}
 	}
 	*err = 0;
-	return FALSE;
+	return false;
 }
 
 
-wtap_open_return_val netscreen_open(wtap *wth, int *err, gchar **err_info)
+wtap_open_return_val netscreen_open(wtap *wth, int *err, char **err_info)
 {
 
 	/* Look for a NetScreen snoop header line */
@@ -173,31 +167,30 @@ wtap_open_return_val netscreen_open(wtap *wth, int *err, gchar **err_info)
 		return WTAP_OPEN_ERROR;
 
 	wth->file_encap = WTAP_ENCAP_UNKNOWN;
-	wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_NETSCREEN;
+	wth->file_type_subtype = netscreen_file_type_subtype;
 	wth->snapshot_length = 0; /* not known */
 	wth->subtype_read = netscreen_read;
 	wth->subtype_seek_read = netscreen_seek_read;
-	wth->file_tsprec = WTAP_TSPREC_DSEC;
+	wth->file_tsprec = WTAP_TSPREC_100_MSEC;
 
 	return WTAP_OPEN_MINE;
 }
 
 /* Find the next packet and parse it; called from wtap_read(). */
-static gboolean netscreen_read(wtap *wth, int *err, gchar **err_info,
-    gint64 *data_offset)
+static bool netscreen_read(wtap *wth, wtap_rec *rec,
+    int *err, char **err_info, int64_t *data_offset)
 {
-	gint64		offset;
+	int64_t		offset;
 	char		line[NETSCREEN_LINE_LENGTH];
 
 	/* Find the next packet */
 	offset = netscreen_seek_next_packet(wth, err, err_info, line);
 	if (offset < 0)
-		return FALSE;
+		return false;
 
 	/* Parse the header and convert the ASCII hex dump to binary data */
-	if (!parse_netscreen_packet(wth->fh, &wth->phdr,
-	    wth->frame_buffer, line, err, err_info))
-		return FALSE;
+	if (!parse_netscreen_packet(wth->fh, rec, line, err, err_info))
+		return false;
 
 	/*
 	 * If the per-file encapsulation isn't known, set it to this
@@ -208,26 +201,25 @@ static gboolean netscreen_read(wtap *wth, int *err, gchar **err_info,
 	 * have a single encapsulation for all packets in the file.
 	 */
 	if (wth->file_encap == WTAP_ENCAP_UNKNOWN)
-		wth->file_encap = wth->phdr.pkt_encap;
+		wth->file_encap = rec->rec_header.packet_header.pkt_encap;
 	else {
-		if (wth->file_encap != wth->phdr.pkt_encap)
+		if (wth->file_encap != rec->rec_header.packet_header.pkt_encap)
 			wth->file_encap = WTAP_ENCAP_PER_PACKET;
 	}
 
 	*data_offset = offset;
-	return TRUE;
+	return true;
 }
 
 /* Used to read packets in random-access fashion */
-static gboolean
-netscreen_seek_read(wtap *wth, gint64 seek_off,
-	struct wtap_pkthdr *phdr, Buffer *buf,
-	int *err, gchar **err_info)
+static bool
+netscreen_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+	int *err, char **err_info)
 {
 	char		line[NETSCREEN_LINE_LENGTH];
 
 	if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1) {
-		return FALSE;
+		return false;
 	}
 
 	if (file_gets(line, NETSCREEN_LINE_LENGTH, wth->random_fh) == NULL) {
@@ -235,10 +227,10 @@ netscreen_seek_read(wtap *wth, gint64 seek_off,
 		if (*err == 0) {
 			*err = WTAP_ERR_SHORT_READ;
 		}
-		return FALSE;
+		return false;
 	}
 
-	return parse_netscreen_packet(wth->random_fh, phdr, buf, line,
+	return parse_netscreen_packet(wth->random_fh, rec, line,
 	    err, err_info);
 }
 
@@ -257,48 +249,74 @@ netscreen_seek_read(wtap *wth, gint64 seek_off,
               2c 21 b6 d3 20 60 0c 8c 35 98 88 cf 20 91 0e a9     ,!...`..5.......
               1d 0b                                               ..
 
+ * The first line of a packet is in the form
 
+<secs>.<dsecs>: <iface>({i,o}) len=<length>:<llinfo>>
+
+ * where:
+ *
+ *   <secs> and <dsecs> are a time stamp in seconds and deciseconds,
+ *     giving the time since the firewall was booted;
+ *
+ *   <iface> is the name of the interface on which the packet was
+ *     received or on which it was transmitted;
+ *
+ *   {i,o} is i for a received packet and o for a transmitted packet;
+ *
+ *   <length> is the length of the packet on the network;
+ *
+ *   <llinfo>, at least for Ethernet, appears to be a source MAC
+ *     address, folowed by "->", folowed by a destination MAC
+ *     address, followed by a sequence of Ethertypes, each
+ *     preceded by a "/" (multiple Ethertypes if there are VLAN
+ *     tags and the like), possibly followed by ", tag <tag>".
+ *
+ * Following that may be some "info lines", each of which is indented
+ * by 14 spaces, giving a dissection of the payload after the
+ * link-layer header.
+ *
+ * Following that is a hex/ASCII dump of the contents of the
+ * packet, with 16 octets per line.
  */
-static gboolean
-parse_netscreen_packet(FILE_T fh, struct wtap_pkthdr *phdr, Buffer* buf,
-    char *line, int *err, gchar **err_info)
+static bool
+parse_netscreen_packet(FILE_T fh, wtap_rec *rec, char *line,
+    int *err, char **err_info)
 {
-	int		pkt_len;
+	unsigned		pkt_len;
 	int		sec;
 	int		dsec;
 	char		cap_int[NETSCREEN_MAX_INT_NAME_LENGTH];
 	char		direction[2];
 	char		cap_src[13];
 	char		cap_dst[13];
-	guint8		*pd;
-	gchar		*p;
+	const uint8_t	*pd;
+	char		*p;
 	int		n, i = 0;
 	int		offset = 0;
-	gchar		dststr[13];
+	char		dststr[13];
 
-	phdr->rec_type = REC_TYPE_PACKET;
-	phdr->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
+	wtap_setup_packet_rec(rec, WTAP_ENCAP_UNKNOWN);
+	rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
+	rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
+	/* Suppress compiler warnings */
+	memset(cap_int, 0, sizeof(cap_int));
+	memset(cap_dst, 0, sizeof(cap_dst));
 
-	if (sscanf(line, "%9d.%9d: %15[a-z0-9/:.-](%1[io]) len=%9d:%12s->%12s/",
+	if (sscanf(line, "%9d.%9d: %15[a-z0-9/:.-](%1[io]) len=%9u:%12s->%12s/",
 		   &sec, &dsec, cap_int, direction, &pkt_len, cap_src, cap_dst) < 5) {
 		*err = WTAP_ERR_BAD_FILE;
 		*err_info = g_strdup("netscreen: Can't parse packet-header");
-		return -1;
+		return false;
 	}
-	if (pkt_len < 0) {
-		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup("netscreen: packet header has a negative packet length");
-		return FALSE;
-	}
-	if (pkt_len > WTAP_MAX_PACKET_SIZE) {
+	if (pkt_len > WTAP_MAX_PACKET_SIZE_STANDARD) {
 		/*
 		 * Probably a corrupt capture file; don't blow up trying
 		 * to allocate space for an immensely-large packet.
 		 */
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("netscreen: File has %u-byte packet, bigger than maximum of %u",
-		    pkt_len, WTAP_MAX_PACKET_SIZE);
-		return FALSE;
+		*err_info = ws_strdup_printf("netscreen: File has %u-byte packet, bigger than maximum of %u",
+		    pkt_len, WTAP_MAX_PACKET_SIZE_STANDARD);
+		return false;
 	}
 
 	/*
@@ -306,13 +324,12 @@ parse_netscreen_packet(FILE_T fh, struct wtap_pkthdr *phdr, Buffer* buf,
 	 * otherwise it's NETSCREEN_INGRESS.
 	 */
 
-	phdr->ts.secs  = sec;
-	phdr->ts.nsecs = dsec * 100000000;
-	phdr->len = pkt_len;
+	rec->ts.secs  = sec;
+	rec->ts.nsecs = dsec * 100000000;
+	rec->rec_header.packet_header.len = pkt_len;
 
 	/* Make sure we have enough room for the packet */
-	ws_buffer_assure_space(buf, pkt_len);
-	pd = ws_buffer_start_ptr(buf);
+	ws_buffer_assure_space(&rec->data, pkt_len);
 
 	while(1) {
 
@@ -336,44 +353,71 @@ parse_netscreen_packet(FILE_T fh, struct wtap_pkthdr *phdr, Buffer* buf,
 			break;
 		}
 
-		n = parse_single_hex_dump_line(p, pd, offset);
+		n = parse_single_hex_dump_line(p, &rec->data);
 
-		/* the smallest packet has a length of 6 bytes, if
-		 * the first hex-data is less then check whether
-		 * it is a info-line and act accordingly
+		/*
+		 * The smallest packet has a length of 6 bytes.
+		 * If the first line either gets an error when
+		 * parsed as hex data, or has fewer than 6
+		 * bytes of hex data, check whether it's an
+		 * info line by see if it has at least
+		 * NETSCREEN_SPACES_ON_INFO_LINE spaces at the
+		 * beginning.
+		 *
+		 * If it does, count this line and, if we have,
+		 * so far, skipped no more than NETSCREEN_MAX_INFOLINES
+		 * lines, skip this line.
 		 */
 		if (offset == 0 && n < 6) {
 			if (info_line(line)) {
+				/* Info line */
 				if (++i <= NETSCREEN_MAX_INFOLINES) {
+					/* Skip this line */
 					continue;
 				}
 			} else {
-				*err = WTAP_ERR_BAD_FILE;
-				*err_info = g_strdup("netscreen: cannot parse hex-data");
-				return FALSE;
+				if (n >= 0) {
+					*err = WTAP_ERR_BAD_FILE;
+					*err_info = g_strdup("netscreen: first line of packet data has only %d hex bytes, < 6");
+					return false;
+				}
+				/* Otherwise, fall through to report error */
 			}
 		}
 
 		/* If there is no more data and the line was not empty,
 		 * then there must be an error in the file
 		 */
-		if (n == -1) {
-			*err = WTAP_ERR_BAD_FILE;
-			*err_info = g_strdup("netscreen: cannot parse hex-data");
-			return FALSE;
+		if (n < 0) {
+			switch (n) {
+
+			case PARSE_LINE_INVALID_CHARACTER:
+				*err = WTAP_ERR_BAD_FILE;
+				*err_info = g_strdup("netscreen: invalid character in hex data");
+				break;
+
+			case PARSE_LINE_NO_BYTES_SEEN:
+				*err = WTAP_ERR_BAD_FILE;
+				*err_info = g_strdup("netscreen: no hex bytes seen in hex data");
+				break;
+
+			case PARSE_LINE_TOO_MANY_BYTES_SEEN:
+				*err = WTAP_ERR_BAD_FILE;
+				*err_info = g_strdup("netscreen: number of hex bytes seen in hex data is greater than the packet length");
+				break;
+
+			default:
+				*err = WTAP_ERR_INTERNAL;
+				*err_info = g_strdup_printf("netscreen: unknown error %d from parse_single_hex_dump_line()", n);
+				break;
+			}
+
+			return false;
 		}
 
 		/* Adjust the offset to the data that was just added to the buffer */
 		offset += n;
 
-		/* If there was more hex-data than was announced in the len=x
-		 * header, then then there must be an error in the file
-		 */
-		if (offset > pkt_len) {
-			*err = WTAP_ERR_BAD_FILE;
-			*err_info = g_strdup("netscreen: too much hex-data");
-			return FALSE;
-		}
 	}
 
 	/*
@@ -383,6 +427,7 @@ parse_netscreen_packet(FILE_T fh, struct wtap_pkthdr *phdr, Buffer* buf,
 	 * XXX	convert this to a 'case' structure when adding more
 	 *	(non-ethernet) interfacetypes
 	 */
+	pd = ws_buffer_start_ptr(&rec->data);
 	if (strncmp(cap_int, "adsl", 4) == 0) {
 		/* The ADSL interface can be bridged with or without
 		 * PPP encapsulation. Check whether the first six bytes
@@ -390,35 +435,38 @@ parse_netscreen_packet(FILE_T fh, struct wtap_pkthdr *phdr, Buffer* buf,
 		 * address in the header. If they are, assume ethernet
 		 * LinkLayer or else PPP
 		 */
-		g_snprintf(dststr, 13, "%02x%02x%02x%02x%02x%02x",
+		snprintf(dststr, 13, "%02x%02x%02x%02x%02x%02x",
 		   pd[0], pd[1], pd[2], pd[3], pd[4], pd[5]);
 		if (strncmp(dststr, cap_dst, 12) == 0)
-			phdr->pkt_encap = WTAP_ENCAP_ETHERNET;
+			rec->rec_header.packet_header.pkt_encap = WTAP_ENCAP_ETHERNET;
 		else
-			phdr->pkt_encap = WTAP_ENCAP_PPP;
+			rec->rec_header.packet_header.pkt_encap = WTAP_ENCAP_PPP;
 		}
 	else if (strncmp(cap_int, "seri", 4) == 0)
-		phdr->pkt_encap = WTAP_ENCAP_PPP;
+		rec->rec_header.packet_header.pkt_encap = WTAP_ENCAP_PPP;
 	else
-		phdr->pkt_encap = WTAP_ENCAP_ETHERNET;
+		rec->rec_header.packet_header.pkt_encap = WTAP_ENCAP_ETHERNET;
 
-	phdr->caplen = offset;
+	rec->rec_header.packet_header.caplen = offset;
 
-	return TRUE;
+	return true;
 }
 
 /* Take a string representing one line from a hex dump, with leading white
- * space removed, and converts the text to binary data. We place the bytes
- * in the buffer at the specified offset.
+ * space removed, and converts the text to binary data. We append the bytes
+ * to the Buffer. The Buffer should already be large enough to contain the
+ * entire packet data, i.e. ws_buffer_assure_space(buf, pkt_len) has been
+ * called.
  *
  * Returns number of bytes successfully read, -1 if bad.  */
 static int
-parse_single_hex_dump_line(char* rec, guint8 *buf, guint byte_offset)
+parse_single_hex_dump_line(char* rec, Buffer *buf)
 {
-	int num_items_scanned;
-	guint8 character;
-	guint8 byte;
-
+	unsigned num_items_scanned;
+	uint8_t character;
+	uint8_t byte;
+	size_t buf_available = buf->allocated - buf->first_free;
+	uint8_t *pd = ws_buffer_end_ptr(buf);
 
 	for (num_items_scanned = 0; num_items_scanned < 16; num_items_scanned++) {
 		character = *rec++;
@@ -432,7 +480,7 @@ parse_single_hex_dump_line(char* rec, guint8 *buf, guint byte_offset)
 			/* Nothing more to parse */
 			break;
 		} else
-			return -1; /* not a hex digit, space before ASCII dump, or EOL */
+			return PARSE_LINE_INVALID_CHARACTER; /* not a hex digit, space before ASCII dump, or EOL */
 		byte <<= 4;
 		character = *rec++ & 0xFF;
 		if (character >= '0' && character <= '9')
@@ -442,25 +490,60 @@ parse_single_hex_dump_line(char* rec, guint8 *buf, guint byte_offset)
 		else if (character >= 'a' && character <= 'f')
 			byte += character - 'a' + 0xa;
 		else
-			return -1; /* not a hex digit */
-		buf[byte_offset + num_items_scanned] = byte;
+			return PARSE_LINE_INVALID_CHARACTER; /* not a hex digit */
+
+		/* If there was more hex-data than was announced in the len=x
+		 * header, then there must be an error in the file; quit
+		 * now, as adding this byte will overflow the buffer.
+		 */
+		if (num_items_scanned >= buf_available) {
+			return PARSE_LINE_TOO_MANY_BYTES_SEEN;
+		}
+
+		pd[num_items_scanned] = byte;
+		ws_buffer_increase_length(buf, 1);
 		character = *rec++ & 0xFF;
 		if (character == '\0' || character == '\r' || character == '\n') {
 			/* Nothing more to parse */
 			break;
 		} else if (character != ' ') {
 			/* not space before ASCII dump */
-			return -1;
+			return PARSE_LINE_INVALID_CHARACTER;
 		}
 	}
 	if (num_items_scanned == 0)
-		return -1;
+		return PARSE_LINE_NO_BYTES_SEEN;
 
 	return num_items_scanned;
 }
 
+static const struct supported_block_type netscreen_blocks_supported[] = {
+	/*
+	 * We support packet blocks, with no comments or other options.
+	 */
+	{ WTAP_BLOCK_PACKET, MULTIPLE_BLOCKS_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info netscreen_info = {
+	"NetScreen snoop text file", "netscreen", "txt", NULL,
+	false, BLOCKS_SUPPORTED(netscreen_blocks_supported),
+	NULL, NULL, NULL
+};
+
+void register_netscreen(void)
+{
+	netscreen_file_type_subtype = wtap_register_file_type_subtype(&netscreen_info);
+
+	/*
+	 * Register name for backwards compatibility with the
+	 * wtap_filetypes table in Lua.
+	 */
+	wtap_register_backwards_compatibility_lua_name("NETSCREEN",
+	    netscreen_file_type_subtype);
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

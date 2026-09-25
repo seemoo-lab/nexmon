@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* LANforge generates network traffic for load & performance testing.
@@ -40,47 +28,43 @@ void proto_reg_handoff_lanforge(void);
 #define LANFORGE_MAGIC 0x1a2b3c4d
 
 /* Initialize the protocol and registered fields */
-static int proto_lanforge = -1;
+static int proto_lanforge;
 
 /* lanforge header */
-static int hf_lanforge_crc = -1;
-static int hf_lanforge_magic = -1;
-static int hf_lanforge_src_session = -1;
-static int hf_lanforge_dst_session = -1;
-static int hf_lanforge_pld_len_l = -1;
-static int hf_lanforge_pld_len_h = -1;
-static int hf_lanforge_pld_len = -1;
-static int hf_lanforge_pld_pattern = -1;
-static int hf_lanforge_seq = -1;
-static int hf_lanforge_tx_time_s = -1;
-static int hf_lanforge_tx_time_ns = -1;
-static int hf_lanforge_timestamp = -1;
+static int hf_lanforge_crc;
+static int hf_lanforge_magic;
+static int hf_lanforge_src_session;
+static int hf_lanforge_dst_session;
+static int hf_lanforge_pld_len_l;
+static int hf_lanforge_pld_len_h;
+static int hf_lanforge_pld_len;
+static int hf_lanforge_pld_pattern;
+static int hf_lanforge_seq;
+static int hf_lanforge_tx_time_s;
+static int hf_lanforge_tx_time_ns;
+static int hf_lanforge_timestamp;
 
 /* Initialize the subtree pointer */
-static gint ett_lanforge = -1;
+static int ett_lanforge;
 
 /* entry point */
-static gboolean dissect_lanforge(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool dissect_lanforge(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item *ti;
-    proto_item *tmp;
     proto_tree *lanforge_tree;
-    guint32 offset = 0;
-    nstime_t tstamp;
-    guint32 tss;
-    guint32 tmpi;
-    guint32 pld_len, magic;
+    uint32_t offset = 0;
+    uint32_t magic, pld_len, pld_len_h;
 
     /* check for min size */
     if(tvb_captured_length(tvb) < 28) {  /* Not a LANforge packet. */
-        return FALSE;
+        return false;
     }
 
     /* check for magic number */
     magic = tvb_get_ntohl(tvb, 4);
     if(magic != LANFORGE_MAGIC){
         /* Not a LANforge packet. */
-        return FALSE;
+        return false;
     }
 
     /* Make entries in Protocol column and Info column on summary display */
@@ -89,67 +73,53 @@ static gboolean dissect_lanforge(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
 
     col_add_fstr(pinfo->cinfo, COL_INFO, "Seq: %u", tvb_get_ntohl(tvb, 16));
 
-    if(tree) {
+    /* create display subtree for the protocol */
 
-        /* create display subtree for the protocol */
+    ti = proto_tree_add_item(tree, proto_lanforge, tvb, 0, -1, ENC_NA);
 
-        ti = proto_tree_add_item(tree, proto_lanforge, tvb, 0, -1, ENC_NA);
+    lanforge_tree = proto_item_add_subtree(ti, ett_lanforge);
 
-        lanforge_tree = proto_item_add_subtree(ti, ett_lanforge);
+    /* add items to the subtree */
 
-        /* add items to the subtree */
+    proto_tree_add_item(lanforge_tree, hf_lanforge_crc, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset+=4;
 
-        proto_tree_add_item(lanforge_tree, hf_lanforge_crc, tvb, offset, 4, ENC_BIG_ENDIAN);
-        offset+=4;
+    proto_tree_add_item(lanforge_tree, hf_lanforge_magic, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset+=4;
 
-        proto_tree_add_item(lanforge_tree, hf_lanforge_magic, tvb, offset, 4, ENC_BIG_ENDIAN);
-        offset+=4;
+    proto_tree_add_item(lanforge_tree, hf_lanforge_src_session, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset+=2;
 
-        proto_tree_add_item(lanforge_tree, hf_lanforge_src_session, tvb, offset, 2, ENC_BIG_ENDIAN);
-        offset+=2;
+    proto_tree_add_item(lanforge_tree, hf_lanforge_dst_session, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset+=2;
 
-        proto_tree_add_item(lanforge_tree, hf_lanforge_dst_session, tvb, offset, 2, ENC_BIG_ENDIAN);
-        offset+=2;
+    proto_tree_add_item_ret_uint(lanforge_tree, hf_lanforge_pld_len_l,
+            tvb, offset, 2, ENC_BIG_ENDIAN, &pld_len);
+    offset+=2;
+    proto_tree_add_item_ret_uint(lanforge_tree, hf_lanforge_pld_len_h,
+            tvb, offset, 1, ENC_BIG_ENDIAN, &pld_len_h);
+    offset+=1;
+    pld_len |= (pld_len_h << 16);
+    proto_tree_add_uint(lanforge_tree, hf_lanforge_pld_len, tvb, offset-3, 3, pld_len);
 
-        pld_len = tvb_get_ntohs(tvb, offset);
-        tmp = proto_tree_add_item(lanforge_tree, hf_lanforge_pld_len_l, tvb, offset, 2, ENC_BIG_ENDIAN);
-        PROTO_ITEM_SET_GENERATED(tmp);
-        offset+=2;
+    proto_tree_add_item(lanforge_tree, hf_lanforge_pld_pattern, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset+=1;
 
-        tmpi = tvb_get_guint8(tvb, offset);
-        tmp = proto_tree_add_item(lanforge_tree, hf_lanforge_pld_len_h, tvb, offset, 1, ENC_BIG_ENDIAN);
-        PROTO_ITEM_SET_GENERATED(tmp);
-        offset+=1;
-        pld_len |= (tmpi << 16);
+    proto_tree_add_item(lanforge_tree, hf_lanforge_seq, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset+=4;
 
-        proto_tree_add_uint(lanforge_tree, hf_lanforge_pld_len, tvb, offset-3, 3, pld_len);
+    proto_tree_add_item(lanforge_tree, hf_lanforge_tx_time_s, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset+=4;
+    proto_tree_add_item(lanforge_tree, hf_lanforge_tx_time_ns, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset+=4;
+    proto_tree_add_item(lanforge_tree, hf_lanforge_timestamp,
+            tvb, offset - 8, 8, ENC_TIME_SECS_NSECS|ENC_BIG_ENDIAN);
 
-        proto_tree_add_item(lanforge_tree, hf_lanforge_pld_pattern, tvb, offset, 1, ENC_BIG_ENDIAN);
-        offset+=1;
-
-        proto_tree_add_item(lanforge_tree, hf_lanforge_seq, tvb, offset, 4, ENC_BIG_ENDIAN);
-        offset+=4;
-
-        tss = tvb_get_ntohl(tvb, offset);
-        tstamp.secs = tss;
-        tmp = proto_tree_add_item(lanforge_tree, hf_lanforge_tx_time_s, tvb, offset, 4, ENC_BIG_ENDIAN);
-        PROTO_ITEM_SET_GENERATED(tmp);
-        offset+=4;
-
-        tss = tvb_get_ntohl(tvb, offset);
-        tstamp.nsecs = tss;
-        tmp = proto_tree_add_item(lanforge_tree, hf_lanforge_tx_time_ns, tvb, offset, 4, ENC_BIG_ENDIAN);
-        PROTO_ITEM_SET_GENERATED(tmp);
-        offset+=4;
-
-        proto_tree_add_time(lanforge_tree, hf_lanforge_timestamp, tvb, offset - 8, 8, &tstamp);
-
-        if(tvb_reported_length_remaining(tvb, offset) > 0) /* random data */
-           call_data_dissector(tvb_new_subset_remaining(tvb, offset), pinfo,
+    if(tvb_reported_length_remaining(tvb, offset) > 0) /* random data */
+        call_data_dissector(tvb_new_subset_remaining(tvb, offset), pinfo,
                 lanforge_tree);
-    }
 
-    return TRUE;
+    return true;
 }
 
 
@@ -259,7 +229,7 @@ void proto_register_lanforge(void)
 
     /* Setup protocol subtree array */
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_lanforge
     };
 
@@ -282,7 +252,7 @@ void proto_reg_handoff_lanforge(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

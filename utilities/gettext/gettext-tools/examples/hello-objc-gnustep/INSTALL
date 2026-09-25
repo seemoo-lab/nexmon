@@ -5,10 +5,11 @@ This example relies on:
 
 GNUstep applications don't need to be configured or installed in order to run;
 all you need is to
-  - Prepare your environment, as described in the GNUstep-HOWTO
+  - Prepare your environment, as described in the GNUstep-HOWTO. E.g.
+    . /usr/share/GNUstep/Makefiles/GNUstep.sh
   - ./autogen.sh
   - make
-  - openapp Hello
+  - openapp ./Hello
 Cleanup:
   - make distclean
   - ./autoclean.sh

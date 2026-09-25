@@ -1,20 +1,19 @@
-/* Copyright (C) 2008 Free Software Foundation, Inc.
+/* Copyright (C) 2008, 2018, 2022 Free Software Foundation, Inc.
    This file is part of the GNU LIBICONV Library.
 
    The GNU LIBICONV Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU Library General Public
-   License as published by the Free Software Foundation; either version 2
+   and/or modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either version 2.1
    of the License, or (at your option) any later version.
 
    The GNU LIBICONV Library is distributed in the hope that it will be
    useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
+   You should have received a copy of the GNU Lesser General Public
    License along with the GNU LIBICONV Library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, Inc., 51 Franklin Street,
-   Fifth Floor, Boston, MA 02110-1301, USA.  */
+   If not, see <https://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 
@@ -27,7 +26,7 @@
    the entire buffer is passed at once, or whether it is passed in two
    subsequent calls.  Based on a bug report from
    Roman Rybalko <roman_rybalko@users.sourceforge.net>
-   at <http://savannah.gnu.org/bugs/?24216>.  */
+   at <https://savannah.gnu.org/bugs/?24216>.  */
 
 void main1 (void)
 {
@@ -65,7 +64,7 @@ void main1 (void)
 
 void main2 (void)
 {
-  static const char input[] = "+2D/YQNhB";
+  static const char input[20] = "+2D/YQNhB";
   iconv_t cd;
   char buf[20];
 

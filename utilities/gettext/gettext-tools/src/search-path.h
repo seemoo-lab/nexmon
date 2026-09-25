@@ -1,7 +1,5 @@
 /* Routines for locating data files
-   Copyright (C) 2016 Free Software Foundation, Inc.
-
-   This file was written by Daiki Ueno <ueno@gnu.org>, 2016.
+   Copyright (C) 2016-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Daiki Ueno and Bruno Haible.  */
 
 #ifndef _SEARCH_PATH_H
 #define _SEARCH_PATH_H
@@ -24,9 +24,10 @@ extern "C" {
 #endif
 
 
-/* Find the standard search path for data files.  Returns a NULL
-   terminated list of strings.  If SUB is not NULL, append it to each
-   directory.  */
+/* Find the standard search path for data files.  If SUB is not NULL, append it
+   to each directory.
+   Returns a freshly allocated NULL terminated list of freshly allocated
+   strings.  */
 extern char **get_search_path (const char *sub);
 
 

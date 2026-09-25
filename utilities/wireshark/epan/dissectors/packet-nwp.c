@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Neighborhood Watch Protocol (NWP) is an XIA protocol for resolving network
  * addresses to link-layer addresses. Hosts on a LAN send NWP Announcement
@@ -33,32 +21,32 @@
 void proto_register_nwp(void);
 void proto_reg_handoff_nwp(void);
 
-static gint proto_nwp		= -1;
+static int proto_nwp;
 
 /* Header fields for all NWP headers. */
-static gint hf_nwp_version	= -1;
-static gint hf_nwp_type		= -1;
-static gint hf_nwp_hid_count	= -1;
-static gint hf_nwp_haddr_len	= -1;
+static int hf_nwp_version;
+static int hf_nwp_type;
+static int hf_nwp_hid_count;
+static int hf_nwp_haddr_len;
 
 /* Header fields for NWP Announcement packets. */
-static gint hf_nwp_ann_haddr	= -1;
-static gint hf_nwp_ann_hids	= -1;
-static gint hf_nwp_ann_hid	= -1;
+static int hf_nwp_ann_haddr;
+static int hf_nwp_ann_hids;
+static int hf_nwp_ann_hid;
 
 /* Header fields for NWP Neighbor List packets. */
-static gint hf_nwp_neigh_list	= -1;
-static gint hf_nwp_neigh	= -1;
-static gint hf_nwp_neigh_hid	= -1;
-static gint hf_nwp_neigh_num	= -1;
-static gint hf_nwp_neigh_haddr	= -1;
+static int hf_nwp_neigh_list;
+static int hf_nwp_neigh;
+static int hf_nwp_neigh_hid;
+static int hf_nwp_neigh_num;
+static int hf_nwp_neigh_haddr;
 
-static gint ett_nwp_tree		= -1;
-static gint ett_nwp_ann_hid_tree	= -1;
-static gint ett_nwp_neigh_list_tree	= -1;
-static gint ett_nwp_neigh_tree		= -1;
+static int ett_nwp_tree;
+static int ett_nwp_ann_hid_tree;
+static int ett_nwp_neigh_list_tree;
+static int ett_nwp_neigh_tree;
 
-static expert_field ei_nwp_bad_type = EI_INIT;
+static expert_field ei_nwp_bad_type;
 
 static dissector_handle_t nwp_handle;
 
@@ -93,14 +81,14 @@ static dissector_handle_t nwp_handle;
 #define NWPH_NLST		4
 #define NWPH_HWAD		4
 
-const value_string nwp_type_vals[] = {
+static const value_string nwp_type_vals[] = {
 	{ NWP_TYPE_ANNOUNCEMENT,	"NWP Announcement" },
 	{ NWP_TYPE_NEIGH_LIST,		"NWP Neighbor List" },
 	{ 0,				NULL }
 };
 
 static void
-add_hid_to_strbuf(tvbuff_t *tvb, wmem_strbuf_t *hid_buf, guint8 offset)
+add_hid_to_strbuf(tvbuff_t *tvb, wmem_strbuf_t *hid_buf, int offset)
 {
 	int i;
 	for (i = 0; i < NWP_XID_LEN / NWP_XID_CHUNK_LEN; i++) {
@@ -111,15 +99,15 @@ add_hid_to_strbuf(tvbuff_t *tvb, wmem_strbuf_t *hid_buf, guint8 offset)
 }
 
 static void
-dissect_nwp_ann(tvbuff_t *tvb, proto_tree *nwp_tree, guint8 hid_count,
-	guint8 ha_len)
+dissect_nwp_ann(tvbuff_t *tvb, packet_info* pinfo, proto_tree *nwp_tree, uint8_t hid_count,
+	uint8_t ha_len)
 {
 	proto_tree *hid_tree = NULL;
 	proto_item *ti = NULL;
 
 	wmem_strbuf_t *buf;
-	guint i;
-	guint8 offset;
+	unsigned i;
+	int offset;
 
 	/* Add hardware address. */
 	proto_tree_add_item(nwp_tree, hf_nwp_ann_haddr, tvb, NWPH_HWAD,
@@ -130,13 +118,12 @@ dissect_nwp_ann(tvbuff_t *tvb, proto_tree *nwp_tree, guint8 hid_count,
 		NWPH_HWAD + ha_len, hid_count * NWP_XID_LEN, ENC_NA);
 	hid_tree = proto_item_add_subtree(ti, ett_nwp_ann_hid_tree);
 
-	buf = wmem_strbuf_sized_new(wmem_packet_scope(),
-		NWP_HID_STR_LEN, NWP_HID_STR_LEN);
+	buf = wmem_strbuf_new_sized(pinfo->pool, NWP_HID_STR_LEN);
 
 	/* Add HIDs. */
 	offset = NWPH_HWAD + ha_len;
 	for (i = 0; i < hid_count; i++) {
-		const gchar *hid_str;
+		const char *hid_str;
 
 		wmem_strbuf_append(buf, "hid-");
 		add_hid_to_strbuf(tvb, buf, offset);
@@ -159,18 +146,18 @@ dissect_nwp_ann(tvbuff_t *tvb, proto_tree *nwp_tree, guint8 hid_count,
  *      count == hid_count.
  */
 static void
-dissect_nwp_nl(tvbuff_t *tvb, proto_tree *nwp_tree, guint8 hid_count,
-	guint8 ha_len)
+dissect_nwp_nl(tvbuff_t *tvb, packet_info* pinfo, proto_tree *nwp_tree, uint8_t hid_count,
+	uint8_t ha_len)
 {
 	proto_tree *neigh_list_tree = NULL;
 	proto_tree *neigh_tree = NULL;
 	proto_item *pi = NULL;
 
-	guint i;
-	guint8 offset = NWPH_NLST;
+	unsigned i;
+	int   offset = NWPH_NLST;
 
-	wmem_strbuf_t *hid_buf = wmem_strbuf_sized_new(wmem_packet_scope(),
-		NWP_HID_STR_LEN, NWP_HID_STR_LEN);
+	wmem_strbuf_t *hid_buf = wmem_strbuf_new_sized(pinfo->pool,
+		NWP_HID_STR_LEN);
 
 	/* Set up tree for neighbor list. */
 	pi = proto_tree_add_item(nwp_tree, hf_nwp_neigh_list,
@@ -178,9 +165,9 @@ dissect_nwp_nl(tvbuff_t *tvb, proto_tree *nwp_tree, guint8 hid_count,
 	neigh_list_tree = proto_item_add_subtree(pi, ett_nwp_neigh_list_tree);
 
 	for (i = 0; i < hid_count; i++) {
-		const gchar *hid_str;
-		guint j;
-		guint8 ha_count = tvb_get_guint8(tvb, offset + NWP_XID_LEN);
+		const char *hid_str;
+		unsigned j;
+		uint8_t ha_count = tvb_get_uint8(tvb, offset + NWP_XID_LEN);
 
 		/* Set up tree for this individual neighbor. */
 		pi = proto_tree_add_none_format(neigh_list_tree, hf_nwp_neigh,
@@ -207,11 +194,11 @@ dissect_nwp_nl(tvbuff_t *tvb, proto_tree *nwp_tree, guint8 hid_count,
 			proto_tree_add_item(neigh_tree, hf_nwp_neigh_haddr,
 				tvb, offset + (j * ha_len), ha_len, ENC_NA);
 
-		offset += ha_len * ha_count;
+		offset += (ha_len * ha_count);
 	}
 }
 
-static gint
+static int
 dissect_nwp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	void *data _U_)
 {
@@ -220,8 +207,8 @@ dissect_nwp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	proto_item *ti = NULL;
 	proto_item *type_ti = NULL;
 
-	const gchar *type_str;
-	guint8 type, hid_count, ha_len;
+	const char *type_str;
+	uint8_t type, hid_count, ha_len;
 
 	if (tvb_reported_length(tvb) < NWPH_MIN_LEN)
 		return 0;
@@ -229,8 +216,8 @@ dissect_nwp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "NWP");
 
 	col_clear(pinfo->cinfo, COL_INFO);
-	type = tvb_get_guint8(tvb, NWPH_TYPE);
-	type_str = val_to_str(type, nwp_type_vals,
+	type = tvb_get_uint8(tvb, NWPH_TYPE);
+	type_str = val_to_str(pinfo->pool, type, nwp_type_vals,
 		"Unknown NWP packet type (0x%02x)");
 	col_add_str(pinfo->cinfo, COL_INFO, type_str);
 
@@ -250,21 +237,21 @@ dissect_nwp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 			"%s", type_str);
 
 	/* Get # of HIDs represented in this packet to use later and add it. */
-	hid_count = tvb_get_guint8(tvb, NWPH_HIDC);
+	hid_count = tvb_get_uint8(tvb, NWPH_HIDC);
 	proto_tree_add_item(nwp_tree, hf_nwp_hid_count, tvb,
 		NWPH_HIDC, 1, ENC_BIG_ENDIAN);
 
 	/* Get hardware address length to use later and add it. */
-	ha_len = tvb_get_guint8(tvb, NWPH_HLEN);
+	ha_len = tvb_get_uint8(tvb, NWPH_HLEN);
 	proto_tree_add_item(nwp_tree, hf_nwp_haddr_len, tvb,
 		NWPH_HLEN, 1, ENC_BIG_ENDIAN);
 
 	switch (type) {
 	case NWP_TYPE_ANNOUNCEMENT:
-		dissect_nwp_ann(tvb, nwp_tree, hid_count, ha_len);
+		dissect_nwp_ann(tvb, pinfo, nwp_tree, hid_count, ha_len);
 		break;
 	case NWP_TYPE_NEIGH_LIST:
-		dissect_nwp_nl(tvb, nwp_tree, hid_count, ha_len);
+		dissect_nwp_nl(tvb, pinfo, nwp_tree, hid_count, ha_len);
 		break;
 	default:
 		break;
@@ -327,7 +314,7 @@ proto_register_nwp(void)
 		   SEP_COLON, NULL, 0x0, NULL, HFILL }}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_nwp_tree,
 		&ett_nwp_ann_hid_tree,
 		&ett_nwp_neigh_list_tree,
@@ -342,10 +329,7 @@ proto_register_nwp(void)
 
 	expert_module_t *expert_nwp;
 
-	proto_nwp = proto_register_protocol(
-		"Neighborhood Watch Protocol",
-		"NWP",
-	        "nwp");
+	proto_nwp = proto_register_protocol("Neighborhood Watch Protocol", "NWP", "nwp");
 
 	nwp_handle = register_dissector("nwp", dissect_nwp, proto_nwp);
 	proto_register_field_array(proto_nwp, hf, array_length(hf));
@@ -362,7 +346,7 @@ proto_reg_handoff_nwp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

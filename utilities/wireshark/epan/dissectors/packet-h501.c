@@ -1,11 +1,8 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-h501.c                                                              */
-/* asn2wrs.py -p h501 -c ./h501.cnf -s ./packet-h501-template -D . -O ../.. H501-MESSAGES.asn */
+/* asn2wrs.py -q -L -p h501 -c ./h501.cnf -s ./packet-h501-template -D . -O ../.. H501-MESSAGES.asn */
 
-/* Input file: packet-h501-template.c */
-
-#line 1 "./asn1/h501/packet-h501-template.c"
 /* packet-h501.c
  * Routines for H.501 packet dissection
  * 2007  Tomas Kukosa
@@ -14,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,6 +20,7 @@
 #include <epan/prefs.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
+#include <wsutil/array.h>
 
 #include "packet-tpkt.h"
 #include "packet-per.h"
@@ -48,391 +34,379 @@
 void proto_register_h501(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_h501 = -1;
-
-/*--- Included file: packet-h501-hf.c ---*/
-#line 1 "./asn1/h501/packet-h501-hf.c"
-static int hf_h501_Message_PDU = -1;              /* Message */
-static int hf_h501_body = -1;                     /* MessageBody */
-static int hf_h501_common = -1;                   /* MessageCommonInfo */
-static int hf_h501_serviceRequest = -1;           /* ServiceRequest */
-static int hf_h501_serviceConfirmation = -1;      /* ServiceConfirmation */
-static int hf_h501_serviceRejection = -1;         /* ServiceRejection */
-static int hf_h501_serviceRelease = -1;           /* ServiceRelease */
-static int hf_h501_descriptorRequest = -1;        /* DescriptorRequest */
-static int hf_h501_descriptorConfirmation = -1;   /* DescriptorConfirmation */
-static int hf_h501_descriptorRejection = -1;      /* DescriptorRejection */
-static int hf_h501_descriptorIDRequest = -1;      /* DescriptorIDRequest */
-static int hf_h501_descriptorIDConfirmation = -1;  /* DescriptorIDConfirmation */
-static int hf_h501_descriptorIDRejection = -1;    /* DescriptorIDRejection */
-static int hf_h501_descriptorUpdate = -1;         /* DescriptorUpdate */
-static int hf_h501_descriptorUpdateAck = -1;      /* DescriptorUpdateAck */
-static int hf_h501_accessRequest = -1;            /* AccessRequest */
-static int hf_h501_accessConfirmation = -1;       /* AccessConfirmation */
-static int hf_h501_accessRejection = -1;          /* AccessRejection */
-static int hf_h501_requestInProgress = -1;        /* RequestInProgress */
-static int hf_h501_nonStandardRequest = -1;       /* NonStandardRequest */
-static int hf_h501_nonStandardConfirmation = -1;  /* NonStandardConfirmation */
-static int hf_h501_nonStandardRejection = -1;     /* NonStandardRejection */
-static int hf_h501_unknownMessageResponse = -1;   /* UnknownMessageResponse */
-static int hf_h501_usageRequest = -1;             /* UsageRequest */
-static int hf_h501_usageConfirmation = -1;        /* UsageConfirmation */
-static int hf_h501_usageIndication = -1;          /* UsageIndication */
-static int hf_h501_usageIndicationConfirmation = -1;  /* UsageIndicationConfirmation */
-static int hf_h501_usageIndicationRejection = -1;  /* UsageIndicationRejection */
-static int hf_h501_usageRejection = -1;           /* UsageRejection */
-static int hf_h501_validationRequest = -1;        /* ValidationRequest */
-static int hf_h501_validationConfirmation = -1;   /* ValidationConfirmation */
-static int hf_h501_validationRejection = -1;      /* ValidationRejection */
-static int hf_h501_authenticationRequest = -1;    /* AuthenticationRequest */
-static int hf_h501_authenticationConfirmation = -1;  /* AuthenticationConfirmation */
-static int hf_h501_authenticationRejection = -1;  /* AuthenticationRejection */
-static int hf_h501_sequenceNumber = -1;           /* INTEGER_0_65535 */
-static int hf_h501_annexGversion = -1;            /* ProtocolVersion */
-static int hf_h501_hopCount = -1;                 /* INTEGER_1_255 */
-static int hf_h501_replyAddress = -1;             /* SEQUENCE_OF_TransportAddress */
-static int hf_h501_replyAddress_item = -1;        /* TransportAddress */
-static int hf_h501_integrityCheckValue = -1;      /* ICV */
-static int hf_h501_tokens = -1;                   /* SEQUENCE_OF_ClearToken */
-static int hf_h501_tokens_item = -1;              /* ClearToken */
-static int hf_h501_cryptoTokens = -1;             /* SEQUENCE_OF_CryptoH323Token */
-static int hf_h501_cryptoTokens_item = -1;        /* CryptoH323Token */
-static int hf_h501_nonStandard = -1;              /* SEQUENCE_OF_NonStandardParameter */
-static int hf_h501_nonStandard_item = -1;         /* NonStandardParameter */
-static int hf_h501_serviceID = -1;                /* ServiceID */
-static int hf_h501_genericData = -1;              /* SEQUENCE_OF_GenericData */
-static int hf_h501_genericData_item = -1;         /* GenericData */
-static int hf_h501_featureSet = -1;               /* FeatureSet */
-static int hf_h501_version = -1;                  /* ProtocolVersion */
-static int hf_h501_elementIdentifier = -1;        /* ElementIdentifier */
-static int hf_h501_domainIdentifier = -1;         /* AliasAddress */
-static int hf_h501_securityMode = -1;             /* SEQUENCE_OF_SecurityMode */
-static int hf_h501_securityMode_item = -1;        /* SecurityMode */
-static int hf_h501_timeToLive = -1;               /* INTEGER_1_4294967295 */
-static int hf_h501_usageSpec = -1;                /* UsageSpecification */
-static int hf_h501_authentication = -1;           /* AuthenticationMechanism */
-static int hf_h501_integrity = -1;                /* IntegrityMechanism */
-static int hf_h501_algorithmOIDs = -1;            /* T_algorithmOIDs */
-static int hf_h501_algorithmOIDs_item = -1;       /* OBJECT_IDENTIFIER */
-static int hf_h501_alternates = -1;               /* AlternatePEInfo */
-static int hf_h501_securityMode_01 = -1;          /* SecurityMode */
-static int hf_h501_reason = -1;                   /* ServiceRejectionReason */
-static int hf_h501_serviceUnavailable = -1;       /* NULL */
-static int hf_h501_serviceRedirected = -1;        /* NULL */
-static int hf_h501_security = -1;                 /* NULL */
-static int hf_h501_continue = -1;                 /* NULL */
-static int hf_h501_undefined = -1;                /* NULL */
-static int hf_h501_unknownServiceID = -1;         /* NULL */
-static int hf_h501_cannotSupportUsageSpec = -1;   /* NULL */
-static int hf_h501_neededFeature = -1;            /* NULL */
-static int hf_h501_genericDataReason = -1;        /* NULL */
-static int hf_h501_usageUnavailable = -1;         /* NULL */
-static int hf_h501_unknownUsageSendTo = -1;       /* NULL */
-static int hf_h501_reason_01 = -1;                /* ServiceReleaseReason */
-static int hf_h501_outOfService = -1;             /* NULL */
-static int hf_h501_maintenance = -1;              /* NULL */
-static int hf_h501_terminated = -1;               /* NULL */
-static int hf_h501_expired = -1;                  /* NULL */
-static int hf_h501_descriptorID = -1;             /* SEQUENCE_OF_DescriptorID */
-static int hf_h501_descriptorID_item = -1;        /* DescriptorID */
-static int hf_h501_descriptor = -1;               /* SEQUENCE_OF_Descriptor */
-static int hf_h501_descriptor_item = -1;          /* Descriptor */
-static int hf_h501_reason_02 = -1;                /* DescriptorRejectionReason */
-static int hf_h501_descriptorID_01 = -1;          /* DescriptorID */
-static int hf_h501_packetSizeExceeded = -1;       /* NULL */
-static int hf_h501_illegalID = -1;                /* NULL */
-static int hf_h501_hopCountExceeded = -1;         /* NULL */
-static int hf_h501_noServiceRelationship = -1;    /* NULL */
-static int hf_h501_descriptorInfo = -1;           /* SEQUENCE_OF_DescriptorInfo */
-static int hf_h501_descriptorInfo_item = -1;      /* DescriptorInfo */
-static int hf_h501_reason_03 = -1;                /* DescriptorIDRejectionReason */
-static int hf_h501_noDescriptors = -1;            /* NULL */
-static int hf_h501_sender = -1;                   /* AliasAddress */
-static int hf_h501_updateInfo = -1;               /* SEQUENCE_OF_UpdateInformation */
-static int hf_h501_updateInfo_item = -1;          /* UpdateInformation */
-static int hf_h501_descriptorInfo_01 = -1;        /* T_descriptorInfo */
-static int hf_h501_descriptor_01 = -1;            /* Descriptor */
-static int hf_h501_updateType = -1;               /* T_updateType */
-static int hf_h501_added = -1;                    /* NULL */
-static int hf_h501_deleted = -1;                  /* NULL */
-static int hf_h501_changed = -1;                  /* NULL */
-static int hf_h501_destinationInfo = -1;          /* PartyInformation */
-static int hf_h501_sourceInfo = -1;               /* PartyInformation */
-static int hf_h501_callInfo = -1;                 /* CallInformation */
-static int hf_h501_desiredProtocols = -1;         /* SEQUENCE_OF_SupportedProtocols */
-static int hf_h501_desiredProtocols_item = -1;    /* SupportedProtocols */
-static int hf_h501_templates = -1;                /* SEQUENCE_OF_AddressTemplate */
-static int hf_h501_templates_item = -1;           /* AddressTemplate */
-static int hf_h501_partialResponse = -1;          /* BOOLEAN */
-static int hf_h501_supportedProtocols = -1;       /* SEQUENCE_OF_SupportedProtocols */
-static int hf_h501_supportedProtocols_item = -1;  /* SupportedProtocols */
-static int hf_h501_serviceControl = -1;           /* SEQUENCE_OF_ServiceControlSession */
-static int hf_h501_serviceControl_item = -1;      /* ServiceControlSession */
-static int hf_h501_reason_04 = -1;                /* AccessRejectionReason */
-static int hf_h501_noMatch = -1;                  /* NULL */
-static int hf_h501_needCallInformation = -1;      /* NULL */
-static int hf_h501_destinationUnavailable = -1;   /* NULL */
-static int hf_h501_aliasesInconsistent = -1;      /* NULL */
-static int hf_h501_resourceUnavailable = -1;      /* NULL */
-static int hf_h501_incompleteAddress = -1;        /* NULL */
-static int hf_h501_reason_05 = -1;                /* UsageRejectReason */
-static int hf_h501_accessTokens = -1;             /* SEQUENCE_OF_AccessToken */
-static int hf_h501_accessTokens_item = -1;        /* AccessToken */
-static int hf_h501_senderRole = -1;               /* Role */
-static int hf_h501_usageCallStatus = -1;          /* UsageCallStatus */
-static int hf_h501_srcInfo = -1;                  /* PartyInformation */
-static int hf_h501_destAddress = -1;              /* PartyInformation */
-static int hf_h501_startTime = -1;                /* TimeStamp */
-static int hf_h501_endTime = -1;                  /* TimeStamp */
-static int hf_h501_terminationCause = -1;         /* TerminationCause */
-static int hf_h501_usageFields = -1;              /* SEQUENCE_OF_UsageField */
-static int hf_h501_usageFields_item = -1;         /* UsageField */
-static int hf_h501_id = -1;                       /* OBJECT_IDENTIFIER */
-static int hf_h501_value = -1;                    /* OCTET_STRING */
-static int hf_h501_invalidCall = -1;              /* NULL */
-static int hf_h501_unavailable = -1;              /* NULL */
-static int hf_h501_reason_06 = -1;                /* UsageIndicationRejectionReason */
-static int hf_h501_unknownCall = -1;              /* NULL */
-static int hf_h501_incomplete = -1;               /* NULL */
-static int hf_h501_accessToken = -1;              /* SEQUENCE_OF_AccessToken */
-static int hf_h501_accessToken_item = -1;         /* AccessToken */
-static int hf_h501_reason_07 = -1;                /* ValidationRejectionReason */
-static int hf_h501_tokenNotValid = -1;            /* NULL */
-static int hf_h501_missingSourceInfo = -1;        /* NULL */
-static int hf_h501_missingDestInfo = -1;          /* NULL */
-static int hf_h501_delay = -1;                    /* INTEGER_1_65535 */
-static int hf_h501_reason_08 = -1;                /* NonStandardRejectionReason */
-static int hf_h501_notSupported = -1;             /* NULL */
-static int hf_h501_unknownMessage = -1;           /* OCTET_STRING */
-static int hf_h501_reason_09 = -1;                /* UnknownMessageReason */
-static int hf_h501_notUnderstood = -1;            /* NULL */
-static int hf_h501_applicationMessage = -1;       /* ApplicationMessage */
-static int hf_h501_reason_10 = -1;                /* AuthenticationRejectionReason */
-static int hf_h501_securityWrongSyncTime = -1;    /* NULL */
-static int hf_h501_securityReplay = -1;           /* NULL */
-static int hf_h501_securityWrongGeneralID = -1;   /* NULL */
-static int hf_h501_securityWrongSendersID = -1;   /* NULL */
-static int hf_h501_securityIntegrityFailed = -1;  /* NULL */
-static int hf_h501_securityWrongOID = -1;         /* NULL */
-static int hf_h501_pattern = -1;                  /* SEQUENCE_OF_Pattern */
-static int hf_h501_pattern_item = -1;             /* Pattern */
-static int hf_h501_routeInfo = -1;                /* SEQUENCE_OF_RouteInformation */
-static int hf_h501_routeInfo_item = -1;           /* RouteInformation */
-static int hf_h501_specific = -1;                 /* AliasAddress */
-static int hf_h501_wildcard = -1;                 /* AliasAddress */
-static int hf_h501_range = -1;                    /* T_range */
-static int hf_h501_startOfRange = -1;             /* PartyNumber */
-static int hf_h501_endOfRange = -1;               /* PartyNumber */
-static int hf_h501_messageType = -1;              /* T_messageType */
-static int hf_h501_sendAccessRequest = -1;        /* NULL */
-static int hf_h501_sendSetup = -1;                /* NULL */
-static int hf_h501_nonExistent = -1;              /* NULL */
-static int hf_h501_callSpecific = -1;             /* BOOLEAN */
-static int hf_h501_priceInfo = -1;                /* SEQUENCE_OF_PriceInfoSpec */
-static int hf_h501_priceInfo_item = -1;           /* PriceInfoSpec */
-static int hf_h501_contacts = -1;                 /* SEQUENCE_OF_ContactInformation */
-static int hf_h501_contacts_item = -1;            /* ContactInformation */
-static int hf_h501_type = -1;                     /* EndpointType */
-static int hf_h501_circuitID = -1;                /* CircuitInfo */
-static int hf_h501_supportedCircuits = -1;        /* SEQUENCE_OF_CircuitIdentifier */
-static int hf_h501_supportedCircuits_item = -1;   /* CircuitIdentifier */
-static int hf_h501_transportAddress = -1;         /* AliasAddress */
-static int hf_h501_priority = -1;                 /* INTEGER_0_127 */
-static int hf_h501_transportQoS = -1;             /* TransportQOS */
-static int hf_h501_security_01 = -1;              /* SEQUENCE_OF_SecurityMode */
-static int hf_h501_security_item = -1;            /* SecurityMode */
-static int hf_h501_multipleCalls = -1;            /* BOOLEAN */
-static int hf_h501_currency = -1;                 /* IA5String_SIZE_3 */
-static int hf_h501_currencyScale = -1;            /* INTEGER_M127_127 */
-static int hf_h501_validFrom = -1;                /* GlobalTimeStamp */
-static int hf_h501_validUntil = -1;               /* GlobalTimeStamp */
-static int hf_h501_hoursFrom = -1;                /* IA5String_SIZE_6 */
-static int hf_h501_hoursUntil = -1;               /* IA5String_SIZE_6 */
-static int hf_h501_priceElement = -1;             /* SEQUENCE_OF_PriceElement */
-static int hf_h501_priceElement_item = -1;        /* PriceElement */
-static int hf_h501_priceFormula = -1;             /* IA5String_SIZE_1_2048 */
-static int hf_h501_amount = -1;                   /* INTEGER_0_4294967295 */
-static int hf_h501_quantum = -1;                  /* INTEGER_0_4294967295 */
-static int hf_h501_units = -1;                    /* T_units */
-static int hf_h501_seconds = -1;                  /* NULL */
-static int hf_h501_packets = -1;                  /* NULL */
-static int hf_h501_bytes = -1;                    /* NULL */
-static int hf_h501_initial = -1;                  /* NULL */
-static int hf_h501_minimum = -1;                  /* NULL */
-static int hf_h501_maximum = -1;                  /* NULL */
-static int hf_h501_descriptorInfo_02 = -1;        /* DescriptorInfo */
-static int hf_h501_gatekeeperID = -1;             /* GatekeeperIdentifier */
-static int hf_h501_lastChanged = -1;              /* GlobalTimeStamp */
-static int hf_h501_alternatePE = -1;              /* SEQUENCE_OF_AlternatePE */
-static int hf_h501_alternatePE_item = -1;         /* AlternatePE */
-static int hf_h501_alternateIsPermanent = -1;     /* BOOLEAN */
-static int hf_h501_contactAddress = -1;           /* AliasAddress */
-static int hf_h501_priority_01 = -1;              /* INTEGER_1_127 */
-static int hf_h501_token = -1;                    /* ClearToken */
-static int hf_h501_cryptoToken = -1;              /* CryptoH323Token */
-static int hf_h501_genericData_01 = -1;           /* GenericData */
-static int hf_h501_callIdentifier = -1;           /* CallIdentifier */
-static int hf_h501_conferenceID = -1;             /* ConferenceIdentifier */
-static int hf_h501_preConnect = -1;               /* NULL */
-static int hf_h501_callInProgress = -1;           /* NULL */
-static int hf_h501_callEnded = -1;                /* NULL */
-static int hf_h501_registrationLost = -1;         /* NULL */
-static int hf_h501_userIdentifier = -1;           /* AliasAddress */
-static int hf_h501_userAuthenticator = -1;        /* SEQUENCE_OF_CryptoH323Token */
-static int hf_h501_userAuthenticator_item = -1;   /* CryptoH323Token */
-static int hf_h501_sendTo = -1;                   /* ElementIdentifier */
-static int hf_h501_when = -1;                     /* T_when */
-static int hf_h501_never = -1;                    /* NULL */
-static int hf_h501_start = -1;                    /* NULL */
-static int hf_h501_end = -1;                      /* NULL */
-static int hf_h501_period = -1;                   /* INTEGER_1_65535 */
-static int hf_h501_failures = -1;                 /* NULL */
-static int hf_h501_required = -1;                 /* T_required */
-static int hf_h501_required_item = -1;            /* OBJECT_IDENTIFIER */
-static int hf_h501_preferred = -1;                /* T_preferred */
-static int hf_h501_preferred_item = -1;           /* OBJECT_IDENTIFIER */
-static int hf_h501_sendToPEAddress = -1;          /* AliasAddress */
-static int hf_h501_logicalAddresses = -1;         /* SEQUENCE_OF_AliasAddress */
-static int hf_h501_logicalAddresses_item = -1;    /* AliasAddress */
-static int hf_h501_endpointType = -1;             /* EndpointType */
-static int hf_h501_userInfo = -1;                 /* UserInformation */
-static int hf_h501_timeZone = -1;                 /* TimeZone */
-static int hf_h501_originator = -1;               /* NULL */
-static int hf_h501_destination = -1;              /* NULL */
-static int hf_h501_nonStandardData = -1;          /* NonStandardParameter */
-static int hf_h501_releaseCompleteReason = -1;    /* ReleaseCompleteReason */
-static int hf_h501_causeIE = -1;                  /* INTEGER_1_65535 */
-
-/*--- End of included file: packet-h501-hf.c ---*/
-#line 45 "./asn1/h501/packet-h501-template.c"
+static int proto_h501;
+static int hf_h501_Message_PDU;                   /* Message */
+static int hf_h501_body;                          /* MessageBody */
+static int hf_h501_common;                        /* MessageCommonInfo */
+static int hf_h501_serviceRequest;                /* ServiceRequest */
+static int hf_h501_serviceConfirmation;           /* ServiceConfirmation */
+static int hf_h501_serviceRejection;              /* ServiceRejection */
+static int hf_h501_serviceRelease;                /* ServiceRelease */
+static int hf_h501_descriptorRequest;             /* DescriptorRequest */
+static int hf_h501_descriptorConfirmation;        /* DescriptorConfirmation */
+static int hf_h501_descriptorRejection;           /* DescriptorRejection */
+static int hf_h501_descriptorIDRequest;           /* DescriptorIDRequest */
+static int hf_h501_descriptorIDConfirmation;      /* DescriptorIDConfirmation */
+static int hf_h501_descriptorIDRejection;         /* DescriptorIDRejection */
+static int hf_h501_descriptorUpdate;              /* DescriptorUpdate */
+static int hf_h501_descriptorUpdateAck;           /* DescriptorUpdateAck */
+static int hf_h501_accessRequest;                 /* AccessRequest */
+static int hf_h501_accessConfirmation;            /* AccessConfirmation */
+static int hf_h501_accessRejection;               /* AccessRejection */
+static int hf_h501_requestInProgress;             /* RequestInProgress */
+static int hf_h501_nonStandardRequest;            /* NonStandardRequest */
+static int hf_h501_nonStandardConfirmation;       /* NonStandardConfirmation */
+static int hf_h501_nonStandardRejection;          /* NonStandardRejection */
+static int hf_h501_unknownMessageResponse;        /* UnknownMessageResponse */
+static int hf_h501_usageRequest;                  /* UsageRequest */
+static int hf_h501_usageConfirmation;             /* UsageConfirmation */
+static int hf_h501_usageIndication;               /* UsageIndication */
+static int hf_h501_usageIndicationConfirmation;   /* UsageIndicationConfirmation */
+static int hf_h501_usageIndicationRejection;      /* UsageIndicationRejection */
+static int hf_h501_usageRejection;                /* UsageRejection */
+static int hf_h501_validationRequest;             /* ValidationRequest */
+static int hf_h501_validationConfirmation;        /* ValidationConfirmation */
+static int hf_h501_validationRejection;           /* ValidationRejection */
+static int hf_h501_authenticationRequest;         /* AuthenticationRequest */
+static int hf_h501_authenticationConfirmation;    /* AuthenticationConfirmation */
+static int hf_h501_authenticationRejection;       /* AuthenticationRejection */
+static int hf_h501_sequenceNumber;                /* INTEGER_0_65535 */
+static int hf_h501_annexGversion;                 /* ProtocolVersion */
+static int hf_h501_hopCount;                      /* INTEGER_1_255 */
+static int hf_h501_replyAddress;                  /* SEQUENCE_OF_TransportAddress */
+static int hf_h501_replyAddress_item;             /* TransportAddress */
+static int hf_h501_integrityCheckValue;           /* ICV */
+static int hf_h501_tokens;                        /* SEQUENCE_OF_ClearToken */
+static int hf_h501_tokens_item;                   /* ClearToken */
+static int hf_h501_cryptoTokens;                  /* SEQUENCE_OF_CryptoH323Token */
+static int hf_h501_cryptoTokens_item;             /* CryptoH323Token */
+static int hf_h501_nonStandard;                   /* SEQUENCE_OF_NonStandardParameter */
+static int hf_h501_nonStandard_item;              /* NonStandardParameter */
+static int hf_h501_serviceID;                     /* ServiceID */
+static int hf_h501_genericData;                   /* SEQUENCE_OF_GenericData */
+static int hf_h501_genericData_item;              /* GenericData */
+static int hf_h501_featureSet;                    /* FeatureSet */
+static int hf_h501_version;                       /* ProtocolVersion */
+static int hf_h501_elementIdentifier;             /* ElementIdentifier */
+static int hf_h501_domainIdentifier;              /* AliasAddress */
+static int hf_h501_securityMode;                  /* SEQUENCE_OF_SecurityMode */
+static int hf_h501_securityMode_item;             /* SecurityMode */
+static int hf_h501_timeToLive;                    /* INTEGER_1_4294967295 */
+static int hf_h501_usageSpec;                     /* UsageSpecification */
+static int hf_h501_authentication;                /* AuthenticationMechanism */
+static int hf_h501_integrity;                     /* IntegrityMechanism */
+static int hf_h501_algorithmOIDs;                 /* T_algorithmOIDs */
+static int hf_h501_algorithmOIDs_item;            /* OBJECT_IDENTIFIER */
+static int hf_h501_alternates;                    /* AlternatePEInfo */
+static int hf_h501_securityMode_01;               /* SecurityMode */
+static int hf_h501_reason;                        /* ServiceRejectionReason */
+static int hf_h501_serviceUnavailable;            /* NULL */
+static int hf_h501_serviceRedirected;             /* NULL */
+static int hf_h501_security;                      /* NULL */
+static int hf_h501_continue;                      /* NULL */
+static int hf_h501_undefined;                     /* NULL */
+static int hf_h501_unknownServiceID;              /* NULL */
+static int hf_h501_cannotSupportUsageSpec;        /* NULL */
+static int hf_h501_neededFeature;                 /* NULL */
+static int hf_h501_genericDataReason;             /* NULL */
+static int hf_h501_usageUnavailable;              /* NULL */
+static int hf_h501_unknownUsageSendTo;            /* NULL */
+static int hf_h501_reason_01;                     /* ServiceReleaseReason */
+static int hf_h501_outOfService;                  /* NULL */
+static int hf_h501_maintenance;                   /* NULL */
+static int hf_h501_terminated;                    /* NULL */
+static int hf_h501_expired;                       /* NULL */
+static int hf_h501_descriptorID;                  /* SEQUENCE_OF_DescriptorID */
+static int hf_h501_descriptorID_item;             /* DescriptorID */
+static int hf_h501_descriptor;                    /* SEQUENCE_OF_Descriptor */
+static int hf_h501_descriptor_item;               /* Descriptor */
+static int hf_h501_reason_02;                     /* DescriptorRejectionReason */
+static int hf_h501_descriptorRejection_descriptorID;  /* DescriptorID */
+static int hf_h501_packetSizeExceeded;            /* NULL */
+static int hf_h501_illegalID;                     /* NULL */
+static int hf_h501_hopCountExceeded;              /* NULL */
+static int hf_h501_noServiceRelationship;         /* NULL */
+static int hf_h501_descriptorInfo;                /* SEQUENCE_OF_DescriptorInfo */
+static int hf_h501_descriptorInfo_item;           /* DescriptorInfo */
+static int hf_h501_reason_03;                     /* DescriptorIDRejectionReason */
+static int hf_h501_noDescriptors;                 /* NULL */
+static int hf_h501_sender;                        /* AliasAddress */
+static int hf_h501_updateInfo;                    /* SEQUENCE_OF_UpdateInformation */
+static int hf_h501_updateInfo_item;               /* UpdateInformation */
+static int hf_h501_descriptorInfo_01;             /* T_descriptorInfo */
+static int hf_h501_updateInformation_descriptorID;  /* DescriptorID */
+static int hf_h501_descriptor_01;                 /* Descriptor */
+static int hf_h501_updateType;                    /* T_updateType */
+static int hf_h501_added;                         /* NULL */
+static int hf_h501_deleted;                       /* NULL */
+static int hf_h501_changed;                       /* NULL */
+static int hf_h501_destinationInfo;               /* PartyInformation */
+static int hf_h501_sourceInfo;                    /* PartyInformation */
+static int hf_h501_callInfo;                      /* CallInformation */
+static int hf_h501_desiredProtocols;              /* SEQUENCE_OF_SupportedProtocols */
+static int hf_h501_desiredProtocols_item;         /* SupportedProtocols */
+static int hf_h501_templates;                     /* SEQUENCE_OF_AddressTemplate */
+static int hf_h501_templates_item;                /* AddressTemplate */
+static int hf_h501_partialResponse;               /* BOOLEAN */
+static int hf_h501_supportedProtocols;            /* SEQUENCE_OF_SupportedProtocols */
+static int hf_h501_supportedProtocols_item;       /* SupportedProtocols */
+static int hf_h501_serviceControl;                /* SEQUENCE_OF_ServiceControlSession */
+static int hf_h501_serviceControl_item;           /* ServiceControlSession */
+static int hf_h501_reason_04;                     /* AccessRejectionReason */
+static int hf_h501_noMatch;                       /* NULL */
+static int hf_h501_needCallInformation;           /* NULL */
+static int hf_h501_destinationUnavailable;        /* NULL */
+static int hf_h501_aliasesInconsistent;           /* NULL */
+static int hf_h501_resourceUnavailable;           /* NULL */
+static int hf_h501_incompleteAddress;             /* NULL */
+static int hf_h501_reason_05;                     /* UsageRejectReason */
+static int hf_h501_accessTokens;                  /* SEQUENCE_OF_AccessToken */
+static int hf_h501_accessTokens_item;             /* AccessToken */
+static int hf_h501_senderRole;                    /* Role */
+static int hf_h501_usageCallStatus;               /* UsageCallStatus */
+static int hf_h501_srcInfo;                       /* PartyInformation */
+static int hf_h501_destAddress;                   /* PartyInformation */
+static int hf_h501_startTime;                     /* TimeStamp */
+static int hf_h501_endTime;                       /* TimeStamp */
+static int hf_h501_terminationCause;              /* TerminationCause */
+static int hf_h501_usageFields;                   /* SEQUENCE_OF_UsageField */
+static int hf_h501_usageFields_item;              /* UsageField */
+static int hf_h501_id;                            /* OBJECT_IDENTIFIER */
+static int hf_h501_value;                         /* OCTET_STRING */
+static int hf_h501_invalidCall;                   /* NULL */
+static int hf_h501_unavailable;                   /* NULL */
+static int hf_h501_reason_06;                     /* UsageIndicationRejectionReason */
+static int hf_h501_unknownCall;                   /* NULL */
+static int hf_h501_incomplete;                    /* NULL */
+static int hf_h501_accessToken;                   /* SEQUENCE_OF_AccessToken */
+static int hf_h501_accessToken_item;              /* AccessToken */
+static int hf_h501_reason_07;                     /* ValidationRejectionReason */
+static int hf_h501_tokenNotValid;                 /* NULL */
+static int hf_h501_missingSourceInfo;             /* NULL */
+static int hf_h501_missingDestInfo;               /* NULL */
+static int hf_h501_delay;                         /* INTEGER_1_65535 */
+static int hf_h501_reason_08;                     /* NonStandardRejectionReason */
+static int hf_h501_notSupported;                  /* NULL */
+static int hf_h501_unknownMessage;                /* OCTET_STRING */
+static int hf_h501_reason_09;                     /* UnknownMessageReason */
+static int hf_h501_notUnderstood;                 /* NULL */
+static int hf_h501_applicationMessage;            /* ApplicationMessage */
+static int hf_h501_reason_10;                     /* AuthenticationRejectionReason */
+static int hf_h501_securityWrongSyncTime;         /* NULL */
+static int hf_h501_securityReplay;                /* NULL */
+static int hf_h501_securityWrongGeneralID;        /* NULL */
+static int hf_h501_securityWrongSendersID;        /* NULL */
+static int hf_h501_securityIntegrityFailed;       /* NULL */
+static int hf_h501_securityWrongOID;              /* NULL */
+static int hf_h501_pattern;                       /* SEQUENCE_OF_Pattern */
+static int hf_h501_pattern_item;                  /* Pattern */
+static int hf_h501_routeInfo;                     /* SEQUENCE_OF_RouteInformation */
+static int hf_h501_routeInfo_item;                /* RouteInformation */
+static int hf_h501_specific;                      /* AliasAddress */
+static int hf_h501_wildcard;                      /* AliasAddress */
+static int hf_h501_range;                         /* T_range */
+static int hf_h501_startOfRange;                  /* PartyNumber */
+static int hf_h501_endOfRange;                    /* PartyNumber */
+static int hf_h501_messageType;                   /* T_messageType */
+static int hf_h501_sendAccessRequest;             /* NULL */
+static int hf_h501_sendSetup;                     /* NULL */
+static int hf_h501_nonExistent;                   /* NULL */
+static int hf_h501_callSpecific;                  /* BOOLEAN */
+static int hf_h501_priceInfo;                     /* SEQUENCE_OF_PriceInfoSpec */
+static int hf_h501_priceInfo_item;                /* PriceInfoSpec */
+static int hf_h501_contacts;                      /* SEQUENCE_OF_ContactInformation */
+static int hf_h501_contacts_item;                 /* ContactInformation */
+static int hf_h501_type;                          /* EndpointType */
+static int hf_h501_circuitID;                     /* CircuitInfo */
+static int hf_h501_supportedCircuits;             /* SEQUENCE_OF_CircuitIdentifier */
+static int hf_h501_supportedCircuits_item;        /* CircuitIdentifier */
+static int hf_h501_transportAddress;              /* AliasAddress */
+static int hf_h501_priority;                      /* INTEGER_0_127 */
+static int hf_h501_transportQoS;                  /* TransportQOS */
+static int hf_h501_security_01;                   /* SEQUENCE_OF_SecurityMode */
+static int hf_h501_security_item;                 /* SecurityMode */
+static int hf_h501_multipleCalls;                 /* BOOLEAN */
+static int hf_h501_currency;                      /* IA5String_SIZE_3 */
+static int hf_h501_currencyScale;                 /* INTEGER_M127_127 */
+static int hf_h501_validFrom;                     /* GlobalTimeStamp */
+static int hf_h501_validUntil;                    /* GlobalTimeStamp */
+static int hf_h501_hoursFrom;                     /* IA5String_SIZE_6 */
+static int hf_h501_hoursUntil;                    /* IA5String_SIZE_6 */
+static int hf_h501_priceElement;                  /* SEQUENCE_OF_PriceElement */
+static int hf_h501_priceElement_item;             /* PriceElement */
+static int hf_h501_priceFormula;                  /* IA5String_SIZE_1_2048 */
+static int hf_h501_amount;                        /* INTEGER_0_4294967295 */
+static int hf_h501_quantum;                       /* INTEGER_0_4294967295 */
+static int hf_h501_units;                         /* T_units */
+static int hf_h501_seconds;                       /* NULL */
+static int hf_h501_packets;                       /* NULL */
+static int hf_h501_bytes;                         /* NULL */
+static int hf_h501_initial;                       /* NULL */
+static int hf_h501_minimum;                       /* NULL */
+static int hf_h501_maximum;                       /* NULL */
+static int hf_h501_descriptorInfo_02;             /* DescriptorInfo */
+static int hf_h501_gatekeeperID;                  /* GatekeeperIdentifier */
+static int hf_h501_descriptorInfo_descriptorID;   /* DescriptorID */
+static int hf_h501_lastChanged;                   /* GlobalTimeStamp */
+static int hf_h501_alternatePE;                   /* SEQUENCE_OF_AlternatePE */
+static int hf_h501_alternatePE_item;              /* AlternatePE */
+static int hf_h501_alternateIsPermanent;          /* BOOLEAN */
+static int hf_h501_contactAddress;                /* AliasAddress */
+static int hf_h501_priority_01;                   /* INTEGER_1_127 */
+static int hf_h501_token;                         /* ClearToken */
+static int hf_h501_cryptoToken;                   /* CryptoH323Token */
+static int hf_h501_genericData_01;                /* GenericData */
+static int hf_h501_callIdentifier;                /* CallIdentifier */
+static int hf_h501_conferenceID;                  /* ConferenceIdentifier */
+static int hf_h501_preConnect;                    /* NULL */
+static int hf_h501_callInProgress;                /* NULL */
+static int hf_h501_callEnded;                     /* NULL */
+static int hf_h501_registrationLost;              /* NULL */
+static int hf_h501_userIdentifier;                /* AliasAddress */
+static int hf_h501_userAuthenticator;             /* SEQUENCE_OF_CryptoH323Token */
+static int hf_h501_userAuthenticator_item;        /* CryptoH323Token */
+static int hf_h501_sendTo;                        /* ElementIdentifier */
+static int hf_h501_when;                          /* T_when */
+static int hf_h501_never;                         /* NULL */
+static int hf_h501_start;                         /* NULL */
+static int hf_h501_end;                           /* NULL */
+static int hf_h501_period;                        /* INTEGER_1_65535 */
+static int hf_h501_failures;                      /* NULL */
+static int hf_h501_required;                      /* T_required */
+static int hf_h501_required_item;                 /* OBJECT_IDENTIFIER */
+static int hf_h501_preferred;                     /* T_preferred */
+static int hf_h501_preferred_item;                /* OBJECT_IDENTIFIER */
+static int hf_h501_sendToPEAddress;               /* AliasAddress */
+static int hf_h501_logicalAddresses;              /* SEQUENCE_OF_AliasAddress */
+static int hf_h501_logicalAddresses_item;         /* AliasAddress */
+static int hf_h501_endpointType;                  /* EndpointType */
+static int hf_h501_userInfo;                      /* UserInformation */
+static int hf_h501_timeZone;                      /* TimeZone */
+static int hf_h501_originator;                    /* NULL */
+static int hf_h501_destination;                   /* NULL */
+static int hf_h501_nonStandardData;               /* NonStandardParameter */
+static int hf_h501_releaseCompleteReason;         /* ReleaseCompleteReason */
+static int hf_h501_causeIE;                       /* INTEGER_1_65535 */
 
 /* Initialize the subtree pointers */
-static int ett_h501 = -1;
-
-/*--- Included file: packet-h501-ett.c ---*/
-#line 1 "./asn1/h501/packet-h501-ett.c"
-static gint ett_h501_Message = -1;
-static gint ett_h501_MessageBody = -1;
-static gint ett_h501_MessageCommonInfo = -1;
-static gint ett_h501_SEQUENCE_OF_TransportAddress = -1;
-static gint ett_h501_SEQUENCE_OF_ClearToken = -1;
-static gint ett_h501_SEQUENCE_OF_CryptoH323Token = -1;
-static gint ett_h501_SEQUENCE_OF_NonStandardParameter = -1;
-static gint ett_h501_SEQUENCE_OF_GenericData = -1;
-static gint ett_h501_ServiceRequest = -1;
-static gint ett_h501_SEQUENCE_OF_SecurityMode = -1;
-static gint ett_h501_SecurityMode = -1;
-static gint ett_h501_T_algorithmOIDs = -1;
-static gint ett_h501_ServiceConfirmation = -1;
-static gint ett_h501_ServiceRejection = -1;
-static gint ett_h501_ServiceRejectionReason = -1;
-static gint ett_h501_ServiceRelease = -1;
-static gint ett_h501_ServiceReleaseReason = -1;
-static gint ett_h501_DescriptorRequest = -1;
-static gint ett_h501_SEQUENCE_OF_DescriptorID = -1;
-static gint ett_h501_DescriptorConfirmation = -1;
-static gint ett_h501_SEQUENCE_OF_Descriptor = -1;
-static gint ett_h501_DescriptorRejection = -1;
-static gint ett_h501_DescriptorRejectionReason = -1;
-static gint ett_h501_DescriptorIDRequest = -1;
-static gint ett_h501_DescriptorIDConfirmation = -1;
-static gint ett_h501_SEQUENCE_OF_DescriptorInfo = -1;
-static gint ett_h501_DescriptorIDRejection = -1;
-static gint ett_h501_DescriptorIDRejectionReason = -1;
-static gint ett_h501_DescriptorUpdate = -1;
-static gint ett_h501_SEQUENCE_OF_UpdateInformation = -1;
-static gint ett_h501_UpdateInformation = -1;
-static gint ett_h501_T_descriptorInfo = -1;
-static gint ett_h501_T_updateType = -1;
-static gint ett_h501_DescriptorUpdateAck = -1;
-static gint ett_h501_AccessRequest = -1;
-static gint ett_h501_SEQUENCE_OF_SupportedProtocols = -1;
-static gint ett_h501_AccessConfirmation = -1;
-static gint ett_h501_SEQUENCE_OF_AddressTemplate = -1;
-static gint ett_h501_SEQUENCE_OF_ServiceControlSession = -1;
-static gint ett_h501_AccessRejection = -1;
-static gint ett_h501_AccessRejectionReason = -1;
-static gint ett_h501_UsageRequest = -1;
-static gint ett_h501_UsageConfirmation = -1;
-static gint ett_h501_UsageRejection = -1;
-static gint ett_h501_UsageIndication = -1;
-static gint ett_h501_SEQUENCE_OF_AccessToken = -1;
-static gint ett_h501_SEQUENCE_OF_UsageField = -1;
-static gint ett_h501_UsageField = -1;
-static gint ett_h501_UsageRejectReason = -1;
-static gint ett_h501_UsageIndicationConfirmation = -1;
-static gint ett_h501_UsageIndicationRejection = -1;
-static gint ett_h501_UsageIndicationRejectionReason = -1;
-static gint ett_h501_ValidationRequest = -1;
-static gint ett_h501_ValidationConfirmation = -1;
-static gint ett_h501_ValidationRejection = -1;
-static gint ett_h501_ValidationRejectionReason = -1;
-static gint ett_h501_RequestInProgress = -1;
-static gint ett_h501_NonStandardRequest = -1;
-static gint ett_h501_NonStandardConfirmation = -1;
-static gint ett_h501_NonStandardRejection = -1;
-static gint ett_h501_NonStandardRejectionReason = -1;
-static gint ett_h501_UnknownMessageResponse = -1;
-static gint ett_h501_UnknownMessageReason = -1;
-static gint ett_h501_AuthenticationRequest = -1;
-static gint ett_h501_AuthenticationConfirmation = -1;
-static gint ett_h501_AuthenticationRejection = -1;
-static gint ett_h501_AuthenticationRejectionReason = -1;
-static gint ett_h501_AddressTemplate = -1;
-static gint ett_h501_SEQUENCE_OF_Pattern = -1;
-static gint ett_h501_SEQUENCE_OF_RouteInformation = -1;
-static gint ett_h501_Pattern = -1;
-static gint ett_h501_T_range = -1;
-static gint ett_h501_RouteInformation = -1;
-static gint ett_h501_T_messageType = -1;
-static gint ett_h501_SEQUENCE_OF_PriceInfoSpec = -1;
-static gint ett_h501_SEQUENCE_OF_ContactInformation = -1;
-static gint ett_h501_SEQUENCE_OF_CircuitIdentifier = -1;
-static gint ett_h501_ContactInformation = -1;
-static gint ett_h501_PriceInfoSpec = -1;
-static gint ett_h501_SEQUENCE_OF_PriceElement = -1;
-static gint ett_h501_PriceElement = -1;
-static gint ett_h501_T_units = -1;
-static gint ett_h501_Descriptor = -1;
-static gint ett_h501_DescriptorInfo = -1;
-static gint ett_h501_AlternatePEInfo = -1;
-static gint ett_h501_SEQUENCE_OF_AlternatePE = -1;
-static gint ett_h501_AlternatePE = -1;
-static gint ett_h501_AccessToken = -1;
-static gint ett_h501_CallInformation = -1;
-static gint ett_h501_UsageCallStatus = -1;
-static gint ett_h501_UserInformation = -1;
-static gint ett_h501_UsageSpecification = -1;
-static gint ett_h501_T_when = -1;
-static gint ett_h501_T_required = -1;
-static gint ett_h501_T_preferred = -1;
-static gint ett_h501_PartyInformation = -1;
-static gint ett_h501_SEQUENCE_OF_AliasAddress = -1;
-static gint ett_h501_Role = -1;
-static gint ett_h501_TerminationCause = -1;
-
-/*--- End of included file: packet-h501-ett.c ---*/
-#line 49 "./asn1/h501/packet-h501-template.c"
+static int ett_h501;
+static int ett_h501_Message;
+static int ett_h501_MessageBody;
+static int ett_h501_MessageCommonInfo;
+static int ett_h501_SEQUENCE_OF_TransportAddress;
+static int ett_h501_SEQUENCE_OF_ClearToken;
+static int ett_h501_SEQUENCE_OF_CryptoH323Token;
+static int ett_h501_SEQUENCE_OF_NonStandardParameter;
+static int ett_h501_SEQUENCE_OF_GenericData;
+static int ett_h501_ServiceRequest;
+static int ett_h501_SEQUENCE_OF_SecurityMode;
+static int ett_h501_SecurityMode;
+static int ett_h501_T_algorithmOIDs;
+static int ett_h501_ServiceConfirmation;
+static int ett_h501_ServiceRejection;
+static int ett_h501_ServiceRejectionReason;
+static int ett_h501_ServiceRelease;
+static int ett_h501_ServiceReleaseReason;
+static int ett_h501_DescriptorRequest;
+static int ett_h501_SEQUENCE_OF_DescriptorID;
+static int ett_h501_DescriptorConfirmation;
+static int ett_h501_SEQUENCE_OF_Descriptor;
+static int ett_h501_DescriptorRejection;
+static int ett_h501_DescriptorRejectionReason;
+static int ett_h501_DescriptorIDRequest;
+static int ett_h501_DescriptorIDConfirmation;
+static int ett_h501_SEQUENCE_OF_DescriptorInfo;
+static int ett_h501_DescriptorIDRejection;
+static int ett_h501_DescriptorIDRejectionReason;
+static int ett_h501_DescriptorUpdate;
+static int ett_h501_SEQUENCE_OF_UpdateInformation;
+static int ett_h501_UpdateInformation;
+static int ett_h501_T_descriptorInfo;
+static int ett_h501_T_updateType;
+static int ett_h501_DescriptorUpdateAck;
+static int ett_h501_AccessRequest;
+static int ett_h501_SEQUENCE_OF_SupportedProtocols;
+static int ett_h501_AccessConfirmation;
+static int ett_h501_SEQUENCE_OF_AddressTemplate;
+static int ett_h501_SEQUENCE_OF_ServiceControlSession;
+static int ett_h501_AccessRejection;
+static int ett_h501_AccessRejectionReason;
+static int ett_h501_UsageRequest;
+static int ett_h501_UsageConfirmation;
+static int ett_h501_UsageRejection;
+static int ett_h501_UsageIndication;
+static int ett_h501_SEQUENCE_OF_AccessToken;
+static int ett_h501_SEQUENCE_OF_UsageField;
+static int ett_h501_UsageField;
+static int ett_h501_UsageRejectReason;
+static int ett_h501_UsageIndicationConfirmation;
+static int ett_h501_UsageIndicationRejection;
+static int ett_h501_UsageIndicationRejectionReason;
+static int ett_h501_ValidationRequest;
+static int ett_h501_ValidationConfirmation;
+static int ett_h501_ValidationRejection;
+static int ett_h501_ValidationRejectionReason;
+static int ett_h501_RequestInProgress;
+static int ett_h501_NonStandardRequest;
+static int ett_h501_NonStandardConfirmation;
+static int ett_h501_NonStandardRejection;
+static int ett_h501_NonStandardRejectionReason;
+static int ett_h501_UnknownMessageResponse;
+static int ett_h501_UnknownMessageReason;
+static int ett_h501_AuthenticationRequest;
+static int ett_h501_AuthenticationConfirmation;
+static int ett_h501_AuthenticationRejection;
+static int ett_h501_AuthenticationRejectionReason;
+static int ett_h501_AddressTemplate;
+static int ett_h501_SEQUENCE_OF_Pattern;
+static int ett_h501_SEQUENCE_OF_RouteInformation;
+static int ett_h501_Pattern;
+static int ett_h501_T_range;
+static int ett_h501_RouteInformation;
+static int ett_h501_T_messageType;
+static int ett_h501_SEQUENCE_OF_PriceInfoSpec;
+static int ett_h501_SEQUENCE_OF_ContactInformation;
+static int ett_h501_SEQUENCE_OF_CircuitIdentifier;
+static int ett_h501_ContactInformation;
+static int ett_h501_PriceInfoSpec;
+static int ett_h501_SEQUENCE_OF_PriceElement;
+static int ett_h501_PriceElement;
+static int ett_h501_T_units;
+static int ett_h501_Descriptor;
+static int ett_h501_DescriptorInfo;
+static int ett_h501_AlternatePEInfo;
+static int ett_h501_SEQUENCE_OF_AlternatePE;
+static int ett_h501_AlternatePE;
+static int ett_h501_AccessToken;
+static int ett_h501_CallInformation;
+static int ett_h501_UsageCallStatus;
+static int ett_h501_UserInformation;
+static int ett_h501_UsageSpecification;
+static int ett_h501_T_when;
+static int ett_h501_T_required;
+static int ett_h501_T_preferred;
+static int ett_h501_PartyInformation;
+static int ett_h501_SEQUENCE_OF_AliasAddress;
+static int ett_h501_Role;
+static int ett_h501_TerminationCause;
 
 /* Dissectors */
 static dissector_handle_t h501_pdu_handle;
+static dissector_handle_t h501_udp_handle;
+static dissector_handle_t h501_tcp_handle;
 
 /* Preferences */
-static guint h501_udp_port = 2099;
-static guint h501_tcp_port = 2099;
-static gboolean h501_desegment_tcp = TRUE;
+#define H501_PORT 2099
+static bool h501_desegment_tcp = true;
 
 void proto_reg_handoff_h501(void);
 
-
-/*--- Included file: packet-h501-fn.c ---*/
-#line 1 "./asn1/h501/packet-h501-fn.c"
 
 
 static int
 dissect_h501_ElementIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_BMPString(tvb, offset, actx, tree, hf_index,
-                                          1, 128, FALSE);
+                                          1, 128, false);
 
   return offset;
 }
@@ -493,7 +467,7 @@ dissect_h501_SEQUENCE_OF_SecurityMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_h501_INTEGER_1_4294967295(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 4294967295U, NULL, FALSE);
+                                                            1U, 4294967295U, NULL, false);
 
   return offset;
 }
@@ -512,7 +486,7 @@ dissect_h501_NULL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_h501_INTEGER_1_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 65535U, NULL, FALSE);
+                                                            1U, 65535U, NULL, false);
 
   return offset;
 }
@@ -602,7 +576,7 @@ dissect_h501_ServiceRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_h501_INTEGER_1_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 127U, NULL, FALSE);
+                                                            1U, 127U, NULL, false);
 
   return offset;
 }
@@ -816,14 +790,15 @@ dissect_h501_DescriptorRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_h501_GlobalTimeStamp(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          14, 14, FALSE);
+                                          14, 14, false,
+                                          NULL);
 
   return offset;
 }
 
 
 static const per_sequence_t DescriptorInfo_sequence[] = {
-  { &hf_h501_descriptorID_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_h501_DescriptorID },
+  { &hf_h501_descriptorInfo_descriptorID, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_h501_DescriptorID },
   { &hf_h501_lastChanged    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_h501_GlobalTimeStamp },
   { NULL, 0, 0, NULL }
 };
@@ -917,7 +892,8 @@ dissect_h501_T_messageType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_h501_IA5String_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          3, 3, FALSE);
+                                          3, 3, false,
+                                          NULL);
 
   return offset;
 }
@@ -927,7 +903,7 @@ dissect_h501_IA5String_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_h501_INTEGER_M127_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 127U, NULL, FALSE);
+                                                            -127, 127U, NULL, false);
 
   return offset;
 }
@@ -937,7 +913,8 @@ dissect_h501_INTEGER_M127_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_h501_IA5String_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          6, 6, FALSE);
+                                          6, 6, false,
+                                          NULL);
 
   return offset;
 }
@@ -947,7 +924,7 @@ dissect_h501_IA5String_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_h501_INTEGER_0_4294967295(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4294967295U, NULL, FALSE);
+                                                            0U, 4294967295U, NULL, false);
 
   return offset;
 }
@@ -1016,7 +993,8 @@ dissect_h501_SEQUENCE_OF_PriceElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_h501_IA5String_SIZE_1_2048(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          1, 2048, FALSE);
+                                          1, 2048, false,
+                                          NULL);
 
   return offset;
 }
@@ -1060,7 +1038,7 @@ dissect_h501_SEQUENCE_OF_PriceInfoSpec(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_h501_INTEGER_0_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -1311,7 +1289,7 @@ dissect_h501_DescriptorRejectionReason(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 static const per_sequence_t DescriptorRejection_sequence[] = {
   { &hf_h501_reason_02      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_h501_DescriptorRejectionReason },
-  { &hf_h501_descriptorID_01, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_h501_DescriptorID },
+  { &hf_h501_descriptorRejection_descriptorID, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_h501_DescriptorID },
   { NULL, 0, 0, NULL }
 };
 
@@ -1419,7 +1397,7 @@ static const value_string h501_T_descriptorInfo_vals[] = {
 };
 
 static const per_choice_t T_descriptorInfo_choice[] = {
-  {   0, &hf_h501_descriptorID_01, ASN1_EXTENSION_ROOT    , dissect_h501_DescriptorID },
+  {   0, &hf_h501_updateInformation_descriptorID, ASN1_EXTENSION_ROOT    , dissect_h501_DescriptorID },
   {   1, &hf_h501_descriptor_01  , ASN1_EXTENSION_ROOT    , dissect_h501_Descriptor },
   { 0, NULL, 0, NULL }
 };
@@ -1559,7 +1537,7 @@ dissect_h501_UserInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_h501_TimeZone(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -43200, 43200U, NULL, FALSE);
+                                                            -43200, 43200U, NULL, false);
 
   return offset;
 }
@@ -1804,7 +1782,7 @@ dissect_h501_NonStandardRejection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_h501_OCTET_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       NO_BOUND, NO_BOUND, FALSE, NULL);
+                                       NO_BOUND, NO_BOUND, false, NULL);
 
   return offset;
 }
@@ -2190,7 +2168,7 @@ dissect_h501_ValidationRejection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_h501_ApplicationMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       NO_BOUND, NO_BOUND, FALSE, NULL);
+                                       NO_BOUND, NO_BOUND, false, NULL);
 
   return offset;
 }
@@ -2355,19 +2333,15 @@ static const per_choice_t MessageBody_choice[] = {
 
 static int
 dissect_h501_MessageBody(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-#line 20 "./asn1/h501/h501.cnf"
-  gint32 msg_type = -1;
-  const gchar *p = NULL;
-
+  int32_t msg_type = -1;
+  const char *p = NULL;
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h501_MessageBody, MessageBody_choice,
                                  &msg_type);
 
-#line 23 "./asn1/h501/h501.cnf"
   p = try_val_to_str(msg_type, VALS(h501_MessageBody_vals));
   if (p )
     col_set_str(actx->pinfo->cinfo, COL_INFO, p);
-
   return offset;
 }
 
@@ -2376,7 +2350,7 @@ dissect_h501_MessageBody(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_h501_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -2395,7 +2369,7 @@ dissect_h501_ProtocolVersion(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_h501_INTEGER_1_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 255U, NULL, FALSE);
+                                                            1U, 255U, NULL, false);
 
   return offset;
 }
@@ -2506,15 +2480,12 @@ dissect_h501_Message(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int dissect_Message_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_h501_Message(tvb, offset, &asn1_ctx, tree, hf_h501_Message_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 
-
-/*--- End of included file: packet-h501-fn.c ---*/
-#line 61 "./asn1/h501/packet-h501-template.c"
 
 static int
 dissect_h501_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
@@ -2533,7 +2504,7 @@ dissect_h501_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 static int
 dissect_h501_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  dissect_tpkt_encap(tvb, pinfo, tree, FALSE, h501_pdu_handle);
+  dissect_tpkt_encap(tvb, pinfo, tree, false, h501_pdu_handle);
   return tvb_captured_length(tvb);
 }
 
@@ -2550,9 +2521,6 @@ void proto_register_h501(void) {
 
   /* List of fields */
   static hf_register_info hf[] = {
-
-/*--- Included file: packet-h501-hfarr.c ---*/
-#line 1 "./asn1/h501/packet-h501-hfarr.c"
     { &hf_h501_Message_PDU,
       { "Message", "h501.Message_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -2897,8 +2865,8 @@ void proto_register_h501(void) {
       { "reason", "h501.reason",
         FT_UINT32, BASE_DEC, VALS(h501_DescriptorRejectionReason_vals), 0,
         "DescriptorRejectionReason", HFILL }},
-    { &hf_h501_descriptorID_01,
-      { "descriptorID", "h501.descriptorID",
+    { &hf_h501_descriptorRejection_descriptorID,
+      { "descriptorID", "h501.descriptorRejection_descriptorID",
         FT_GUID, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_h501_packetSizeExceeded,
@@ -2948,6 +2916,10 @@ void proto_register_h501(void) {
     { &hf_h501_descriptorInfo_01,
       { "descriptorInfo", "h501.descriptorInfo",
         FT_UINT32, BASE_DEC, VALS(h501_T_descriptorInfo_vals), 0,
+        NULL, HFILL }},
+    { &hf_h501_updateInformation_descriptorID,
+      { "descriptorID", "h501.updateInformation_descriptorID",
+        FT_GUID, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_h501_descriptor_01,
       { "descriptor", "h501.descriptor_element",
@@ -3393,6 +3365,10 @@ void proto_register_h501(void) {
       { "gatekeeperID", "h501.gatekeeperID",
         FT_STRING, BASE_NONE, NULL, 0,
         "GatekeeperIdentifier", HFILL }},
+    { &hf_h501_descriptorInfo_descriptorID,
+      { "descriptorID", "h501.descriptorInfo_descriptorID",
+        FT_GUID, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_h501_lastChanged,
       { "lastChanged", "h501.lastChanged",
         FT_STRING, BASE_NONE, NULL, 0,
@@ -3553,17 +3529,11 @@ void proto_register_h501(void) {
       { "causeIE", "h501.causeIE",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_1_65535", HFILL }},
-
-/*--- End of included file: packet-h501-hfarr.c ---*/
-#line 97 "./asn1/h501/packet-h501-template.c"
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_h501,
-
-/*--- Included file: packet-h501-ettarr.c ---*/
-#line 1 "./asn1/h501/packet-h501-ettarr.c"
     &ett_h501_Message,
     &ett_h501_MessageBody,
     &ett_h501_MessageCommonInfo,
@@ -3663,9 +3633,6 @@ void proto_register_h501(void) {
     &ett_h501_SEQUENCE_OF_AliasAddress,
     &ett_h501_Role,
     &ett_h501_TerminationCause,
-
-/*--- End of included file: packet-h501-ettarr.c ---*/
-#line 103 "./asn1/h501/packet-h501-template.c"
   };
 
   /* Register protocol */
@@ -3675,17 +3642,13 @@ void proto_register_h501(void) {
   proto_register_field_array(proto_h501, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
+  /* Register dissectors */
   h501_pdu_handle = register_dissector(PFNAME, dissect_h501_pdu, proto_h501);
+  h501_udp_handle = register_dissector(PFNAME ".udp", dissect_h501_udp, proto_h501);
+  h501_tcp_handle = register_dissector(PFNAME ".tcp", dissect_h501_tcp, proto_h501);
 
-  h501_module = prefs_register_protocol(proto_h501, proto_reg_handoff_h501);
-  prefs_register_uint_preference(h501_module, "udp.port",
-                                 "UDP port",
-                                 "Port to be decoded as h501",
-                                 10, &h501_udp_port);
-  prefs_register_uint_preference(h501_module, "tcp.port",
-                                 "TCP port",
-                                 "Port to be decoded as h501",
-                                 10, &h501_tcp_port);
+  /* Register dissection preferences */
+  h501_module = prefs_register_protocol(proto_h501, NULL);
   prefs_register_bool_preference(h501_module, "desegment",
                                  "Desegment H.501 over TCP",
                                  "Desegment H.501 messages that span more TCP segments",
@@ -3696,26 +3659,7 @@ void proto_register_h501(void) {
 /*--- proto_reg_handoff_h501 -------------------------------------------*/
 void proto_reg_handoff_h501(void)
 {
-  static gboolean h501_prefs_initialized = FALSE;
-  static dissector_handle_t h501_udp_handle;
-  static dissector_handle_t h501_tcp_handle;
-  static guint saved_h501_udp_port;
-  static guint saved_h501_tcp_port;
-
-  if (!h501_prefs_initialized) {
-    h501_udp_handle = create_dissector_handle(dissect_h501_udp, proto_h501);
-    h501_tcp_handle = create_dissector_handle(dissect_h501_tcp, proto_h501);
-    h501_prefs_initialized = TRUE;
-  } else {
-    dissector_delete_uint("udp.port", saved_h501_udp_port, h501_udp_handle);
-    dissector_delete_uint("tcp.port", saved_h501_tcp_port, h501_tcp_handle);
-  }
-
-  /* Set our port number for future use */
-  saved_h501_udp_port = h501_udp_port;
-  dissector_add_uint("udp.port", saved_h501_udp_port, h501_udp_handle);
-  saved_h501_tcp_port = h501_tcp_port;
-  dissector_add_uint("tcp.port", saved_h501_tcp_port, h501_tcp_handle);
-
+  dissector_add_uint_with_preference("tcp.port", H501_PORT, h501_tcp_handle);
+  dissector_add_uint_with_preference("udp.port", H501_PORT, h501_udp_handle);
 }
 

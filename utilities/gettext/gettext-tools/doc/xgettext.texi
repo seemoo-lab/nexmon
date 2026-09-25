@@ -1,3 +1,7 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2026 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
 @pindex xgettext
 @cindex @code{xgettext} program, usage
 @example
@@ -19,6 +23,9 @@ Input files.
 @opindex --files-from@r{, @code{xgettext} option}
 Read the names of the input files from @var{file} instead of getting
 them from the command line.
+
+Often @var{file} is a temporary file, generated during the build process.
+In this case, you should also pass the @code{--generated=@var{file}} option.
 
 @item -D @var{directory}
 @itemx --directory=@var{directory}
@@ -68,13 +75,39 @@ is written to standard output.
 @opindex -L@r{, @code{xgettext} option}
 @opindex --language@r{, @code{xgettext} option}
 @cindex supported languages, @code{xgettext}
-Specifies the language of the input files.  The supported languages
-are @code{C}, @code{C++}, @code{ObjectiveC}, @code{PO}, @code{Shell},
-@code{Python}, @code{Lisp}, @code{EmacsLisp}, @code{librep}, @code{Scheme},
-@code{Smalltalk}, @code{Java}, @code{JavaProperties}, @code{C#}, @code{awk},
-@code{YCP}, @code{Tcl}, @code{Perl}, @code{PHP}, @code{GCC-source},
-@code{NXStringTable}, @code{RST}, @code{Glade}, @code{Lua}, @code{JavaScript},
-@code{Vala}, @code{GSettings}, @code{Desktop}.
+Specifies the language of the input files.  The supported languages are
+@code{C}, @code{C++}, @code{ObjectiveC},
+@code{PO},
+@code{Python},
+@code{Java}, @code{JavaProperties},
+@code{C#},
+@code{JavaScript},
+@code{TypeScript}, @code{TSX},
+@code{Scheme}, @code{Guile},
+@code{Lisp},
+@code{EmacsLisp},
+@code{librep},
+@code{Rust},
+@code{Go},
+@code{Ruby},
+@code{Shell},
+@code{awk},
+@code{Lua},
+@code{Modula-2},
+@code{D},
+@code{OCaml},
+@code{Smalltalk},
+@code{Vala},
+@code{Tcl},
+@code{Perl},
+@code{PHP},
+@code{GCC-source},
+@code{YCP},
+@code{NXStringTable},
+@code{RST}, @code{RSJ},
+@code{Glade},
+@code{GSettings},
+@code{Desktop}.
 
 @item -C
 @itemx --c++
@@ -125,8 +158,9 @@ Place comment blocks starting with @var{tag} and preceding keyword lines
 in the output file.  Without a @var{tag}, the option means to put @emph{all}
 comment blocks preceding keyword lines in the output file.
 
-Note that comment blocks supposed to be extracted must be adjacent to
-keyword lines.  For example, in the following C source code:
+Note that comment blocks are only extracted if there is no program code
+between the comment and the string that gets extracted.
+For example, in the following C source code:
 
 @example
 /* This is the first comment.  */
@@ -139,16 +173,23 @@ gettext (
 gettext (
   /* This is the third comment.  */
   "baz");
+
+/* This is the fourth comment.  */
+
+gettext ("I love blank lines in my programs");
 @end example
 
-The second comment line will not be extracted, because there is one
-blank line between the comment line and the keyword.
+@noindent
+the second comment line will not be extracted, because there is a line
+with some tokens between the comment line and the line that contains
+the string.  But the fourth comment is extracted, because between it and
+the line with the string there is merely a blank line.
 
 @item --check[=@var{CHECK}]
 @opindex --check@r{, @code{xgettext} option}
 @cindex supported syntax checks, @code{xgettext}
-Perform a syntax check on msgid and msgid_plural.  The supported checks
-are:
+Perform a syntax check on msgid and msgid_plural.
+The supported checks that are disabled by default and that can be enabled are:
 
 @table @samp
 @item ellipsis-unicode
@@ -182,10 +223,36 @@ where @var{name} is the name of a valid syntax check.  If a flag is
 prefixed by @code{no-}, the meaning is negated.
 
 Some tests apply the checks to each sentence within the msgid, rather
-than the whole string.  xgettext detects the end of sentence by
+than the whole string.  @code{xgettext} detects the end of sentence by
 performing a pattern match, which usually looks for a period followed by
 a certain number of spaces.  The number is specified with the
 @code{--sentence-end} option.
+
+@item --no-check[=@var{CHECK}]
+@opindex --no-check@r{, @code{xgettext} option}
+Don't perform a syntax check on msgid and msgid_plural
+that is enabled by default.
+The supported checks that are enabled by default are:
+
+@table @samp
+@item url
+Prohibit a URL inside a string.
+
+@item email
+Prohibit an email address inside a string.
+
+@end table
+
+The option has an effect on all input files.
+To disable a check for a certain string,
+you can mark it with an @code{xgettext:} special comment in the source file.
+For example, if you want to suppress the check on a particular string,
+add the following comment:
+
+@example
+/* xgettext: no-email-check */
+gettext ("Specify your@@email-address.com here.");
+@end example
 
 @item --sentence-end[=@var{TYPE}]
 @opindex --sentence-end@r{, @code{xgettext} option}
@@ -212,9 +279,31 @@ Expect at least two whitespaces after a period
 @opindex --extract-all@r{, @code{xgettext} option}
 Extract all strings.
 
-This option has an effect with most languages, namely C, C++, ObjectiveC,
-Shell, Python, Lisp, EmacsLisp, librep, Java, C#, awk, Tcl, Perl, PHP,
-GCC-source, Glade, Lua, JavaScript, Vala, GSettings.
+This option has an effect with most languages, namely
+C, C++, ObjectiveC,
+Python,
+Java,
+C#,
+JavaScript,
+Scheme, Guile,
+Lisp,
+EmacsLisp,
+librep,
+Rust,
+Go,
+Shell,
+awk,
+Lua,
+Modula-2,
+D,
+OCaml,
+Vala,
+Tcl,
+Perl,
+PHP,
+GCC-source,
+Glade,
+GSettings.
 
 @item -k[@var{keywordspec}]
 @itemx --keyword[=@var{keywordspec}]
@@ -255,14 +344,38 @@ comment @var{xcomment} to the message.  Note that when used through a normal
 shell command line, the double-quotes around the @var{xcomment} need to be
 escaped.
 
-This option has an effect with most languages, namely C, C++, ObjectiveC,
-Shell, Python, Lisp, EmacsLisp, librep, Java, C#, awk, Tcl, Perl, PHP,
-GCC-source, Glade, Lua, JavaScript, Vala, GSettings, Desktop.
+This option has an effect with most languages, namely
+C, C++, ObjectiveC,
+Python,
+Java,
+C#,
+JavaScript,
+TypeScript, TSX,
+Scheme, Guile,
+Lisp,
+EmacsLisp,
+librep,
+Rust,
+Go,
+Shell,
+awk,
+Lua,
+Modula-2,
+D,
+OCaml,
+Vala,
+Tcl,
+Perl,
+PHP,
+GCC-source,
+Glade,
+GSettings,
+Desktop.
 
 The default keyword specifications, which are always looked for if not
 explicitly disabled, are language dependent.  They are:
 
-@itemize
+@itemize @bullet
 @item
 For C, C++, and GCC-source: @code{gettext}, @code{dgettext:2},
 @code{dcgettext:2}, @code{ngettext:1,2}, @code{dngettext:2,3},
@@ -275,8 +388,11 @@ For Objective C: Like for C, and also @code{NSLocalizedString}, @code{_},
 @code{NSLocalizedStaticString}, @code{__}.
 
 @item
-For Shell scripts: @code{gettext}, @code{ngettext:1,2}, @code{eval_gettext},
-@code{eval_ngettext:1,2}.
+For Shell scripts:
+@code{gettext}, @code{ngettext:1,2},
+@code{printf_gettext}, @code{printf_ngettext:1,2},
+@code{eval_gettext}, @code{eval_ngettext:1,2},
+@code{eval_pgettext:1c,2}, @code{eval_npgettext:1c,2,3}.
 
 @item
 For Python: @code{gettext}, @code{ugettext}, @code{dgettext:2},
@@ -292,7 +408,7 @@ For EmacsLisp: @code{_}.
 For librep: @code{_}.
 
 @item
-For Scheme: @code{gettext}, @code{ngettext:1,2}, @code{gettext-noop}.
+For Scheme and Guile: @code{gettext}, @code{ngettext:1,2}, @code{gettext-noop}.
 
 @item
 For Java: @code{GettextResource.gettext:2},
@@ -329,7 +445,12 @@ For Lua: @code{_}, @code{gettext.gettext}, @code{gettext.dgettext:2},
 @code{gettext.dngettext:2,3}, @code{gettext.dcngettext:2,3}.
 
 @item
-For JavaScript: @code{_}, @code{gettext}, @code{dgettext:2},
+For D: @code{gettext}, @code{dgettext:2}, @code{dcgettext:2},
+@code{ngettext:1,2}, @code{dngettext:2,3}, @code{dcngettext:2,3}.
+
+@item
+For JavaScript, TypeScript, TSX:
+@code{_}, @code{gettext}, @code{dgettext:2},
 @code{dcgettext:2}, @code{ngettext:1,2}, @code{dngettext:2,3},
 @code{pgettext:1c,2}, @code{dpgettext:2c,3}.
 
@@ -340,7 +461,7 @@ For Vala: @code{_}, @code{Q_}, @code{N_}, @code{NC_}, @code{dgettext:2},
 
 @item
 For Desktop: @code{Name}, @code{GenericName}, @code{Comment},
-@code{Icon}, @code{Keywords}.
+@code{Keywords}.
 @end itemize
 
 To disable the default keyword specifications, the option @samp{-k} or
@@ -391,16 +512,55 @@ together with the checks done by @samp{msgfmt -c} it will ensure that
 translators cannot accidentally use format string directives that would
 lead to a crash at runtime.
 @*
-This option has an effect with most languages, namely C, C++, ObjectiveC,
-Shell, Python, Lisp, EmacsLisp, librep, Scheme, Java, C#, awk, YCP, Tcl, Perl, PHP,
-GCC-source, Lua, JavaScript, Vala.
+This option has an effect with most languages, namely
+C, C++, ObjectiveC,
+Python,
+Java,
+C#,
+JavaScript,
+TypeScript, TSX,
+Scheme, Guile,
+Lisp,
+EmacsLisp,
+librep,
+Rust,
+Go,
+Shell,
+awk,
+Lua,
+Modula-2,
+D,
+OCaml,
+Vala,
+Tcl,
+Perl,
+PHP,
+GCC-source,
+YCP.
+
+@item --tag=@var{word}:@var{format}
+@opindex --tag@r{, @code{xgettext} option}
+Defines the behaviour of tagged template literals with tag @var{word}.
+This option has an effect only with language JavaScript.
+@*
+@var{format} is a symbolic description
+of the first step of the JavaScript function named @var{word},
+namely how this function constructs a format string
+based on the parts of the template literal.
+Currently only one value is supported: @code{javascript-gnome-format},
+which describes the construction of a format string with numbered placeholders
+@code{@{0@}}, @code{@{1@}}, @code{@{2@}}, etc.
+For example, @code{javascript-gnome-format} transforms the template literal
+@code{@var{word}`My name is $@{id.name@} and I am $@{id.age@} years old.`}
+into the format string @code{"My name is @{0@} and I am @{1@} years old."}.
 
 @item -T
 @itemx --trigraphs
 @opindex -T@r{, @code{xgettext} option}
 @opindex --trigraphs@r{, @code{xgettext} option}
 @cindex C trigraphs
-Understand ANSI C trigraphs for input.
+Understand ANSI C trigraphs for input
+(deprecated, since trigraphs have been removed from ISO C 23).
 @*
 This option has an effect only with the languages C, C++, ObjectiveC.
 
@@ -441,6 +601,40 @@ not have to care about these details.
 This implementation of @code{xgettext} is able to process a few awkward
 cases, like strings in preprocessor macros, ANSI concatenation of
 adjacent strings, and escaped end of lines for continued strings.
+
+@subsection Options for XML input files
+
+When some of the input files are XML files
+and they are not of one of the types covered
+by the system-wide installed *.its files,
+a *.its file is needed for each such file type,
+so that @code{xgettext} can handle them.
+There are two ways to specify such a file:
+
+@itemize @bullet
+@item
+@table @samp
+@item --its=@var{file}
+@opindex --its@r{, @code{xgettext} option}
+Use the ITS rules defined in @var{file}.
+@end table
+
+@item
+The environment variable @code{GETTEXTDATADIRS}.
+Together with the *.its file, you need a corresponding *.loc file
+(@pxref{Preparing ITS Rules}).
+Furthermore you need to store these files
+in a directory @file{@var{parent_dir}/its/}
+@vindex GETTEXTDATADIRS@r{, environment variable}
+and set the environment variable @code{GETTEXTDATADIRS} to include
+@code{@var{parent_dir}}.
+More generally, the value of @code{GETTEXTDATADIRS} should be
+a colon-separated list of directory names.
+@end itemize
+
+Note that when the option @code{--its} is specified,
+the system-wide installed *.its files are ignored
+and the environment variable @code{GETTEXTDATADIRS} has no effect either.
 
 @subsection Output details
 
@@ -503,11 +697,6 @@ obsolete messages.
 Write out a NeXTstep/GNUstep localized resource file in @code{.strings} syntax.
 Note that this file format doesn't support plural forms.
 
-@item --its=@var{file}
-@opindex --its@r{, @code{xgettext} option}
-Use ITS rules defined in @var{file}.
-Note that this is only effective with XML files.
-
 @item --itstool
 @opindex --itstool@r{, @code{xgettext} option}
 Write out comments recognized by itstool (@uref{http://itstool.org}).
@@ -532,8 +721,8 @@ lines which are wider than the output page width will be split.
 @opindex -s@r{, @code{xgettext} option}
 @opindex --sort-output@r{, @code{xgettext} option}
 @cindex sorting output of @code{xgettext}
-Generate sorted output.  Note that using this option makes it much harder
-for the translator to understand each message's context.
+Generate sorted output (deprecated).  Note that using this option makes it
+much harder for the translator to understand each message's context.
 
 @item -F
 @itemx --sort-by-file
@@ -544,6 +733,8 @@ Sort output by file location.
 @item --omit-header
 @opindex --omit-header@r{, @code{xgettext} option}
 Don't write header with @samp{msgid ""} entry.
+Note: Using this option may lead to an error in subsequent operations
+if the output contains non-ASCII characters.
 
 @cindex testing @file{.po} files for equivalence
 This is useful for testing purposes because it eliminates a source
@@ -554,10 +745,29 @@ options at different times are guaranteed to produce the same results.
 Note that using this option will lead to an error if the resulting file
 would not entirely be in ASCII.
 
+@item --no-git
+@opindex --no-git@r{, @code{xgettext} option}
+Don't use the @code{git} program
+to produce a reproducible @samp{POT-Creation-Date} field in the output.
+
+Use this option, for speed, if
+your project has a very long @code{Git} history
+(hundreds of thousands of commits)
+or you are specifying thousands of input files.
+
+By default, @code{xgettext} determines the @samp{POT-Creation-Date} as
+the maximum version-controlled modification time
+among all the given input files.
+With this option, you can specify that it should instead use
+the maximum modification time (time stamp on disk)
+among all the given input files.
+
+By ``version control'', here we mean the @code{Git} version control system.
+
 @item --copyright-holder=@var{string}
 @opindex --copyright-holder@r{, @code{xgettext} option}
 Set the copyright holder in the output.  @var{string} should be the
-copyright holder of the surrounding package.  (Note that the msgstr
+copyright holder of the surrounding package.  (Note that the @code{msgid}
 strings, extracted from the package's sources, belong to the copyright
 holder of the package.)  Translators are expected to transfer or disclaim
 the copyright for their translations, so that package maintainers can
@@ -608,6 +818,34 @@ which the translators can contact you.
 The default value is empty, which means that translators will be clueless!
 Don't forget to specify this option.
 
+@item --generated=@var{file}
+@opindex --generated@r{, @code{xgettext} option}
+
+Declares that the given @var{file} is generated
+and therefore should not have
+an influence on the @samp{POT-Creation-Date} field in the output.
+
+When you specify this option,
+you should also specify one or more @code{--reference} options,
+to indicate the files from which the given @var{file} was generated.
+
+@item --reference=@var{file}
+@opindex --reference@r{, @code{xgettext} option}
+
+Declares that the output depends on the contents of the given @var{file}.
+This has an influence on the @samp{POT-Creation-Date} field in the output.
+
+By default, @code{xgettext} determines the @samp{POT-Creation-Date} as
+the maximum version-controlled modification time
+among all the given input files.
+With this option, you can specify that
+the output depends also on some other files.
+For example, use this option when
+some of the input files is not under version control
+but instead is generated from one or more files that are under version control.
+
+By ``version control'', here we mean the @code{Git} version control system.
+
 @item -m[@var{string}]
 @itemx --msgstr-prefix[=@var{string}]
 @opindex -m@r{, @code{xgettext} option}
@@ -637,4 +875,25 @@ Display this help and exit.
 @opindex --version@r{, @code{xgettext} option}
 Output version information and exit.
 
+@item -v
+@itemx --verbose
+@opindex -v@r{, @code{xgettext} option}
+@opindex --verbose@r{, @code{xgettext} option}
+Increase verbosity level.
+
 @end table
+
+@subsection Example
+
+A sample invocation of @code{xgettext}, in a project
+that has a single source file @file{src/hello.c}
+that uses @samp{_} as shorthand for the @code{gettext} function,
+could be:
+
+@example
+xgettext -o hello.pot \
+         --add-comments=TRANSLATORS: \
+         --keyword=_ --flag=_:1:pass-c-format \
+         --directory=.. \
+         src/hello.c
+@end example

@@ -6,6 +6,9 @@
 #ifdef G_OS_UNIX
 #include <unistd.h>
 #endif
+#ifdef G_OS_WIN32
+#include <io.h> /* for close() */
+#endif
 
 static const char *original_data = "This is some test data that we can put in a file...";
 static const char *new_data = "new data..";
@@ -29,6 +32,7 @@ static void
 verify_iostream (GFileIOStream *file_iostream)
 {
   gboolean res;
+  gssize skipped;
   GIOStream *iostream;
   GError *error;
   GInputStream *in;
@@ -70,8 +74,9 @@ verify_iostream (GFileIOStream *file_iostream)
   g_assert (res == 5);
   verify_pos (iostream, 15);
 
-  res = g_input_stream_skip (in, 10000, NULL, NULL);
-  g_assert (res == strlen (original_data) - 15);
+  skipped = g_input_stream_skip (in, 10000, NULL, NULL);
+  g_assert_cmpint (skipped, >=, 0);
+  g_assert ((gsize) skipped == strlen (original_data) - 15);
   verify_pos (iostream, strlen (original_data));
 
   res = g_seekable_seek (G_SEEKABLE (iostream),

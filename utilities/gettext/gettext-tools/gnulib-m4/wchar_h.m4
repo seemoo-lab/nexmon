@@ -1,15 +1,16 @@
-dnl A placeholder for ISO C99 <wchar.h>, for platforms that have issues.
-
-dnl Copyright (C) 2007-2016 Free Software Foundation, Inc.
+# wchar_h.m4
+# serial 66
+dnl Copyright (C) 2007-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
+
+dnl A placeholder for ISO C99 <wchar.h>, for platforms that have issues.
 
 dnl Written by Eric Blake.
 
-# wchar_h.m4 serial 39
-
-AC_DEFUN([gl_WCHAR_H],
+AC_DEFUN_ONCE([gl_WCHAR_H],
 [
   AC_REQUIRE([gl_WCHAR_H_DEFAULTS])
   AC_REQUIRE([gl_WCHAR_H_INLINE_OK])
@@ -35,76 +36,82 @@ AC_DEFUN([gl_WCHAR_H],
   fi
   AC_SUBST([HAVE_WINT_T])
 
+  AC_REQUIRE([gl_TYPE_WINT_T_PREREQ])
+
   dnl Check for declarations of anything we want to poison if the
   dnl corresponding gnulib module is not in use.
   gl_WARN_ON_USE_PREPARE([[
-/* Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-   <wchar.h>.
-   BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be
-   included before <wchar.h>.  */
-#if !(defined __GLIBC__ && !defined __UCLIBC__)
-# include <stddef.h>
-# include <stdio.h>
-# include <time.h>
-#endif
-#include <wchar.h>
+      #include <wchar.h>
     ]],
     [btowc wctob mbsinit mbrtowc mbrlen mbsrtowcs mbsnrtowcs wcrtomb
-     wcsrtombs wcsnrtombs wcwidth wmemchr wmemcmp wmemcpy wmemmove wmemset
+     wcsrtombs wcsnrtombs wcwidth
+     wmemchr wmemcmp wmemcpy wmemmove wmempcpy wmemset
      wcslen wcsnlen wcscpy wcpcpy wcsncpy wcpncpy wcscat wcsncat wcscmp
      wcsncmp wcscasecmp wcsncasecmp wcscoll wcsxfrm wcsdup wcschr wcsrchr
-     wcscspn wcsspn wcspbrk wcsstr wcstok wcswidth
+     wcscspn wcsspn wcspbrk wcsstr wcstok wcswidth wcsftime
     ])
+
+  AC_REQUIRE([AC_C_RESTRICT])
+
+  AC_CHECK_DECLS([wcsdup], [], [], [[
+      #include <wchar.h>
+    ]])
+  if test $ac_cv_have_decl_wcsdup = no; then
+    HAVE_DECL_WCSDUP=0
+  fi
 ])
 
 dnl Check whether <wchar.h> is usable at all.
 AC_DEFUN([gl_WCHAR_H_INLINE_OK],
 [
   dnl Test whether <wchar.h> suffers due to the transition from '__inline' to
-  dnl 'gnu_inline'. See <http://sourceware.org/bugzilla/show_bug.cgi?id=4022>
-  dnl and <http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42440>. In summary,
+  dnl 'gnu_inline'. See <https://sourceware.org/PR4022>
+  dnl and <https://gcc.gnu.org/PR42440>. In summary,
   dnl glibc version 2.5 or older, together with gcc version 4.3 or newer and
   dnl the option -std=c99 or -std=gnu99, leads to a broken <wchar.h>.
+  AC_REQUIRE([AC_CANONICAL_HOST])
   AC_CACHE_CHECK([whether <wchar.h> uses 'inline' correctly],
     [gl_cv_header_wchar_h_correct_inline],
     [gl_cv_header_wchar_h_correct_inline=yes
-     AC_LANG_CONFTEST([
-       AC_LANG_SOURCE([[#define wcstod renamed_wcstod
-/* Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-   <wchar.h>.
-   BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be
-   included before <wchar.h>.  */
-#include <stddef.h>
-#include <stdio.h>
-#include <time.h>
-#include <wchar.h>
-extern int zero (void);
-int main () { return zero(); }
-]])])
-     if AC_TRY_EVAL([ac_compile]); then
-       mv conftest.$ac_objext conftest1.$ac_objext
-       AC_LANG_CONFTEST([
-         AC_LANG_SOURCE([[#define wcstod renamed_wcstod
-/* Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-   <wchar.h>.
-   BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be
-   included before <wchar.h>.  */
-#include <stddef.h>
-#include <stdio.h>
-#include <time.h>
-#include <wchar.h>
-int zero (void) { return 0; }
-]])])
-       if AC_TRY_EVAL([ac_compile]); then
-         mv conftest.$ac_objext conftest2.$ac_objext
-         if $CC -o conftest$ac_exeext $CFLAGS $LDFLAGS conftest1.$ac_objext conftest2.$ac_objext $LIBS >&AS_MESSAGE_LOG_FD 2>&1; then
-           :
-         else
-           gl_cv_header_wchar_h_correct_inline=no
+     case "$host_os" in
+       *-gnu* | gnu*)
+         AC_LANG_CONFTEST([
+           AC_LANG_SOURCE([[
+             #define wcstod renamed_wcstod
+             #include <wchar.h>
+             extern int zero (void);
+             int main () { return zero(); }
+           ]])])
+         dnl Do not rename the object file from conftest.$ac_objext to
+         dnl conftest1.$ac_objext, as this will cause the link to fail on
+         dnl z/OS when using the XPLINK object format (due to duplicate
+         dnl CSECT names). Instead, temporarily redefine $ac_compile so
+         dnl that the object file has the latter name from the start.
+         saved_ac_compile="$ac_compile"
+         ac_compile=`echo "$saved_ac_compile" | sed s/conftest/conftest1/`
+         if echo '#include "conftest.c"' >conftest1.c \
+            && AC_TRY_EVAL([ac_compile]); then
+           AC_LANG_CONFTEST([
+             AC_LANG_SOURCE([[
+               #define wcstod renamed_wcstod
+               #include <wchar.h>
+               int zero (void) { return 0; }
+             ]])])
+           dnl See note above about renaming object files.
+           ac_compile=`echo "$saved_ac_compile" | sed s/conftest/conftest2/`
+           if echo '#include "conftest.c"' >conftest2.c \
+              && AC_TRY_EVAL([ac_compile]); then
+             if $CC -o conftest$ac_exeext $CFLAGS $LDFLAGS conftest1.$ac_objext conftest2.$ac_objext $LIBS >&AS_MESSAGE_LOG_FD 2>&1; then
+               :
+             else
+               gl_cv_header_wchar_h_correct_inline=no
+             fi
+           fi
          fi
-       fi
-     fi
-     rm -f conftest1.$ac_objext conftest2.$ac_objext conftest$ac_exeext
+         ac_compile="$saved_ac_compile"
+         rm -f conftest[12].c conftest[12].$ac_objext conftest$ac_exeext
+         ;;
+     esac
     ])
   if test $gl_cv_header_wchar_h_correct_inline = no; then
     AC_MSG_ERROR([<wchar.h> cannot be used with this compiler ($CC $CFLAGS $CPPFLAGS).
@@ -112,63 +119,86 @@ This is a known interoperability problem of glibc <= 2.5 with gcc >= 4.3 in
 C99 mode. You have four options:
   - Add the flag -fgnu89-inline to CC and reconfigure, or
   - Fix your include files, using parts of
-    <http://sourceware.org/git/?p=glibc.git;a=commitdiff;h=b037a293a48718af30d706c2e18c929d0e69a621>, or
+    <https://sourceware.org/git/?p=glibc.git;a=commitdiff;h=b037a293a48718af30d706c2e18c929d0e69a621>, or
   - Use a gcc version older than 4.3, or
   - Don't use the flags -std=c99 or -std=gnu99.
 Configuration aborted.])
   fi
 ])
 
+# gl_WCHAR_MODULE_INDICATOR([modulename])
+# sets the shell variable that indicates the presence of the given module
+# to a C preprocessor expression that will evaluate to 1.
+# This macro invocation must not occur in macros that are AC_REQUIREd.
 AC_DEFUN([gl_WCHAR_MODULE_INDICATOR],
 [
-  dnl Use AC_REQUIRE here, so that the default settings are expanded once only.
-  AC_REQUIRE([gl_WCHAR_H_DEFAULTS])
+  dnl Ensure to expand the default settings once only.
+  gl_WCHAR_H_REQUIRE_DEFAULTS
   gl_MODULE_INDICATOR_SET_VARIABLE([$1])
   dnl Define it also as a C macro, for the benefit of the unit tests.
   gl_MODULE_INDICATOR_FOR_TESTS([$1])
 ])
 
+# Initializes the default values for AC_SUBSTed shell variables.
+# This macro must not be AC_REQUIREd.  It must only be invoked, and only
+# outside of macros or in macros that are not AC_REQUIREd.
+AC_DEFUN([gl_WCHAR_H_REQUIRE_DEFAULTS],
+[
+  m4_defun(GL_MODULE_INDICATOR_PREFIX[_WCHAR_H_MODULE_INDICATOR_DEFAULTS], [
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_BTOWC])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCTOB])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSINIT])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSZERO])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBRTOWC])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBRLEN])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSRTOWCS])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSNRTOWCS])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCRTOMB])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSRTOMBS])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSNRTOMBS])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCWIDTH])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WMEMCHR])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WMEMCMP])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WMEMCPY])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WMEMMOVE])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WMEMPCPY])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WMEMSET])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSLEN])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSNLEN])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSCPY])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCPCPY])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSNCPY])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCPNCPY])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSCAT])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSNCAT])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSCMP])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSNCMP])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSCASECMP])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSNCASECMP])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSCOLL])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSXFRM])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSDUP])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSCHR])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSRCHR])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSCSPN])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSSPN])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSPBRK])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSSTR])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSTOK])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSWIDTH])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WCSFTIME])
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_WGETCWD])
+    dnl Support Microsoft deprecated alias function names by default.
+    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MDA_WCSDUP], [1])
+  ])
+  m4_require(GL_MODULE_INDICATOR_PREFIX[_WCHAR_H_MODULE_INDICATOR_DEFAULTS])
+  dnl Make sure the shell variable for GNULIB_FREE_POSIX is initialized.
+  gl_STDLIB_H_REQUIRE_DEFAULTS
+  AC_REQUIRE([gl_WCHAR_H_DEFAULTS])
+])
+
 AC_DEFUN([gl_WCHAR_H_DEFAULTS],
 [
-  GNULIB_BTOWC=0;       AC_SUBST([GNULIB_BTOWC])
-  GNULIB_WCTOB=0;       AC_SUBST([GNULIB_WCTOB])
-  GNULIB_MBSINIT=0;     AC_SUBST([GNULIB_MBSINIT])
-  GNULIB_MBRTOWC=0;     AC_SUBST([GNULIB_MBRTOWC])
-  GNULIB_MBRLEN=0;      AC_SUBST([GNULIB_MBRLEN])
-  GNULIB_MBSRTOWCS=0;   AC_SUBST([GNULIB_MBSRTOWCS])
-  GNULIB_MBSNRTOWCS=0;  AC_SUBST([GNULIB_MBSNRTOWCS])
-  GNULIB_WCRTOMB=0;     AC_SUBST([GNULIB_WCRTOMB])
-  GNULIB_WCSRTOMBS=0;   AC_SUBST([GNULIB_WCSRTOMBS])
-  GNULIB_WCSNRTOMBS=0;  AC_SUBST([GNULIB_WCSNRTOMBS])
-  GNULIB_WCWIDTH=0;     AC_SUBST([GNULIB_WCWIDTH])
-  GNULIB_WMEMCHR=0;     AC_SUBST([GNULIB_WMEMCHR])
-  GNULIB_WMEMCMP=0;     AC_SUBST([GNULIB_WMEMCMP])
-  GNULIB_WMEMCPY=0;     AC_SUBST([GNULIB_WMEMCPY])
-  GNULIB_WMEMMOVE=0;    AC_SUBST([GNULIB_WMEMMOVE])
-  GNULIB_WMEMSET=0;     AC_SUBST([GNULIB_WMEMSET])
-  GNULIB_WCSLEN=0;      AC_SUBST([GNULIB_WCSLEN])
-  GNULIB_WCSNLEN=0;     AC_SUBST([GNULIB_WCSNLEN])
-  GNULIB_WCSCPY=0;      AC_SUBST([GNULIB_WCSCPY])
-  GNULIB_WCPCPY=0;      AC_SUBST([GNULIB_WCPCPY])
-  GNULIB_WCSNCPY=0;     AC_SUBST([GNULIB_WCSNCPY])
-  GNULIB_WCPNCPY=0;     AC_SUBST([GNULIB_WCPNCPY])
-  GNULIB_WCSCAT=0;      AC_SUBST([GNULIB_WCSCAT])
-  GNULIB_WCSNCAT=0;     AC_SUBST([GNULIB_WCSNCAT])
-  GNULIB_WCSCMP=0;      AC_SUBST([GNULIB_WCSCMP])
-  GNULIB_WCSNCMP=0;     AC_SUBST([GNULIB_WCSNCMP])
-  GNULIB_WCSCASECMP=0;  AC_SUBST([GNULIB_WCSCASECMP])
-  GNULIB_WCSNCASECMP=0; AC_SUBST([GNULIB_WCSNCASECMP])
-  GNULIB_WCSCOLL=0;     AC_SUBST([GNULIB_WCSCOLL])
-  GNULIB_WCSXFRM=0;     AC_SUBST([GNULIB_WCSXFRM])
-  GNULIB_WCSDUP=0;      AC_SUBST([GNULIB_WCSDUP])
-  GNULIB_WCSCHR=0;      AC_SUBST([GNULIB_WCSCHR])
-  GNULIB_WCSRCHR=0;     AC_SUBST([GNULIB_WCSRCHR])
-  GNULIB_WCSCSPN=0;     AC_SUBST([GNULIB_WCSCSPN])
-  GNULIB_WCSSPN=0;      AC_SUBST([GNULIB_WCSSPN])
-  GNULIB_WCSPBRK=0;     AC_SUBST([GNULIB_WCSPBRK])
-  GNULIB_WCSSTR=0;      AC_SUBST([GNULIB_WCSSTR])
-  GNULIB_WCSTOK=0;      AC_SUBST([GNULIB_WCSTOK])
-  GNULIB_WCSWIDTH=0;    AC_SUBST([GNULIB_WCSWIDTH])
   dnl Assume proper GNU behavior unless another module says otherwise.
   HAVE_BTOWC=1;         AC_SUBST([HAVE_BTOWC])
   HAVE_MBSINIT=1;       AC_SUBST([HAVE_MBSINIT])
@@ -183,6 +213,7 @@ AC_DEFUN([gl_WCHAR_H_DEFAULTS],
   HAVE_WMEMCMP=1;       AC_SUBST([HAVE_WMEMCMP])
   HAVE_WMEMCPY=1;       AC_SUBST([HAVE_WMEMCPY])
   HAVE_WMEMMOVE=1;      AC_SUBST([HAVE_WMEMMOVE])
+  HAVE_WMEMPCPY=1;      AC_SUBST([HAVE_WMEMPCPY])
   HAVE_WMEMSET=1;       AC_SUBST([HAVE_WMEMSET])
   HAVE_WCSLEN=1;        AC_SUBST([HAVE_WCSLEN])
   HAVE_WCSNLEN=1;       AC_SUBST([HAVE_WCSNLEN])
@@ -207,7 +238,9 @@ AC_DEFUN([gl_WCHAR_H_DEFAULTS],
   HAVE_WCSSTR=1;        AC_SUBST([HAVE_WCSSTR])
   HAVE_WCSTOK=1;        AC_SUBST([HAVE_WCSTOK])
   HAVE_WCSWIDTH=1;      AC_SUBST([HAVE_WCSWIDTH])
-  HAVE_DECL_WCTOB=1;    AC_SUBST([HAVE_DECL_WCTOB])
+  HAVE_WCSFTIME=1;      AC_SUBST([HAVE_WCSFTIME])
+  HAVE_WCTOB=1;         AC_SUBST([HAVE_WCTOB])
+  HAVE_DECL_WCSDUP=1;   AC_SUBST([HAVE_DECL_WCSDUP])
   HAVE_DECL_WCWIDTH=1;  AC_SUBST([HAVE_DECL_WCWIDTH])
   REPLACE_MBSTATE_T=0;  AC_SUBST([REPLACE_MBSTATE_T])
   REPLACE_BTOWC=0;      AC_SUBST([REPLACE_BTOWC])
@@ -222,4 +255,12 @@ AC_DEFUN([gl_WCHAR_H_DEFAULTS],
   REPLACE_WCSNRTOMBS=0; AC_SUBST([REPLACE_WCSNRTOMBS])
   REPLACE_WCWIDTH=0;    AC_SUBST([REPLACE_WCWIDTH])
   REPLACE_WCSWIDTH=0;   AC_SUBST([REPLACE_WCSWIDTH])
+  REPLACE_WCSFTIME=0;   AC_SUBST([REPLACE_WCSFTIME])
+  REPLACE_WCSCMP=0;     AC_SUBST([REPLACE_WCSCMP])
+  REPLACE_WCSNCAT=0;    AC_SUBST([REPLACE_WCSNCAT])
+  REPLACE_WCSNCMP=0;    AC_SUBST([REPLACE_WCSNCMP])
+  REPLACE_WCSSTR=0;     AC_SUBST([REPLACE_WCSSTR])
+  REPLACE_WCSTOK=0;     AC_SUBST([REPLACE_WCSTOK])
+  REPLACE_WMEMCMP=0;    AC_SUBST([REPLACE_WMEMCMP])
+  REPLACE_WMEMPCPY=0;   AC_SUBST([REPLACE_WMEMPCPY])
 ])

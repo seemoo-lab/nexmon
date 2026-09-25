@@ -13,23 +13,17 @@
         <Directory Id="INSTALLFOLDER" Name="$(var.WiresharkName)">
           <Directory Id="dirDtds" Name="dtds"/>
           <Directory Id="dirDiameter" Name="diameter"/>
-          <Directory Id="dirEtc" Name="etc">
-            <Directory Id="dirEtcGtk2_0" Name="gtk-2.0"/>
-          </Directory>
           <Directory Id="dirExtcap" Name="extcap"/>
           <Directory Id="dirHelp" Name="help"/>
-          <Directory Id="dirLib" Name="lib">
-            <Directory Id="dirLibGtk2_0" Name="gtk-2.0">
-              <Directory Id="dirLibGtk2_0_2_10_0" Name="2.10.0">
-                <Directory Id="dirLibGtk2_0_2_10_0_engines" Name="engines"/>
-              </Directory>
-              <Directory Id="dirLibGtk2_0_modules" Name="modules"/>
-            </Directory>
-          </Directory>
           <Directory Id="dirRadius" Name="radius"/>
           <Directory Id="dirPlugins" Name="plugins">
-            <Directory Id="dirPluginsVersion" Name="$(var.WiresharkVersion)"/>
+            <Directory Id="dirPluginsVersion" Name="$(var.WiresharkMajorVersion).$(var.WiresharkMinorVersion)">
+              <Directory Id="dirPluginsVersionEpan" Name="epan"/>
+              <Directory Id="dirPluginsVersionWtap" Name="wiretap"/>
+              <Directory Id="dirPluginsVersionCodecs" Name="codecs"/>
+            </Directory>
           </Directory>
+          <Directory Id="dirUsersGuide" Name="Wireshark User's Guide"/>
           <Directory Id="dirProfiles" Name="profiles"/>
           <Directory Id="dirSnmp" Name="snmp">
             <Directory Id="dirSnmpMibs" Name="mibs"/>
@@ -37,6 +31,7 @@
           <Directory Id="dirTpncp" Name="tpncp"/>
           <Directory Id="dirTranslations" Name="translations"/>
           <Directory Id="dirWimaxasncp" Name="wimaxasncp"/>
+          <Directory Id="dirProtobuf" Name="protobuf"/>
         </Directory>
       </Directory>
 

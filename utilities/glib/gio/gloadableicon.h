@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,12 +36,6 @@ G_BEGIN_DECLS
 #define G_IS_LOADABLE_ICON(obj)	        (G_TYPE_CHECK_INSTANCE_TYPE ((obj), G_TYPE_LOADABLE_ICON))
 #define G_LOADABLE_ICON_GET_IFACE(obj)  (G_TYPE_INSTANCE_GET_INTERFACE ((obj), G_TYPE_LOADABLE_ICON, GLoadableIconIface))
 
-/**
- * GLoadableIcon:
- *
- * Generic type for all kinds of icons that can be loaded
- * as a stream.
- **/
 typedef struct _GLoadableIconIface    		GLoadableIconIface;
 
 /**
@@ -73,22 +69,22 @@ struct _GLoadableIconIface
                                   GError             **error);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType         g_loadable_icon_get_type    (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType         g_loadable_icon_get_type    (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GInputStream *g_loadable_icon_load        (GLoadableIcon        *icon,
 					   int                   size,
 					   char                **type,
 					   GCancellable         *cancellable,
 					   GError              **error);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void          g_loadable_icon_load_async  (GLoadableIcon        *icon,
 					   int                   size,
 					   GCancellable         *cancellable,
 					   GAsyncReadyCallback   callback,
 					   gpointer              user_data);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GInputStream *g_loadable_icon_load_finish (GLoadableIcon        *icon,
 					   GAsyncResult         *res,
 					   char                **type,

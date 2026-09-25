@@ -1,7 +1,5 @@
 /* xgettext Scheme backend.
-   Copyright (C) 2004-2009, 2011, 2015-2016 Free Software Foundation, Inc.
-
-   This file was written by Bruno Haible <bruno@clisp.org>, 2004-2005.
+   Copyright (C) 2004-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "x-scheme.h"
@@ -29,18 +27,37 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <error.h>
+#include "attribute.h"
 #include "message.h"
 #include "xgettext.h"
-#include "error.h"
+#include "unicase.h"
+#include "uninorm.h"
+#include "xg-pos.h"
+#include "xg-mixed-string.h"
+#include "xg-arglist-context.h"
+#include "xg-arglist-callshape.h"
+#include "xg-arglist-parser.h"
+#include "xg-message.h"
+#include "if-error.h"
 #include "xalloc.h"
-#include "hash.h"
+#include "mem-hash-map.h"
 #include "gettext.h"
 
 #define _(s) gettext(s)
 
+#define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
 
-/* The Scheme syntax is described in R5RS.  It is implemented in
-   guile-2.0.0/libguile/read.c.
+
+/* The Scheme syntax is described in R5RS and following standards:
+     - R5RS: https://conservatory.scheme.org/schemers/Documents/Standards/R5RS/HTML/
+     - R6RS: https://www.r6rs.org/
+     - R7RS: https://standards.scheme.org/corrected-r7rs/r7rs.html
+
+   It is implemented in guile-3.0.10/module/ice-9/read.scm, with support of
+   #!r6rs.  What you see in guile-3.0.10/libguile/read.c is just the bootstrap
+   reader, without support of #!r6rs and similar directives.
+
    Since we are interested only in strings and in forms similar to
         (gettext msgid ...)
    or   (ngettext msgid msgid_plural ...)
@@ -60,7 +77,18 @@
    - The syntax code assigned to each character, and how tokens are built
      up from characters (single escape, multiple escape etc.).
 
-   - Comment syntax: ';' and '#! ... !#' and '#| ... |#' (may be nested).
+   - Directives:
+       #!r6rs          (see R6RS § 4) turns R6RS compliance on
+       #!fold-case     (see R7RS § 2.1) turns case-folding of identifiers on
+       #!no-fold-case  (see R7RS § 2.1) turns case-folding of identifiers off
+       #!curly-infix                    (guile specific)
+       #!curly-infix-and-bracket-lists  (guile specific)
+
+   - Comment syntax:
+       ';' up to end of line
+       '#;' <datum> (see R6RS § 4.2.3, R7RS § 2.2)
+       '#! ... !#'
+       '#| ... |#' (may be nested)
 
    - String syntax: "..." with single escapes.
 
@@ -93,18 +121,16 @@ x_scheme_keyword (const char *name)
     default_keywords = false;
   else
     {
-      const char *end;
-      struct callshape shape;
-      const char *colon;
-
       if (keywords.table == NULL)
         hash_init (&keywords, 100);
 
+      const char *end;
+      struct callshape shape;
       split_keywordspec (name, &end, &shape);
 
       /* The characters between name and end should form a valid Lisp symbol.
          Extract the symbol name part.  */
-      colon = strchr (name, ':');
+      const char *colon = strchr (name, ':');
       if (colon != NULL && colon < end)
         {
           name = colon + 1;
@@ -148,47 +174,85 @@ init_flag_table_scheme ()
 
 /* ======================== Reading of characters.  ======================== */
 
-/* Real filename, used in error messages about the input file.  */
-static const char *real_file_name;
-
-/* Logical filename and line number, used to label the extracted messages.  */
-static char *logical_file_name;
-static int line_number;
-
 /* The input file stream.  */
 static FILE *fp;
 
 
 /* Fetch the next character from the input file.  */
 static int
-do_getc ()
+phase0_getc ()
 {
   int c = getc (fp);
 
   if (c == EOF)
     {
       if (ferror (fp))
-        error (EXIT_FAILURE, errno, _("\
-error while reading \"%s\""), real_file_name);
+        error (EXIT_FAILURE, errno,
+               _("error while reading \"%s\""), real_file_name);
     }
-  else if (c == '\n')
-   line_number++;
 
   return c;
 }
 
 /* Put back the last fetched character, not EOF.  */
-static void
-do_ungetc (int c)
+MAYBE_UNUSED static void
+phase0_ungetc (int c)
 {
-  if (c == '\n')
-    line_number--;
   ungetc (c, fp);
+}
+
+
+/* 1. line_number handling.  */
+
+/* Maximum used.
+   Must be larger than the longest possible directive.  */
+#define MAX_PHASE1_PUSHBACK 32
+static unsigned char phase1_pushback[MAX_PHASE1_PUSHBACK];
+static int phase1_pushback_length;
+
+/* Read the next single character from the input file.  */
+static int
+phase1_getc ()
+{
+  int c;
+
+  if (phase1_pushback_length)
+    c = phase1_pushback[--phase1_pushback_length];
+  else
+    c = phase0_getc ();
+
+  if (c == '\n')
+    ++line_number;
+
+  return c;
+}
+
+/* Supports MAX_PHASE1_PUSHBACK characters of pushback.  */
+static void
+phase1_ungetc (int c)
+{
+  if (c != EOF)
+    {
+      if (c == '\n')
+        --line_number;
+
+      if (phase1_pushback_length == SIZEOF (phase1_pushback))
+        abort ();
+      phase1_pushback[phase1_pushback_length++] = c;
+    }
 }
 
 
 /* ========================== Reading of tokens.  ========================== */
 
+
+/* True to follow what Guile does (before a '#!r6rs' directive is seen).
+   False to follow R6RS and R7RS.  */
+static bool follow_guile;
+
+/* True if all read identifiers are to be casefolded, i.e. essentially mapped
+   to lower case.  */
+static bool casefold;
 
 /* A token consists of a sequence of characters.  */
 struct token
@@ -237,14 +301,14 @@ read_token (struct token *tp, int first)
 
   for (;;)
     {
-      int c = do_getc ();
+      int c = phase1_getc ();
 
       if (c == EOF)
         break;
       if (c == ' ' || c == '\r' || c == '\f' || c == '\t' || c == '\n'
           || c == '"' || c == '(' || c == ')' || c == ';')
         {
-          do_ungetc (c);
+          phase1_ungetc (c);
           break;
         }
       grow_token (tp);
@@ -295,13 +359,11 @@ is_integer_syntax (const char *str, int len, int radix)
    If unconstrained is false, only real numbers are accepted; otherwise,
    complex numbers are accepted as well.
    Taken from guile-1.6.4/libguile/numbers.c:scm_istr2flo().  */
-static inline bool
+static bool
 is_other_number_syntax (const char *str, int len, int radix, bool unconstrained)
 {
   const char *p = str;
   const char *p_end = str + len;
-  bool seen_sign;
-  bool seen_digits;
 
   /* The accepted syntaxes are:
      for a floating-point number:
@@ -320,8 +382,9 @@ is_other_number_syntax (const char *str, int len, int radix, bool unconstrained)
    */
   if (p == p_end)
     return false;
+
   /* Parse leading sign.  */
-  seen_sign = false;
+  bool seen_sign = false;
   if (*p == '+' || *p == '-')
     {
       p++;
@@ -332,8 +395,9 @@ is_other_number_syntax (const char *str, int len, int radix, bool unconstrained)
       if (unconstrained && (*p == 'I' || *p == 'i') && p + 1 == p_end)
         return true;
     }
+
   /* Parse digits before dot or exponent or slash.  */
-  seen_digits = false;
+  bool seen_digits = false;
   do
     {
       int c = *p;
@@ -360,6 +424,7 @@ is_other_number_syntax (const char *str, int len, int radix, bool unconstrained)
       p++;
     }
   while (p < p_end);
+
   /* If p == p_end, we know that seen_digits = true, and the number is an
      integer without exponent.  */
   if (p < p_end)
@@ -498,13 +563,14 @@ is_number (const struct token *tp)
 {
   const char *str = tp->chars;
   int len = tp->charcount;
-  enum { unknown, exact, inexact } exactness = unknown;
-  bool seen_radix_prefix = false;
-  bool seen_exactness_prefix = false;
 
   if (len == 1)
     if (*str == '+' || *str == '-')
       return false;
+
+  enum { unknown, exact, inexact } exactness = unknown;
+  bool seen_radix_prefix = false;
+  bool seen_exactness_prefix = false;
   while (len >= 2 && *str == '#')
     {
       switch (str[1])
@@ -562,6 +628,249 @@ is_number (const struct token *tp)
         return true;
     }
   return false;
+}
+
+/* Read a string literal.  */
+static void
+accumulate_escaped (struct mixed_string_buffer *literal)
+{
+  for (;;)
+    {
+      int c = phase1_getc ();
+      if (c == EOF)
+        /* Invalid input.  Be tolerant, no error message.  */
+        break;
+      if (c == '"')
+        break;
+      if (c == '\\')
+        {
+          c = phase1_getc ();
+          if (c == EOF)
+            /* Invalid input.  Be tolerant, no error message.  */
+            break;
+          if (c == ' ' || c == '\t')
+            {
+              if (follow_guile)
+               /* Invalid input.  Be tolerant, no error message.  */
+                ;
+              else
+                {
+                  /* In R6RS mode, a sequence of spaces and tabs is
+                     allowed between the backslash and the newline.
+                     Other than that, backslash-space and backslash-tab
+                     are not allowed.  See R6RS § 4.2.7, R7RS § 6.7.  */
+                  do
+                    c = phase1_getc ();
+                  while (c == ' ' || c == '\t');
+                  if (c == EOF)
+                    /* Invalid input.  Be tolerant, no error message.  */
+                    break;
+                  if (c != '\n')
+                    {
+                      /* Invalid input.  Be tolerant, no error message.  */
+                      phase1_ungetc (c);
+                      continue;
+                    }
+                }
+            }
+          if (c == '\n')
+            {
+              if (!follow_guile)
+                {
+                  /* In R6RS mode, a sequence of spaces and tabs is
+                     allowed after the newline and is discarded.
+                     See R6RS § 4.2.7, R7RS § 6.7.  */
+                  do
+                    c = phase1_getc ();
+                  while (c == ' ' || c == '\t');
+                  if (c == EOF)
+                    /* Invalid input.  Be tolerant, no error message.  */
+                    break;
+                  phase1_ungetc (c);
+                }
+              continue;
+            }
+          if (follow_guile && (c == 'x' || c == 'u' || c == 'U'))
+            {
+              /* In Guile, \x must be followed by exactly 2 hexadecimal digits,
+                 \u must be followed by exactly 4 hexadecimal digits, and
+                 \U must be followed by exactly 6 hexadecimal digits, producing
+                 a value < 0x110000.  See
+                 <https://www.gnu.org/software/guile/manual/html_node/String-Syntax.html>.  */
+              int first = c;
+              unsigned int count = (c == 'x' ? 2 : c == 'u' ? 4 : 6);
+              unsigned int n_limit =
+                (c == 'x' ? 0x100 : c == 'u' ? 0x10000 : 0x110000);
+              c = phase1_getc ();
+              switch (c)
+                {
+                default:
+                  phase1_ungetc (c);
+                  phase1_ungetc (first);
+                  /* Invalid input.  Be tolerant, no error message.  */
+                  mixed_string_buffer_append_char (literal, '\\');
+                  continue;
+
+                case '0': case '1': case '2': case '3': case '4':
+                case '5': case '6': case '7': case '8': case '9':
+                case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+                case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+                  break;
+                }
+              {
+                unsigned int n = 0;
+                bool overflow = false;
+                for (;;)
+                  {
+                    switch (c)
+                      {
+                      default:
+                        phase1_ungetc (c);
+                        goto guile_hex_escape_done;
+
+                      case '0': case '1': case '2': case '3': case '4':
+                      case '5': case '6': case '7': case '8': case '9':
+                        if (n < n_limit / 16)
+                          n = n * 16 + c - '0';
+                        else
+                          overflow = true;
+                        break;
+
+                      case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+                        if (n < n_limit / 16)
+                          n = n * 16 + 10 + c - 'A';
+                        else
+                          overflow = true;
+                        break;
+
+                      case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+                        if (n < n_limit / 16)
+                          n = n * 16 + 10 + c - 'a';
+                        else
+                          overflow = true;
+                        break;
+                      }
+                    if (--count == 0)
+                      goto guile_hex_escape_done;
+                    c = phase1_getc ();
+                  }
+
+               guile_hex_escape_done:
+                if (count > 0)
+                  {
+                    if_error (IF_SEVERITY_WARNING,
+                              logical_file_name, line_number, (size_t)(-1), false,
+                              _("hexadecimal escape sequence with too few digits"));
+                    n = 0xFFFD;
+                  }
+                else if (overflow)
+                  {
+                    if_error (IF_SEVERITY_WARNING,
+                              logical_file_name, line_number, (size_t)(-1), false,
+                              _("hexadecimal escape sequence out of range"));
+                    n = 0xFFFD;
+                  }
+                mixed_string_buffer_append_unicode (literal, n);
+              }
+              continue;
+            }
+          if (!follow_guile && c == 'x')
+            {
+              /* In R6RS mode, \x must be followed by one or more hexadecimal
+                 digits and then a semicolon.  See
+                 R6RS § 4.2.7, R7RS § 6.7 and § 7.1.1.  */
+              unsigned int const n_limit = 0x110000;
+
+              unsigned int count = 0;
+              unsigned int n = 0;
+              bool overflow = false;
+              for (;;)
+                {
+                  c = phase1_getc ();
+                  switch (c)
+                    {
+                    case '0': case '1': case '2': case '3': case '4':
+                    case '5': case '6': case '7': case '8': case '9':
+                      if (n < n_limit / 16)
+                        n = n * 16 + c - '0';
+                      else
+                        overflow = true;
+                      break;
+
+                    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+                      if (n < n_limit / 16)
+                        n = n * 16 + 10 + c - 'A';
+                      else
+                        overflow = true;
+                      break;
+
+                    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+                      if (n < n_limit / 16)
+                        n = n * 16 + 10 + c - 'a';
+                      else
+                        overflow = true;
+                      break;
+
+                    case ';':
+                      if (count == 0)
+                        {
+                          if_error (IF_SEVERITY_WARNING,
+                                    logical_file_name, line_number, (size_t)(-1), false,
+                                    _("hexadecimal escape sequence with no digits"));
+                          n = 0xFFFD;
+                        }
+                      else if (overflow)
+                        {
+                          if_error (IF_SEVERITY_WARNING,
+                                    logical_file_name, line_number, (size_t)(-1), false,
+                                    _("hexadecimal escape sequence out of range"));
+                          n = 0xFFFD;
+                        }
+                      goto r6rs_hex_escape_done;
+
+                    default:
+                      if_error (IF_SEVERITY_WARNING,
+                                logical_file_name, line_number, (size_t)(-1), false,
+                                _("hexadecimal escape sequence not terminated with a semicolon"));
+                      n = '\\';
+                      goto r6rs_hex_escape_done;
+                    }
+                  count++;
+                }
+
+             r6rs_hex_escape_done:
+              mixed_string_buffer_append_unicode (literal, n);
+              continue;
+            }
+          switch (c)
+            {
+            case '0':
+              c = '\0';
+              break;
+            case 'a':
+              c = '\a';
+              break;
+            case 'f':
+              c = '\f';
+              break;
+            case 'n':
+              c = '\n';
+              break;
+            case 'r':
+              c = '\r';
+              break;
+            case 't':
+              c = '\t';
+              break;
+            case 'v':
+              c = '\v';
+              break;
+            default:
+              break;
+            }
+        }
+      mixed_string_buffer_append_char (literal, c);
+    }
 }
 
 
@@ -636,19 +945,22 @@ enum object_type
 struct object
 {
   enum object_type type;
-  struct token *token;          /* for t_symbol and t_string */
-  int line_number_at_start;     /* for t_string */
+  struct token *token;           /* for t_symbol */
+  mixed_string_ty *mixed_string; /* for t_string */
+  int line_number_at_start;      /* for t_string */
 };
 
 /* Free the memory pointed to by a 'struct object'.  */
 static inline void
 free_object (struct object *op)
 {
-  if (op->type == t_symbol || op->type == t_string)
+  if (op->type == t_symbol)
     {
       free_token (op->token);
       free (op->token);
     }
+  else if (op->type == t_string)
+    mixed_string_free (op->mixed_string);
 }
 
 /* Convert a t_symbol/t_string token to a char*.  */
@@ -656,30 +968,54 @@ static char *
 string_of_object (const struct object *op)
 {
   char *str;
-  int n;
 
-  if (!(op->type == t_symbol || op->type == t_string))
+  if (op->type == t_symbol)
+    {
+      int n = op->token->charcount;
+      str = XNMALLOC (n + 1, char);
+      memcpy (str, op->token->chars, n);
+      str[n] = '\0';
+      /* In this case, str's encoding is the xgettext_current_source_encoding.  */
+    }
+  else if (op->type == t_string)
+    {
+      str = mixed_string_contents (op->mixed_string);
+      /* In this case, str is UTF-8 encoded.  */
+    }
+  else
     abort ();
-  n = op->token->charcount;
-  str = XNMALLOC (n + 1, char);
-  memcpy (str, op->token->chars, n);
-  str[n] = '\0';
   return str;
 }
+
 
 /* Context lookup table.  */
 static flag_context_list_table_ty *flag_context_list_table;
 
+
+/* Maximum supported nesting depth.  */
+#define MAX_NESTING_DEPTH 1000
+
+/* Current nesting depth.  */
+static int nesting_depth;
+
+/* Current nesting depth of #;<datum> comments.  */
+static int datum_comment_nesting_depth;
+
+
 /* Read the next object.  */
 static void
-read_object (struct object *op, flag_context_ty outer_context)
+read_object (struct object *op, flag_region_ty *outer_region)
 {
+  if (nesting_depth > MAX_NESTING_DEPTH)
+    if_error (IF_SEVERITY_FATAL_ERROR,
+              logical_file_name, line_number, (size_t)(-1), false,
+              _("too deeply nested objects"));
   for (;;)
     {
-      int c = do_getc ();
+      int ch = phase1_getc ();
       bool seen_underscore_prefix = false;
 
-      switch (c)
+      switch (ch)
         {
         case EOF:
           op->type = t_eof;
@@ -698,13 +1034,12 @@ read_object (struct object *op, flag_context_ty outer_context)
 
         case ';':
           {
-            bool all_semicolons = true;
-
             last_comment_line = line_number;
             comment_start ();
+            bool all_semicolons = true;
             for (;;)
               {
-                c = do_getc ();
+                int c = phase1_getc ();
                 if (c == EOF || c == '\n')
                   break;
                 if (c != ';')
@@ -722,25 +1057,26 @@ read_object (struct object *op, flag_context_ty outer_context)
 
         case '(':
           {
-             int arg = 0;               /* Current argument number.  */
-             flag_context_list_iterator_ty context_iter;
+            int arg = 0;                /* Current argument number.  */
+            flag_context_list_iterator_ty context_iter;
             const struct callshapes *shapes = NULL;
             struct arglist_parser *argparser = NULL;
 
-             for (;; arg++)
-               {
-                struct object inner;
-                flag_context_ty inner_context;
-
+            for (;; arg++)
+              {
+                flag_region_ty *inner_region;
                 if (arg == 0)
-                  inner_context = null_context;
+                  inner_region = null_context_region ();
                 else
-                  inner_context =
-                    inherited_context (outer_context,
+                  inner_region =
+                    inheriting_region (outer_region,
                                        flag_context_list_iterator_advance (
                                          &context_iter));
 
-                read_object (&inner, inner_context);
+                ++nesting_depth;
+                struct object inner;
+                read_object (&inner, inner_region);
+                nesting_depth--;
 
                 /* Recognize end of list.  */
                 if (inner.type == t_close)
@@ -749,6 +1085,7 @@ read_object (struct object *op, flag_context_ty outer_context)
                     last_non_comment_line = line_number;
                     if (argparser != NULL)
                       arglist_parser_done (argparser, arg);
+                    unref_region (inner_region);
                     return;
                   }
 
@@ -763,11 +1100,34 @@ read_object (struct object *op, flag_context_ty outer_context)
                 if (arg == 0)
                   {
                     /* This is the function position.  */
-                    if (inner.type == t_symbol)
+                    if (datum_comment_nesting_depth == 0
+                        && inner.type == t_symbol)
                       {
                         char *symbol_name = string_of_object (&inner);
-                        void *keyword_value;
+                        if (casefold)
+                          {
+                            char *symbol_name_converted =
+                              from_current_source_encoding (symbol_name,
+                                                            lc_outside,
+                                                            logical_file_name,
+                                                            line_number);
+                            size_t symbol_name_casefolded_len;
+                            char *symbol_name_casefolded =
+                              (char *)
+                              u8_casefold ((uint8_t *) symbol_name_converted,
+                                           strlen (symbol_name_converted) + 1,
+                                           NULL, UNINORM_NFC,
+                                           NULL, &symbol_name_casefolded_len);
+                            if (symbol_name_converted != symbol_name)
+                              free (symbol_name_converted);
+                            if (symbol_name_casefolded != NULL)
+                              {
+                                free (symbol_name);
+                                symbol_name = symbol_name_casefolded;
+                              }
+                          }
 
+                        void *keyword_value;
                         if (hash_find_entry (&keywords,
                                              symbol_name, strlen (symbol_name),
                                              &keyword_value)
@@ -790,15 +1150,24 @@ read_object (struct object *op, flag_context_ty outer_context)
                 else
                   {
                     /* These are the argument positions.  */
-                    if (argparser != NULL && inner.type == t_string)
-                      arglist_parser_remember (argparser, arg,
-                                               string_of_object (&inner),
-                                               inner_context,
-                                               logical_file_name,
-                                               inner.line_number_at_start,
-                                               savable_comment);
+                    if (datum_comment_nesting_depth == 0
+                        && argparser != NULL && inner.type == t_string)
+                      {
+                        char *s = string_of_object (&inner);
+                        mixed_string_ty *ms =
+                          mixed_string_alloc_utf8 (s, lc_string,
+                                                   logical_file_name,
+                                                   inner.line_number_at_start);
+                        free (s);
+                        arglist_parser_remember (argparser, arg, ms,
+                                                 inner_region,
+                                                 logical_file_name,
+                                                 inner.line_number_at_start,
+                                                 savable_comment, false);
+                      }
                   }
 
+                unref_region (inner_region);
                 free_object (&inner);
               }
             if (argparser != NULL)
@@ -818,19 +1187,20 @@ read_object (struct object *op, flag_context_ty outer_context)
 
         case ',':
           {
-            int c = do_getc ();
+            int c = phase1_getc ();
             /* The ,@ handling inside lists is wrong anyway, because
                ,@form expands to an unknown number of elements.  */
             if (c != EOF && c != '@')
-              do_ungetc (c);
+              phase1_ungetc (c);
           }
-          /*FALLTHROUGH*/
+          FALLTHROUGH;
         case '\'':
         case '`':
           {
+            ++nesting_depth;
             struct object inner;
-
-            read_object (&inner, null_context);
+            read_object (&inner, null_context_region ());
+            nesting_depth--;
 
             /* Dots and EOF are not allowed here.  But be tolerant.  */
 
@@ -844,21 +1214,23 @@ read_object (struct object *op, flag_context_ty outer_context)
         case '#':
           /* Dispatch macro handling.  */
           {
-            c = do_getc ();
-            if (c == EOF)
+            int dmc = phase1_getc ();
+            if (dmc == EOF)
               /* Invalid input.  Be tolerant, no error message.  */
               {
                 op->type = t_other;
                 return;
               }
 
-            switch (c)
+            switch (dmc)
               {
               case '(': /* Vector */
-                do_ungetc (c);
+                phase1_ungetc (dmc);
                 {
+                  ++nesting_depth;
                   struct object inner;
-                  read_object (&inner, null_context);
+                  read_object (&inner, null_context_region ());
+                  nesting_depth--;
                   /* Dots and EOF are not allowed here.
                      But be tolerant.  */
                   free_object (&inner);
@@ -868,10 +1240,94 @@ read_object (struct object *op, flag_context_ty outer_context)
                 }
 
               case 'T': case 't': /* Boolean true */
-              case 'F': case 'f': /* Boolean false */
+              case 'F': /* Boolean false */
                 op->type = t_other;
                 last_non_comment_line = line_number;
                 return;
+
+              case 'a':
+              case 'c':
+              case 'f':
+              case 'h':
+              case 'l':
+              case 's':
+              case 'u':
+              case 'v':
+              case 'y':
+                {
+                  phase1_ungetc (dmc);
+                  struct token token;
+                  read_token (&token, '#');
+                  if ((token.charcount == 2
+                       && (token.chars[1] == 'a' || token.chars[1] == 'c'
+                           || token.chars[1] == 'h' || token.chars[1] == 'l'
+                           || token.chars[1] == 's' || token.chars[1] == 'u'
+                           || token.chars[1] == 'y'))
+                      || (token.charcount == 3
+                          && (token.chars[1] == 's' || token.chars[1] == 'u')
+                          && token.chars[2] == '8')
+                      || (token.charcount == 4
+                          && (((token.chars[1] == 's' || token.chars[1] == 'u')
+                               && token.chars[2] == '1'
+                               && token.chars[3] == '6')
+                              || ((token.chars[1] == 'c'
+                                   || token.chars[1] == 'f'
+                                   || token.chars[1] == 's'
+                                   || token.chars[1] == 'u')
+                                  && ((token.chars[2] == '3'
+                                       && token.chars[3] == '2')
+                                      || (token.chars[2] == '6'
+                                          && token.chars[3] == '4')))
+                              || (token.chars[1] == 'v'
+                                  && token.chars[2] == 'u'
+                                  && token.chars[3] == '8'))))
+                    {
+                      int c = phase1_getc ();
+                      if (c != EOF)
+                        phase1_ungetc (c);
+                      if (c == '(')
+                        {
+                          /* Homogeneous vector syntax:
+                               #a(...) - vector of char
+                               #c(...) - vector of complex (old)
+                               #c32(...) - vector of complex of single-float
+                               #c64(...) - vector of complex of double-float
+                               #f32(...) - vector of single-float
+                               #f64(...) - vector of double-float
+                               #h(...) - vector of short (old)
+                               #l(...) - vector of long long (old)
+                               #s(...) - vector of single-float (old)
+                               #s8(...) - vector of signed 8-bit integers
+                               #s16(...) - vector of signed 16-bit integers
+                               #s32(...) - vector of signed 32-bit integers
+                               #s64(...) - vector of signed 64-bit integers
+                               #u(...) - vector of unsigned long (old)
+                               #u8(...) - vector of unsigned 8-bit integers
+                               #u16(...) - vector of unsigned 16-bit integers
+                               #u32(...) - vector of unsigned 32-bit integers
+                               #u64(...) - vector of unsigned 64-bit integers
+                               #vu8(...) - vector of byte
+                               #y(...) - vector of byte (old)
+                           */
+                          ++nesting_depth;
+                          struct object inner;
+                          read_object (&inner, null_context_region ());
+                          nesting_depth--;
+                          /* Dots and EOF are not allowed here.
+                             But be tolerant.  */
+                          free_token (&token);
+                          free_object (&inner);
+                          op->type = t_other;
+                          last_non_comment_line = line_number;
+                          return;
+                        }
+                    }
+                  /* Boolean false, or unknown # object.  But be tolerant.  */
+                  free_token (&token);
+                  op->type = t_other;
+                  last_non_comment_line = line_number;
+                  return;
+                }
 
               case 'B': case 'b':
               case 'O': case 'o':
@@ -880,8 +1336,8 @@ read_object (struct object *op, flag_context_ty outer_context)
               case 'E': case 'e':
               case 'I': case 'i':
                 {
+                  phase1_ungetc (dmc);
                   struct token token;
-                  do_ungetc (c);
                   read_token (&token, '#');
                   if (is_number (&token))
                     {
@@ -896,31 +1352,27 @@ read_object (struct object *op, flag_context_ty outer_context)
                       if (token.charcount == 2
                           && (token.chars[1] == 'e' || token.chars[1] == 'i'))
                         {
-                          c = do_getc ();
+                          int c = phase1_getc ();
                           if (c != EOF)
-                            do_ungetc (c);
+                            phase1_ungetc (c);
                           if (c == '(')
-                            /* Homogenous vector syntax, see arrays.scm.  */
-                            case 'a':   /* Vectors of char */
-                            case 'c':   /* Vectors of complex */
-                          /*case 'e':*/ /* Vectors of long */
-                            case 'h':   /* Vectors of short */
-                          /*case 'i':*/ /* Vectors of double-float */
-                            case 'l':   /* Vectors of long long */
-                            case 's':   /* Vectors of single-float */
-                            case 'u':   /* Vectors of unsigned long */
-                            case 'y':   /* Vectors of byte */
-                              {
-                                struct object inner;
-                                read_object (&inner, null_context);
-                                /* Dots and EOF are not allowed here.
-                                   But be tolerant.  */
-                                free_token (&token);
-                                free_object (&inner);
-                                op->type = t_other;
-                                last_non_comment_line = line_number;
-                                return;
-                              }
+                            {
+                              /* Homogeneous vector syntax:
+                                   #e(...) - vector of long (old)
+                                   #i(...) - vector of double-float (old)
+                               */
+                              ++nesting_depth;
+                              struct object inner;
+                              read_object (&inner, null_context_region ());
+                              nesting_depth--;
+                              /* Dots and EOF are not allowed here.
+                                 But be tolerant.  */
+                              free_token (&token);
+                              free_object (&inner);
+                              op->type = t_other;
+                              last_non_comment_line = line_number;
+                              return;
+                            }
                         }
                       /* Unknown # object.  But be tolerant.  */
                       free_token (&token);
@@ -930,71 +1382,163 @@ read_object (struct object *op, flag_context_ty outer_context)
                     }
                 }
 
-              case '!':
-                /* Block comment '#! ... !#'.  See
-                   <http://www.gnu.org/software/guile/manual/html_node/Block-Comments.html>.  */
+              case ';':
+                /* Datum comment '#; <datum>'.
+                   See R6RS § 4.2.3, R7RS § 2.2.  */
                 {
-                  int c;
+                  int saved_last_non_comment_line = last_non_comment_line;
+                  ++datum_comment_nesting_depth;
+                  ++nesting_depth;
+                  struct object inner;
+                  read_object (&inner, null_context_region ());
+                  nesting_depth--;
+                  datum_comment_nesting_depth--;
+                  last_non_comment_line = saved_last_non_comment_line;
+                  /* Dots and EOF are not allowed here.
+                     But be tolerant.  */
+                  free_object (&inner);
+                  last_comment_line = line_number;
+                  continue;
+                }
 
-                  comment_start ();
-                  c = do_getc ();
-                  for (;;)
+              case '!':
+                /* Directive or block comment.  */
+                {
+                  const char * const directives[] =
                     {
-                      if (c == EOF)
-                        break;
-                      if (c == '!')
+                      "r6rs",
+                      "fold-case",
+                      "no-fold-case",
+                      "curly-infix",
+                      "curly-infix-and-bracket-lists"
+                    };
+                  int num_directives = SIZEOF (directives);
+                  enum { max_directive_len = 29 };
+                  bool seen_directive = false;
+                  for (int d = 0; d < num_directives; d++)
+                    {
+                      const char *directive = directives[d];
+                      int directive_len = strlen (directive);
+                      int c[max_directive_len];
+                      int i;
+                      for (i = 0; i < directive_len; i++)
                         {
-                          c = do_getc ();
-                          if (c == EOF)
-                            break;
-                          if (c == '#')
+                          c[i] = phase1_getc ();
+                          if (c[i] != directive[i])
                             {
-                              comment_line_end (0);
+                              phase1_ungetc (c[i]);
                               break;
                             }
-                          else
-                            comment_add ('!');
                         }
-                      else
+                      if (i == directive_len)
                         {
-                          /* We skip all leading white space.  */
-                          if (!(buflen == 0 && (c == ' ' || c == '\t')))
-                            comment_add (c);
-                          if (c == '\n')
+                          int e = phase1_getc ();
+                          /* Like in read_token.  */
+                          if (e == ' '
+                              || e == '\r' || e == '\f' || e == '\t' || e == '\n'
+                              || e == '"' || e == '(' || e == ')' || e == ';')
                             {
-                              comment_line_end (1);
-                              comment_start ();
+                              /* Seen the directive.  */
+                              phase1_ungetc (e);
+                              seen_directive = true;
+                              switch (d)
+                                {
+                                case 0: /* #!r6rs */
+                                  follow_guile = false;
+                                  break;
+                                case 1: /* #!fold-case */
+                                  casefold = true;
+                                  break;
+                                case 2: /* #!no-fold-case */
+                                  casefold = false;
+                                  break;
+                                case 3: /* #!curly-infix */
+                                case 4: /* #!curly-infix-and-bracket-lists */
+                                  if_error (IF_SEVERITY_WARNING,
+                                            logical_file_name, line_number, (size_t)(-1),
+                                            false,
+                                            _("Unsupported Guile directive \"%s\"."),
+                                            directive);
+                                  break;
+                                default:
+                                  abort ();
+                                }
+                              break;
                             }
-                          c = do_getc ();
+                          phase1_ungetc (e);
+                        }
+                      while (i > 0)
+                        {
+                          i--;
+                          phase1_ungetc (c[i]);
                         }
                     }
-                  if (c == EOF)
+                  if (!seen_directive)
+                    /* Block comment '#! ... !#'.  See
+                       <https://www.gnu.org/software/guile/manual/html_node/Block-Comments.html>.  */
                     {
-                      /* EOF not allowed here.  But be tolerant.  */
-                      op->type = t_eof;
-                      return;
+                      int c;
+
+                      comment_start ();
+                      c = phase1_getc ();
+                      for (;;)
+                        {
+                          if (c == EOF)
+                            break;
+                          if (c == '!')
+                            {
+                              c = phase1_getc ();
+                              if (c == EOF)
+                                break;
+                              if (c == '#')
+                                {
+                                  comment_line_end (0);
+                                  break;
+                                }
+                              else
+                                comment_add ('!');
+                            }
+                          else
+                            {
+                              /* We skip all leading white space.  */
+                              if (!(buflen == 0 && (c == ' ' || c == '\t')))
+                                comment_add (c);
+                              if (c == '\n')
+                                {
+                                  comment_line_end (1);
+                                  comment_start ();
+                                }
+                              c = phase1_getc ();
+                            }
+                        }
+                      if (c == EOF)
+                        {
+                          /* EOF not allowed here.  But be tolerant.  */
+                          op->type = t_eof;
+                          return;
+                        }
+                      last_comment_line = line_number;
                     }
-                  last_comment_line = line_number;
                   continue;
                 }
 
               case '|':
                 /* Block comment '#| ... |#'.  See
-                   <http://www.gnu.org/software/guile/manual/html_node/Block-Comments.html>
-                   and <http://srfi.schemers.org/srfi-30/srfi-30.html>.  */
+                   <https://www.gnu.org/software/guile/manual/html_node/Block-Comments.html>
+                   and <https://srfi.schemers.org/srfi-30/srfi-30.html>.  */
                 {
                   int depth = 0;
                   int c;
 
                   comment_start ();
-                  c = do_getc ();
+                  c = phase1_getc ();
                   for (;;)
                     {
                       if (c == EOF)
                         break;
                       if (c == '|')
                         {
-                          c = do_getc ();
+                          c = phase1_getc ();
                           if (c == EOF)
                             break;
                           if (c == '#')
@@ -1007,14 +1551,14 @@ read_object (struct object *op, flag_context_ty outer_context)
                               depth--;
                               comment_add ('|');
                               comment_add ('#');
-                              c = do_getc ();
+                              c = phase1_getc ();
                             }
                           else
                             comment_add ('|');
                         }
                       else if (c == '#')
                         {
-                          c = do_getc ();
+                          c = phase1_getc ();
                           if (c == EOF)
                             break;
                           comment_add ('#');
@@ -1022,7 +1566,7 @@ read_object (struct object *op, flag_context_ty outer_context)
                             {
                               depth++;
                               comment_add ('|');
-                              c = do_getc ();
+                              c = phase1_getc ();
                             }
                         }
                       else
@@ -1035,7 +1579,7 @@ read_object (struct object *op, flag_context_ty outer_context)
                               comment_line_end (1);
                               comment_start ();
                             }
-                          c = do_getc ();
+                          c = phase1_getc ();
                         }
                     }
                   if (c == EOF)
@@ -1052,7 +1596,7 @@ read_object (struct object *op, flag_context_ty outer_context)
                 /* Bit vector.  */
                 {
                   struct token token;
-                  read_token (&token, c);
+                  read_token (&token, dmc);
                   /* The token should consists only of '0' and '1', except
                      for the initial '*'.  But be tolerant.  */
                   free_token (&token);
@@ -1070,23 +1614,23 @@ read_object (struct object *op, flag_context_ty outer_context)
 
                   for (;;)
                     {
-                      c = do_getc ();
+                      int c = phase1_getc ();
 
                       if (c == EOF)
                         break;
                       if (c == '\\')
                         {
-                          c = do_getc ();
+                          c = phase1_getc ();
                           if (c == EOF)
                             break;
                         }
                       else if (c == '}')
                         {
-                          c = do_getc ();
+                          c = phase1_getc ();
                           if (c == '#')
                             break;
                           if (c != EOF)
-                            do_ungetc (c);
+                            phase1_ungetc (c);
                           c = '}';
                         }
                       grow_token (op->token);
@@ -1101,10 +1645,10 @@ read_object (struct object *op, flag_context_ty outer_context)
               case '\\':
                 /* Character.  */
                 {
-                  struct token token;
-                  c = do_getc ();
+                  int c = phase1_getc ();
                   if (c != EOF)
                     {
+                      struct token token;
                       read_token (&token, c);
                       free_token (&token);
                     }
@@ -1133,18 +1677,23 @@ read_object (struct object *op, flag_context_ty outer_context)
                      n ::= DIGIT+
                      x ::= {'a'|'b'|'c'|'e'|'i'|'s'|'u'}
                  */
-                do
-                  c = do_getc ();
-                while (c >= '0' && c <= '9');
-                /* c should be one of {'a'|'b'|'c'|'e'|'i'|'s'|'u'}.
-                   But be tolerant.  */
-                /*FALLTHROUGH*/
+                {
+                  int c;
+                  do
+                    c = phase1_getc ();
+                  while (c >= '0' && c <= '9');
+                  /* c should be one of {'a'|'b'|'c'|'e'|'i'|'s'|'u'}.
+                     But be tolerant.  */
+                }
+                FALLTHROUGH;
               case '\'': /* boot-9.scm */
               case '.': /* boot-9.scm */
               case ',': /* srfi-10.scm */
                 {
+                  ++nesting_depth;
                   struct object inner;
-                  read_object (&inner, null_context);
+                  read_object (&inner, null_context_region ());
+                  nesting_depth--;
                   /* Dots and EOF are not allowed here.
                      But be tolerant.  */
                   free_object (&inner);
@@ -1167,7 +1716,7 @@ read_object (struct object *op, flag_context_ty outer_context)
           /* GIMP script-fu extension: '_' before a string literal is
              considered a gettext call on the string.  */
           {
-            int c = do_getc ();
+            int c = phase1_getc ();
             if (c == EOF)
               /* Invalid input.  Be tolerant, no error message.  */
               {
@@ -1176,7 +1725,7 @@ read_object (struct object *op, flag_context_ty outer_context)
               }
             if (c != '"')
               {
-                do_ungetc (c);
+                phase1_ungetc (c);
 
                 /* If '_' is not followed by a string literal,
                    consider it a part of symbol.  */
@@ -1188,69 +1737,30 @@ read_object (struct object *op, flag_context_ty outer_context)
               }
             seen_underscore_prefix = true;
           }
-          /*FALLTHROUGH*/
+          FALLTHROUGH;
 
         case '"':
+          /* String literal.  */
           {
-            op->token = XMALLOC (struct token);
-            init_token (op->token);
             op->line_number_at_start = line_number;
-            for (;;)
-              {
-                int c = do_getc ();
-                if (c == EOF)
-                  /* Invalid input.  Be tolerant, no error message.  */
-                  break;
-                if (c == '"')
-                  break;
-                if (c == '\\')
-                  {
-                    c = do_getc ();
-                    if (c == EOF)
-                      /* Invalid input.  Be tolerant, no error message.  */
-                      break;
-                    switch (c)
-                      {
-                      case '\n':
-                        continue;
-                      case '0':
-                        c = '\0';
-                        break;
-                      case 'a':
-                        c = '\a';
-                        break;
-                      case 'f':
-                        c = '\f';
-                        break;
-                      case 'n':
-                        c = '\n';
-                        break;
-                      case 'r':
-                        c = '\r';
-                        break;
-                      case 't':
-                        c = '\t';
-                        break;
-                      case 'v':
-                        c = '\v';
-                        break;
-                      default:
-                        break;
-                      }
-                  }
-                grow_token (op->token);
-                op->token->chars[op->token->charcount++] = c;
-              }
+            {
+              struct mixed_string_buffer literal;
+              mixed_string_buffer_init (&literal, lc_string,
+                                        logical_file_name, line_number);
+              accumulate_escaped (&literal);
+              op->mixed_string = mixed_string_buffer_result (&literal);
+            }
             op->type = t_string;
 
             if (seen_underscore_prefix || extract_all)
               {
                 lex_pos_ty pos;
-
                 pos.file_name = logical_file_name;
                 pos.line_number = op->line_number_at_start;
-                remember_a_message (mlp, NULL, string_of_object (op),
-                                    null_context, &pos, NULL, savable_comment);
+
+                remember_a_message (mlp, NULL, string_of_object (op), true,
+                                    false, null_context_region (), &pos,
+                                    NULL, savable_comment, false);
               }
             last_non_comment_line = line_number;
             return;
@@ -1261,7 +1771,7 @@ read_object (struct object *op, flag_context_ty outer_context)
         case '+': case '-': case '.':
           /* Read a number or symbol token.  */
           op->token = XMALLOC (struct token);
-          read_token (op->token, c);
+          read_token (op->token, ch);
           if (op->token->charcount == 1 && op->token->chars[0] == '.')
             {
               free_token (op->token);
@@ -1287,7 +1797,7 @@ read_object (struct object *op, flag_context_ty outer_context)
         default:
           /* Read a symbol token.  */
           op->token = XMALLOC (struct token);
-          read_token (op->token, c);
+          read_token (op->token, ch);
           op->type = t_symbol;
           last_non_comment_line = line_number;
           return;
@@ -1296,11 +1806,11 @@ read_object (struct object *op, flag_context_ty outer_context)
 }
 
 
-void
-extract_scheme (FILE *f,
-                const char *real_filename, const char *logical_filename,
-                flag_context_list_table_ty *flag_table,
-                msgdomain_list_ty *mdlp)
+static void
+extract_whole_file (FILE *f,
+                    const char *real_filename, const char *logical_filename,
+                    flag_context_list_table_ty *flag_table,
+                    msgdomain_list_ty *mdlp)
 {
   mlp = mdlp->item[0]->messages;
 
@@ -1309,10 +1819,16 @@ extract_scheme (FILE *f,
   logical_file_name = xstrdup (logical_filename);
   line_number = 1;
 
+  phase1_pushback_length = 0;
+
+  casefold = false;
+
   last_comment_line = -1;
   last_non_comment_line = -1;
 
   flag_context_list_table = flag_table;
+  nesting_depth = 0;
+  datum_comment_nesting_depth = 0;
 
   init_keywords ();
 
@@ -1322,7 +1838,7 @@ extract_scheme (FILE *f,
     {
       struct object toplevel_object;
 
-      read_object (&toplevel_object, null_context);
+      read_object (&toplevel_object, null_context_region ());
 
       if (toplevel_object.type == t_eof)
         break;
@@ -1336,4 +1852,24 @@ extract_scheme (FILE *f,
   real_file_name = NULL;
   logical_file_name = NULL;
   line_number = 0;
+}
+
+void
+extract_scheme (FILE *f,
+                const char *real_filename, const char *logical_filename,
+                flag_context_list_table_ty *flag_table,
+                msgdomain_list_ty *mdlp)
+{
+  follow_guile = false;
+  extract_whole_file (f, real_filename, logical_filename, flag_table, mdlp);
+}
+
+void
+extract_guile (FILE *f,
+               const char *real_filename, const char *logical_filename,
+               flag_context_list_table_ty *flag_table,
+               msgdomain_list_ty *mdlp)
+{
+  follow_guile = true;
+  extract_whole_file (f, real_filename, logical_filename, flag_table, mdlp);
 }

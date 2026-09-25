@@ -6,25 +6,11 @@
  * Copyright (C) 2003  Red Hat, Inc.
  * Copyright (C) 2003  Jonathan Blandford <jrb@alum.mit.edu>
  *
- * Licensed under the Academic Free License version 2.0
- * Or under the following terms:
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: LGPL-2.1-or-later or AFL-2.0
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #include "xdgmimeglob.h"
@@ -88,7 +74,7 @@ _xdg_glob_list_new (void)
   return new_element;
 }
 
-/* Frees glob_list and all of it's children */
+/* Frees glob_list and all of its children */
 static void
 _xdg_glob_list_free (XdgGlobList *glob_list)
 {
@@ -112,7 +98,7 @@ _xdg_glob_list_free (XdgGlobList *glob_list)
 
 static XdgGlobList *
 _xdg_glob_list_append (XdgGlobList *glob_list,
-		       void        *data,
+		       const char  *data,
 		       const char  *mime_type,
 		       int          weight,
 		       int          case_sensitive)
@@ -131,8 +117,8 @@ _xdg_glob_list_append (XdgGlobList *glob_list,
     }
 
   new_element = _xdg_glob_list_new ();
-  new_element->data = data;
-  new_element->mime_type = mime_type;
+  new_element->data = strdup (data);
+  new_element->mime_type = strdup (mime_type);
   new_element->weight = weight;
   new_element->case_sensitive = case_sensitive;
   if (glob_list == NULL)
@@ -160,8 +146,6 @@ _xdg_glob_hash_node_new (void)
   return glob_hash_node;
 }
 
-#ifdef NOT_USED_IN_GIO
-
 static void
 _xdg_glob_hash_node_dump (XdgGlobHashNode *glob_hash_node,
 			  int depth)
@@ -180,8 +164,6 @@ _xdg_glob_hash_node_dump (XdgGlobHashNode *glob_hash_node,
   if (glob_hash_node->next)
     _xdg_glob_hash_node_dump (glob_hash_node->next, depth);
 }
-
-#endif
 
 static XdgGlobHashNode *
 _xdg_glob_hash_insert_ucs4 (XdgGlobHashNode *glob_hash_node,
@@ -594,18 +576,16 @@ _xdg_glob_hash_append_glob (XdgGlobHash *glob_hash,
   switch (type)
     {
     case XDG_GLOB_LITERAL:
-      glob_hash->literal_list = _xdg_glob_list_append (glob_hash->literal_list, strdup (glob), strdup (mime_type), weight, case_sensitive);
+      glob_hash->literal_list = _xdg_glob_list_append (glob_hash->literal_list, glob, mime_type, weight, case_sensitive);
       break;
     case XDG_GLOB_SIMPLE:
       glob_hash->simple_node = _xdg_glob_hash_insert_text (glob_hash->simple_node, glob + 1, mime_type, weight, case_sensitive);
       break;
     case XDG_GLOB_FULL:
-      glob_hash->full_list = _xdg_glob_list_append (glob_hash->full_list, strdup (glob), strdup (mime_type), weight, case_sensitive);
+      glob_hash->full_list = _xdg_glob_list_append (glob_hash->full_list, glob, mime_type, weight, case_sensitive);
       break;
     }
 }
-
-#ifdef NOT_USED_IN_GIO
 
 void
 _xdg_glob_hash_dump (XdgGlobHash *glob_hash)
@@ -643,7 +623,6 @@ _xdg_glob_hash_dump (XdgGlobHash *glob_hash)
     }
 }
 
-#endif
 
 void
 _xdg_mime_glob_read_from_file (XdgGlobHash *glob_hash,

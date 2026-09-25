@@ -1,0 +1,13 @@
+[wrap-file]
+directory = libffi-3.5.2
+source_url = https://github.com/libffi/libffi/releases/download/v3.5.2/libffi-3.5.2.tar.gz
+source_filename = libffi-3.5.2.tar.gz
+source_hash = f3a3082a23b37c293a4fcd1053147b371f2ff91fa7ea1b2a52e335676bac82dc
+patch_filename = libffi_3.5.2-1_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/libffi_3.5.2-1/get_patch
+patch_hash = 1ee3035d92e4df3541d0b2b8d192d2fa183b46e4a3d68c00d8f71ede354bee74
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/libffi_3.5.2-1/libffi-3.5.2.tar.gz
+wrapdb_version = 3.5.2-1
+
+[provide]
+dependency_names = libffi

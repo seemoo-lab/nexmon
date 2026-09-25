@@ -1,0 +1,647 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSAXHandlerV1" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSAXHandlerV1</compoundname>
+    <includes local="no">parser.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a0328ae88f860fb790ba24737b6e42e3d" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1ae3be3f05449fd58f28dab948f98c0019" kindref="member">internalSubsetSAXFunc</ref></type>
+        <definition>internalSubsetSAXFunc internalSubset</definition>
+        <argsstring></argsstring>
+        <name>internalSubset</name>
+        <qualifiedname>_xmlSAXHandlerV1::internalSubset</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1205" column="27" bodyfile="parser.h" bodystart="1205" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a3a5b37537cb112b95034b9d12d152c3a" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1aae47c44a3f35c4894abc632c9ee89274" kindref="member">isStandaloneSAXFunc</ref></type>
+        <definition>isStandaloneSAXFunc isStandalone</definition>
+        <argsstring></argsstring>
+        <name>isStandalone</name>
+        <qualifiedname>_xmlSAXHandlerV1::isStandalone</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1206" column="25" bodyfile="parser.h" bodystart="1206" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1aee5c195920394d5add68fdfd156764c0" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1aa2da3f4f60619e33a10fd52b699f2d4e" kindref="member">hasInternalSubsetSAXFunc</ref></type>
+        <definition>hasInternalSubsetSAXFunc hasInternalSubset</definition>
+        <argsstring></argsstring>
+        <name>hasInternalSubset</name>
+        <qualifiedname>_xmlSAXHandlerV1::hasInternalSubset</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1207" column="30" bodyfile="parser.h" bodystart="1207" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a3dba0c62e2735583c2ff364880e69bb9" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a8ac7164d8c139e135e3a950215b6ca87" kindref="member">hasExternalSubsetSAXFunc</ref></type>
+        <definition>hasExternalSubsetSAXFunc hasExternalSubset</definition>
+        <argsstring></argsstring>
+        <name>hasExternalSubset</name>
+        <qualifiedname>_xmlSAXHandlerV1::hasExternalSubset</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1208" column="30" bodyfile="parser.h" bodystart="1208" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a3b837a1c8257f162e0309d7efdf9f940" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a2f6713769c7d76ee892c8d2b8440441c" kindref="member">resolveEntitySAXFunc</ref></type>
+        <definition>resolveEntitySAXFunc resolveEntity</definition>
+        <argsstring></argsstring>
+        <name>resolveEntity</name>
+        <qualifiedname>_xmlSAXHandlerV1::resolveEntity</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1209" column="26" bodyfile="parser.h" bodystart="1209" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a2b8cff8ecaad4fb2a60b8260d88592d8" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1aaa9c8e4e3ed37a64eced66e8d72840c1" kindref="member">getEntitySAXFunc</ref></type>
+        <definition>getEntitySAXFunc getEntity</definition>
+        <argsstring></argsstring>
+        <name>getEntity</name>
+        <qualifiedname>_xmlSAXHandlerV1::getEntity</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1210" column="22" bodyfile="parser.h" bodystart="1210" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1ad367cbc117be33c2e6eda084029dfe83" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a85f408324c98a8d32b8e6555c952bb11" kindref="member">entityDeclSAXFunc</ref></type>
+        <definition>entityDeclSAXFunc entityDecl</definition>
+        <argsstring></argsstring>
+        <name>entityDecl</name>
+        <qualifiedname>_xmlSAXHandlerV1::entityDecl</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1211" column="23" bodyfile="parser.h" bodystart="1211" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1afa583248715fc0155e531e3061f8bd0e" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1ae868d0df93c6a017772407d739099b5a" kindref="member">notationDeclSAXFunc</ref></type>
+        <definition>notationDeclSAXFunc notationDecl</definition>
+        <argsstring></argsstring>
+        <name>notationDecl</name>
+        <qualifiedname>_xmlSAXHandlerV1::notationDecl</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1212" column="25" bodyfile="parser.h" bodystart="1212" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1ad81455fb66af9e6a1c888d52ad9a9a51" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a4a7d84270ecad8060391d9c4c7cf6d57" kindref="member">attributeDeclSAXFunc</ref></type>
+        <definition>attributeDeclSAXFunc attributeDecl</definition>
+        <argsstring></argsstring>
+        <name>attributeDecl</name>
+        <qualifiedname>_xmlSAXHandlerV1::attributeDecl</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1213" column="26" bodyfile="parser.h" bodystart="1213" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a3e4f504817a2666d55260cb44574b06e" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1ac5ec19a6df95c97d32144d4f8213c400" kindref="member">elementDeclSAXFunc</ref></type>
+        <definition>elementDeclSAXFunc elementDecl</definition>
+        <argsstring></argsstring>
+        <name>elementDecl</name>
+        <qualifiedname>_xmlSAXHandlerV1::elementDecl</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1214" column="24" bodyfile="parser.h" bodystart="1214" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1af07934285725c2d214a6168ad4b7f8ed" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a6354bab61867807bfd9604458f4cb895" kindref="member">unparsedEntityDeclSAXFunc</ref></type>
+        <definition>unparsedEntityDeclSAXFunc unparsedEntityDecl</definition>
+        <argsstring></argsstring>
+        <name>unparsedEntityDecl</name>
+        <qualifiedname>_xmlSAXHandlerV1::unparsedEntityDecl</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1215" column="31" bodyfile="parser.h" bodystart="1215" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a68f9de83a145f83e8d10761374dfdb7c" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a4a2cd6237b2699478b458e4850f2d063" kindref="member">setDocumentLocatorSAXFunc</ref></type>
+        <definition>setDocumentLocatorSAXFunc setDocumentLocator</definition>
+        <argsstring></argsstring>
+        <name>setDocumentLocator</name>
+        <qualifiedname>_xmlSAXHandlerV1::setDocumentLocator</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1216" column="31" bodyfile="parser.h" bodystart="1216" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a666a323b26d5e99a42cf90680711b1f2" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a4268bb28d5cde065e253072f9fb043f7" kindref="member">startDocumentSAXFunc</ref></type>
+        <definition>startDocumentSAXFunc startDocument</definition>
+        <argsstring></argsstring>
+        <name>startDocument</name>
+        <qualifiedname>_xmlSAXHandlerV1::startDocument</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1217" column="26" bodyfile="parser.h" bodystart="1217" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a8c08e1284786e1cc6b002a541ce37a96" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1ac608920fca862211a347b7e566da5f07" kindref="member">endDocumentSAXFunc</ref></type>
+        <definition>endDocumentSAXFunc endDocument</definition>
+        <argsstring></argsstring>
+        <name>endDocument</name>
+        <qualifiedname>_xmlSAXHandlerV1::endDocument</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1218" column="24" bodyfile="parser.h" bodystart="1218" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1ad07098e48b100419b1e1a3fe0ed3dd4a" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1acd161dbf36daa156e929c43f0da82a57" kindref="member">startElementSAXFunc</ref></type>
+        <definition>startElementSAXFunc startElement</definition>
+        <argsstring></argsstring>
+        <name>startElement</name>
+        <qualifiedname>_xmlSAXHandlerV1::startElement</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1219" column="25" bodyfile="parser.h" bodystart="1219" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1ac4ffac749d80f063c01798627551d149" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1aa95bf34c49f3de2488ef85a4c29e5b8f" kindref="member">endElementSAXFunc</ref></type>
+        <definition>endElementSAXFunc endElement</definition>
+        <argsstring></argsstring>
+        <name>endElement</name>
+        <qualifiedname>_xmlSAXHandlerV1::endElement</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1220" column="23" bodyfile="parser.h" bodystart="1220" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1ac30f4b10ee69fd033afe519a4bf0a2dc" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1aec86c94e515536f0b51b49226fbc2d8c" kindref="member">referenceSAXFunc</ref></type>
+        <definition>referenceSAXFunc reference</definition>
+        <argsstring></argsstring>
+        <name>reference</name>
+        <qualifiedname>_xmlSAXHandlerV1::reference</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1221" column="22" bodyfile="parser.h" bodystart="1221" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a4eb00512f53e8f493633ce79a10ca238" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a7fd5e24151a5d5600ae4dce65969ec6c" kindref="member">charactersSAXFunc</ref></type>
+        <definition>charactersSAXFunc characters</definition>
+        <argsstring></argsstring>
+        <name>characters</name>
+        <qualifiedname>_xmlSAXHandlerV1::characters</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1222" column="23" bodyfile="parser.h" bodystart="1222" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a731ec4c733960aa456c70442da00c86a" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1aa33097820941f90d7f40002ea1645522" kindref="member">ignorableWhitespaceSAXFunc</ref></type>
+        <definition>ignorableWhitespaceSAXFunc ignorableWhitespace</definition>
+        <argsstring></argsstring>
+        <name>ignorableWhitespace</name>
+        <qualifiedname>_xmlSAXHandlerV1::ignorableWhitespace</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1223" column="32" bodyfile="parser.h" bodystart="1223" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a04fd7737754e2e258a152262295f2466" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a67fec9511920e346c9cf8db23619bf94" kindref="member">processingInstructionSAXFunc</ref></type>
+        <definition>processingInstructionSAXFunc processingInstruction</definition>
+        <argsstring></argsstring>
+        <name>processingInstruction</name>
+        <qualifiedname>_xmlSAXHandlerV1::processingInstruction</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1224" column="34" bodyfile="parser.h" bodystart="1224" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1af865974a949c76e9b286e4c1469de30c" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a4c805c301c421fcc1706f23318089471" kindref="member">commentSAXFunc</ref></type>
+        <definition>commentSAXFunc comment</definition>
+        <argsstring></argsstring>
+        <name>comment</name>
+        <qualifiedname>_xmlSAXHandlerV1::comment</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1225" column="20" bodyfile="parser.h" bodystart="1225" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a0c544f0ab99445b0a1f6a3aa2d08264c" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a3c936add47426035072fa3c74c756a0d" kindref="member">warningSAXFunc</ref></type>
+        <definition>warningSAXFunc warning</definition>
+        <argsstring></argsstring>
+        <name>warning</name>
+        <qualifiedname>_xmlSAXHandlerV1::warning</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1226" column="20" bodyfile="parser.h" bodystart="1226" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a5967328166d93d99eae85f23603f4b8b" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a17346e47f79a3e856155920008def17a" kindref="member">errorSAXFunc</ref></type>
+        <definition>errorSAXFunc error</definition>
+        <argsstring></argsstring>
+        <name>error</name>
+        <qualifiedname>_xmlSAXHandlerV1::error</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1227" column="18" bodyfile="parser.h" bodystart="1227" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1ac8ab4254d39bf9e284d4fb2e7e818311" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1ae8355da372afe12a16911fab33885028" kindref="member">fatalErrorSAXFunc</ref></type>
+        <definition>fatalErrorSAXFunc fatalError</definition>
+        <argsstring></argsstring>
+        <name>fatalError</name>
+        <qualifiedname>_xmlSAXHandlerV1::fatalError</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1228" column="23" bodyfile="parser.h" bodystart="1228" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1afd67d6b7ffb1942ea4abd00d9bad560c" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a01130568df5ed0f24653a00caf419cbf" kindref="member">getParameterEntitySAXFunc</ref></type>
+        <definition>getParameterEntitySAXFunc getParameterEntity</definition>
+        <argsstring></argsstring>
+        <name>getParameterEntity</name>
+        <qualifiedname>_xmlSAXHandlerV1::getParameterEntity</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1229" column="31" bodyfile="parser.h" bodystart="1229" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a2d7262ee78d117bb9a6ac16c2f32d8c2" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a0b0bc862805a2b3dda16c90504e5483f" kindref="member">cdataBlockSAXFunc</ref></type>
+        <definition>cdataBlockSAXFunc cdataBlock</definition>
+        <argsstring></argsstring>
+        <name>cdataBlock</name>
+        <qualifiedname>_xmlSAXHandlerV1::cdataBlock</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1230" column="23" bodyfile="parser.h" bodystart="1230" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1a2e5ac62ed929bc447ab06a6e57677968" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a97f9adc14726a761e46415cc938c8657" kindref="member">externalSubsetSAXFunc</ref></type>
+        <definition>externalSubsetSAXFunc externalSubset</definition>
+        <argsstring></argsstring>
+        <name>externalSubset</name>
+        <qualifiedname>_xmlSAXHandlerV1::externalSubset</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1231" column="27" bodyfile="parser.h" bodystart="1231" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXHandlerV1_1af00a707f65afa5d0f6cf27ec821bb763" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int initialized</definition>
+        <argsstring></argsstring>
+        <name>initialized</name>
+        <qualifiedname>_xmlSAXHandlerV1::initialized</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="1232" column="18" bodyfile="parser.h" bodystart="1232" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>SAX handler, version 1. </para>
+    </briefdescription>
+    <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000005"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use version 2 handlers. </para>
+</xrefdescription></xrefsect></para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="13">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="7" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="4">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="11">
+        <label>_xmlDict</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="12">
+        <label>_xmlDictStrings</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="7" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="7" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="16">
+        <label>_xmlElementContent</label>
+        <link refid="struct__xmlElementContent"/>
+        <childnode refid="16" relation="usage">
+          <edgelabel>c1</edgelabel>
+          <edgelabel>c2</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlEntity</label>
+        <link refid="struct__xmlEntity"/>
+        <childnode refid="7" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>nexte</edgelabel>
+        </childnode>
+      </node>
+      <node id="15">
+        <label>_xmlEnumeration</label>
+        <link refid="struct__xmlEnumeration"/>
+        <childnode refid="15" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="14">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="14" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="7" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="10" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlParserInput</label>
+        <link refid="struct__xmlParserInput"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>buf</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>entity</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlParserInputBuffer</label>
+        <link refid="struct__xmlParserInputBuffer"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>raw</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlSAXHandlerV1</label>
+        <link refid="struct__xmlSAXHandlerV1"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>resolveEntity</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>getEntity</edgelabel>
+          <edgelabel>getParameterEntity</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>attributeDecl</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>elementDecl</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>setDocumentLocator</edgelabel>
+        </childnode>
+      </node>
+      <node id="17">
+        <label>_xmlSAXLocator</label>
+        <link refid="struct__xmlSAXLocator"/>
+      </node>
+    </collaborationgraph>
+    <location file="parser.h" line="1204" column="1" bodyfile="parser.h" bodystart="1204" bodyend="1233"/>
+    <listofallmembers>
+      <member refid="struct__xmlSAXHandlerV1_1ad81455fb66af9e6a1c888d52ad9a9a51" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>attributeDecl</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a2d7262ee78d117bb9a6ac16c2f32d8c2" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>cdataBlock</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a4eb00512f53e8f493633ce79a10ca238" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>characters</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1af865974a949c76e9b286e4c1469de30c" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>comment</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a3e4f504817a2666d55260cb44574b06e" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>elementDecl</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a8c08e1284786e1cc6b002a541ce37a96" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>endDocument</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1ac4ffac749d80f063c01798627551d149" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>endElement</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1ad367cbc117be33c2e6eda084029dfe83" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>entityDecl</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a5967328166d93d99eae85f23603f4b8b" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>error</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a2e5ac62ed929bc447ab06a6e57677968" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>externalSubset</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1ac8ab4254d39bf9e284d4fb2e7e818311" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>fatalError</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a2b8cff8ecaad4fb2a60b8260d88592d8" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>getEntity</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1afd67d6b7ffb1942ea4abd00d9bad560c" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>getParameterEntity</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a3dba0c62e2735583c2ff364880e69bb9" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>hasExternalSubset</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1aee5c195920394d5add68fdfd156764c0" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>hasInternalSubset</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a731ec4c733960aa456c70442da00c86a" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>ignorableWhitespace</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1af00a707f65afa5d0f6cf27ec821bb763" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>initialized</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a0328ae88f860fb790ba24737b6e42e3d" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>internalSubset</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a3a5b37537cb112b95034b9d12d152c3a" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>isStandalone</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1afa583248715fc0155e531e3061f8bd0e" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>notationDecl</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a04fd7737754e2e258a152262295f2466" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>processingInstruction</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1ac30f4b10ee69fd033afe519a4bf0a2dc" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>reference</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a3b837a1c8257f162e0309d7efdf9f940" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>resolveEntity</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a68f9de83a145f83e8d10761374dfdb7c" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>setDocumentLocator</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a666a323b26d5e99a42cf90680711b1f2" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>startDocument</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1ad07098e48b100419b1e1a3fe0ed3dd4a" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>startElement</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1af07934285725c2d214a6168ad4b7f8ed" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>unparsedEntityDecl</name></member>
+      <member refid="struct__xmlSAXHandlerV1_1a0c544f0ab99445b0a1f6a3aa2d08264c" prot="public" virt="non-virtual"><scope>_xmlSAXHandlerV1</scope><name>warning</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

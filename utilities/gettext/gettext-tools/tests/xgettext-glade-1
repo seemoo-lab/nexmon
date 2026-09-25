@@ -3,7 +3,7 @@
 
 # Test of Glade support.
 
-cat <<EOF > xg-gl-1-empty.glade
+cat <<\EOF > xg-gl-1-empty.glade
 <?xml version="1.0"?>
 <GTK-Interface/>
 EOF
@@ -15,7 +15,7 @@ test $? = 0 || {
   Exit 77
 }
 
-cat <<EOF > xg-gl-1-widgets.glade
+cat <<\EOF > xg-gl-1-widgets.glade
 <?xml version="1.0"?>
 <GTK-Interface>
 
@@ -1330,9 +1330,10 @@ for said code in libglade.</text>
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} --add-comments -o - xg-gl-1-widgets.glade | grep -v 'POT-Creation-Date' > xg-gl-1.pot || Exit 1
+${XGETTEXT} --add-comments -o xg-gl-1.tmp xg-gl-1-widgets.glade || Exit 1
+func_filter_POT_Creation_Date xg-gl-1.tmp xg-gl-1.pot
 
-cat <<EOF > xg-gl-1.ok
+cat <<\EOF > xg-gl-1.ok
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.

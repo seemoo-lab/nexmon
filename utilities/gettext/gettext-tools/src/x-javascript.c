@@ -1,9 +1,5 @@
 /* xgettext JavaScript backend.
-   Copyright (C) 2002-2003, 2005-2009, 2013, 2015-2016 Free Software
-   Foundation, Inc.
-
-   This file was written by Andreas Stricker <andy@knitter.ch>, 2010
-   It's based on x-python from Bruno Haible.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Bruno Haible, Andreas Stricker, and Daiki Ueno.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "x-javascript.h"
@@ -32,15 +28,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SB_NO_APPENDF
+#include <error.h>
+#include "attribute.h"
 #include "message.h"
+#include "str-list.h"
+#include "rc-str-list.h"
 #include "xgettext.h"
-#include "error.h"
-#include "error-progname.h"
+#include "xg-pos.h"
+#include "xg-encoding.h"
+#include "xg-mixed-string.h"
+#include "xg-arglist-context.h"
+#include "xg-arglist-callshape.h"
+#include "xg-arglist-parser.h"
+#include "xg-message.h"
+#include "if-error.h"
+#include "xstrerror.h"
 #include "progname.h"
-#include "basename.h"
 #include "xerror.h"
 #include "xvasprintf.h"
 #include "xalloc.h"
+#include "string-buffer.h"
 #include "c-strstr.h"
 #include "c-ctype.h"
 #include "po-charset.h"
@@ -49,13 +57,20 @@
 
 #define _(s) gettext(s)
 
-#define max(a,b) ((a) > (b) ? (a) : (b))
-
 #define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
 
 /* The JavaScript aka ECMA-Script syntax is defined in ECMA-262
    specification:
-   http://www.ecma-international.org/publications/standards/Ecma-262.htm */
+   <https://www.ecma-international.org/publications/standards/Ecma-262.htm>
+
+   Regarding the XML element support:
+   The earlier standard E4X
+   <https://en.wikipedia.org/wiki/ECMAScript_for_XML>
+   <https://web.archive.org/web/20131104082608/http://www.ecma-international.org/publications/standards/Ecma-357.htm>
+   is no longer widely supported.
+   Instead, nowadays, JSX is widely used.
+   <https://facebook.github.io/jsx/>
+*/
 
 /* ====================== Keyword set customization.  ====================== */
 
@@ -80,18 +95,16 @@ x_javascript_keyword (const char *name)
     default_keywords = false;
   else
     {
-      const char *end;
-      struct callshape shape;
-      const char *colon;
-
       if (keywords.table == NULL)
         hash_init (&keywords, 100);
 
+      const char *end;
+      struct callshape shape;
       split_keywordspec (name, &end, &shape);
 
       /* The characters between name and end should form a valid C identifier.
          A colon means an invalid parse in split_keywordspec().  */
-      colon = strchr (name, ':');
+      const char *colon = strchr (name, ':');
       if (colon == NULL || colon >= end)
         insert_keyword_callshape (&keywords, name, end - name, &shape);
     }
@@ -134,14 +147,105 @@ init_flag_table_javascript ()
 }
 
 
+/* ======================== Tag set customization.  ======================== */
+
+/* Tagged template literals are described in
+   <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals>.
+
+   A tagged template literal looks like this in the source code:
+     TAG`part0 ${expression 1} part1 ${expression 2} ... ${expression N} partN`
+
+   A tag, immediately before a template literal, denotes a function that takes
+   as arguments:
+     - A list of the N+1 parts of the template literal,
+     - The N values of the N expressions between these parts.
+
+   In our use case, the tag function is supposed to
+     1. Convert the N+1 parts to a format string.
+     2. Look up the translation of this format string. (It is supposed to
+        accept the same number of arguments.)
+     3. Call a formatting facility that substitutes the N values into the
+        translated format string.
+   The type of format string is not fixed.  */
+
+/* Type of a C function that implements step 1 of what a tag function does.
+   It takes a non-empty string_list_ty as argument and returns a freshly
+   allocated string.  */
+typedef char * (*tag_step1_fn) (string_list_ty *parts);
+
+/* Tag step 1 function that produces a format string with placeholders
+   {0}, {1}, {2}, etc.  */
+static char *
+gnome_step1 (string_list_ty *parts)
+{
+  size_t n = parts->nitems - 1;
+
+  string_list_ty pieces;
+  pieces.nitems = 2 * n + 1;
+  pieces.nitems_max = pieces.nitems;
+  pieces.item = XNMALLOC (pieces.nitems, const char *);
+  for (unsigned long i = 0; i <= n; i++)
+    {
+      pieces.item[2 * i] = parts->item[i];
+      if (i < n)
+        pieces.item[2 * i + 1] = xasprintf ("{%lu}", i);
+    }
+
+  char *result = string_list_concat (&pieces);
+
+  for (unsigned long i = 0; i < n; i++)
+    free ((char *) pieces.item[2 * i + 1]);
+
+  return result;
+}
+
+/* Returns the tag step 1 function for a given format, or NULL if that format
+   is unknown.  */
+static tag_step1_fn
+get_tag_step1_fn (const char *format)
+{
+  if (strcmp (format, "javascript-gnome-format") == 0)
+    return gnome_step1;
+  /* ... More formats can be added here ...  */
+  return NULL;
+}
+
+/* Information associated with a tag.  */
+struct tag_definition
+{
+  const char *format;
+  tag_step1_fn step1_fn;
+};
+
+/* Mapping tag -> format.  */
+static hash_table tags;
+
+void
+x_javascript_tag (const char *name)
+{
+  const char *colon = strchr (name, ':');
+  if (colon != NULL)
+    {
+      const char *format = colon + 1;
+      tag_step1_fn step1_fn = get_tag_step1_fn (format);
+      if (step1_fn != NULL)
+        {
+          /* Heap-allocate a 'struct tag_definition'  */
+          struct tag_definition *def = XMALLOC (struct tag_definition);
+          def->format = xstrdup (format);
+          def->step1_fn = step1_fn;
+
+          if (tags.table == NULL)
+            hash_init (&tags, 10);
+
+          /* Insert it in the TAGS table.  */
+          hash_set_value (&tags, name, colon - name, def);
+        }
+    }
+}
+
+
 /* ======================== Reading of characters.  ======================== */
-
-/* Real filename, used in error messages about the input file.  */
-static const char *real_file_name;
-
-/* Logical filename and line number, used to label the extracted messages.  */
-static char *logical_file_name;
-static int line_number;
 
 /* The input file stream.  */
 static FILE *fp;
@@ -205,8 +309,8 @@ phase1_ungetc (int c)
 
 static lexical_context_ty lexical_context;
 
-/* Maximum used, length of "<![CDATA[" tag minus one.  */
-static int phase2_pushback[8];
+/* Maximum used, length of "<![CDATA[" tag.  */
+static int phase2_pushback[9];
 static int phase2_pushback_length;
 
 /* Read the next Unicode UCS-4 character from the input file.  */
@@ -228,8 +332,7 @@ phase2_getc ()
                                       non_ascii_error_message (lexical_context,
                                                                real_file_name,
                                                                line_number),
-                                      _("\
-Please specify the source encoding through --from-code\n")));
+                                      _("Please specify the source encoding through --from-code\n")));
           exit (EXIT_FAILURE);
         }
       return c;
@@ -242,11 +345,14 @@ Please specify the source encoding through --from-code\n")));
          interactive behaviour when fp is connected to an interactive tty.  */
       unsigned char buf[MAX_PHASE1_PUSHBACK];
       size_t bufcount;
-      int c = phase1_getc ();
-      if (c == EOF)
-        return UEOF;
-      buf[0] = (unsigned char) c;
-      bufcount = 1;
+
+      {
+        int c = phase1_getc ();
+        if (c == EOF)
+          return UEOF;
+        buf[0] = (unsigned char) c;
+        bufcount = 1;
+      }
 
       for (;;)
         {
@@ -282,8 +388,6 @@ Please specify the correct source encoding through --from-code\n"),
               else if (errno == EINVAL)
                 {
                   /* An incomplete multibyte character.  */
-                  int c;
-
                   if (bufcount == MAX_PHASE1_PUSHBACK)
                     {
                       /* An overlong incomplete multibyte sequence was
@@ -297,7 +401,7 @@ Please specify the correct source encoding through --from-code\n"),
                     }
 
                   /* Read one more byte and retry iconv.  */
-                  c = phase1_getc ();
+                  int c = phase1_getc ();
                   if (c == EOF)
                     {
                       multiline_error (xstrdup (""),
@@ -319,14 +423,14 @@ Please specify the correct source encoding through --from-code\n"),
                   buf[bufcount++] = (unsigned char) c;
                 }
               else
-                error (EXIT_FAILURE, errno, _("%s:%d: iconv failure"),
-                       real_file_name, line_number);
+                if_error (IF_SEVERITY_FATAL_ERROR,
+                          real_file_name, line_number, (size_t)(-1), false,
+                          "%s", xstrerror (_("iconv failure"), errno));
             }
           else
             {
               size_t outbytes = sizeof (scratchbuf) - outsize;
               size_t bytes = bufcount - insize;
-              ucs4_t uc;
 
               /* We expect that one character has been produced.  */
               if (bytes == 0)
@@ -337,6 +441,7 @@ Please specify the correct source encoding through --from-code\n"),
               while (insize > 0)
                 phase1_ungetc (buf[--insize]);
               /* Convert the character from UTF-8 to UCS-4.  */
+              ucs4_t uc;
               if (u8_mbtoucr (&uc, scratchbuf, outbytes) < (int) outbytes)
                 {
                   /* scratchbuf contains an out-of-range Unicode character
@@ -364,7 +469,6 @@ Please specify the source encoding through --from-code\n"),
       unsigned char buf[6];
       unsigned int count;
       int c;
-      ucs4_t uc;
 
       c = phase1_getc ();
       if (c == EOF)
@@ -427,12 +531,13 @@ Please specify the source encoding through --from-code\n"),
           count = 6;
         }
 
+      ucs4_t uc;
       u8_mbtouc (&uc, buf, count);
       return uc;
     }
 }
 
-/* Supports max (9, UNINAME_MAX + 3) pushback characters.  */
+/* Supports 9 pushback characters.  */
 static void
 phase2_ungetc (int c)
 {
@@ -447,76 +552,7 @@ phase2_ungetc (int c)
 
 /* ========================= Accumulating strings.  ======================== */
 
-/* A string buffer type that allows appending Unicode characters.
-   Returns the entire string in UTF-8 encoding.  */
-
-struct unicode_string_buffer
-{
-  /* The part of the string that has already been converted to UTF-8.  */
-  char *utf8_buffer;
-  size_t utf8_buflen;
-  size_t utf8_allocated;
-};
-
-/* Initialize a 'struct unicode_string_buffer' to empty.  */
-static inline void
-init_unicode_string_buffer (struct unicode_string_buffer *bp)
-{
-  bp->utf8_buffer = NULL;
-  bp->utf8_buflen = 0;
-  bp->utf8_allocated = 0;
-}
-
-/* Auxiliary function: Ensure count more bytes are available in bp->utf8.  */
-static inline void
-unicode_string_buffer_append_unicode_grow (struct unicode_string_buffer *bp,
-                                           size_t count)
-{
-  if (bp->utf8_buflen + count > bp->utf8_allocated)
-    {
-      size_t new_allocated = 2 * bp->utf8_allocated + 10;
-      if (new_allocated < bp->utf8_buflen + count)
-        new_allocated = bp->utf8_buflen + count;
-      bp->utf8_allocated = new_allocated;
-      bp->utf8_buffer = xrealloc (bp->utf8_buffer, new_allocated);
-    }
-}
-
-/* Auxiliary function: Append a Unicode character to bp->utf8.
-   uc must be < 0x110000.  */
-static inline void
-unicode_string_buffer_append_unicode (struct unicode_string_buffer *bp,
-                                      unsigned int uc)
-{
-  unsigned char utf8buf[6];
-  int count = u8_uctomb (utf8buf, uc, 6);
-
-  if (count < 0)
-    /* The caller should have ensured that uc is not out-of-range.  */
-    abort ();
-
-  unicode_string_buffer_append_unicode_grow (bp, count);
-  memcpy (bp->utf8_buffer + bp->utf8_buflen, utf8buf, count);
-  bp->utf8_buflen += count;
-}
-
-/* Return the string buffer's contents.  */
-static char *
-unicode_string_buffer_result (struct unicode_string_buffer *bp)
-{
-  /* NUL-terminate it.  */
-  unicode_string_buffer_append_unicode_grow (bp, 1);
-  bp->utf8_buffer[bp->utf8_buflen] = '\0';
-  /* Return it.  */
-  return bp->utf8_buffer;
-}
-
-/* Free the memory pointed to by a 'struct unicode_string_buffer'.  */
-static inline void
-free_unicode_string_buffer (struct unicode_string_buffer *bp)
-{
-  free (bp->utf8_buffer);
-}
+/* See xg-mixed-string.h for the API.  */
 
 
 /* ======================== Accumulating comments.  ======================== */
@@ -524,31 +560,32 @@ free_unicode_string_buffer (struct unicode_string_buffer *bp)
 
 /* Accumulating a single comment line.  */
 
-static struct unicode_string_buffer comment_buffer;
+static struct mixed_string_buffer comment_buffer;
 
 static inline void
 comment_start ()
 {
-  lexical_context = lc_comment;
-  comment_buffer.utf8_buflen = 0;
+  mixed_string_buffer_init (&comment_buffer, lc_comment,
+                            logical_file_name, line_number);
 }
 
 static inline bool
 comment_at_start ()
 {
-  return (comment_buffer.utf8_buflen == 0);
+  return mixed_string_buffer_is_empty (&comment_buffer);
 }
 
 static inline void
 comment_add (int c)
 {
-  unicode_string_buffer_append_unicode (&comment_buffer, c);
+  mixed_string_buffer_append_unicode (&comment_buffer, c);
 }
 
 static inline const char *
 comment_line_end (size_t chars_to_remove)
 {
-  char *buffer = unicode_string_buffer_result (&comment_buffer);
+  char *buffer =
+    mixed_string_contents_free1 (mixed_string_buffer_result (&comment_buffer));
   size_t buflen = strlen (buffer) - chars_to_remove;
 
   while (buflen >= 1
@@ -581,7 +618,7 @@ static iconv_t xgettext_current_file_source_iconv;
 
 /* Tracking whether the current line is a continuation line or contains a
    non-blank character.  */
-static bool continuation_or_nonblank_line = false;
+static bool continuation_or_nonblank_line;
 
 
 /* Phase 3: Outside strings, replace backslash-newline with nothing and a
@@ -590,10 +627,10 @@ static bool continuation_or_nonblank_line = false;
 static int
 phase3_getc ()
 {
-  int c;
-
   for (;;)
     {
+      int c;
+
       c = phase2_getc ();
       if (c == '\\')
         {
@@ -634,9 +671,9 @@ phase3_getc ()
           else if (c == '*')
             {
               /* C style comment.  */
-              bool last_was_star = false;
               last_comment_line = line_number;
               comment_start ();
+              bool last_was_star = false;
               for (;;)
                 {
                   c = phase2_getc ();
@@ -662,7 +699,7 @@ phase3_getc ()
                           comment_line_end (2);
                           break;
                         }
-                      /* FALLTHROUGH */
+                      FALLTHROUGH;
 
                     default:
                       last_was_star = false;
@@ -702,6 +739,7 @@ phase3_ungetc (int c)
 /* Return value of phase7_getuc when EOF is reached.  */
 #define P7_EOF (-1)
 #define P7_STRING_END (-2)
+#define P7_TEMPLATE_START_OF_EXPRESSION (-3) /* ${ */
 
 /* Convert an UTF-16 or UTF-32 code point to a return value that can be
    distinguished from a single-byte return value.  */
@@ -722,9 +760,13 @@ phase3_ungetc (int c)
 enum token_type_ty
 {
   token_type_eof,
+  token_type_start,
   token_type_lparen,            /* ( */
   token_type_rparen,            /* ) */
+  token_type_lbrace,            /* { */
+  token_type_rbrace,            /* } */
   token_type_comma,             /* , */
+  token_type_dot,               /* . */
   token_type_lbracket,          /* [ */
   token_type_rbracket,          /* ] */
   token_type_plus,              /* + */
@@ -732,6 +774,14 @@ enum token_type_ty
   token_type_operator,          /* - * / % . < > = ~ ! | & ? : ^ */
   token_type_equal,             /* = */
   token_type_string,            /* "abc", 'abc' */
+  token_type_template,          /* `abc` */
+  token_type_ltemplate,         /* left part of template: `abc${ */
+  token_type_mtemplate,         /* middle part of template: }abc${ */
+  token_type_rtemplate,         /* right part of template: }abc` */
+  token_type_xml_tag,           /* < or </ */
+  token_type_xml_element_start, /* last token of < ... > */
+  token_type_xml_element_end,   /* last token of </ ... > */
+  token_type_xml_empty_element, /* last token of < ... /> */
   token_type_keyword,           /* return, else */
   token_type_symbol,            /* symbol, number */
   token_type_other              /* misc. operator */
@@ -742,9 +792,15 @@ typedef struct token_ty token_ty;
 struct token_ty
 {
   token_type_ty type;
-  char *string;         /* for token_type_string, token_type_symbol,
-                           token_type_keyword */
-  refcounted_string_list_ty *comment;   /* for token_type_string */
+  char *template_tag;                 /* for token_type_template, token_type_ltemplate,
+                                         token_type_rtemplate */
+  char *string;                       /* for token_type_symbol, token_type_keyword */
+  mixed_string_ty *mixed_string;      /* for token_type_string, token_type_template,
+                                         token_type_ltemplate, token_type_mtemplate,
+                                         token_type_rtemplate */
+  string_list_ty *template_parts;     /* for token_type_rtemplate */
+  refcounted_string_list_ty *comment; /* for token_type_string, token_type_template,
+                                         token_type_ltemplate, token_type_rtemplate */
   int line_number;
 };
 
@@ -753,15 +809,28 @@ struct token_ty
 static inline void
 free_token (token_ty *tp)
 {
-  if (tp->type == token_type_string || tp->type == token_type_symbol)
+  if (tp->type == token_type_template || tp->type == token_type_ltemplate
+      || tp->type == token_type_rtemplate)
+    free (tp->template_tag);
+  if (tp->type == token_type_symbol || tp->type == token_type_keyword)
     free (tp->string);
-  if (tp->type == token_type_string)
+  if (tp->type == token_type_string || tp->type == token_type_template
+      /* For these types, tp->mixed_string is already freed earlier, when we
+         build up the level's template_parts.  */
+      #if 0
+      || tp->type == token_type_ltemplate || tp->type == token_type_mtemplate
+      || tp->type == token_type_rtemplate
+      #endif
+     )
+    mixed_string_free (tp->mixed_string);
+  if (tp->type == token_type_string || tp->type == token_type_template
+      || tp->type == token_type_ltemplate || tp->type == token_type_rtemplate)
     drop_reference (tp->comment);
 }
 
 
 /* JavaScript provides strings with either double or single quotes:
-     "abc" or 'abc'
+     "abc" or 'abc' or `abc`
    Both may contain special sequences after a backslash:
      \', \", \\, \b, \f, \n, \r, \t, \v
    Special characters can be entered using hexadecimal escape
@@ -776,10 +845,10 @@ free_token (token_ty *tp)
 static int
 phase7_getuc (int quote_char)
 {
-  int c;
-
   for (;;)
     {
+      int c;
+
       /* Use phase 2, because phase 3 elides comments.  */
       c = phase2_getc ();
 
@@ -789,14 +858,38 @@ phase7_getuc (int quote_char)
       if (c == quote_char)
         return P7_STRING_END;
 
+      if (c == '$' && quote_char == '`')
+        {
+          int c1 = phase2_getc ();
+
+          if (c1 == '{')
+            return P7_TEMPLATE_START_OF_EXPRESSION;
+          phase2_ungetc (c1);
+        }
+
       if (c == '\n')
         {
-          phase2_ungetc (c);
-          error_with_progname = false;
-          error (0, 0, _("%s:%d: warning: unterminated string"),
-                 logical_file_name, line_number);
-          error_with_progname = true;
-          return P7_STRING_END;
+          if (quote_char == '`')
+            return UNICODE ('\n');
+          else
+            {
+              phase2_ungetc (c);
+              if_error (IF_SEVERITY_WARNING,
+                        logical_file_name, line_number, (size_t)(-1), false,
+                        _("unterminated string"));
+              return P7_STRING_END;
+            }
+        }
+
+      if (c == '\r' && quote_char == '`')
+        {
+          /* Line terminators inside template literals are normalized to \n,
+             says <http://exploringjs.com/es6/ch_template-literals.html>.  */
+          int c1 = phase2_getc ();
+
+          if (c1 == '\n')
+            return UNICODE ('\n');
+          phase2_ungetc (c1);
         }
 
       if (c != '\\')
@@ -851,8 +944,8 @@ phase7_getuc (int quote_char)
         case 'x':
           {
             int c1 = phase2_getc ();
-            int n1;
 
+            int n1;
             if (c1 >= '0' && c1 <= '9')
               n1 = c1 - '0';
             else if (c1 >= 'A' && c1 <= 'F')
@@ -865,8 +958,8 @@ phase7_getuc (int quote_char)
             if (n1 >= 0)
               {
                 int c2 = phase2_getc ();
-                int n2;
 
+                int n2;
                 if (c2 >= '0' && c2 <= '9')
                   n2 = c2 - '0';
                 else if (c2 >= 'A' && c2 <= 'F')
@@ -891,9 +984,7 @@ phase7_getuc (int quote_char)
           {
             unsigned char buf[4];
             unsigned int n = 0;
-            int i;
-
-            for (i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
               {
                 int c1 = phase2_getc ();
 
@@ -928,62 +1019,201 @@ phase7_getuc (int quote_char)
 static token_ty phase5_pushback[2];
 static int phase5_pushback_length;
 
-static token_type_ty last_token_type = token_type_other;
+static token_type_ty last_token_type;
 
-static void
-phase5_scan_regexp ()
+/* Returns true if last_token_type indicates that we have just seen the
+   possibly last token of an expression.  In this case, '<', '>', and '/'
+   need to be interpreted as operators, rather than as XML markup or start
+   of a regular expression.  */
+static bool
+is_after_expression (void)
 {
-    int c;
+  switch (last_token_type)
+    {
+    case token_type_rparen:
+    case token_type_rbrace:
+    case token_type_rbracket:
+    case token_type_regexp:
+    case token_type_string:
+    case token_type_template:
+    case token_type_rtemplate:
+    case token_type_xml_element_end:
+    case token_type_xml_empty_element:
+    case token_type_symbol:
+      return true;
 
-    /* Scan for end of RegExp literal ('/').  */
-    for (;;)
-      {
-        /* Must use phase2 as there can't be comments.  */
-        c = phase2_getc ();
-        if (c == '/')
-          break;
-        if (c == '\\')
-          {
-            c = phase2_getc ();
-            if (c != UEOF)
-              continue;
-          }
-        if (c == UEOF)
-          {
-            error_with_progname = false;
-            error (0, 0,
-                   _("%s:%d: warning: RegExp literal terminated too early"),
-                   logical_file_name, line_number);
-            error_with_progname = true;
-            return;
-          }
-      }
+    case token_type_eof:
+    case token_type_start:
+    case token_type_lparen:
+    case token_type_lbrace:
+    case token_type_comma:
+    case token_type_dot:
+    case token_type_lbracket:
+    case token_type_plus:
+    case token_type_operator:
+    case token_type_equal:
+    case token_type_ltemplate:
+    case token_type_mtemplate:
+    case token_type_xml_tag:
+    case token_type_xml_element_start:
+    case token_type_keyword:
+    case token_type_other:
+      return false;
 
-    /* Scan for modifier flags (ECMA-262 5th section 15.10.4.1).  */
-    c = phase2_getc ();
-    if (!(c == 'g' || c == 'i' || c == 'm'))
-      phase2_ungetc (c);
+    default:
+      abort ();
+    }
 }
 
-static int xml_element_depth = 0;
-static bool inside_embedded_js_in_xml = false;
+/* Scans a regular expression literal.
+   The leading '/' has already been consumed.
+   See ECMA-262 15th edition sections
+   - § 12.9.5 Regular Expression Literals
+   - § 22.2.3.3 RegExpInitialize  */
+static void
+phase5_scan_regexp (void)
+{
+  int c;
 
-static bool
+  /* Scan for end of RegExp literal ('/').  */
+  for (bool at_start = true; ; at_start = false)
+    {
+      /* Must use phase2 as there can't be comments.  */
+      c = phase2_getc ();
+      if (c == UEOF || c == '\n' || c == '\r' || c == 0x2028 || c == 0x2029)
+        goto unterminated;
+      if (at_start && c == '*')
+        {
+          if_error (IF_SEVERITY_WARNING,
+                    logical_file_name, line_number, (size_t)(-1), false,
+                    _("invalid RegExp literal"));
+          return;
+        }
+      if (c == '/')
+        break;
+      if (c == '\\')
+        {
+          c = phase2_getc ();
+          if (c == UEOF || c == '\n' || c == '\r' || c == 0x2028 || c == 0x2029)
+            goto unterminated;
+        }
+      else if (c == '[')
+        {
+          for (;;)
+            {
+              c = phase2_getc ();
+              if (c == UEOF
+                  || c == '\n' || c == '\r' || c == 0x2028 || c == 0x2029)
+                goto unterminated_in_class;
+              if (c == ']')
+                break;
+              if (c == '\\')
+                {
+                  c = phase2_getc ();
+                  if (c == UEOF
+                      || c == '\n' || c == '\r' || c == 0x2028 || c == 0x2029)
+                    goto unterminated_in_class;
+                }
+            }
+        }
+    }
+
+  /* Scan for modifier flags (ECMA-262 15th edition § 22.2.3.3).  */
+  c = phase2_getc ();
+  if (!(c == 'd' || c == 'g' || c == 'i' || c == 'm' || c == 's'
+        || c == 'u' || c == 'v' || c == 'y'))
+    phase2_ungetc (c);
+
+  return;
+
+ unterminated:
+  if_error (IF_SEVERITY_WARNING,
+            logical_file_name, line_number, (size_t)(-1), false,
+            _("RegExp literal terminated too early"));
+  return;
+
+ unterminated_in_class:
+  if_error (IF_SEVERITY_WARNING,
+            logical_file_name, line_number, (size_t)(-1), false,
+            _("RegExp literal lacks a ']' to match the '['"));
+  return;
+}
+
+/* Various syntactic constructs can be nested:
+     - braces in expressions       {
+     - template literals           `...${
+     - XML elements                <tag>
+     - embedded JavaScript in XML  {
+   For a well-formed program:
+     - expressions must have balanced braces;
+     - template literals must be closed before the embedded JavaScript is closed;
+     - the embedded JavaScript must be closed before the XML element is closed;
+     - and so on.
+   Therefore we can represent these nested syntactic constructs with a stack;
+   each element is a new level.  */
+enum level_ty
+{
+  level_brace              = 1,
+  level_template_literal   = 2,
+  level_xml_element        = 3,
+  level_embedded_js_in_xml = 4
+};
+struct level_info
+{
+  enum level_ty type;
+  char *template_tag;                          /* for level_template_literal */
+  string_list_ty *template_parts;              /* for level_template_literal */
+  refcounted_string_list_ty *template_comment; /* for level_template_literal */
+};
+/* The level stack.  */
+static struct level_info *levels /* = NULL */;
+/* Number of allocated elements in levels.  */
+static size_t levels_alloc /* = 0 */;
+/* Number of currently used elements in levels.  */
+static size_t level;
+
+/* Adds a new level.  */
+static void
+new_level (enum level_ty l)
+{
+  if (level == levels_alloc)
+    {
+      levels_alloc = 2 * levels_alloc + 1;
+      /* Now level < levels_alloc.  */
+      levels =
+        (struct level_info *)
+        xrealloc (levels, levels_alloc * sizeof (struct level_info));
+    }
+  levels[level].type = l;
+  level++;
+}
+
+/* Returns the current level's type,
+   as one of the level_* enum items, or 0 if the level stack is empty.  */
+#define level_type() \
+  (level > 0 ? levels[level - 1].type : 0)
+
+/* Parses some XML markup.
+   Returns 0 for an XML comment,
+           1 for a CDATA,
+           2 for an XML Processing Instruction,
+   or -1 when none of them was recognized.  */
+static int
 phase5_scan_xml_markup (token_ty *tp)
 {
   struct
-  {
-    const char *start;
-    const char *end;
-  } markers[] =
-      {
-        { "!--", "--" },
-        { "![CDATA[", "]]" },
-        { "?", "?" }
-      };
-  int i;
+    {
+      const char *start;
+      const char *end;
+    }
+  markers[] =
+    {
+      { "!--", "--" },
+      { "![CDATA[", "]]" },
+      { "?", "?" }
+    };
 
-  for (i = 0; i < SIZEOF (markers); i++)
+  for (int i = 0; i < SIZEOF (markers); i++)
     {
       const char *start = markers[i].start;
       const char *end = markers[i].end;
@@ -992,10 +1222,8 @@ phase5_scan_xml_markup (token_ty *tp)
       /* Look for a start marker.  */
       for (j = 0; start[j] != '\0'; j++)
         {
-          int c;
-
           assert (phase2_pushback_length + j < SIZEOF (phase2_pushback));
-          c = phase2_getc ();
+          int c = phase2_getc ();
           if (c == UEOF)
             goto eof;
           if (c != start[j])
@@ -1011,73 +1239,62 @@ phase5_scan_xml_markup (token_ty *tp)
             }
         }
 
-      if (start[j] != '\0')
-        continue;
+      if (start[j] == '\0')
+        /* Skip until the end marker.  */
+        for (;;)
+          {
+            for (j = 0; end[j] != '\0'; j++)
+              {
+                assert (phase2_pushback_length + 1 < SIZEOF (phase2_pushback));
+                int c = phase2_getc ();
+                if (c == UEOF)
+                  goto eof;
+                if (c != end[j])
+                  {
+                    /* Don't push the first character back so the next
+                       iteration start from the second character.  */
+                    if (j > 0)
+                      {
+                        int k = j;
 
-      /* Skip until the end marker.  */
-      for (;;)
-        {
-          int c;
+                        phase2_ungetc (c);
+                        k--;
 
-          for (j = 0; end[j] != '\0'; j++)
-            {
-              assert (phase2_pushback_length + 1 < SIZEOF (phase2_pushback));
-              c = phase2_getc ();
-              if (c == UEOF)
-                goto eof;
-              if (c != end[j])
-                {
-                  /* Don't push the first character back so the next
-                     iteration start from the second character.  */
-                  if (j > 0)
-                    {
-                      int k = j;
+                        for (; k > 0; k--)
+                          phase2_ungetc (end[k]);
+                      }
+                    break;
+                  }
+              }
 
-                      phase2_ungetc (c);
-                      k--;
-
-                      for (; k > 0; k--)
-                        phase2_ungetc (end[k]);
-                    }
-                  break;
-                }
-            }
-
-          if (end[j] != '\0')
-            continue;
-
-          c = phase2_getc ();
-          if (c == UEOF)
-            goto eof;
-          if (c != '>')
-            {
-              error_with_progname = false;
-              error (0, 0,
-                     _("%s:%d: warning: %s is not allowed"),
-                     logical_file_name, line_number,
-                     end);
-              error_with_progname = true;
-              return false;
-            }
-          return true;
-        }
+            if (end[j] == '\0')
+              {
+                int c = phase2_getc ();
+                if (c == UEOF)
+                  goto eof;
+                if (c != '>')
+                  {
+                    if_error (IF_SEVERITY_WARNING,
+                              logical_file_name, line_number, (size_t)(-1), false,
+                              _("%s is not allowed"), end);
+                    return -1;
+                  }
+                return i;
+              }
+          }
     }
-  return false;
+  return -1;
 
  eof:
-  error_with_progname = false;
-  error (0, 0,
-         _("%s:%d: warning: unterminated XML markup"),
-         logical_file_name, line_number);
-  error_with_progname = true;
-  return false;
+  if_error (IF_SEVERITY_WARNING,
+            logical_file_name, line_number, (size_t)(-1), false,
+            _("unterminated XML markup"));
+  return -1;
 }
 
 static void
 phase5_get (token_ty *tp)
 {
-  int c;
-
   if (phase5_pushback_length)
     {
       *tp = phase5_pushback[--phase5_pushback_length];
@@ -1087,6 +1304,8 @@ phase5_get (token_ty *tp)
 
   for (;;)
     {
+      int c;
+
       tp->line_number = line_number;
       c = phase3_getc ();
 
@@ -1099,7 +1318,7 @@ phase5_get (token_ty *tp)
         case '\n':
           if (last_non_comment_line > last_comment_line)
             savable_comment_reset ();
-          /* FALLTHROUGH */
+          FALLTHROUGH;
         case ' ':
         case '\t':
         case '\f':
@@ -1118,11 +1337,11 @@ phase5_get (token_ty *tp)
             if (!(c1 >= '0' && c1 <= '9'))
               {
 
-                tp->type = last_token_type = token_type_other;
+                tp->type = last_token_type = token_type_dot;
                 return;
               }
           }
-          /* FALLTHROUGH */
+          FALLTHROUGH;
         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
         case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
         case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
@@ -1138,19 +1357,11 @@ phase5_get (token_ty *tp)
         case '5': case '6': case '7': case '8': case '9':
           /* Symbol, or part of a number.  */
           {
-            static char *buffer;
-            static int bufmax;
-            int bufpos;
-
-            bufpos = 0;
+            struct string_buffer buffer;
+            sb_init (&buffer);
             for (;;)
               {
-                if (bufpos >= bufmax)
-                  {
-                    bufmax = 2 * bufmax + 10;
-                    buffer = xrealloc (buffer, bufmax);
-                  }
-                buffer[bufpos++] = c;
+                sb_xappend1 (&buffer, c);
                 c = phase3_getc ();
                 switch (c)
                   {
@@ -1174,58 +1385,102 @@ phase5_get (token_ty *tp)
                   }
                 break;
               }
-            if (bufpos >= bufmax)
-              {
-                bufmax = 2 * bufmax + 10;
-                buffer = xrealloc (buffer, bufmax);
-              }
-            buffer[bufpos] = '\0';
-            tp->string = xstrdup (buffer);
-            if (strcmp (buffer, "return") == 0
-                || strcmp (buffer, "else") == 0)
+            tp->string = sb_xdupfree_c (&buffer);
+            if (strcmp (tp->string, "return") == 0
+                || strcmp (tp->string, "else") == 0)
               tp->type = last_token_type = token_type_keyword;
             else
               tp->type = last_token_type = token_type_symbol;
             return;
           }
 
-        /* Strings.  */
+        case '"': case '\'':
+          /* Strings.  */
           {
-            struct mixed_string_buffer *bp;
-            int quote_char;
+            int quote_char = c;
+            lexical_context_ty saved_lexical_context = lexical_context;
 
-            case '"': case '\'':
-              quote_char = c;
-              lexical_context = lc_string;
-              /* Start accumulating the string.  */
-              bp = mixed_string_buffer_alloc (lexical_context,
-                                              logical_file_name,
-                                              line_number);
-              for (;;)
-                {
-                  int uc = phase7_getuc (quote_char);
+            struct mixed_string_buffer msb;
+            lexical_context = lc_string;
+            /* Start accumulating the string.  */
+            mixed_string_buffer_init (&msb, lexical_context,
+                                      logical_file_name, line_number);
+            for (;;)
+              {
+                int uc = phase7_getuc (quote_char);
 
-                  /* Keep line_number in sync.  */
-                  bp->line_number = line_number;
+                /* Keep line_number in sync.  */
+                msb.line_number = line_number;
 
-                  if (uc == P7_EOF || uc == P7_STRING_END)
+                if (uc == P7_EOF || uc == P7_STRING_END)
+                  break;
+
+                if (IS_UNICODE (uc))
+                  {
+                    assert (UNICODE_VALUE (uc) >= 0
+                            && UNICODE_VALUE (uc) < 0x110000);
+                    mixed_string_buffer_append_unicode (&msb,
+                                                        UNICODE_VALUE (uc));
+                  }
+                else
+                  mixed_string_buffer_append_char (&msb, uc);
+              }
+            tp->mixed_string = mixed_string_buffer_result (&msb);
+            tp->comment = add_reference (savable_comment);
+            lexical_context = saved_lexical_context;
+            tp->type = last_token_type = token_type_string;
+            return;
+          }
+
+        case '`':
+          /* Template literals.  */
+          {
+            struct mixed_string_buffer msb;
+            lexical_context = lc_string;
+            /* Start accumulating the string.  */
+            mixed_string_buffer_init (&msb, lexical_context,
+                                      logical_file_name, line_number);
+            for (;;)
+              {
+                int uc = phase7_getuc ('`');
+
+                /* Keep line_number in sync.  */
+                msb.line_number = line_number;
+
+                if (uc == P7_EOF || uc == P7_STRING_END)
+                  {
+                    tp->template_tag = NULL;
+                    tp->mixed_string = mixed_string_buffer_result (&msb);
+                    tp->comment = add_reference (savable_comment);
+                    tp->type = last_token_type = token_type_template;
                     break;
+                  }
 
-                  if (IS_UNICODE (uc))
-                    {
-                      assert (UNICODE_VALUE (uc) >= 0
-                              && UNICODE_VALUE (uc) < 0x110000);
-                      mixed_string_buffer_append_unicode (bp,
-                                                          UNICODE_VALUE (uc));
-                    }
-                  else
-                    mixed_string_buffer_append_char (bp, uc);
-                }
-              tp->string = mixed_string_buffer_done (bp);
-              tp->comment = add_reference (savable_comment);
-              lexical_context = lc_outside;
-              tp->type = last_token_type = token_type_string;
-              return;
+                if (uc == P7_TEMPLATE_START_OF_EXPRESSION)
+                  {
+                    tp->template_tag = NULL;
+                    tp->mixed_string = mixed_string_buffer_result (&msb);
+                    tp->comment = add_reference (savable_comment);
+                    tp->type = last_token_type = token_type_ltemplate;
+                    new_level (level_template_literal);
+                    levels[level - 1].template_tag = NULL;
+                    levels[level - 1].template_parts = NULL;
+                    levels[level - 1].template_comment = NULL;
+                    break;
+                  }
+
+                if (IS_UNICODE (uc))
+                  {
+                    assert (UNICODE_VALUE (uc) >= 0
+                            && UNICODE_VALUE (uc) < 0x110000);
+                    mixed_string_buffer_append_unicode (&msb,
+                                                        UNICODE_VALUE (uc));
+                  }
+                else
+                  mixed_string_buffer_append_char (&msb, uc);
+              }
+            lexical_context = lc_outside;
+            return;
           }
 
         case '+':
@@ -1248,32 +1503,39 @@ phase5_get (token_ty *tp)
         case '<':
           {
             /* We assume:
-               - XMLMarkup and XMLElement are only allowed after '=' or '('
-               - embedded JavaScript expressions in XML do not recurse
+               XMLMarkup and XMLElement are not allowed after an expression.
              */
-            if (xml_element_depth > 0
-                || (!inside_embedded_js_in_xml
-                    && (last_token_type == token_type_equal
-                        || last_token_type == token_type_lparen)))
+            if (level_type () == level_xml_element
+                || ! is_after_expression ())
               {
-                /* Comments, PI, or CDATA.  */
-                if (phase5_scan_xml_markup (tp))
-                  return;
-                c = phase2_getc ();
-
-                /* Closing tag.  */
-                if (c == '/')
-                  lexical_context = lc_xml_close_tag;
-
-                /* Opening element.  */
-                else
+                /* Recognize XML markup: XML comment, CDATA, Processing
+                   Instruction.  */
+                int xml_markup_type = phase5_scan_xml_markup (tp);
+                if (xml_markup_type >= 0)
                   {
-                    phase2_ungetc (c);
-                    lexical_context = lc_xml_open_tag;
-                    xml_element_depth++;
+                    /* Ignore them all, since they are not part of JSX.
+                       But warn about CDATA.  */
+                    if (xml_markup_type == 1)
+                      if_error (IF_SEVERITY_WARNING,
+                                logical_file_name, line_number, (size_t)(-1), false,
+                                _("ignoring CDATA section"));
+                    continue;
                   }
 
-                tp->type = last_token_type = token_type_other;
+                c = phase2_getc ();
+                if (c == '/')
+                  {
+                    /* Closing tag.  */
+                    lexical_context = lc_xml_close_tag;
+                  }
+                else
+                  {
+                    /* Opening element.  */
+                    phase2_ungetc (c);
+                    lexical_context = lc_xml_open_tag;
+                    new_level (level_xml_element);
+                  }
+                tp->type = last_token_type = token_type_xml_tag;
               }
             else
               tp->type = last_token_type = token_type_operator;
@@ -1281,32 +1543,33 @@ phase5_get (token_ty *tp)
           return;
 
         case '>':
-          if (xml_element_depth > 0 && !inside_embedded_js_in_xml)
+          if (level_type () == level_xml_element)
             {
               switch (lexical_context)
                 {
                 case lc_xml_open_tag:
                   lexical_context = lc_xml_content;
-                  break;
+                  tp->type = last_token_type = token_type_xml_element_start;
+                  return;
 
                 case lc_xml_close_tag:
-                  if (xml_element_depth-- > 0)
+                  level--;
+                  if (memchr (levels, level_xml_element, level) != NULL)
                     lexical_context = lc_xml_content;
                   else
                     lexical_context = lc_outside;
-                  break;
+                  tp->type = last_token_type = token_type_xml_element_end;
+                  return;
 
                 default:
                   break;
                 }
-              tp->type = last_token_type = token_type_other;
             }
-          else
-            tp->type = last_token_type = token_type_operator;
+          tp->type = last_token_type = token_type_operator;
           return;
 
         case '/':
-          if (xml_element_depth > 0 && !inside_embedded_js_in_xml)
+          if (level_type () == level_xml_element)
             {
               /* If it appears in an opening tag of an XML element, it's
                  part of '/>'.  */
@@ -1314,39 +1577,95 @@ phase5_get (token_ty *tp)
                 {
                   c = phase2_getc ();
                   if (c == '>')
-                    lexical_context = lc_outside;
+                    {
+                      level--;
+                      if (memchr (levels, level_xml_element, level) != NULL)
+                        lexical_context = lc_xml_content;
+                      else
+                        lexical_context = lc_outside;
+                      tp->type = last_token_type = token_type_xml_empty_element;
+                      return;
+                    }
                   else
                     phase2_ungetc (c);
                 }
-              tp->type = last_token_type = token_type_other;
-              return;
             }
 
-          /* Either a division operator or the start of a regular
-             expression literal.  If the '/' token is spotted after a
-             symbol it's a division, otherwise it's a regular
-             expression.  */
-          if (last_token_type == token_type_symbol
-              || last_token_type == token_type_rparen
-              || last_token_type == token_type_rbracket)
+          /* Either a division operator or the start of a regular expression
+             literal.  If the '/' token is spotted after an expression, it's a
+             division; otherwise it's a regular expression.  */
+          if (is_after_expression ())
             tp->type = last_token_type = token_type_operator;
           else
             {
-              phase5_scan_regexp (tp);
+              phase5_scan_regexp ();
               tp->type = last_token_type = token_type_regexp;
             }
           return;
 
         case '{':
-          if (xml_element_depth > 0 && !inside_embedded_js_in_xml)
-            inside_embedded_js_in_xml = true;
-          tp->type = last_token_type = token_type_other;
+          if (level_type () == level_xml_element)
+            new_level (level_embedded_js_in_xml);
+          else
+            new_level (level_brace);
+          tp->type = last_token_type = token_type_lbrace;
           return;
 
         case '}':
-          if (xml_element_depth > 0 && inside_embedded_js_in_xml)
-            inside_embedded_js_in_xml = false;
-          tp->type = last_token_type = token_type_other;
+          if (level_type () == level_embedded_js_in_xml)
+            level--;
+          else if (level_type () == level_brace)
+            level--;
+          else if (level_type () == level_template_literal)
+            {
+              /* Middle or right part of template literal.  */
+              struct mixed_string_buffer msb;
+              lexical_context = lc_string;
+              /* Start accumulating the string.  */
+              mixed_string_buffer_init (&msb, lexical_context,
+                                        logical_file_name, line_number);
+              for (;;)
+                {
+                  int uc = phase7_getuc ('`');
+
+                  /* Keep line_number in sync.  */
+                  msb.line_number = line_number;
+
+                  if (uc == P7_EOF || uc == P7_STRING_END)
+                    {
+                      tp->mixed_string = mixed_string_buffer_result (&msb);
+                      tp->type = last_token_type = token_type_rtemplate;
+                      string_list_append_move (levels[level - 1].template_parts,
+                                               mixed_string_contents_free1 (tp->mixed_string));
+                      /* Move info from the current level to the token.  */
+                      tp->template_tag = levels[level - 1].template_tag;
+                      tp->template_parts = levels[level - 1].template_parts;
+                      tp->comment = levels[level - 1].template_comment;
+                      level--;
+                      break;
+                    }
+
+                  if (uc == P7_TEMPLATE_START_OF_EXPRESSION)
+                    {
+                      tp->mixed_string = mixed_string_buffer_result (&msb);
+                      tp->type = last_token_type = token_type_mtemplate;
+                      break;
+                    }
+
+                  if (IS_UNICODE (uc))
+                    {
+                      assert (UNICODE_VALUE (uc) >= 0
+                              && UNICODE_VALUE (uc) < 0x110000);
+                      mixed_string_buffer_append_unicode (&msb,
+                                                          UNICODE_VALUE (uc));
+                    }
+                  else
+                    mixed_string_buffer_append_char (&msb, uc);
+                }
+              lexical_context = lc_outside;
+              return;
+            }
+          tp->type = last_token_type = token_type_rbrace;
           return;
 
         case '(':
@@ -1392,35 +1711,32 @@ phase5_unget (token_ty *tp)
 }
 
 
-/* String concatenation with '+'.  */
+/* String concatenation with '+'.
+   Handling of tagged template literals.  */
 
 static void
 x_javascript_lex (token_ty *tp)
 {
   phase5_get (tp);
-  if (tp->type == token_type_string)
+
+  if (tp->type == token_type_string || tp->type == token_type_template)
     {
-      char *sum = tp->string;
-      size_t sum_len = strlen (sum);
+      mixed_string_ty *sum = tp->mixed_string;
 
       for (;;)
         {
           token_ty token2;
-
           phase5_get (&token2);
+
           if (token2.type == token_type_plus)
             {
               token_ty token3;
-
               phase5_get (&token3);
-              if (token3.type == token_type_string)
-                {
-                  char *addend = token3.string;
-                  size_t addend_len = strlen (addend);
 
-                  sum = (char *) xrealloc (sum, sum_len + addend_len + 1);
-                  memcpy (sum + sum_len, addend, addend_len + 1);
-                  sum_len += addend_len;
+              if (token3.type == token_type_string
+                  || token3.type == token_type_template)
+                {
+                  sum = mixed_string_concat_free1 (sum, token3.mixed_string);
 
                   free_token (&token3);
                   free_token (&token2);
@@ -1431,7 +1747,46 @@ x_javascript_lex (token_ty *tp)
           phase5_unget (&token2);
           break;
         }
-      tp->string = sum;
+      tp->mixed_string = sum;
+    }
+  else if (tp->type == token_type_symbol)
+    {
+      token_ty token2;
+      phase5_get (&token2);
+
+      if (token2.type == token_type_template
+          || token2.type == token_type_ltemplate)
+        {
+          /* Merge *tp and token2:
+             tag `abc`    becomes    tag`abc`
+             tag `abc${   becomes    tag`abc${
+           */
+          tp->type = token2.type;
+          tp->template_tag = tp->string;
+          tp->mixed_string = token2.mixed_string;
+          tp->comment = token2.comment;
+          tp->line_number = token2.line_number;
+        }
+      else
+        phase5_unget (&token2);
+    }
+
+  /* Move info from the token into the current level.  */
+  if (tp->type == token_type_ltemplate
+      || tp->type == token_type_mtemplate)
+    {
+      if (!(level_type () == level_template_literal))
+        abort ();
+      if (tp->type == token_type_ltemplate)
+        {
+          levels[level - 1].template_tag = tp->template_tag;
+          tp->template_tag = NULL;
+          levels[level - 1].template_parts = string_list_alloc ();
+          levels[level - 1].template_comment = tp->comment;
+          tp->comment = NULL;
+        }
+      string_list_append_move (levels[level - 1].template_parts,
+                               mixed_string_contents_free1 (tp->mixed_string));
     }
 }
 
@@ -1441,6 +1796,16 @@ x_javascript_lex (token_ty *tp)
 
 /* Context lookup table.  */
 static flag_context_list_table_ty *flag_context_list_table;
+
+
+/* Maximum supported nesting depth.  */
+#define MAX_NESTING_DEPTH 1000
+
+/* Current nesting depths.  */
+static int paren_nesting_depth;
+static int bracket_nesting_depth;
+static int brace_nesting_depth;
+static int xml_element_nesting_depth;
 
 
 /* The file is broken into tokens.  Scan the token stream, looking for
@@ -1466,7 +1831,7 @@ static flag_context_list_table_ty *flag_context_list_table;
 static bool
 extract_balanced (message_list_ty *mlp,
                   token_type_ty delim,
-                  flag_context_ty outer_context,
+                  flag_region_ty *outer_region,
                   flag_context_list_iterator_ty context_iter,
                   struct arglist_parser *argparser)
 {
@@ -1479,9 +1844,9 @@ extract_balanced (message_list_ty *mlp,
   /* Context iterator that will be used if the next token is a '('.  */
   flag_context_list_iterator_ty next_context_iter =
     passthrough_context_list_iterator;
-  /* Current context.  */
-  flag_context_ty inner_context =
-    inherited_context (outer_context,
+  /* Current region.  */
+  flag_region_ty *inner_region =
+    inheriting_region (outer_region,
                        flag_context_list_iterator_advance (&context_iter));
 
   /* Start state is 0.  */
@@ -1490,14 +1855,13 @@ extract_balanced (message_list_ty *mlp,
   for (;;)
     {
       token_ty token;
-
       x_javascript_lex (&token);
+
       switch (token.type)
         {
         case token_type_symbol:
           {
             void *keyword_value;
-
             if (hash_find_entry (&keywords, token.string, strlen (token.string),
                                  &keyword_value)
                 == 0)
@@ -1514,108 +1878,228 @@ extract_balanced (message_list_ty *mlp,
                 flag_context_list_table,
                 token.string, strlen (token.string)));
           free (token.string);
-          continue;
+          break;
 
         case token_type_lparen:
+          if (++paren_nesting_depth > MAX_NESTING_DEPTH)
+            if_error (IF_SEVERITY_FATAL_ERROR,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("too many open parentheses"));
           if (extract_balanced (mlp, token_type_rparen,
-                                inner_context, next_context_iter,
+                                inner_region, next_context_iter,
                                 arglist_parser_alloc (mlp,
                                                       state ? next_shapes : NULL)))
             {
-              xgettext_current_source_encoding = po_charset_utf8;
               arglist_parser_done (argparser, arg);
-              xgettext_current_source_encoding = xgettext_current_file_source_encoding;
+              unref_region (inner_region);
               return true;
             }
+          paren_nesting_depth--;
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_rparen:
           if (delim == token_type_rparen || delim == token_type_eof)
             {
-              xgettext_current_source_encoding = po_charset_utf8;
               arglist_parser_done (argparser, arg);
-              xgettext_current_source_encoding = xgettext_current_file_source_encoding;
+              unref_region (inner_region);
               return false;
             }
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_comma:
           arg++;
-          inner_context =
-            inherited_context (outer_context,
+          unref_region (inner_region);
+          inner_region =
+            inheriting_region (outer_region,
                                flag_context_list_iterator_advance (
                                  &context_iter));
           next_context_iter = passthrough_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_lbracket:
+          if (++bracket_nesting_depth > MAX_NESTING_DEPTH)
+            if_error (IF_SEVERITY_FATAL_ERROR,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("too many open brackets"));
           if (extract_balanced (mlp, token_type_rbracket,
-                                null_context, null_context_list_iterator,
+                                null_context_region (),
+                                null_context_list_iterator,
                                 arglist_parser_alloc (mlp, NULL)))
             {
-              xgettext_current_source_encoding = po_charset_utf8;
               arglist_parser_done (argparser, arg);
-              xgettext_current_source_encoding = xgettext_current_file_source_encoding;
+              unref_region (inner_region);
               return true;
             }
+          bracket_nesting_depth--;
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_rbracket:
           if (delim == token_type_rbracket || delim == token_type_eof)
             {
-              xgettext_current_source_encoding = po_charset_utf8;
               arglist_parser_done (argparser, arg);
-              xgettext_current_source_encoding = xgettext_current_file_source_encoding;
+              unref_region (inner_region);
               return false;
             }
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
+
+        case token_type_lbrace:
+          if (++brace_nesting_depth > MAX_NESTING_DEPTH)
+            if_error (IF_SEVERITY_FATAL_ERROR,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("too many open braces"));
+          if (extract_balanced (mlp, token_type_rbrace,
+                                null_context_region (),
+                                null_context_list_iterator,
+                                arglist_parser_alloc (mlp, NULL)))
+            {
+              arglist_parser_done (argparser, arg);
+              unref_region (inner_region);
+              return true;
+            }
+          brace_nesting_depth--;
+          next_context_iter = null_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_rbrace:
+          if (delim == token_type_rbrace || delim == token_type_eof)
+            {
+              arglist_parser_done (argparser, arg);
+              unref_region (inner_region);
+              return false;
+            }
+          next_context_iter = null_context_list_iterator;
+          state = 0;
+          break;
 
         case token_type_string:
+        case token_type_template:
+        case token_type_rtemplate:
           {
             lex_pos_ty pos;
             pos.file_name = logical_file_name;
             pos.line_number = token.line_number;
 
-            xgettext_current_source_encoding = po_charset_utf8;
-            if (extract_all)
-              remember_a_message (mlp, NULL, token.string, inner_context,
-                                  &pos, NULL, token.comment);
-            else
-              arglist_parser_remember (argparser, arg, token.string,
-                                       inner_context,
-                                       pos.file_name, pos.line_number,
-                                       token.comment);
-            xgettext_current_source_encoding = xgettext_current_file_source_encoding;
+            mixed_string_ty *mixed_string =
+              (token.type != token_type_rtemplate ? token.mixed_string : NULL);
+            /* For a tagged template literal, perform the tag step 1.  */
+            if ((token.type == token_type_template
+                 || token.type == token_type_rtemplate)
+                && token.template_tag != NULL)
+              {
+                const char *tag = token.template_tag;
+
+                string_list_ty *parts;
+                if (token.type == token_type_template)
+                  {
+                    parts = string_list_alloc ();
+                    string_list_append_move (parts,
+                                             mixed_string_contents (mixed_string));
+                  }
+                else /* (token.type == token_type_rtemplate) */
+                  parts = token.template_parts;
+
+                void *tag_value;
+                if (tags.table != NULL
+                    && hash_find_entry (&tags, tag, strlen (tag), &tag_value) == 0)
+                  {
+                    struct tag_definition *def = tag_value;
+
+                    /* Invoke the tag step 1 function.  */
+                    char *string = def->step1_fn (parts);
+
+                    /* Extract the string.  */
+                    remember_a_message (mlp, NULL, string, true, false,
+                                        inner_region, &pos,
+                                        NULL, token.comment, true);
+                  }
+
+                string_list_free (parts);
+
+                /* Due to the tag, the value is not a constant.  */
+                mixed_string = NULL;
+              }
+
+            if (mixed_string != NULL)
+              {
+                if (extract_all)
+                  {
+                    char *string = mixed_string_contents_free1 (mixed_string);
+                    remember_a_message (mlp, NULL, string, true, false,
+                                        inner_region, &pos,
+                                        NULL, token.comment, true);
+                  }
+                else
+                  arglist_parser_remember (argparser, arg, mixed_string,
+                                           inner_region,
+                                           pos.file_name, pos.line_number,
+                                           token.comment, true);
+              }
           }
           drop_reference (token.comment);
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
+
+        case token_type_xml_element_start:
+          if (++xml_element_nesting_depth > MAX_NESTING_DEPTH)
+            if_error (IF_SEVERITY_FATAL_ERROR,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("too many open XML elements"));
+          if (extract_balanced (mlp, token_type_xml_element_end,
+                                null_context_region (),
+                                null_context_list_iterator,
+                                arglist_parser_alloc (mlp, NULL)))
+            {
+              arglist_parser_done (argparser, arg);
+              unref_region (inner_region);
+              return true;
+            }
+          xml_element_nesting_depth--;
+          next_context_iter = null_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_xml_element_end:
+          if (delim == token_type_xml_element_end || delim == token_type_eof)
+            {
+              arglist_parser_done (argparser, arg);
+              unref_region (inner_region);
+              return false;
+            }
+          next_context_iter = null_context_list_iterator;
+          state = 0;
+          break;
 
         case token_type_eof:
-          xgettext_current_source_encoding = po_charset_utf8;
           arglist_parser_done (argparser, arg);
-          xgettext_current_source_encoding = xgettext_current_file_source_encoding;
+          unref_region (inner_region);
           return true;
 
+        case token_type_ltemplate:
+        case token_type_mtemplate:
         case token_type_keyword:
+        case token_type_start:
+        case token_type_dot:
         case token_type_plus:
         case token_type_regexp:
         case token_type_operator:
         case token_type_equal:
+        case token_type_xml_tag:
+        case token_type_xml_empty_element:
         case token_type_other:
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         default:
           abort ();
@@ -1626,9 +2110,9 @@ extract_balanced (message_list_ty *mlp,
 
 void
 extract_javascript (FILE *f,
-                const char *real_filename, const char *logical_filename,
-                flag_context_list_table_ty *flag_table,
-                msgdomain_list_ty *mdlp)
+                    const char *real_filename, const char *logical_filename,
+                    flag_context_list_table_ty *flag_table,
+                    msgdomain_list_ty *mdlp)
 {
   message_list_ty *mlp = mdlp->item[0]->messages;
 
@@ -1637,14 +2121,18 @@ extract_javascript (FILE *f,
   logical_file_name = xstrdup (logical_filename);
   line_number = 1;
 
+  phase1_pushback_length = 0;
+
   lexical_context = lc_outside;
+
+  phase2_pushback_length = 0;
 
   last_comment_line = -1;
   last_non_comment_line = -1;
 
-  xml_element_depth = 0;
-
-  xgettext_current_file_source_encoding = xgettext_global_source_encoding;
+  xgettext_current_file_source_encoding =
+    (xgettext_global_source_encoding != NULL ? xgettext_global_source_encoding :
+     po_charset_ascii);
 #if HAVE_ICONV
   xgettext_current_file_source_iconv = xgettext_global_source_iconv;
 #endif
@@ -1656,14 +2144,23 @@ extract_javascript (FILE *f,
 
   continuation_or_nonblank_line = false;
 
+  phase5_pushback_length = 0;
+  last_token_type = token_type_start;
+
+  level = 0;
+
   flag_context_list_table = flag_table;
+  paren_nesting_depth = 0;
+  bracket_nesting_depth = 0;
+  brace_nesting_depth = 0;
+  xml_element_nesting_depth = 0;
 
   init_keywords ();
 
   /* Eat tokens until eof is seen.  When extract_balanced returns
      due to an unbalanced closing parenthesis, just restart it.  */
   while (!extract_balanced (mlp, token_type_eof,
-                            null_context, null_context_list_iterator,
+                            null_context_region (), null_context_list_iterator,
                             arglist_parser_alloc (mlp, NULL)))
     ;
 

@@ -1,7 +1,5 @@
 /* Manipulates attributes of messages in translation catalogs.
-   Copyright (C) 2001-2007, 2009-2010, 2012, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,28 +12,31 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
 
-#include <getopt.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
 
+#include <textstyle.h>
+
+#include <error.h>
+#include "options.h"
+#include "noreturn.h"
 #include "closeout.h"
 #include "dir-list.h"
-#include "error.h"
 #include "error-progname.h"
 #include "progname.h"
 #include "relocatable.h"
-#include "basename.h"
+#include "basename-lgpl.h"
 #include "message.h"
-#include "read-catalog.h"
+#include "read-catalog-file.h"
 #include "read-po.h"
 #include "read-properties.h"
 #include "read-stringtable.h"
@@ -43,7 +44,7 @@
 #include "write-po.h"
 #include "write-properties.h"
 #include "write-stringtable.h"
-#include "color.h"
+#include "xerror-handler.h"
 #include "propername.h"
 #include "xalloc.h"
 #include "gettext.h"
@@ -79,57 +80,9 @@ enum
 };
 static int to_change;
 
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "add-location", optional_argument, NULL, 'n' },
-  { "clear-fuzzy", no_argument, NULL, CHAR_MAX + 8 },
-  { "clear-obsolete", no_argument, NULL, CHAR_MAX + 10 },
-  { "clear-previous", no_argument, NULL, CHAR_MAX + 18 },
-  { "empty", no_argument, NULL, CHAR_MAX + 23 },
-  { "color", optional_argument, NULL, CHAR_MAX + 19 },
-  { "directory", required_argument, NULL, 'D' },
-  { "escape", no_argument, NULL, 'E' },
-  { "force-po", no_argument, &force_po, 1 },
-  { "fuzzy", no_argument, NULL, CHAR_MAX + 11 },
-  { "help", no_argument, NULL, 'h' },
-  { "ignore-file", required_argument, NULL, CHAR_MAX + 15 },
-  { "indent", no_argument, NULL, 'i' },
-  { "no-escape", no_argument, NULL, 'e' },
-  { "no-fuzzy", no_argument, NULL, CHAR_MAX + 3 },
-  { "no-location", no_argument, NULL, CHAR_MAX + 22 },
-  { "no-obsolete", no_argument, NULL, CHAR_MAX + 5 },
-  { "no-wrap", no_argument, NULL, CHAR_MAX + 13 },
-  { "obsolete", no_argument, NULL, CHAR_MAX + 12 },
-  { "only-file", required_argument, NULL, CHAR_MAX + 14 },
-  { "only-fuzzy", no_argument, NULL, CHAR_MAX + 4 },
-  { "only-obsolete", no_argument, NULL, CHAR_MAX + 6 },
-  { "output-file", required_argument, NULL, 'o' },
-  { "previous", no_argument, NULL, CHAR_MAX + 21 },
-  { "properties-input", no_argument, NULL, 'P' },
-  { "properties-output", no_argument, NULL, 'p' },
-  { "set-fuzzy", no_argument, NULL, CHAR_MAX + 7 },
-  { "set-obsolete", no_argument, NULL, CHAR_MAX + 9 },
-  { "sort-by-file", no_argument, NULL, 'F' },
-  { "sort-output", no_argument, NULL, 's' },
-  { "stringtable-input", no_argument, NULL, CHAR_MAX + 16 },
-  { "stringtable-output", no_argument, NULL, CHAR_MAX + 17 },
-  { "strict", no_argument, NULL, 'S' },
-  { "style", required_argument, NULL, CHAR_MAX + 20 },
-  { "translated", no_argument, NULL, CHAR_MAX + 1 },
-  { "untranslated", no_argument, NULL, CHAR_MAX + 2 },
-  { "version", no_argument, NULL, 'V' },
-  { "width", required_argument, NULL, 'w', },
-  { NULL, 0, NULL, 0 }
-};
-
 
 /* Forward declaration of local functions.  */
-static void usage (int status)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-        __attribute__ ((noreturn))
-#endif
-;
+_GL_NORETURN_FUNC static void usage (int status);
 static msgdomain_list_ty *process_msgdomain_list (msgdomain_list_ty *mdlp,
                                                   msgdomain_list_ty *only_mdlp,
                                                 msgdomain_list_ty *ignore_mdlp);
@@ -138,227 +91,265 @@ static msgdomain_list_ty *process_msgdomain_list (msgdomain_list_ty *mdlp,
 int
 main (int argc, char **argv)
 {
-  int optchar;
-  bool do_help;
-  bool do_version;
-  char *output_file;
-  const char *input_file;
-  const char *only_file;
-  const char *ignore_file;
-  msgdomain_list_ty *only_mdlp;
-  msgdomain_list_ty *ignore_mdlp;
-  msgdomain_list_ty *result;
-  catalog_input_format_ty input_syntax = &input_format_po;
-  catalog_output_format_ty output_syntax = &output_format_po;
-  bool sort_by_msgid = false;
-  bool sort_by_filepos = false;
-
   /* Set program name for messages.  */
   set_program_name (argv[0]);
   error_print_progname = maybe_print_progname;
+  gram_max_allowed_errors = 20;
 
-#ifdef HAVE_SETLOCALE
   /* Set locale via LC_ALL.  */
   setlocale (LC_ALL, "");
-#endif
 
   /* Set the text message domain.  */
   bindtextdomain (PACKAGE, relocate (LOCALEDIR));
+  bindtextdomain ("gnulib", relocate (GNULIB_LOCALEDIR));
   bindtextdomain ("bison-runtime", relocate (BISON_LOCALEDIR));
   textdomain (PACKAGE);
 
   /* Ensure that write errors on stdout are detected.  */
   atexit (close_stdout);
 
-  /* Set default values for variables.  */
-  do_help = false;
-  do_version = false;
-  output_file = NULL;
-  input_file = NULL;
-  only_file = NULL;
-  ignore_file = NULL;
+  /* Default values for command line options.  */
+  bool do_help = false;
+  bool do_version = false;
+  char *output_file = NULL;
+  const char *input_file = NULL;
+  const char *only_file = NULL;
+  const char *ignore_file = NULL;
+  catalog_input_format_ty input_syntax = &input_format_po;
+  catalog_output_format_ty output_syntax = &output_format_po;
+  bool sort_by_msgid = false;
+  bool sort_by_filepos = false;
 
-  while ((optchar = getopt_long (argc, argv, "D:eEFhino:pPsVw:", long_options,
-                                 NULL)) != EOF)
-    switch (optchar)
-      {
-      case '\0':                /* Long option.  */
-        break;
-
-      case 'D':
-        dir_list_append (optarg);
-        break;
-
-      case 'e':
-        message_print_style_escape (false);
-        break;
-
-      case 'E':
-        message_print_style_escape (true);
-        break;
-
-      case 'F':
-        sort_by_filepos = true;
-        break;
-
-      case 'h':
-        do_help = true;
-        break;
-
-      case 'i':
-        message_print_style_indent ();
-        break;
-
-      case 'n':
-        if (handle_filepos_comment_option (optarg))
-          usage (EXIT_FAILURE);
-        break;
-
-      case 'o':
-        output_file = optarg;
-        break;
-
-      case 'p':
-        output_syntax = &output_format_properties;
-        break;
-
-      case 'P':
-        input_syntax = &input_format_properties;
-        break;
-
-      case 's':
-        sort_by_msgid = true;
-        break;
-
-      case 'S':
-        message_print_style_uniforum ();
-        break;
-
-      case 'V':
-        do_version = true;
-        break;
-
-      case 'w':
+  /* Parse command line options.  */
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "add-location",       CHAR_MAX + 'n', optional_argument },
+    { NULL,                 'n',            no_argument       },
+    { "clear-fuzzy",        CHAR_MAX + 8,   no_argument       },
+    { "clear-obsolete",     CHAR_MAX + 10,  no_argument       },
+    { "clear-previous",     CHAR_MAX + 18,  no_argument       },
+    { "empty",              CHAR_MAX + 23,  no_argument       },
+    { "color",              CHAR_MAX + 19,  optional_argument },
+    { "directory",          'D',            required_argument },
+    { "escape",             'E',            no_argument       },
+    { "force-po",           0,              no_argument,      &force_po, 1 },
+    { "fuzzy",              CHAR_MAX + 11,  no_argument       },
+    { "help",               'h',            no_argument       },
+    { "ignore-file",        CHAR_MAX + 15,  required_argument },
+    { "indent",             'i',            no_argument       },
+    { "no-escape",          'e',            no_argument       },
+    { "no-fuzzy",           CHAR_MAX + 3,   no_argument       },
+    { "no-location",        CHAR_MAX + 22,  no_argument       },
+    { "no-obsolete",        CHAR_MAX + 5,   no_argument       },
+    { "no-wrap",            CHAR_MAX + 13,  no_argument       },
+    { "obsolete",           CHAR_MAX + 12,  no_argument       },
+    { "only-file",          CHAR_MAX + 14,  required_argument },
+    { "only-fuzzy",         CHAR_MAX + 4,   no_argument       },
+    { "only-obsolete",      CHAR_MAX + 6,   no_argument       },
+    { "output-file",        'o',            required_argument },
+    { "previous",           CHAR_MAX + 21,  no_argument       },
+    { "properties-input",   'P',            no_argument       },
+    { "properties-output",  'p',            no_argument       },
+    { "set-fuzzy",          CHAR_MAX + 7,   no_argument       },
+    { "set-obsolete",       CHAR_MAX + 9,   no_argument       },
+    { "sort-by-file",       'F',            no_argument       },
+    { "sort-output",        's',            no_argument       },
+    { "stringtable-input",  CHAR_MAX + 16,  no_argument       },
+    { "stringtable-output", CHAR_MAX + 17,  no_argument       },
+    { "strict",             CHAR_MAX + 24,  no_argument       },
+    { "style",              CHAR_MAX + 20,  required_argument },
+    { "translated",         CHAR_MAX + 1,   no_argument       },
+    { "untranslated",       CHAR_MAX + 2,   no_argument       },
+    { "version",            'V',            no_argument       },
+    { "width",              'w',            required_argument },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  start_options (argc, argv, options, MOVE_OPTIONS_FIRST, 0);
+  {
+    int optchar;
+    while ((optchar = get_next_option ()) != -1)
+      switch (optchar)
         {
-          int value;
-          char *endp;
-          value = strtol (optarg, &endp, 10);
-          if (endp != optarg)
-            message_page_width_set (value);
-        }
-        break;
+        case '\0':                /* Long option with key == 0.  */
+          break;
 
-      case CHAR_MAX + 1: /* --translated */
-        to_remove |= REMOVE_UNTRANSLATED;
-        break;
+        case 'D':
+          dir_list_append (optarg);
+          break;
 
-      case CHAR_MAX + 2: /* --untranslated */
-        to_remove |= REMOVE_TRANSLATED;
-        break;
+        case 'e':
+          message_print_style_escape (false);
+          break;
 
-      case CHAR_MAX + 3: /* --no-fuzzy */
-        to_remove |= REMOVE_FUZZY;
-        break;
+        case 'E':
+          message_print_style_escape (true);
+          break;
 
-      case CHAR_MAX + 4: /* --only-fuzzy */
-        to_remove |= REMOVE_NONFUZZY;
-        break;
+        case 'F':
+          sort_by_filepos = true;
+          break;
 
-      case CHAR_MAX + 5: /* --no-obsolete */
-        to_remove |= REMOVE_OBSOLETE;
-        break;
+        case 'h':
+          do_help = true;
+          break;
 
-      case CHAR_MAX + 6: /* --only-obsolete */
-        to_remove |= REMOVE_NONOBSOLETE;
-        break;
+        case 'i':
+          message_print_style_indent ();
+          break;
 
-      case CHAR_MAX + 7: /* --set-fuzzy */
-        to_change |= SET_FUZZY;
-        break;
+        case 'n':            /* -n */
+        case CHAR_MAX + 'n': /* --add-location[={full|yes|file|never|no}] */
+          if (handle_filepos_comment_option (optarg))
+            usage (EXIT_FAILURE);
+          break;
 
-      case CHAR_MAX + 8: /* --clear-fuzzy */
-        to_change |= RESET_FUZZY;
-        break;
+        case 'o':
+          output_file = optarg;
+          break;
 
-      case CHAR_MAX + 9: /* --set-obsolete */
-        to_change |= SET_OBSOLETE;
-        break;
+        case 'p':
+          output_syntax = &output_format_properties;
+          break;
 
-      case CHAR_MAX + 10: /* --clear-obsolete */
-        to_change |= RESET_OBSOLETE;
-        break;
+        case 'P':
+          input_syntax = &input_format_properties;
+          break;
 
-      case CHAR_MAX + 11: /* --fuzzy */
-        to_remove |= REMOVE_NONFUZZY;
-        to_change |= RESET_FUZZY;
-        break;
+        case 's':
+          sort_by_msgid = true;
+          break;
 
-      case CHAR_MAX + 12: /* --obsolete */
-        to_remove |= REMOVE_NONOBSOLETE;
-        to_change |= RESET_OBSOLETE;
-        break;
+        case CHAR_MAX + 24: /* --strict */
+          message_print_style_uniforum ();
+          break;
 
-      case CHAR_MAX + 13: /* --no-wrap */
-        message_page_width_ignore ();
-        break;
+        case 'V':
+          do_version = true;
+          break;
 
-      case CHAR_MAX + 14: /* --only-file */
-        only_file = optarg;
-        break;
+        case 'w':
+          {
+            char *endp;
+            int value = strtol (optarg, &endp, 10);
+            if (endp != optarg)
+              message_page_width_set (value);
+          }
+          break;
 
-      case CHAR_MAX + 15: /* --ignore-file */
-        ignore_file = optarg;
-        break;
+        case CHAR_MAX + 1: /* --translated */
+          to_remove |= REMOVE_UNTRANSLATED;
+          break;
 
-      case CHAR_MAX + 16: /* --stringtable-input */
-        input_syntax = &input_format_stringtable;
-        break;
+        case CHAR_MAX + 2: /* --untranslated */
+          to_remove |= REMOVE_TRANSLATED;
+          break;
 
-      case CHAR_MAX + 17: /* --stringtable-output */
-        output_syntax = &output_format_stringtable;
-        break;
+        case CHAR_MAX + 3: /* --no-fuzzy */
+          to_remove |= REMOVE_FUZZY;
+          break;
 
-      case CHAR_MAX + 18: /* --clear-previous */
-        to_change |= REMOVE_PREV;
-        break;
+        case CHAR_MAX + 4: /* --only-fuzzy */
+          to_remove |= REMOVE_NONFUZZY;
+          break;
 
-      case CHAR_MAX + 19: /* --color */
-        if (handle_color_option (optarg) || color_test_mode)
+        case CHAR_MAX + 5: /* --no-obsolete */
+          to_remove |= REMOVE_OBSOLETE;
+          break;
+
+        case CHAR_MAX + 6: /* --only-obsolete */
+          to_remove |= REMOVE_NONOBSOLETE;
+          break;
+
+        case CHAR_MAX + 7: /* --set-fuzzy */
+          to_change |= SET_FUZZY;
+          break;
+
+        case CHAR_MAX + 8: /* --clear-fuzzy */
+          to_change |= RESET_FUZZY;
+          break;
+
+        case CHAR_MAX + 9: /* --set-obsolete */
+          to_change |= SET_OBSOLETE;
+          break;
+
+        case CHAR_MAX + 10: /* --clear-obsolete */
+          to_change |= RESET_OBSOLETE;
+          break;
+
+        case CHAR_MAX + 11: /* --fuzzy */
+          to_remove |= REMOVE_NONFUZZY;
+          to_change |= RESET_FUZZY;
+          break;
+
+        case CHAR_MAX + 12: /* --obsolete */
+          to_remove |= REMOVE_NONOBSOLETE;
+          to_change |= RESET_OBSOLETE;
+          break;
+
+        case CHAR_MAX + 13: /* --no-wrap */
+          message_page_width_ignore ();
+          break;
+
+        case CHAR_MAX + 14: /* --only-file */
+          only_file = optarg;
+          break;
+
+        case CHAR_MAX + 15: /* --ignore-file */
+          ignore_file = optarg;
+          break;
+
+        case CHAR_MAX + 16: /* --stringtable-input */
+          input_syntax = &input_format_stringtable;
+          break;
+
+        case CHAR_MAX + 17: /* --stringtable-output */
+          output_syntax = &output_format_stringtable;
+          break;
+
+        case CHAR_MAX + 18: /* --clear-previous */
+          to_change |= REMOVE_PREV;
+          break;
+
+        case CHAR_MAX + 19: /* --color */
+          if (handle_color_option (optarg) || color_test_mode)
+            usage (EXIT_FAILURE);
+          break;
+
+        case CHAR_MAX + 20: /* --style */
+          handle_style_option (optarg);
+          break;
+
+        case CHAR_MAX + 21: /* --previous */
+          to_change |= ADD_PREV;
+          break;
+
+        case CHAR_MAX + 22: /* --no-location */
+          message_print_style_filepos (filepos_comment_none);
+          break;
+
+        case CHAR_MAX + 23: /* --empty */
+          to_change |= REMOVE_TRANSLATION;
+          break;
+
+        default:
           usage (EXIT_FAILURE);
-        break;
-
-      case CHAR_MAX + 20: /* --style */
-        handle_style_option (optarg);
-        break;
-
-      case CHAR_MAX + 21: /* --previous */
-        to_change |= ADD_PREV;
-        break;
-
-      case CHAR_MAX + 22: /* --no-location */
-        message_print_style_filepos (filepos_comment_none);
-        break;
-
-      case CHAR_MAX + 23: /* --empty */
-        to_change |= REMOVE_TRANSLATION;
-        break;
-
-      default:
-        usage (EXIT_FAILURE);
-        /* NOTREACHED */
-      }
+          /* NOTREACHED */
+        }
+  }
 
   /* Version information requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "2001-2016");
+              "2001-2026", "https://gnu.org/licenses/gpl.html");
       printf (_("Written by %s.\n"), proper_name ("Bruno Haible"));
       exit (EXIT_SUCCESS);
     }
@@ -384,15 +375,17 @@ There is NO WARRANTY, to the extent permitted by law.\n\
            "--sort-output", "--sort-by-file");
 
   /* Read input file.  */
-  result = read_catalog_file (input_file, input_syntax);
+  msgdomain_list_ty *result = read_catalog_file (input_file, input_syntax);
 
   /* Read optional files that limit the extent of the attribute changes.  */
-  only_mdlp = (only_file != NULL
-               ? read_catalog_file (only_file, input_syntax)
-               : NULL);
-  ignore_mdlp = (ignore_file != NULL
-                 ? read_catalog_file (ignore_file, input_syntax)
-                 : NULL);
+  msgdomain_list_ty *only_mdlp =
+    (only_file != NULL
+     ? read_catalog_file (only_file, input_syntax)
+     : NULL);
+  msgdomain_list_ty *ignore_mdlp =
+    (ignore_file != NULL
+     ? read_catalog_file (ignore_file, input_syntax)
+     : NULL);
 
   /* Filter the messages and manipulate the attributes.  */
   result = process_msgdomain_list (result, only_mdlp, ignore_mdlp);
@@ -404,7 +397,8 @@ There is NO WARRANTY, to the extent permitted by law.\n\
     msgdomain_list_sort_by_msgid (result);
 
   /* Write the PO file.  */
-  msgdomain_list_print (result, output_file, output_syntax, force_po, false);
+  msgdomain_list_print (result, output_file, output_syntax,
+                        textmode_xerror_handler, force_po, false);
 
   exit (EXIT_SUCCESS);
 }
@@ -539,12 +533,16 @@ Informative output:\n"));
       printf (_("\
   -V, --version               output version information and exit\n"));
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"),
-             stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+             "https://savannah.gnu.org/projects/gettext",
+             "bug-gettext@gnu.org");
     }
 
   exit (status);
@@ -591,9 +589,7 @@ process_message_list (message_list_ty *mlp,
   /* Change the attributes.  */
   if (to_change)
     {
-      size_t j;
-
-      for (j = 0; j < mlp->nitems; j++)
+      for (size_t j = 0; j < mlp->nitems; j++)
         {
           message_ty *mp = mlp->item[j];
 
@@ -629,14 +625,13 @@ process_message_list (message_list_ty *mlp,
                       && mp->is_fuzzy && !mp->obsolete)
                     {
                       unsigned long int nplurals = 0;
-                      char *msgstr;
-                      size_t pos;
-
-                      for (pos = 0; pos < mp->msgstr_len; ++pos)
+                      for (size_t pos = 0; pos < mp->msgstr_len; ++pos)
                         if (!mp->msgstr[pos])
                           ++nplurals;
+
                       free ((char *) mp->msgstr);
-                      msgstr = XNMALLOC (nplurals, char);
+
+                      char *msgstr = XNMALLOC (nplurals, char);
                       memset (msgstr, '\0', nplurals);
                       mp->msgstr = msgstr;
                       mp->msgstr_len = nplurals;
@@ -665,9 +660,7 @@ process_msgdomain_list (msgdomain_list_ty *mdlp,
                         msgdomain_list_ty *only_mdlp,
                         msgdomain_list_ty *ignore_mdlp)
 {
-  size_t k;
-
-  for (k = 0; k < mdlp->nitems; k++)
+  for (size_t k = 0; k < mdlp->nitems; k++)
     process_message_list (mdlp->item[k]->messages,
                           only_mdlp
                           ? msgdomain_list_sublist (only_mdlp,

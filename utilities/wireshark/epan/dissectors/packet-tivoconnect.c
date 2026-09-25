@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -40,27 +28,32 @@
 void proto_reg_handoff_tivoconnect(void);
 void proto_register_tivoconnect(void);
 
-static int proto_tivoconnect = -1;
-static int hf_tivoconnect_flavor = -1;
-static int hf_tivoconnect_method = -1;
-static int hf_tivoconnect_platform = -1;
-static int hf_tivoconnect_machine = -1;
-static int hf_tivoconnect_identity = -1;
-static int hf_tivoconnect_services = -1;
-static int hf_tivoconnect_version = -1;
+static dissector_handle_t tivoconnect_tcp_handle;
+static dissector_handle_t tivoconnect_udp_handle;
 
-static gint ett_tivoconnect = -1;
+#define TIVOCONNECT_PORT 2190
+
+static int proto_tivoconnect;
+static int hf_tivoconnect_flavor;
+static int hf_tivoconnect_method;
+static int hf_tivoconnect_platform;
+static int hf_tivoconnect_machine;
+static int hf_tivoconnect_identity;
+static int hf_tivoconnect_services;
+static int hf_tivoconnect_version;
+
+static int ett_tivoconnect;
 
 static int
-dissect_tivoconnect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_tcp)
+dissect_tivoconnect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool is_tcp)
 {
     /* parsing variables */
-    gchar * string;
-    gint length;
+    char * string;
+    int length;
     /* value strings */
-    const gchar * proto_name;
-    gchar * packet_identity = NULL;
-    gchar * packet_machine = NULL;
+    const char * proto_name;
+    char * packet_identity = NULL;
+    char * packet_machine = NULL;
 
     /* validate that we have a tivoconnect packet */
     if ( tvb_strncaseeql(tvb, 0, "tivoconnect", 11) != 0) {
@@ -68,7 +61,7 @@ dissect_tivoconnect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolea
     }
 
     length = tvb_captured_length(tvb);
-    string = (gchar*)tvb_get_string_enc(wmem_packet_scope(), tvb, 0, length, ENC_ASCII);
+    string = (char*)tvb_get_string_enc(pinfo->pool, tvb, 0, length, ENC_ASCII);
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "TiVoConnect");
@@ -84,8 +77,8 @@ dissect_tivoconnect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolea
         proto_tree *tivoconnect_tree;
 
         /* parsing variables */
-        guint offset = 0;
-        gchar * field;
+        unsigned offset = 0;
+        char * field;
 
         /* create display subtree for the protocol */
         ti = proto_tree_add_item(tree, proto_tivoconnect, tvb, 0, -1, ENC_NA);
@@ -96,8 +89,8 @@ dissect_tivoconnect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolea
         for ( field = strtok(string, "\n");
               field;
               offset += length, field = strtok(NULL, "\n") ) {
-            gchar * value;
-            gint fieldlen;
+            char * value;
+            int fieldlen;
 
             length = (int)strlen(field) + 1;
 
@@ -111,39 +104,39 @@ dissect_tivoconnect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolea
             if ( g_ascii_strcasecmp(field, "tivoconnect") == 0 ) {
                 proto_tree_add_item(tivoconnect_tree,
                     hf_tivoconnect_flavor, tvb, offset+fieldlen,
-                    length-fieldlen-1, ENC_ASCII|ENC_NA);
+                    length-fieldlen-1, ENC_ASCII);
             }
             else if ( g_ascii_strcasecmp(field, "method") == 0 ) {
                 proto_tree_add_item(tivoconnect_tree,
                     hf_tivoconnect_method, tvb, offset+fieldlen,
-                    length-fieldlen-1, ENC_ASCII|ENC_NA);
+                    length-fieldlen-1, ENC_ASCII);
             }
             else if ( g_ascii_strcasecmp(field, "platform") == 0 ) {
                 proto_tree_add_item(tivoconnect_tree,
                     hf_tivoconnect_platform, tvb, offset+fieldlen,
-                    length-fieldlen-1, ENC_ASCII|ENC_NA);
+                    length-fieldlen-1, ENC_ASCII);
             }
             else if ( g_ascii_strcasecmp(field, "machine") == 0 ) {
                 proto_tree_add_item(tivoconnect_tree,
                     hf_tivoconnect_machine, tvb, offset+fieldlen,
-                    length-fieldlen-1, ENC_ASCII|ENC_NA);
+                    length-fieldlen-1, ENC_ASCII);
                 packet_machine = value;
             }
             else if ( g_ascii_strcasecmp(field, "identity") == 0 ) {
                 proto_tree_add_item(tivoconnect_tree,
                     hf_tivoconnect_identity, tvb, offset+fieldlen,
-                    length-fieldlen-1, ENC_ASCII|ENC_NA);
+                    length-fieldlen-1, ENC_ASCII);
                 packet_identity = value;
             }
             else if ( g_ascii_strcasecmp(field, "services") == 0 ) {
                 proto_tree_add_item(tivoconnect_tree,
                     hf_tivoconnect_services, tvb, offset+fieldlen,
-                    length-fieldlen-1, ENC_ASCII|ENC_NA);
+                    length-fieldlen-1, ENC_ASCII);
             }
             else if ( g_ascii_strcasecmp(field, "swversion") == 0 ) {
                 proto_tree_add_item(tivoconnect_tree,
                     hf_tivoconnect_version, tvb, offset+fieldlen,
-                    length-fieldlen-1, ENC_ASCII|ENC_NA);
+                    length-fieldlen-1, ENC_ASCII);
             }
             else {
                 /* unknown field! */
@@ -178,13 +171,13 @@ dissect_tivoconnect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolea
 static int
 dissect_tivoconnect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    return dissect_tivoconnect(tvb, pinfo, tree, TRUE);
+    return dissect_tivoconnect(tvb, pinfo, tree, true);
 }
 
 static int
 dissect_tivoconnect_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    return dissect_tivoconnect(tvb, pinfo, tree, FALSE);
+    return dissect_tivoconnect(tvb, pinfo, tree, false);
 }
 
 void
@@ -221,7 +214,7 @@ proto_register_tivoconnect(void)
             "System software version", HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_tivoconnect,
     };
 
@@ -230,22 +223,21 @@ proto_register_tivoconnect(void)
 
     proto_register_field_array(proto_tivoconnect, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    tivoconnect_tcp_handle = register_dissector("tivo.tcp", dissect_tivoconnect_tcp, proto_tivoconnect);
+    tivoconnect_udp_handle = register_dissector("tivo.udp", dissect_tivoconnect_udp, proto_tivoconnect);
 }
 
 
 void
 proto_reg_handoff_tivoconnect(void)
 {
-    dissector_handle_t tivoconnect_tcp_handle, tivoconnect_udp_handle;
-
-    tivoconnect_tcp_handle = create_dissector_handle(dissect_tivoconnect_tcp, proto_tivoconnect);
-    tivoconnect_udp_handle = create_dissector_handle(dissect_tivoconnect_udp, proto_tivoconnect);
-    dissector_add_uint("udp.port", 2190, tivoconnect_udp_handle);
-    dissector_add_uint("tcp.port", 2190, tivoconnect_tcp_handle);
+    dissector_add_uint_with_preference("udp.port", TIVOCONNECT_PORT, tivoconnect_udp_handle);
+    dissector_add_uint_with_preference("tcp.port", TIVOCONNECT_PORT, tivoconnect_tcp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

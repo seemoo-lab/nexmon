@@ -3,7 +3,7 @@
 
 # Test Lisp support: --add-comments option.
 
-cat <<EOF > xg-ls-1.lisp
+cat <<\EOF > xg-ls-1.lisp
 ; This comment will not be extracted.
 (write-line (gettext "help"))
 ;;  TRANSLATORS: This is an extracted comment.
@@ -21,7 +21,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-ls-1.tmp xg-ls-1.lisp || Exit 1
 LC_ALL=C tr -d '\r' < xg-ls-1.tmp.po > xg-ls-1.po || Exit 1
 
-cat <<EOF > xg-ls-1.ok
+cat <<\EOF > xg-ls-1.ok
 msgid "help"
 msgstr ""
 

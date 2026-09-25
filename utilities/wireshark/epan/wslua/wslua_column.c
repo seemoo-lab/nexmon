@@ -12,20 +12,9 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
+#include "config.h"
 
 #include "wslua_pinfo_common.h"
 
@@ -33,11 +22,11 @@
 /* WSLUA_CONTINUE_MODULE Pinfo */
 
 
-static GPtrArray* outstanding_Column = NULL;
-static GPtrArray* outstanding_Columns = NULL;
+static GPtrArray* outstanding_Column;
+static GPtrArray* outstanding_Columns;
 
-CLEAR_OUTSTANDING(Column,expired, TRUE)
-CLEAR_OUTSTANDING(Columns,expired, TRUE)
+CLEAR_OUTSTANDING(Column,expired, true)
+CLEAR_OUTSTANDING(Columns,expired, true)
 
 #define PUSH_COLUMN(L,c) {g_ptr_array_add(outstanding_Column,c);pushColumn(L,c);}
 
@@ -51,12 +40,14 @@ void Push_Columns(lua_State *L, Columns c)
 WSLUA_CLASS_DEFINE(Column,FAIL_ON_NULL("Column")); /* A Column in the packet list. */
 
 struct col_names_t {
-    const gchar* name;
+    const char* name;
     int id;
 };
 
+// Duplicated below in Columns__newindex.
 static const struct col_names_t colnames[] = {
     {"number",COL_NUMBER},
+    {"number_displayed",COL_NUMBER_DIS},
     {"abs_time",COL_ABS_TIME},
     {"utc_time",COL_UTC_TIME},
     {"cls_time",COL_CLS_TIME},
@@ -96,14 +87,12 @@ static const struct col_names_t colnames[] = {
     {"packet_len",COL_PACKET_LENGTH},
     {"cumulative_bytes",COL_CUMULATIVE_BYTES},
     {"direction",COL_IF_DIR},
-    {"vsan",COL_VSAN},
     {"tx_rate",COL_TX_RATE},
     {"rssi",COL_RSSI},
-    {"dce_call",COL_DCE_CALL},
     {NULL,0}
 };
 
-static gint col_name_to_id(const gchar* name) {
+static int col_name_to_id(const char* name) {
     const struct col_names_t* cn;
     for(cn = colnames; cn->name; cn++) {
         if (g_str_equal(cn->name,name)) {
@@ -114,7 +103,7 @@ static gint col_name_to_id(const gchar* name) {
     return 0;
 }
 
-static const gchar*  col_id_to_name(gint id) {
+static const char*  col_id_to_name(int id) {
     const struct col_names_t* cn;
     for(cn = colnames; cn->name; cn++) {
         if ( cn->id == id ) {
@@ -127,7 +116,7 @@ static const gchar*  col_id_to_name(gint id) {
 
 WSLUA_METAMETHOD Column__tostring(lua_State *L) {
     Column c = checkColumn(L,1);
-    const gchar* text;
+    const char* text;
 
     if (!c->cinfo) {
         text = col_id_to_name(c->col);
@@ -148,7 +137,7 @@ static int Column__gc(lua_State* L) {
     if (!col) return 0;
 
     if (!col->expired)
-        col->expired = TRUE;
+        col->expired = true;
     else
         g_free(col);
 
@@ -171,7 +160,7 @@ WSLUA_METHOD Column_set(lua_State *L) {
     /* Sets the text of a Column. */
 #define WSLUA_ARG_Column_set_TEXT 2 /* The text to which to set the Column. */
     Column c = checkColumn(L,1);
-    const gchar* s = luaL_checkstring(L,WSLUA_ARG_Column_set_TEXT);
+    const char* s = luaL_checkstring(L,WSLUA_ARG_Column_set_TEXT);
 
     if (!(c->cinfo))
         return 0;
@@ -184,13 +173,19 @@ WSLUA_METHOD Column_set(lua_State *L) {
 WSLUA_METHOD Column_append(lua_State *L) {
     /* Appends text to a Column. */
 #define WSLUA_ARG_Column_append_TEXT 2 /* The text to append to the Column. */
+#define WSLUA_OPTARG_Column_append_SEP 3 /* An optional separator to use as prefix if the column is not empty. */
     Column c = checkColumn(L,1);
-    const gchar* s = luaL_checkstring(L,WSLUA_ARG_Column_append_TEXT);
+    const char* s = luaL_checkstring(L,WSLUA_ARG_Column_append_TEXT);
+    const char* sep = luaL_optstring(L,WSLUA_OPTARG_Column_append_SEP,NULL);
 
     if (!(c->cinfo))
         return 0;
 
-    col_append_str(c->cinfo, c->col, s);
+    if (sep) {
+        col_append_sep_str(c->cinfo, c->col, sep, s);
+    } else {
+        col_append_str(c->cinfo, c->col, s);
+    }
 
     return 0;
 }
@@ -199,7 +194,7 @@ WSLUA_METHOD Column_prepend(lua_State *L) {
     /* Prepends text to a Column. */
 #define WSLUA_ARG_Column_prepend_TEXT 2 /* The text to prepend to the Column. */
     Column c = checkColumn(L,1);
-    const gchar* s = luaL_checkstring(L,WSLUA_ARG_Column_prepend_TEXT);
+    const char* s = luaL_checkstring(L,WSLUA_ARG_Column_prepend_TEXT);
 
     if (!(c->cinfo))
         return 0;
@@ -210,10 +205,7 @@ WSLUA_METHOD Column_prepend(lua_State *L) {
 }
 
 WSLUA_METHOD Column_fence(lua_State *L) {
-    /* Sets Column text fence, to prevent overwriting.
-
-       @since 1.10.6
-     */
+    /* Sets Column text fence, to prevent overwriting. */
     Column c = checkColumn(L,1);
 
     if (c->cinfo)
@@ -223,10 +215,7 @@ WSLUA_METHOD Column_fence(lua_State *L) {
 }
 
 WSLUA_METHOD Column_clear_fence(lua_State *L) {
-    /* Clear Column text fence.
-
-       @since 1.11.3
-     */
+    /* Clear Column text fence. */
     Column c = checkColumn(L,1);
 
     if (c->cinfo)
@@ -256,27 +245,90 @@ WSLUA_META Column_meta[] = {
 
 int Column_register(lua_State *L) {
     WSLUA_REGISTER_CLASS(Column);
+    if (outstanding_Column != NULL) {
+        g_ptr_array_unref(outstanding_Column);
+    }
     outstanding_Column = g_ptr_array_new();
     return 0;
 }
 
 
-WSLUA_CLASS_DEFINE(Columns,NOP);
-/* The Columns of the packet list. */
+WSLUA_CLASS_DEFINE(Columns,NOP); /* The <<lua_class_Column,``Column``>>s of the packet list. */
 
 WSLUA_METAMETHOD Columns__tostring(lua_State *L) {
     lua_pushstring(L,"Columns");
     WSLUA_RETURN(1);
-    /* The string "Columns", no real use, just for debugging purposes. */
+    /* The string "Columns". This has no real use aside from debugging. */
 }
 
 /*
  * To document this is very odd - it won't make sense to a person reading the
  * API docs to see this metamethod as a method, but oh well.
  */
-WSLUA_METAMETHOD Columns__newindex(lua_State *L) {
-    /* Sets the text of a specific column. */
-#define WSLUA_ARG_Columns__newindex_COLUMN 2 /* The name of the column to set. */
+WSLUA_METAMETHOD Columns__newindex(lua_State *L) { /*
+    Sets the text of a specific column.
+    Some columns cannot be modified, and no error is raised if attempted.
+    The columns that are known to allow modification are "info" and "protocol".
+    */
+#define WSLUA_ARG_Columns__newindex_COLUMN 2 /*
+    The name of the column to set.
+    Valid values are:
+
+    [options="header"]
+    |===
+    |Name |Description
+    |number |Frame number
+    |abs_time |Absolute timestamp
+    |utc_time |UTC timestamp
+    |cls_time |CLS timestamp
+    |rel_time |Relative timestamp
+    |date |Absolute date and time
+    |date_doy |Absolute year, day of year, and time
+    |utc_date |UTC date and time
+    |utc_date_doy |UTC year, day of year, and time
+    |delta_time |Delta time from previous packet
+    |delta_time_displayed |Delta time from previous displayed packet
+    |src |Source address
+    |src_res |Resolved source address
+    |src_unres |Numeric source address
+    |dl_src |Source data link address
+    |dl_src_res |Resolved source data link address
+    |dl_src_unres |Numeric source data link address
+    |net_src |Source network address
+    |net_src_res |Resolved source network address
+    |net_src_unres |Numeric source network address
+    |dst |Destination address
+    |dst_res |Resolve destination address
+    |dst_unres |Numeric destination address
+    |dl_dst |Destination data link address
+    |dl_dst_res |Resolved destination data link address
+    |dl_dst_unres |Numeric destination data link address
+    |net_dst |Destination network address
+    |net_dst_res |Resolved destination network address
+    |net_dst_unres |Numeric destination network address
+    |src_port |Source port
+    |src_port_res |Resolved source port
+    |src_port_unres |Numeric source port
+    |dst_port |Destination port
+    |dst_port_res |Resolved destination port
+    |dst_port_unres |Numeric destination port
+    |protocol |Protocol name
+    |info |General packet information
+    |packet_len |Packet length
+    |cumulative_bytes |Cumulative bytes in the capture
+    |direction |Packet direction
+    |vsan |Virtual SAN
+    |tx_rate |Transmit rate
+    |rssi |RSSI value
+    |dce_call |DCE call
+    |===
+
+    ===== Example
+    pinfo.cols['info'] = 'foo bar'
+
+    -- syntactic sugar (equivalent to above)
+    pinfo.cols.info = 'foo bar'
+    */
 #define WSLUA_ARG_Columns__newindex_TEXT 3 /* The text for the column. */
     Columns cols = checkColumns(L,1);
     const struct col_names_t* cn;
@@ -304,7 +356,7 @@ WSLUA_METAMETHOD Columns__newindex(lua_State *L) {
 }
 
 WSLUA_METAMETHOD Columns__index(lua_State *L) {
-    /* Gets a specific Column. */
+    /* Get a specific <<lua_class_Column,``Column``>>. */
     Columns cols = checkColumns(L,1);
     const struct col_names_t* cn;
     const char* colname = luaL_checkstring(L,2);
@@ -313,7 +365,7 @@ WSLUA_METAMETHOD Columns__index(lua_State *L) {
         Column c = (Column)g_malloc(sizeof(struct _wslua_col_info));
         c->cinfo = NULL;
         c->col = col_name_to_id(colname);
-        c->expired = FALSE;
+        c->expired = false;
 
         PUSH_COLUMN(L,c);
         return 1;
@@ -330,7 +382,7 @@ WSLUA_METAMETHOD Columns__index(lua_State *L) {
             Column c = (Column)g_malloc(sizeof(struct _wslua_col_info));
             c->cinfo = cols->cinfo;
             c->col = col_name_to_id(colname);
-            c->expired = FALSE;
+            c->expired = false;
 
             PUSH_COLUMN(L,c);
             return 1;
@@ -354,7 +406,7 @@ static int Columns__gc(lua_State* L) {
     if (!cols) return 0;
 
     if (!cols->expired)
-        cols->expired = TRUE;
+        cols->expired = true;
     else
         g_free(cols);
 
@@ -373,6 +425,9 @@ WSLUA_META Columns_meta[] = {
 
 int Columns_register(lua_State *L) {
     WSLUA_REGISTER_META(Columns);
+    if (outstanding_Columns != NULL) {
+        g_ptr_array_unref(outstanding_Columns);
+    }
     outstanding_Columns = g_ptr_array_new();
     return 0;
 }
@@ -380,7 +435,7 @@ int Columns_register(lua_State *L) {
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

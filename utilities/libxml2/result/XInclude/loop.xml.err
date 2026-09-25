@@ -1,0 +1,2 @@
+./test/XInclude/without-reader/loop.xml:2: element include: XInclude error : inclusion loop detected
+./test/XInclude/without-reader/loop.xml : failed to parse

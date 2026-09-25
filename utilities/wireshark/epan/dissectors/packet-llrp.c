@@ -10,302 +10,296 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+
 #include "packet-tcp.h"
 
 void proto_register_llrp(void);
 void proto_reg_handoff_llrp(void);
 
+static dissector_handle_t llrp_handle;
+
 #define LLRP_PORT 5084
 
 /* Initialize the protocol and registered fields */
-static int proto_llrp                             = -1;
-static int hf_llrp_version                        = -1;
-static int hf_llrp_type                           = -1;
-static int hf_llrp_length                         = -1;
-static int hf_llrp_id                             = -1;
-static int hf_llrp_cur_ver                        = -1;
-static int hf_llrp_sup_ver                        = -1;
-static int hf_llrp_req_cap                        = -1;
-static int hf_llrp_req_conf                       = -1;
-static int hf_llrp_rospec                         = -1;
-static int hf_llrp_antenna_id                     = -1;
-static int hf_llrp_gpi_port                       = -1;
-static int hf_llrp_gpo_port                       = -1;
-static int hf_llrp_rest_fact                      = -1;
-static int hf_llrp_accessspec                     = -1;
-static int hf_llrp_vendor                         = -1;
-static int hf_llrp_impinj_msg_type                = -1;
-static int hf_llrp_tlv_type                       = -1;
-static int hf_llrp_tv_type                        = -1;
-static int hf_llrp_tlv_len                        = -1;
-static int hf_llrp_param                          = -1;
-static int hf_llrp_num_gpi                        = -1;
-static int hf_llrp_num_gpo                        = -1;
-static int hf_llrp_microseconds                   = -1;
-static int hf_llrp_max_supported_antenna          = -1;
-static int hf_llrp_can_set_antenna_prop           = -1;
-static int hf_llrp_has_utc_clock                  = -1;
-static int hf_llrp_device_manufacturer            = -1;
-static int hf_llrp_model                          = -1;
-static int hf_llrp_firmware_version               = -1;
-static int hf_llrp_max_receive_sense              = -1;
-static int hf_llrp_index                          = -1;
-static int hf_llrp_receive_sense                  = -1;
-static int hf_llrp_receive_sense_index_min        = -1;
-static int hf_llrp_receive_sense_index_max        = -1;
-static int hf_llrp_num_protocols                  = -1;
-static int hf_llrp_protocol_id                    = -1;
-static int hf_llrp_can_do_survey                  = -1;
-static int hf_llrp_can_report_buffer_warning      = -1;
-static int hf_llrp_support_client_opspec          = -1;
-static int hf_llrp_can_stateaware                 = -1;
-static int hf_llrp_support_holding                = -1;
-static int hf_llrp_max_priority_supported         = -1;
-static int hf_llrp_client_opspec_timeout          = -1;
-static int hf_llrp_max_num_rospec                 = -1;
-static int hf_llrp_max_num_spec_per_rospec        = -1;
-static int hf_llrp_max_num_inventory_per_aispec   = -1;
-static int hf_llrp_max_num_accessspec             = -1;
-static int hf_llrp_max_num_opspec_per_accressspec = -1;
-static int hf_llrp_country_code                   = -1;
-static int hf_llrp_comm_standard                  = -1;
-static int hf_llrp_transmit_power                 = -1;
-static int hf_llrp_hopping                        = -1;
-static int hf_llrp_hop_table_id                   = -1;
-static int hf_llrp_rfu                            = -1;
-static int hf_llrp_num_hops                       = -1;
-static int hf_llrp_frequency                      = -1;
-static int hf_llrp_num_freqs                      = -1;
-static int hf_llrp_min_freq                       = -1;
-static int hf_llrp_max_freq                       = -1;
-static int hf_llrp_rospec_id                      = -1;
-static int hf_llrp_priority                       = -1;
-static int hf_llrp_cur_state                      = -1;
-static int hf_llrp_rospec_start_trig_type         = -1;
-static int hf_llrp_offset                         = -1;
-static int hf_llrp_period                         = -1;
-static int hf_llrp_gpi_event                      = -1;
-static int hf_llrp_timeout                        = -1;
-static int hf_llrp_rospec_stop_trig_type          = -1;
-static int hf_llrp_duration_trig                  = -1;
-static int hf_llrp_antenna_count                  = -1;
-static int hf_llrp_antenna                        = -1;
-static int hf_llrp_aispec_stop_trig_type          = -1;
-static int hf_llrp_trig_type                      = -1;
-static int hf_llrp_number_of_tags                 = -1;
-static int hf_llrp_number_of_attempts             = -1;
-static int hf_llrp_t                              = -1;
-static int hf_llrp_inventory_spec_id              = -1;
-static int hf_llrp_start_freq                     = -1;
-static int hf_llrp_stop_freq                      = -1;
-static int hf_llrp_stop_trig_type                 = -1;
-static int hf_llrp_n_4                            = -1;
-static int hf_llrp_duration                       = -1;
-static int hf_llrp_accessspec_id                  = -1;
-static int hf_llrp_access_cur_state               = -1;
-static int hf_llrp_access_stop_trig_type          = -1;
-static int hf_llrp_operation_count                = -1;
-static int hf_llrp_opspec_id                      = -1;
-static int hf_llrp_conf_value                     = -1;
-static int hf_llrp_id_type                        = -1;
-static int hf_llrp_reader_id                      = -1;
-static int hf_llrp_gpo_data                       = -1;
-static int hf_llrp_keepalive_trig_type            = -1;
-static int hf_llrp_time_iterval                   = -1;
-static int hf_llrp_antenna_connected              = -1;
-static int hf_llrp_antenna_gain                   = -1;
-static int hf_llrp_receiver_sense                 = -1;
-static int hf_llrp_channel_idx                    = -1;
-static int hf_llrp_gpi_config                     = -1;
-static int hf_llrp_gpi_state                      = -1;
-static int hf_llrp_hold_events_and_reports        = -1;
-static int hf_llrp_ro_report_trig                 = -1;
-static int hf_llrp_n_2                            = -1;
-static int hf_llrp_enable_rospec_id               = -1;
-static int hf_llrp_enable_spec_idx                = -1;
-static int hf_llrp_enable_inv_spec_id             = -1;
-static int hf_llrp_enable_antenna_id              = -1;
-static int hf_llrp_enable_channel_idx             = -1;
-static int hf_llrp_enable_peak_rssi               = -1;
-static int hf_llrp_enable_first_seen              = -1;
-static int hf_llrp_enable_last_seen               = -1;
-static int hf_llrp_enable_seen_count              = -1;
-static int hf_llrp_enable_accessspec_id           = -1;
-static int hf_llrp_access_report_trig             = -1;
-static int hf_llrp_length_bits                    = -1;
-static int hf_llrp_epc                            = -1;
-static int hf_llrp_spec_idx                       = -1;
-static int hf_llrp_peak_rssi                      = -1;
-static int hf_llrp_tag_count                      = -1;
-static int hf_llrp_bandwidth                      = -1;
-static int hf_llrp_average_rssi                   = -1;
-static int hf_llrp_notif_state                    = -1;
-static int hf_llrp_event_type                     = -1;
-static int hf_llrp_next_chan_idx                  = -1;
-static int hf_llrp_roevent_type                   = -1;
-static int hf_llrp_prem_rospec_id                 = -1;
-static int hf_llrp_buffer_full_percentage         = -1;
-static int hf_llrp_message                        = -1;
-static int hf_llrp_rfevent_type                   = -1;
-static int hf_llrp_aievent_type                   = -1;
-static int hf_llrp_antenna_event_type             = -1;
-static int hf_llrp_conn_status                    = -1;
-static int hf_llrp_loop_count                     = -1;
-static int hf_llrp_status_code                    = -1;
-static int hf_llrp_error_desc                     = -1;
-static int hf_llrp_field_num                      = -1;
-static int hf_llrp_error_code                     = -1;
-static int hf_llrp_parameter_type                 = -1;
-static int hf_llrp_can_support_block_erase        = -1;
-static int hf_llrp_can_support_block_write        = -1;
-static int hf_llrp_can_support_block_permalock    = -1;
-static int hf_llrp_can_support_tag_recomm         = -1;
-static int hf_llrp_can_support_UMI_method2        = -1;
-static int hf_llrp_can_support_XPC                = -1;
-static int hf_llrp_max_num_filter_per_query       = -1;
-static int hf_llrp_mode_ident                     = -1;
-static int hf_llrp_DR                             = -1;
-static int hf_llrp_hag_conformance                = -1;
-static int hf_llrp_mod                            = -1;
-static int hf_llrp_flm                            = -1;
-static int hf_llrp_m                              = -1;
-static int hf_llrp_bdr                            = -1;
-static int hf_llrp_pie                            = -1;
-static int hf_llrp_min_tari                       = -1;
-static int hf_llrp_max_tari                       = -1;
-static int hf_llrp_step_tari                      = -1;
-static int hf_llrp_inventory_state_aware          = -1;
-static int hf_llrp_trunc                          = -1;
-static int hf_llrp_mb                             = -1;
-static int hf_llrp_pointer                        = -1;
-static int hf_llrp_tag_mask                       = -1;
-static int hf_llrp_aware_filter_target            = -1;
-static int hf_llrp_aware_filter_action            = -1;
-static int hf_llrp_unaware_filter_action          = -1;
-static int hf_llrp_mode_idx                       = -1;
-static int hf_llrp_tari                           = -1;
-static int hf_llrp_session                        = -1;
-static int hf_llrp_tag_population                 = -1;
-static int hf_llrp_tag_transit_time               = -1;
-static int hf_llrp_sing_i                         = -1;
-static int hf_llrp_sing_s                         = -1;
-static int hf_llrp_sing_a                         = -1;
-static int hf_llrp_match                          = -1;
-static int hf_llrp_tag_data                       = -1;
-static int hf_llrp_access_pass                    = -1;
-static int hf_llrp_word_pointer                   = -1;
-static int hf_llrp_word_count                     = -1;
-static int hf_llrp_write_data                     = -1;
-static int hf_llrp_kill_pass                      = -1;
-static int hf_llrp_kill_3                         = -1;
-static int hf_llrp_kill_2                         = -1;
-static int hf_llrp_kill_l                         = -1;
-static int hf_llrp_privilege                      = -1;
-static int hf_llrp_data_field                     = -1;
-static int hf_llrp_block_pointer                  = -1;
-static int hf_llrp_block_mask                     = -1;
-static int hf_llrp_length_words                   = -1;
-static int hf_llrp_block_range                    = -1;
-static int hf_llrp_enable_crc                     = -1;
-static int hf_llrp_enable_pc                      = -1;
-static int hf_llrp_enable_xpc                     = -1;
-static int hf_llrp_pc_bits                        = -1;
-static int hf_llrp_xpc_w1                         = -1;
-static int hf_llrp_xpc_w2                         = -1;
-static int hf_llrp_crc                            = -1;
-static int hf_llrp_num_coll                       = -1;
-static int hf_llrp_num_empty                      = -1;
-static int hf_llrp_access_result                  = -1;
-static int hf_llrp_read_data                      = -1;
-static int hf_llrp_num_words_written              = -1;
-static int hf_llrp_permlock_status                = -1;
-static int hf_llrp_vendor_id                      = -1;
-static int hf_llrp_impinj_param_type              = -1;
-static int hf_llrp_save_config                    = -1;
-static int hf_llrp_impinj_req_data                = -1;
-static int hf_llrp_impinj_reg_region              = -1;
-static int hf_llrp_impinj_search_mode             = -1;
-static int hf_llrp_impinj_en_tag_dir              = -1;
-static int hf_llrp_impinj_antenna_conf            = -1;
-static int hf_llrp_decision_time                  = -1;
-static int hf_llrp_impinj_tag_dir                 = -1;
-static int hf_llrp_confidence                     = -1;
-static int hf_llrp_impinj_fix_freq_mode           = -1;
-static int hf_llrp_num_channels                   = -1;
-static int hf_llrp_channel                        = -1;
-static int hf_llrp_impinj_reduce_power_mode       = -1;
-static int hf_llrp_impinj_low_duty_mode           = -1;
-static int hf_llrp_empty_field_timeout            = -1;
-static int hf_llrp_field_ping_interval            = -1;
-static int hf_llrp_model_name                     = -1;
-static int hf_llrp_serial_number                  = -1;
-static int hf_llrp_soft_ver                       = -1;
-static int hf_llrp_firm_ver                       = -1;
-static int hf_llrp_fpga_ver                       = -1;
-static int hf_llrp_pcba_ver                       = -1;
-static int hf_llrp_height_thresh                  = -1;
-static int hf_llrp_zero_motion_thresh             = -1;
-static int hf_llrp_board_manufacturer             = -1;
-static int hf_llrp_fw_ver_hex                     = -1;
-static int hf_llrp_hw_ver_hex                     = -1;
-static int hf_llrp_gpi_debounce                   = -1;
-static int hf_llrp_temperature                    = -1;
-static int hf_llrp_impinj_link_monitor_mode       = -1;
-static int hf_llrp_link_down_thresh               = -1;
-static int hf_llrp_impinj_report_buff_mode        = -1;
-static int hf_llrp_permalock_result               = -1;
-static int hf_llrp_block_permalock_result         = -1;
-static int hf_llrp_impinj_data_profile            = -1;
-static int hf_llrp_impinj_access_range            = -1;
-static int hf_llrp_impinj_persistence             = -1;
-static int hf_llrp_set_qt_config_result           = -1;
-static int hf_llrp_get_qt_config_result           = -1;
-static int hf_llrp_impinj_serialized_tid_mode     = -1;
-static int hf_llrp_impinj_rf_phase_mode           = -1;
-static int hf_llrp_impinj_peak_rssi_mode          = -1;
-static int hf_llrp_impinj_gps_coordinates_mode    = -1;
-static int hf_llrp_impinj_tid                     = -1;
-static int hf_llrp_phase_angle                    = -1;
-static int hf_llrp_rssi                           = -1;
-static int hf_llrp_latitude                       = -1;
-static int hf_llrp_longitude                      = -1;
-static int hf_llrp_gga_sentence                   = -1;
-static int hf_llrp_rmc_sentence                   = -1;
-static int hf_llrp_impinj_optim_read_mode         = -1;
-static int hf_llrp_impinj_rf_doppler_mode         = -1;
-static int hf_llrp_retry_count                    = -1;
-static int hf_llrp_impinj_access_spec_ordering    = -1;
-static int hf_llrp_impinj_gpo_mode                = -1;
-static int hf_llrp_gpo_pulse_dur                  = -1;
-static int hf_llrp_impinj_hub_id                  = -1;
-static int hf_llrp_impinj_hub_fault_type          = -1;
-static int hf_llrp_impinj_hub_connected_type      = -1;
+static int proto_llrp;
+static int hf_llrp_version;
+static int hf_llrp_type;
+static int hf_llrp_length;
+static int hf_llrp_id;
+static int hf_llrp_cur_ver;
+static int hf_llrp_sup_ver;
+static int hf_llrp_req_cap;
+static int hf_llrp_req_conf;
+static int hf_llrp_rospec;
+static int hf_llrp_antenna_id;
+static int hf_llrp_gpi_port;
+static int hf_llrp_gpo_port;
+static int hf_llrp_rest_fact;
+static int hf_llrp_accessspec;
+static int hf_llrp_vendor;
+static int hf_llrp_impinj_msg_type;
+static int hf_llrp_tlv_type;
+static int hf_llrp_tv_type;
+static int hf_llrp_tlv_len;
+static int hf_llrp_param;
+static int hf_llrp_num_gpi;
+static int hf_llrp_num_gpo;
+static int hf_llrp_microseconds;
+static int hf_llrp_max_supported_antenna;
+static int hf_llrp_can_set_antenna_prop;
+static int hf_llrp_has_utc_clock;
+static int hf_llrp_device_manufacturer;
+static int hf_llrp_model;
+static int hf_llrp_firmware_version;
+static int hf_llrp_max_receive_sense;
+static int hf_llrp_index;
+static int hf_llrp_receive_sense;
+static int hf_llrp_receive_sense_index_min;
+static int hf_llrp_receive_sense_index_max;
+static int hf_llrp_num_protocols;
+static int hf_llrp_protocol_id;
+static int hf_llrp_can_do_survey;
+static int hf_llrp_can_report_buffer_warning;
+static int hf_llrp_support_client_opspec;
+static int hf_llrp_can_stateaware;
+static int hf_llrp_support_holding;
+static int hf_llrp_max_priority_supported;
+static int hf_llrp_client_opspec_timeout;
+static int hf_llrp_max_num_rospec;
+static int hf_llrp_max_num_spec_per_rospec;
+static int hf_llrp_max_num_inventory_per_aispec;
+static int hf_llrp_max_num_accessspec;
+static int hf_llrp_max_num_opspec_per_accressspec;
+static int hf_llrp_country_code;
+static int hf_llrp_comm_standard;
+static int hf_llrp_transmit_power;
+static int hf_llrp_hopping;
+static int hf_llrp_hop_table_id;
+static int hf_llrp_rfu;
+static int hf_llrp_num_hops;
+static int hf_llrp_frequency;
+static int hf_llrp_num_freqs;
+static int hf_llrp_min_freq;
+static int hf_llrp_max_freq;
+static int hf_llrp_rospec_id;
+static int hf_llrp_priority;
+static int hf_llrp_cur_state;
+static int hf_llrp_rospec_start_trig_type;
+static int hf_llrp_offset;
+static int hf_llrp_period;
+static int hf_llrp_gpi_event;
+static int hf_llrp_timeout;
+static int hf_llrp_rospec_stop_trig_type;
+static int hf_llrp_duration_trig;
+static int hf_llrp_antenna_count;
+static int hf_llrp_antenna;
+static int hf_llrp_aispec_stop_trig_type;
+static int hf_llrp_trig_type;
+static int hf_llrp_number_of_tags;
+static int hf_llrp_number_of_attempts;
+static int hf_llrp_t;
+static int hf_llrp_inventory_spec_id;
+static int hf_llrp_start_freq;
+static int hf_llrp_stop_freq;
+static int hf_llrp_stop_trig_type;
+static int hf_llrp_n_4;
+static int hf_llrp_duration;
+static int hf_llrp_accessspec_id;
+static int hf_llrp_access_cur_state;
+static int hf_llrp_access_stop_trig_type;
+static int hf_llrp_operation_count;
+static int hf_llrp_opspec_id;
+static int hf_llrp_conf_value;
+static int hf_llrp_id_type;
+static int hf_llrp_reader_id;
+static int hf_llrp_gpo_data;
+static int hf_llrp_keepalive_trig_type;
+static int hf_llrp_time_iterval;
+static int hf_llrp_antenna_connected;
+static int hf_llrp_antenna_gain;
+static int hf_llrp_receiver_sense;
+static int hf_llrp_channel_idx;
+static int hf_llrp_gpi_config;
+static int hf_llrp_gpi_state;
+static int hf_llrp_hold_events_and_reports;
+static int hf_llrp_ro_report_trig;
+static int hf_llrp_n_2;
+static int hf_llrp_enable_rospec_id;
+static int hf_llrp_enable_spec_idx;
+static int hf_llrp_enable_inv_spec_id;
+static int hf_llrp_enable_antenna_id;
+static int hf_llrp_enable_channel_idx;
+static int hf_llrp_enable_peak_rssi;
+static int hf_llrp_enable_first_seen;
+static int hf_llrp_enable_last_seen;
+static int hf_llrp_enable_seen_count;
+static int hf_llrp_enable_accessspec_id;
+static int hf_llrp_access_report_trig;
+static int hf_llrp_length_bits;
+static int hf_llrp_epc;
+static int hf_llrp_spec_idx;
+static int hf_llrp_peak_rssi;
+static int hf_llrp_tag_count;
+static int hf_llrp_bandwidth;
+static int hf_llrp_average_rssi;
+static int hf_llrp_notif_state;
+static int hf_llrp_event_type;
+static int hf_llrp_next_chan_idx;
+static int hf_llrp_roevent_type;
+static int hf_llrp_prem_rospec_id;
+static int hf_llrp_buffer_full_percentage;
+static int hf_llrp_message;
+static int hf_llrp_rfevent_type;
+static int hf_llrp_aievent_type;
+static int hf_llrp_antenna_event_type;
+static int hf_llrp_conn_status;
+static int hf_llrp_loop_count;
+static int hf_llrp_status_code;
+static int hf_llrp_error_desc;
+static int hf_llrp_field_num;
+static int hf_llrp_error_code;
+static int hf_llrp_parameter_type;
+static int hf_llrp_can_support_block_erase;
+static int hf_llrp_can_support_block_write;
+static int hf_llrp_can_support_block_permalock;
+static int hf_llrp_can_support_tag_recomm;
+static int hf_llrp_can_support_UMI_method2;
+static int hf_llrp_can_support_XPC;
+static int hf_llrp_max_num_filter_per_query;
+static int hf_llrp_mode_ident;
+static int hf_llrp_DR;
+static int hf_llrp_hag_conformance;
+static int hf_llrp_mod;
+static int hf_llrp_flm;
+static int hf_llrp_m;
+static int hf_llrp_bdr;
+static int hf_llrp_pie;
+static int hf_llrp_min_tari;
+static int hf_llrp_max_tari;
+static int hf_llrp_step_tari;
+static int hf_llrp_inventory_state_aware;
+static int hf_llrp_trunc;
+static int hf_llrp_mb;
+static int hf_llrp_pointer;
+static int hf_llrp_tag_mask;
+static int hf_llrp_aware_filter_target;
+static int hf_llrp_aware_filter_action;
+static int hf_llrp_unaware_filter_action;
+static int hf_llrp_mode_idx;
+static int hf_llrp_tari;
+static int hf_llrp_session;
+static int hf_llrp_tag_population;
+static int hf_llrp_tag_transit_time;
+static int hf_llrp_sing_i;
+static int hf_llrp_sing_s;
+static int hf_llrp_sing_a;
+static int hf_llrp_match;
+static int hf_llrp_tag_data;
+static int hf_llrp_access_pass;
+static int hf_llrp_word_pointer;
+static int hf_llrp_word_count;
+static int hf_llrp_write_data;
+static int hf_llrp_kill_pass;
+static int hf_llrp_kill_3;
+static int hf_llrp_kill_2;
+static int hf_llrp_kill_l;
+static int hf_llrp_privilege;
+static int hf_llrp_data_field;
+static int hf_llrp_block_pointer;
+static int hf_llrp_block_mask;
+static int hf_llrp_length_words;
+static int hf_llrp_block_range;
+static int hf_llrp_enable_crc;
+static int hf_llrp_enable_pc;
+static int hf_llrp_enable_xpc;
+static int hf_llrp_pc_bits;
+static int hf_llrp_xpc_w1;
+static int hf_llrp_xpc_w2;
+static int hf_llrp_crc;
+static int hf_llrp_num_coll;
+static int hf_llrp_num_empty;
+static int hf_llrp_access_result;
+static int hf_llrp_read_data;
+static int hf_llrp_num_words_written;
+static int hf_llrp_permlock_status;
+static int hf_llrp_vendor_id;
+static int hf_llrp_vendor_unknown;
+static int hf_llrp_impinj_param_type;
+static int hf_llrp_save_config;
+static int hf_llrp_impinj_req_data;
+static int hf_llrp_impinj_reg_region;
+static int hf_llrp_impinj_search_mode;
+static int hf_llrp_impinj_en_tag_dir;
+static int hf_llrp_impinj_antenna_conf;
+static int hf_llrp_decision_time;
+static int hf_llrp_impinj_tag_dir;
+static int hf_llrp_confidence;
+static int hf_llrp_impinj_fix_freq_mode;
+static int hf_llrp_num_channels;
+static int hf_llrp_channel;
+static int hf_llrp_impinj_reduce_power_mode;
+static int hf_llrp_impinj_low_duty_mode;
+static int hf_llrp_empty_field_timeout;
+static int hf_llrp_field_ping_interval;
+static int hf_llrp_model_name;
+static int hf_llrp_serial_number;
+static int hf_llrp_soft_ver;
+static int hf_llrp_firm_ver;
+static int hf_llrp_fpga_ver;
+static int hf_llrp_pcba_ver;
+static int hf_llrp_height_thresh;
+static int hf_llrp_zero_motion_thresh;
+static int hf_llrp_board_manufacturer;
+static int hf_llrp_fw_ver_hex;
+static int hf_llrp_hw_ver_hex;
+static int hf_llrp_gpi_debounce;
+static int hf_llrp_temperature;
+static int hf_llrp_impinj_link_monitor_mode;
+static int hf_llrp_link_down_thresh;
+static int hf_llrp_impinj_report_buff_mode;
+static int hf_llrp_permalock_result;
+static int hf_llrp_block_permalock_result;
+static int hf_llrp_impinj_data_profile;
+static int hf_llrp_impinj_access_range;
+static int hf_llrp_impinj_persistence;
+static int hf_llrp_set_qt_config_result;
+static int hf_llrp_get_qt_config_result;
+static int hf_llrp_impinj_serialized_tid_mode;
+static int hf_llrp_impinj_rf_phase_mode;
+static int hf_llrp_impinj_peak_rssi_mode;
+static int hf_llrp_impinj_gps_coordinates_mode;
+static int hf_llrp_impinj_tid;
+static int hf_llrp_phase_angle;
+static int hf_llrp_rssi;
+static int hf_llrp_latitude;
+static int hf_llrp_longitude;
+static int hf_llrp_gga_sentence;
+static int hf_llrp_rmc_sentence;
+static int hf_llrp_impinj_optim_read_mode;
+static int hf_llrp_impinj_rf_doppler_mode;
+static int hf_llrp_retry_count;
+static int hf_llrp_impinj_access_spec_ordering;
+static int hf_llrp_impinj_gpo_mode;
+static int hf_llrp_gpo_pulse_dur;
+static int hf_llrp_impinj_hub_id;
+static int hf_llrp_impinj_hub_fault_type;
+static int hf_llrp_impinj_hub_connected_type;
 
 /* Initialize the subtree pointers */
-static gint ett_llrp = -1;
-static gint ett_llrp_param = -1;
+static int ett_llrp;
+static int ett_llrp_param;
 
-static expert_field ei_llrp_req_conf = EI_INIT;
-static expert_field ei_llrp_invalid_length = EI_INIT;
+static expert_field ei_llrp_req_conf;
+static expert_field ei_llrp_invalid_length;
 
 /* Message Types */
 #define LLRP_TYPE_GET_READER_CAPABILITIES           1
@@ -580,7 +574,7 @@ static const value_string tlv_type[] = {
     { LLRP_TLV_UHF_CAPABILITIES,        "UHF Capabilities"                               },
     { LLRP_TLV_XMIT_POWER_LEVEL_ENTRY,  "Transmit Power Level Entry"                     },
     { LLRP_TLV_FREQ_INFORMATION,        "Frequency Information"                          },
-    { LLRP_TLV_FREQ_HOP_TABLE,          "Frequenct Hop Table"                            },
+    { LLRP_TLV_FREQ_HOP_TABLE,          "Frequency Hop Table"                            },
     { LLRP_TLV_FIXED_FREQ_TABLE,        "Fixed Frequency Table"                          },
     { LLRP_TLV_ANTENNA_RCV_SENSE_RANGE, "Antenna RCV Sensitivity Range"                  },
     { LLRP_TLV_RO_SPEC,                 "RO Spec"                                        },
@@ -753,7 +747,7 @@ static value_string_ext tv_type_ext = VALUE_STRING_EXT_INIT(tv_type);
 static const range_string protocol_id[] = {
     { LLRP_PROT_ID_UNSPECIFIED, LLRP_PROT_ID_UNSPECIFIED, "Unspecified protocol"          },
     { LLRP_PROT_ID_EPC_C1G2, LLRP_PROT_ID_EPC_C1G2,       "EPCGlobal Class 1 Gen 2"       },
-    { LLRP_PROT_ID_EPC_C1G2 + 1, 255,                     "Reserved for furure use"       },
+    { LLRP_PROT_ID_EPC_C1G2 + 1, 255,                     "Reserved for future use"       },
     { 0, 0,                                                NULL                           }
 };
 
@@ -947,9 +941,9 @@ static const value_string status_code[] = {
 static value_string_ext status_code_ext = VALUE_STRING_EXT_INIT(status_code);
 
 /* C1G2 tag inventory state aware singulation action */
-const true_false_string tfs_state_a_b = { "State B", "State A" };
-const true_false_string tfs_sl =        { "~SL",     "SL"      };
-const true_false_string tfs_all_no =    { "All",     "No"      };
+static const true_false_string tfs_state_a_b = { "State B", "State A" };
+static const true_false_string tfs_sl =        { "~SL",     "SL"      };
+static const true_false_string tfs_all_no =    { "All",     "No"      };
 
 /* Vendors */
 #define LLRP_VENDOR_IMPINJ 25882
@@ -1304,7 +1298,7 @@ static const value_string impinj_access_range[] = {
 static const value_string impinj_persistence[] = {
     { LLRP_IMPINJ_PERSISTENCE_UNKNOWN,     "Unknown"    },
     { LLRP_IMPINJ_PERSISTENCE_TEMPORARY,   "Temporary"  },
-    { LLRP_IMPINJ_PERSISTENCE_PERMANENT,   "Permament"  },
+    { LLRP_IMPINJ_PERSISTENCE_PERMANENT,   "Permanent"  },
     { 0,                                   NULL         }
 };
 
@@ -1423,14 +1417,45 @@ static value_string_ext impinj_hub_fault_type_ext = VALUE_STRING_EXT_INIT(impinj
 #define LLRP_HEADER_LENGTH  10
 #define LLRP_NO_LIMIT        0
 
-static guint
-dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        guint offset, const guint end, const guint depth);
+static const value_string unique_no_limit[] = {
+    { LLRP_NO_LIMIT, "No Limit" },
+    { 0, NULL },
+};
 
-static guint dissect_llrp_utf8_parameter(tvbuff_t * const tvb, packet_info *pinfo,
-        proto_tree * const tree, const guint hfindex, const guint offset)
+static const value_string unique_all_rospecs[] = {
+    { LLRP_ROSPEC_ALL, "All ROSpecs" },
+    { 0, NULL },
+};
+
+static const value_string unique_all_access_specs[] = {
+    { LLRP_ACCESSSPEC_ALL, "All Access Specs" },
+    { 0, NULL },
+};
+
+static const value_string unique_all_antenna[] = {
+    { LLRP_ANTENNA_ALL, "All Antenna" },
+    { 0, NULL },
+};
+
+static const value_string unique_all_gpi_ports[] = {
+    { LLRP_GPI_PORT_ALL, "All GPI Ports" },
+    { 0, NULL },
+};
+
+static const value_string unique_all_gpo_ports[] = {
+    { LLRP_GPO_PORT_ALL, "All GPO Ports" },
+    { 0, NULL },
+};
+
+
+static unsigned
+dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+        unsigned offset, const unsigned end, const unsigned depth);
+
+static unsigned dissect_llrp_utf8_parameter(tvbuff_t * const tvb, packet_info *pinfo,
+        proto_tree * const tree, const unsigned hfindex, const unsigned offset)
 {
-    gint len;
+    int len;
 
     len = tvb_get_ntohs(tvb, offset);
     if(tvb_reported_length_remaining(tvb, offset) < len) {
@@ -1445,10 +1470,10 @@ static guint dissect_llrp_utf8_parameter(tvbuff_t * const tvb, packet_info *pinf
     return offset + len + 2;
 }
 
-static guint dissect_llrp_bit_field(tvbuff_t * const tvb,
-        proto_tree * const tree, const guint hfindex, const guint offset)
+static unsigned dissect_llrp_bit_field(tvbuff_t * const tvb,
+        proto_tree * const tree, const unsigned hfindex, const unsigned offset)
 {
-    guint len;
+    unsigned len;
 
     len = tvb_get_ntohs(tvb, offset);
     len = (len + 7) / 8;
@@ -1459,10 +1484,10 @@ static guint dissect_llrp_bit_field(tvbuff_t * const tvb,
     return offset + len + 2;
 }
 
-static guint dissect_llrp_word_array(tvbuff_t * const tvb,
-        proto_tree * const tree, const guint hfindex, const guint offset)
+static unsigned dissect_llrp_word_array(tvbuff_t * const tvb,
+        proto_tree * const tree, const unsigned hfindex, const unsigned offset)
 {
-    guint len;
+    unsigned len;
 
     len = tvb_get_ntohs(tvb, offset);
     len *= 2;
@@ -1473,54 +1498,39 @@ static guint dissect_llrp_word_array(tvbuff_t * const tvb,
     return offset + len + 2;
 }
 
-static guint dissect_llrp_item_array(tvbuff_t * const tvb, packet_info *pinfo,
-        proto_tree * const tree, const guint hfindex_number,
-        const guint hfindex_item, const guint item_size, guint offset)
+static unsigned dissect_llrp_item_array(tvbuff_t * const tvb, packet_info *pinfo,
+        proto_tree * const tree, const unsigned hfindex_number,
+        const unsigned hfindex_item, const unsigned item_size, unsigned offset)
 {
-    guint num;
+    unsigned num;
 
     num = tvb_get_ntohs(tvb, offset);
     proto_tree_add_item(tree, hfindex_number, tvb,
             offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
-    if(tvb_reported_length_remaining(tvb, offset) < ((gint)(num*item_size))) {
+    if(tvb_reported_length_remaining(tvb, offset) < ((int)(num*item_size))) {
         expert_add_info_format(pinfo, tree, &ei_llrp_invalid_length,
                 "Array longer than message");
         return offset + tvb_reported_length_remaining(tvb, offset);
     }
     while(num--) {
         proto_tree_add_item(tree, hfindex_item, tvb,
-                offset, item_size, item_size == 1 ? ENC_NA : ENC_BIG_ENDIAN);
+                offset, item_size, ENC_BIG_ENDIAN);
         offset += item_size;
     }
     return offset;
 }
 
-#define PARAM_TREE_ADD_STAY(hfindex, length, flag) \
-            proto_tree_add_item(param_tree, hf_llrp_##hfindex, tvb, \
-                    suboffset, length, flag)
-
-#define PARAM_TREE_ADD(hfindex, length, flag) \
-            PARAM_TREE_ADD_STAY(hfindex, length, flag); \
-            suboffset += length
-
-#define PARAM_TREE_ADD_SPEC_STAY(type, hfindex, length, number, string) \
-            proto_tree_add_##type(param_tree, hf_llrp_##hfindex, tvb, \
-                    suboffset, length, number, string, number)
-
-#define PARAM_TREE_ADD_SPEC(type, hfindex, length, number, string) \
-            PARAM_TREE_ADD_SPEC_STAY(type, hfindex, length, number, string); \
-            suboffset += length
-
-static guint
+static unsigned
+// NOLINTNEXTLINE(misc-no-recursion)
 dissect_llrp_impinj_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *param_tree,
-        guint suboffset, const guint param_end)
+        unsigned suboffset, const unsigned param_end)
 {
-    guint32 subtype;
+    uint32_t subtype;
 
     subtype = tvb_get_ntohl(tvb, suboffset);
     proto_item_append_text(param_tree, " (Impinj - %s)",
-            val_to_str_ext(subtype, &impinj_param_type_ext, "Unknown Type: %d"));
+            val_to_str_ext(pinfo->pool, subtype, &impinj_param_type_ext, "Unknown Type: %d"));
     proto_tree_add_item(param_tree, hf_llrp_impinj_param_type, tvb, suboffset, 4, ENC_BIG_ENDIAN);
     suboffset += 4;
 
@@ -1534,40 +1544,56 @@ dissect_llrp_impinj_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *par
         /* Just parameters */
         break;
     case LLRP_IMPINJ_PARAM_REQUESTED_DATA:
-        PARAM_TREE_ADD(impinj_req_data, 4, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_req_data, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_SUBREGULATORY_REGION:
-        PARAM_TREE_ADD(impinj_reg_region, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_reg_region, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_INVENTORY_SEARCH_MODE:
-        PARAM_TREE_ADD(impinj_search_mode, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_search_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_TAG_DIRECTION_REPORTING:
-        PARAM_TREE_ADD(impinj_en_tag_dir, 2, ENC_NA);
-        PARAM_TREE_ADD(impinj_antenna_conf, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(rfu, 4, ENC_NA);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_en_tag_dir, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_antenna_conf, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_rfu, tvb, suboffset, 4, ENC_NA);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_TAG_DIRECTION:
-        PARAM_TREE_ADD(decision_time, 8, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(impinj_tag_dir, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(confidence, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_decision_time, tvb, suboffset, 8, ENC_BIG_ENDIAN);
+        suboffset += 8;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_tag_dir, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_confidence, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_FIXED_FREQUENCY_LIST:
-        PARAM_TREE_ADD(impinj_fix_freq_mode, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(rfu, 2, ENC_NA);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_fix_freq_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_rfu, tvb, suboffset, 2, ENC_NA);
+        suboffset += 2;
         suboffset = dissect_llrp_item_array(tvb, pinfo, param_tree,
                 hf_llrp_num_channels, hf_llrp_channel, 2, suboffset);
         break;
     case LLRP_IMPINJ_PARAM_REDUCED_POWER_FREQUENCY_LIST:
-        PARAM_TREE_ADD(impinj_reduce_power_mode, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(rfu, 2, ENC_NA);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_reduce_power_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_rfu, tvb, suboffset, 2, ENC_NA);
+        suboffset += 2;
         suboffset = dissect_llrp_item_array(tvb, pinfo, param_tree,
                 hf_llrp_num_channels, hf_llrp_channel, 2, suboffset);
         break;
     case LLRP_IMPINJ_PARAM_LOW_DUTY_CYCLE:
-        PARAM_TREE_ADD(impinj_low_duty_mode, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(empty_field_timeout, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(field_ping_interval, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_low_duty_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_empty_field_timeout, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_field_ping_interval, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_DETAILED_VERSION:
         suboffset = dissect_llrp_utf8_parameter(tvb, pinfo, param_tree, hf_llrp_model_name, suboffset);
@@ -1582,105 +1608,155 @@ dissect_llrp_impinj_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *par
                 hf_llrp_num_freqs, hf_llrp_frequency, 4, suboffset);
         break;
     case LLRP_IMPINJ_PARAM_FORKLIFT_HEIGHT_THRESHOLD:
-        PARAM_TREE_ADD(height_thresh, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_height_thresh, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_FORKLIFT_ZEROMOTION_TIME_THRESHOLD:
-        PARAM_TREE_ADD(zero_motion_thresh, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_zero_motion_thresh, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_FORKLIFT_COMPANION_BOARD_INFO:
         suboffset = dissect_llrp_utf8_parameter(tvb, pinfo, param_tree, hf_llrp_board_manufacturer, suboffset);
-        PARAM_TREE_ADD(fw_ver_hex, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(hw_ver_hex, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_fw_ver_hex, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_hw_ver_hex, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_GPI_DEBOUNCE_CONFIGURATION:
-        PARAM_TREE_ADD(gpi_port, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(gpi_debounce, 4, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_gpi_port, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_gpi_debounce, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_READER_TEMPERATURE:
-        PARAM_TREE_ADD(temperature, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_temperature, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_LINK_MONITOR_CONFIGURATION:
-        PARAM_TREE_ADD(impinj_link_monitor_mode, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(link_down_thresh, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_link_monitor_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_link_down_thresh, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_REPORT_BUFFER_CONFIGURATION:
-        PARAM_TREE_ADD(impinj_report_buff_mode, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_report_buff_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_BLOCK_WRITE_WORD_COUNT:
-        PARAM_TREE_ADD(word_count, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_word_count, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_BLOCK_PERMALOCK:
-        PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(mb, 1, ENC_NA);
-        PARAM_TREE_ADD(block_pointer, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(block_mask, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
+        proto_tree_add_item(param_tree, hf_llrp_mb, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_block_pointer, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_block_mask, tvb, suboffset, 2, ENC_NA);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_BLOCK_PERMALOCK_OPSPEC_RESULT:
-        PARAM_TREE_ADD(permalock_result, 1, ENC_NA);
-        PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_permalock_result, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_GET_BLOCK_PERMALOCK_STATUS:
-        PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(mb, 1, ENC_NA);
-        PARAM_TREE_ADD(block_pointer, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(block_range, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
+        proto_tree_add_item(param_tree, hf_llrp_mb, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_block_pointer, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_block_range, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_GET_BLOCK_PERMALOCK_STATUS_OPSPEC_RESULT:
-        PARAM_TREE_ADD(block_permalock_result, 1, ENC_NA);
-        PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_block_permalock_result, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_SET_QT_CONFIG:
-        PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(impinj_data_profile, 1, ENC_NA);
-        PARAM_TREE_ADD(impinj_access_range, 1, ENC_NA);
-        PARAM_TREE_ADD(impinj_persistence, 1, ENC_NA);
-        PARAM_TREE_ADD(rfu, 4, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_data_profile, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_access_range, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_persistence, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_rfu, tvb, suboffset, 4, ENC_NA);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_SET_QT_CONFIG_OPSPEC_RESULT:
-        PARAM_TREE_ADD(set_qt_config_result, 1, ENC_NA);
-        PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_set_qt_config_result, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_GET_QT_CONFIG:
-        PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_GET_QT_CONFIG_OPSPEC_RESULT:
-        PARAM_TREE_ADD(get_qt_config_result, 1, ENC_NA);
-        PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(impinj_data_profile, 1, ENC_NA);
-        PARAM_TREE_ADD(impinj_access_range, 1, ENC_NA);
-        PARAM_TREE_ADD(rfu, 4, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_get_qt_config_result, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_data_profile, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_access_range, tvb, suboffset, 1, ENC_NA);
+        suboffset += 1;
+        proto_tree_add_item(param_tree, hf_llrp_rfu, tvb, suboffset, 4, ENC_NA);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_ENABLE_SERIALIZED_TID:
-        PARAM_TREE_ADD(impinj_serialized_tid_mode, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_serialized_tid_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_ENABLE_RF_PHASE_ANGLE:
-        PARAM_TREE_ADD(impinj_rf_phase_mode, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_rf_phase_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_ENABLE_PEAK_RSSI:
-        PARAM_TREE_ADD(impinj_peak_rssi_mode, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_peak_rssi_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_ENABLE_GPS_COORDINATES:
-        PARAM_TREE_ADD(impinj_gps_coordinates_mode, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_gps_coordinates_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_SERIALIZED_TID:
-        PARAM_TREE_ADD(impinj_tid, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_tid, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_RF_PHASE_ANGLE:
-        PARAM_TREE_ADD(phase_angle, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_phase_angle, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_PEAK_RSSI:
-        PARAM_TREE_ADD(rssi, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_rssi, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_GPS_COORDINATES:
-        PARAM_TREE_ADD(latitude, 4, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(longitude, 4, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_latitude, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
+        proto_tree_add_item(param_tree, hf_llrp_longitude, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_LOOP_SPEC:
-        PARAM_TREE_ADD(loop_count, 4, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_loop_count, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_GGA_SENTENCE:
         suboffset = dissect_llrp_utf8_parameter(tvb, pinfo, param_tree, hf_llrp_gga_sentence, suboffset);
@@ -1689,21 +1765,28 @@ dissect_llrp_impinj_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *par
         suboffset = dissect_llrp_utf8_parameter(tvb, pinfo, param_tree, hf_llrp_rmc_sentence, suboffset);
         break;
     case LLRP_IMPINJ_PARAM_OPSPEC_RETRY_COUNT:
-        PARAM_TREE_ADD(retry_count, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_retry_count, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_ADVANCE_GPO_CONFIG:
-        PARAM_TREE_ADD(gpo_port, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(impinj_gpo_mode, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(gpo_pulse_dur, 4, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_gpo_port, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_gpo_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_gpo_pulse_dur, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+        suboffset += 4;
         break;
     case LLRP_IMPINJ_PARAM_ENABLE_OPTIM_READ:
-        PARAM_TREE_ADD(impinj_optim_read_mode, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_optim_read_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_ACCESS_SPEC_ORDERING:
-        PARAM_TREE_ADD(impinj_access_spec_ordering, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_access_spec_ordering, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_ENABLE_RF_DOPPLER_FREQ:
-        PARAM_TREE_ADD(impinj_rf_doppler_mode, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_rf_doppler_mode, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     case LLRP_IMPINJ_PARAM_ARRAY_VERSION:
         suboffset = dissect_llrp_utf8_parameter(tvb, pinfo, param_tree, hf_llrp_serial_number, suboffset);
@@ -1711,33 +1794,36 @@ dissect_llrp_impinj_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *par
         suboffset = dissect_llrp_utf8_parameter(tvb, pinfo, param_tree, hf_llrp_pcba_ver, suboffset);
         break;
     case LLRP_IMPINJ_PARAM_HUB_CONFIGURATION:
-        PARAM_TREE_ADD(impinj_hub_id, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(impinj_hub_connected_type, 2, ENC_BIG_ENDIAN);
-        PARAM_TREE_ADD(impinj_hub_fault_type, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(param_tree, hf_llrp_impinj_hub_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_hub_connected_type, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
+        proto_tree_add_item(param_tree, hf_llrp_impinj_hub_fault_type, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+        suboffset += 2;
         break;
     default:
         return suboffset;
-        break;
     }
     /* Each custom parameters ends with optional custom parameter, disscect it */
     return dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, 0);
 }
 
-static guint
+static unsigned
+// NOLINTNEXTLINE(misc-no-recursion)
 dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        guint offset, const guint end, const guint depth)
+        unsigned offset, const unsigned end, const unsigned depth)
 {
-    guint8      has_length;
-    guint16     len, type;
-    guint       real_len, param_end;
-    guint       suboffset;
-    guint       num;
+    uint8_t     has_length;
+    uint16_t    len, type;
+    unsigned    real_len, param_end;
+    unsigned    suboffset;
+    unsigned    num;
     proto_item *ti;
     proto_tree *param_tree;
 
-    while (((gint)(end - offset)) > 0)
+    while (((int)(end - offset)) > 0)
     {
-        has_length = !(tvb_get_guint8(tvb, offset) & 0x80);
+        has_length = !(tvb_get_uint8(tvb, offset) & 0x80);
 
         if (has_length)
         {
@@ -1759,7 +1845,7 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
             ti = proto_tree_add_none_format(tree, hf_llrp_param, tvb,
                     offset, real_len, "TLV Parameter: %s",
-                    val_to_str_ext(type, &tlv_type_ext, "Unknown Type: %d"));
+                    val_to_str_ext(pinfo->pool, type, &tlv_type_ext, "Unknown Type: %d"));
             param_tree = proto_item_add_subtree(ti, ett_llrp_param);
 
             proto_tree_add_item(param_tree, hf_llrp_tlv_type, tvb,
@@ -1775,6 +1861,7 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             offset += 2;
 
             suboffset = offset;
+            increment_dissection_depth(pinfo);
             switch(type) {
             case LLRP_TLV_RO_BOUND_SPEC:
             case LLRP_TLV_UHF_CAPABILITIES:
@@ -1789,93 +1876,98 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 break;
             case LLRP_TLV_UTC_TIMESTAMP:
             case LLRP_TLV_UPTIME:
-                PARAM_TREE_ADD(microseconds, 8, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_microseconds, tvb, suboffset, 8, ENC_BIG_ENDIAN);
+                suboffset += 8;
                 break;
             case LLRP_TLV_GENERAL_DEVICE_CAP:
-                PARAM_TREE_ADD_STAY(max_supported_antenna, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(can_set_antenna_prop, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(has_utc_clock, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(device_manufacturer, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(model, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_max_supported_antenna, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_can_set_antenna_prop, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_has_utc_clock, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_device_manufacturer, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_model, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 suboffset = dissect_llrp_utf8_parameter(tvb, pinfo, param_tree, hf_llrp_firmware_version, suboffset);
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_MAX_RECEIVE_SENSE:
-                PARAM_TREE_ADD(max_receive_sense, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_max_receive_sense, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_RECEIVE_SENSE_ENTRY:
-                PARAM_TREE_ADD(index, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(receive_sense, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_index, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_receive_sense, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_ANTENNA_RCV_SENSE_RANGE:
-                PARAM_TREE_ADD(antenna_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(receive_sense_index_min, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(receive_sense_index_max, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_receive_sense_index_min, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_receive_sense_index_max, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_ANTENNA_AIR_PROTO:
-                PARAM_TREE_ADD(antenna_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_item_array(tvb, pinfo, param_tree,
                         hf_llrp_num_protocols, hf_llrp_protocol_id, 1, suboffset);
                 break;
             case LLRP_TLV_GPIO_CAPABILITIES:
-                PARAM_TREE_ADD(num_gpi, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(num_gpo, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_num_gpi, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_num_gpo, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_LLRP_CAPABILITIES:
-                PARAM_TREE_ADD_STAY(can_do_survey, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(can_report_buffer_warning, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(support_client_opspec, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(can_stateaware, 1, ENC_NA);
-                PARAM_TREE_ADD(support_holding, 1, ENC_NA);
-                PARAM_TREE_ADD(max_priority_supported, 1, ENC_NA);
-                PARAM_TREE_ADD(client_opspec_timeout, 2, ENC_BIG_ENDIAN);
-                num = tvb_get_ntohl(tvb, suboffset);
-                if(num == LLRP_NO_LIMIT)
-                    PARAM_TREE_ADD_SPEC_STAY(uint_format_value, max_num_rospec, 4, num, "No limit (%u)");
-                else
-                    PARAM_TREE_ADD_STAY(max_num_rospec, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_can_do_survey, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_can_report_buffer_warning, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_support_client_opspec, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_can_stateaware, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_support_holding, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_max_priority_supported, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_client_opspec_timeout, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_max_num_rospec, tvb, suboffset, 4, ENC_BIG_ENDIAN);
                 suboffset += 4;
-                num = tvb_get_ntohl(tvb, suboffset);
-                if(num == LLRP_NO_LIMIT)
-                    PARAM_TREE_ADD_SPEC_STAY(uint_format_value, max_num_spec_per_rospec, 4, num, "No limit (%u)");
-                else
-                    PARAM_TREE_ADD_STAY(max_num_spec_per_rospec, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_max_num_spec_per_rospec, tvb, suboffset, 4, ENC_BIG_ENDIAN);
                 suboffset += 4;
-                num = tvb_get_ntohl(tvb, suboffset);
-                if(num == LLRP_NO_LIMIT)
-                    PARAM_TREE_ADD_SPEC_STAY(uint_format_value, max_num_inventory_per_aispec, 4, num, "No limit (%u)");
-                else
-                    PARAM_TREE_ADD_STAY(max_num_inventory_per_aispec, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_max_num_inventory_per_aispec, tvb, suboffset, 4, ENC_BIG_ENDIAN);
                 suboffset += 4;
-                num = tvb_get_ntohl(tvb, suboffset);
-                if(num == LLRP_NO_LIMIT)
-                    PARAM_TREE_ADD_SPEC_STAY(uint_format_value, max_num_accessspec, 4, num, "No limit (%u)");
-                else
-                    PARAM_TREE_ADD_STAY(max_num_accessspec, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_max_num_accessspec, tvb, suboffset, 4, ENC_BIG_ENDIAN);
                 suboffset += 4;
-                num = tvb_get_ntohl(tvb, suboffset);
-                if(num == LLRP_NO_LIMIT)
-                    PARAM_TREE_ADD_SPEC_STAY(uint_format_value, max_num_opspec_per_accressspec, 4, num, "No limit (%u)");
-                else
-                    PARAM_TREE_ADD_STAY(max_num_opspec_per_accressspec, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_max_num_opspec_per_accressspec, tvb, suboffset, 4, ENC_BIG_ENDIAN);
                 suboffset += 4;
+
                 break;
             case LLRP_TLV_REGU_CAPABILITIES:
-                PARAM_TREE_ADD(country_code, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(comm_standard, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_country_code, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_comm_standard, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_XMIT_POWER_LEVEL_ENTRY:
-                PARAM_TREE_ADD(index, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(transmit_power, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_index, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_transmit_power, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_FREQ_INFORMATION:
-                PARAM_TREE_ADD(hopping, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_hopping, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_FREQ_HOP_TABLE:
-                PARAM_TREE_ADD(hop_table_id, 1, ENC_NA);
-                PARAM_TREE_ADD(rfu, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_hop_table_id, tvb, suboffset, 1, ENC_BIG_ENDIAN);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_rfu, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 suboffset = dissect_llrp_item_array(tvb, pinfo, param_tree,
                         hf_llrp_num_hops, hf_llrp_frequency, 4, suboffset);
                 break;
@@ -1884,32 +1976,45 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                         hf_llrp_num_freqs, hf_llrp_frequency, 4, suboffset);
                 break;
             case LLRP_TLV_RF_SURVEY_FREQ_CAP:
-                PARAM_TREE_ADD(min_freq, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(max_freq, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_min_freq, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_max_freq, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_RO_SPEC:
-                PARAM_TREE_ADD(rospec_id, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(priority, 1, ENC_NA);
-                PARAM_TREE_ADD(cur_state, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_rospec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_priority, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_cur_state, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_RO_SPEC_START_TRIGGER:
-                PARAM_TREE_ADD(rospec_start_trig_type, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_rospec_start_trig_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_PER_TRIGGER_VAL:
-                PARAM_TREE_ADD(offset, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(period, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_offset, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_period, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_GPI_TRIGGER_VAL:
-                PARAM_TREE_ADD(gpi_port, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(gpi_event, 1, ENC_NA);
-                PARAM_TREE_ADD(timeout, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_gpi_port, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_gpi_event, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_timeout, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_RO_SPEC_STOP_TRIGGER:
-                PARAM_TREE_ADD(rospec_stop_trig_type, 1, ENC_NA);
-                PARAM_TREE_ADD(duration_trig, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_rospec_stop_trig_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_duration_trig, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_AI_SPEC:
@@ -1918,148 +2023,210 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_AI_SPEC_STOP:
-                PARAM_TREE_ADD(aispec_stop_trig_type, 1, ENC_NA);
-                PARAM_TREE_ADD(duration_trig, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_aispec_stop_trig_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_duration_trig, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_TAG_OBSERV_TRIGGER:
-                PARAM_TREE_ADD(trig_type, 1, ENC_NA);
-                PARAM_TREE_ADD(rfu, 1, ENC_NA);
-                PARAM_TREE_ADD(number_of_tags, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(number_of_attempts, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(t, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(timeout, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_trig_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_rfu, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_number_of_tags, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_number_of_attempts, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_t, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_timeout, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_INVENTORY_PARAM_SPEC:
-                PARAM_TREE_ADD(inventory_spec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(protocol_id, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_inventory_spec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_protocol_id, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_RF_SURVEY_SPEC:
-                PARAM_TREE_ADD(antenna_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(start_freq, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(stop_freq, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_start_freq, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_stop_freq, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_RF_SURVEY_SPEC_STOP_TR:
-                PARAM_TREE_ADD(stop_trig_type, 1, ENC_NA);
-                PARAM_TREE_ADD(duration, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(n_4, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_stop_trig_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_duration, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_n_4, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_LOOP_SPEC:
-                PARAM_TREE_ADD(loop_count, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_loop_count, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_ACCESS_SPEC:
-                PARAM_TREE_ADD(accessspec_id, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(antenna_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(protocol_id, 1, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(access_cur_state, 1, ENC_NA);
-                PARAM_TREE_ADD(rospec_id, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_accessspec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_protocol_id, tvb, suboffset, 1, ENC_BIG_ENDIAN);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_access_cur_state, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_rospec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_ACCESS_SPEC_STOP_TRIG:
-                PARAM_TREE_ADD(access_stop_trig_type, 1, ENC_NA);
-                PARAM_TREE_ADD(operation_count, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_access_stop_trig_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_operation_count, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_CLIENT_REQ_OP_SPEC:
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_CLIENT_REQ_RESPONSE:
-                PARAM_TREE_ADD(accessspec_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_accessspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_LLRP_CONF_STATE_VAL:
-                PARAM_TREE_ADD(conf_value, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_conf_value, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_IDENT:
-                PARAM_TREE_ADD(id_type, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_id_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 num = tvb_get_ntohs(tvb, suboffset);
-                PARAM_TREE_ADD(reader_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_reader_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                 suboffset += num;
                 break;
             case LLRP_TLV_GPO_WRITE_DATA:
-                PARAM_TREE_ADD(gpo_port, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(gpo_data, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_gpo_port, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_gpo_data, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_KEEPALIVE_SPEC:
-                PARAM_TREE_ADD(keepalive_trig_type, 1, ENC_NA);
-                PARAM_TREE_ADD(time_iterval, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_keepalive_trig_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_time_iterval, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_ANTENNA_PROPS:
-                PARAM_TREE_ADD(antenna_connected, 1, ENC_NA);
-                PARAM_TREE_ADD(antenna_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(antenna_gain, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_antenna_connected, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_antenna_gain, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_ANTENNA_CONF:
-                PARAM_TREE_ADD(antenna_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_RF_RECEIVER:
-                PARAM_TREE_ADD(receiver_sense, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_receiver_sense, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_RF_TRANSMITTER:
-                PARAM_TREE_ADD(hop_table_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(channel_idx, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(transmit_power, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_hop_table_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_channel_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_transmit_power, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_GPI_PORT_CURRENT_STATE:
-                PARAM_TREE_ADD(gpi_port, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(gpi_config, 1, ENC_NA);
-                PARAM_TREE_ADD(gpi_state, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_gpi_port, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_gpi_config, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_gpi_state, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_EVENTS_AND_REPORTS:
-                PARAM_TREE_ADD(hold_events_and_reports, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_hold_events_and_reports, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_RO_REPORT_SPEC:
-                PARAM_TREE_ADD(ro_report_trig, 1, ENC_NA);
-                PARAM_TREE_ADD(n_2, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_ro_report_trig, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_n_2, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_TAG_REPORT_CONTENT_SEL:
-                PARAM_TREE_ADD_STAY(enable_rospec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(enable_spec_idx, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(enable_inv_spec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(enable_antenna_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(enable_channel_idx, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(enable_peak_rssi, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(enable_first_seen, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(enable_last_seen, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(enable_seen_count, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(enable_accessspec_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_rospec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_spec_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_inv_spec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_channel_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_peak_rssi, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_first_seen, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_last_seen, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_seen_count, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_enable_accessspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_ACCESS_REPORT_SPEC:
-                PARAM_TREE_ADD(access_report_trig, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_access_report_trig, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_EPC_DATA:
                 suboffset = dissect_llrp_bit_field(tvb, param_tree, hf_llrp_epc, suboffset);
                 break;
             case LLRP_TLV_FREQ_RSSI_LEVEL_ENTRY:
-                PARAM_TREE_ADD(frequency, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(bandwidth, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(average_rssi, 1, ENC_NA);
-                PARAM_TREE_ADD(peak_rssi, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_frequency, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_bandwidth, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_average_rssi, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_peak_rssi, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_EVENT_NOTIF_STATE:
-                PARAM_TREE_ADD(event_type, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(notif_state, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_event_type, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_notif_state, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_HOPPING_EVENT:
-                PARAM_TREE_ADD(hop_table_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(next_chan_idx, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_hop_table_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_next_chan_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_GPI_EVENT:
-                PARAM_TREE_ADD(gpi_port, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(gpi_event, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_gpi_port, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_gpi_event, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_RO_SPEC_EVENT:
-                PARAM_TREE_ADD(roevent_type, 1, ENC_NA);
-                PARAM_TREE_ADD(rospec_id, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(prem_rospec_id, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_roevent_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_rospec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_prem_rospec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_REPORT_BUF_LEVEL_WARN:
-                PARAM_TREE_ADD(buffer_full_percentage, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_buffer_full_percentage, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_REPORT_BUF_OVERFLOW_ERR: break;
             case LLRP_TLV_READER_EXCEPTION_EVENT:
@@ -2067,201 +2234,281 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_RF_SURVEY_EVENT:
-                PARAM_TREE_ADD(rfevent_type, 1, ENC_NA);
-                PARAM_TREE_ADD(rospec_id, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(spec_idx, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_rfevent_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_rospec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_spec_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_AI_SPEC_EVENT:
-                PARAM_TREE_ADD(aievent_type, 1, ENC_NA);
-                PARAM_TREE_ADD(rospec_id, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(spec_idx, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_aievent_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_rospec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_spec_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_ANTENNA_EVENT:
-                PARAM_TREE_ADD(antenna_event_type, 1, ENC_NA);
-                PARAM_TREE_ADD(antenna_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_antenna_event_type, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_CONN_ATTEMPT_EVENT:
-                PARAM_TREE_ADD(conn_status, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_conn_status, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_CONN_CLOSE_EVENT:
                 break;
             case LLRP_TLV_SPEC_LOOP_EVENT:
-                PARAM_TREE_ADD(rospec_id, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(loop_count, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_rospec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_loop_count, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_LLRP_STATUS:
-                PARAM_TREE_ADD(status_code, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_status_code, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_utf8_parameter(tvb, pinfo, param_tree, hf_llrp_error_desc, suboffset);
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_FIELD_ERROR:
-                PARAM_TREE_ADD(field_num, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(error_code, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_field_num, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_error_code, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_PARAM_ERROR:
-                PARAM_TREE_ADD(parameter_type, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(error_code, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_parameter_type, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_error_code, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_C1G2_LLRP_CAP:
-                PARAM_TREE_ADD_STAY(can_support_block_erase, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(can_support_block_write, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(can_support_block_permalock, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(can_support_tag_recomm, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(can_support_UMI_method2, 1, ENC_NA);
-                PARAM_TREE_ADD(can_support_XPC, 1, ENC_NA);
-                num = tvb_get_ntohs(tvb, suboffset);
-                if(num == LLRP_NO_LIMIT)
-                    PARAM_TREE_ADD_SPEC_STAY(uint_format_value, max_num_filter_per_query, 2, num, "No limit (%u)");
-                else
-                    PARAM_TREE_ADD_STAY(max_num_filter_per_query, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_can_support_block_erase, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_can_support_block_write, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_can_support_block_permalock, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_can_support_tag_recomm, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_can_support_UMI_method2, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_can_support_XPC, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_max_num_filter_per_query, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                 suboffset += 2;
                 break;
             case LLRP_TLV_C1G2_UHF_RF_MD_TBL_ENT:
-                PARAM_TREE_ADD(mode_ident, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(DR, 1, ENC_NA);
-                PARAM_TREE_ADD(hag_conformance, 1, ENC_NA);
-                PARAM_TREE_ADD(mod, 1, ENC_NA);
-                PARAM_TREE_ADD(flm, 1, ENC_NA);
-                PARAM_TREE_ADD(m, 1, ENC_NA);
-                PARAM_TREE_ADD(bdr, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(pie, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(min_tari, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(max_tari, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(step_tari, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_mode_ident, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_DR, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_hag_conformance, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_mod, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_flm, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_m, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_bdr, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_pie, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_min_tari, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_max_tari, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_step_tari, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_C1G2_INVENTORY_COMMAND:
-                PARAM_TREE_ADD(inventory_state_aware, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_inventory_state_aware, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_C1G2_FILTER:
-                PARAM_TREE_ADD(trunc, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_trunc, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_C1G2_TAG_INV_MASK:
-                PARAM_TREE_ADD(mb, 1, ENC_NA);
-                PARAM_TREE_ADD(pointer, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_mb, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_pointer, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_bit_field(tvb, param_tree, hf_llrp_tag_mask, suboffset);
                 break;
             case LLRP_TLV_C1G2_TAG_INV_AWARE_FLTR:
-                PARAM_TREE_ADD(aware_filter_target, 1, ENC_NA);
-                PARAM_TREE_ADD(aware_filter_action, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_aware_filter_target, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_aware_filter_action, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_C1G2_TAG_INV_UNAWR_FLTR:
-                PARAM_TREE_ADD(unaware_filter_action, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_unaware_filter_action, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_C1G2_RF_CONTROL:
-                PARAM_TREE_ADD(mode_idx, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(tari, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_mode_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_tari, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_C1G2_SINGULATION_CTRL:
-                PARAM_TREE_ADD(session, 1, ENC_NA);
-                PARAM_TREE_ADD(tag_population, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(tag_transit_time, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_session, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_tag_population, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_tag_transit_time, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_C1G2_TAG_INV_AWARE_SING:
-                PARAM_TREE_ADD_STAY(sing_i, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(sing_s, 1, ENC_NA);
-                PARAM_TREE_ADD(sing_a, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_sing_i, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_sing_s, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_sing_a, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_C1G2_TARGET_TAG:
-                PARAM_TREE_ADD_STAY(mb, 1, ENC_NA);
-                PARAM_TREE_ADD(match, 1, ENC_NA);
-                PARAM_TREE_ADD(pointer, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_mb, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_match, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_pointer, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_bit_field(tvb, param_tree, hf_llrp_tag_mask, suboffset);
                 suboffset = dissect_llrp_bit_field(tvb, param_tree, hf_llrp_tag_data, suboffset);
                 break;
             case LLRP_TLV_C1G2_READ:
             case LLRP_TLV_C1G2_BLK_ERASE:
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(mb, 1, ENC_NA);
-                PARAM_TREE_ADD(word_pointer, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(word_count, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_mb, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_word_pointer, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_word_count, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_C1G2_WRITE:
             case LLRP_TLV_C1G2_BLK_WRITE:
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(mb, 1, ENC_NA);
-                PARAM_TREE_ADD(word_pointer, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_mb, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_word_pointer, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_word_array(tvb, param_tree, hf_llrp_write_data, suboffset);
                 break;
             case LLRP_TLV_C1G2_KILL:
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(kill_pass, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_kill_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 break;
             case LLRP_TLV_C1G2_RECOMMISSION:
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(kill_pass, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD_STAY(kill_3, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(kill_2, 1, ENC_NA);
-                PARAM_TREE_ADD(kill_l, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_kill_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_kill_3, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_kill_2, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_kill_l, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_C1G2_LOCK:
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
                 suboffset = dissect_llrp_parameters(tvb, pinfo, param_tree, suboffset, param_end, depth+1);
                 break;
             case LLRP_TLV_C1G2_LOCK_PAYLOAD:
-                PARAM_TREE_ADD(privilege, 1, ENC_NA);
-                PARAM_TREE_ADD(data_field, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_privilege, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_data_field, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_C1G2_BLK_PERMALOCK:
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(mb, 1, ENC_NA);
-                PARAM_TREE_ADD(block_pointer, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 4;
+                proto_tree_add_item(param_tree, hf_llrp_mb, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_block_pointer, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_word_array(tvb, param_tree, hf_llrp_block_mask, suboffset);
                 break;
             case LLRP_TLV_C1G2_GET_BLK_PERMALOCK:
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(access_pass, 4, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(mb, 1, ENC_NA);
-                PARAM_TREE_ADD(block_pointer, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(block_range, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_access_pass, tvb, suboffset, 4, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_mb, tvb, suboffset, 1, ENC_NA);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_block_pointer, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_block_range, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_C1G2_EPC_MEMORY_SLCTOR:
-                PARAM_TREE_ADD_STAY(enable_crc, 1, ENC_NA);
-                PARAM_TREE_ADD_STAY(enable_pc, 1, ENC_NA);
-                PARAM_TREE_ADD(enable_xpc, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_enable_crc, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_enable_pc, tvb, suboffset, 1, ENC_NA);
+                proto_tree_add_item(param_tree, hf_llrp_enable_xpc, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
                 break;
             case LLRP_TLV_C1G2_READ_OP_SPEC_RES:
-                PARAM_TREE_ADD(access_result, 1, ENC_NA);
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_access_result, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_word_array(tvb, param_tree, hf_llrp_read_data, suboffset);
                 break;
             case LLRP_TLV_C1G2_WRT_OP_SPEC_RES:
             case LLRP_TLV_C1G2_BLK_WRT_OP_SPC_RES:
-                PARAM_TREE_ADD(access_result, 1, ENC_NA);
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
-                PARAM_TREE_ADD(num_words_written, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_access_result, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
+                proto_tree_add_item(param_tree, hf_llrp_num_words_written, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_C1G2_KILL_OP_SPEC_RES:
             case LLRP_TLV_C1G2_RECOM_OP_SPEC_RES:
             case LLRP_TLV_C1G2_LOCK_OP_SPEC_RES:
             case LLRP_TLV_C1G2_BLK_ERS_OP_SPC_RES:
             case LLRP_TLV_C1G2_BLK_PRL_OP_SPC_RES:
-                PARAM_TREE_ADD(access_result, 1, ENC_NA);
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_access_result, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 break;
             case LLRP_TLV_C1G2_BLK_PRL_STAT_RES:
-                PARAM_TREE_ADD(access_result, 1, ENC_NA);
-                PARAM_TREE_ADD(opspec_id, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(param_tree, hf_llrp_access_result, tvb, suboffset, 1, ENC_NA);
+                suboffset += 1;
+                proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                suboffset += 2;
                 suboffset = dissect_llrp_word_array(tvb, param_tree, hf_llrp_permlock_status, suboffset);
                 break;
             case LLRP_TLV_CUSTOM_PARAMETER:
-                num = tvb_get_ntohl(tvb, suboffset);
-                PARAM_TREE_ADD(vendor_id, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint(param_tree, hf_llrp_vendor_id, tvb, suboffset, 4, ENC_BIG_ENDIAN, &num);
+                suboffset += 4;
                 switch(num) {
                 case LLRP_VENDOR_IMPINJ:
                     suboffset = dissect_llrp_impinj_parameter(tvb, pinfo, param_tree, suboffset, param_end);
                     break;
+                default:
+                    proto_tree_add_item(param_tree, hf_llrp_vendor_unknown, tvb, suboffset, len-4-2-2, ENC_NA);
+                    suboffset += len-4-2-2;
+                    break;
                 }
                 break;
             }
+            decrement_dissection_depth(pinfo);
             /* Have we decoded exactly the number of bytes declared in the parameter? */
             if(suboffset != param_end) {
                 /* Report problem */
@@ -2275,7 +2522,7 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         }
         else
         {
-            type = tvb_get_guint8(tvb, offset) & 0x7F;
+            type = tvb_get_uint8(tvb, offset) & 0x7F;
 
             switch (type)
             {
@@ -2325,11 +2572,11 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                      * will already show up as 'unknown'. */
                     real_len = 0;
                     break;
-            };
+            }
 
             ti = proto_tree_add_none_format(tree, hf_llrp_param, tvb,
                     offset, real_len + 1, "TV Parameter : %s",
-                    val_to_str_ext(type, &tv_type_ext, "Unknown Type: %d"));
+                    val_to_str_ext(pinfo->pool, type, &tv_type_ext, "Unknown Type: %d"));
             param_tree = proto_item_add_subtree(ti, ett_llrp_param);
 
             proto_tree_add_item(param_tree, hf_llrp_tv_type, tvb,
@@ -2340,59 +2587,59 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             switch (type)
             {
                 case LLRP_TV_ANTENNA_ID:
-                    PARAM_TREE_ADD_STAY(antenna_id, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_antenna_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_FIRST_SEEN_TIME_UTC:
                 case LLRP_TV_FIRST_SEEN_TIME_UPTIME:
                 case LLRP_TV_LAST_SEEN_TIME_UTC:
                 case LLRP_TV_LAST_SEEN_TIME_UPTIME:
-                    PARAM_TREE_ADD_STAY(microseconds, 8, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_microseconds, tvb, suboffset, 8, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_PEAK_RSSI:
-                    PARAM_TREE_ADD_STAY(peak_rssi, 1, ENC_NA);
+                    proto_tree_add_item(param_tree, hf_llrp_peak_rssi, tvb, suboffset, 1, ENC_NA);
                     break;
                 case LLRP_TV_CHANNEL_INDEX:
-                    PARAM_TREE_ADD_STAY(channel_idx, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_channel_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_TAG_SEEN_COUNT:
-                    PARAM_TREE_ADD_STAY(tag_count, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_tag_count, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_RO_SPEC_ID:
-                    PARAM_TREE_ADD_STAY(rospec_id, 4, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_rospec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_INVENTORY_PARAM_SPEC_ID:
-                    PARAM_TREE_ADD_STAY(inventory_spec_id, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_inventory_spec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_C1G2_CRC:
-                    PARAM_TREE_ADD_STAY(crc, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_crc, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_C1G2_PC:
-                    PARAM_TREE_ADD_STAY(pc_bits, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_pc_bits, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_EPC96:
-                    PARAM_TREE_ADD_STAY(epc, 96/8, ENC_NA);
+                    proto_tree_add_item(param_tree, hf_llrp_epc, tvb, suboffset, 96/8, ENC_NA);
                     break;
                 case LLRP_TV_SPEC_INDEX:
-                    PARAM_TREE_ADD_STAY(spec_idx, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_spec_idx, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_CLIENT_REQ_OP_SPEC_RES:
-                    PARAM_TREE_ADD_STAY(opspec_id, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_ACCESS_SPEC_ID:
-                    PARAM_TREE_ADD_STAY(accessspec_id, 4, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_accessspec_id, tvb, suboffset, 4, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_OP_SPEC_ID:
-                    PARAM_TREE_ADD_STAY(opspec_id, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_opspec_id, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_C1G2_SINGULATION_DET:
-                    PARAM_TREE_ADD_STAY(num_coll, 2, ENC_BIG_ENDIAN);
-                    PARAM_TREE_ADD_STAY(num_empty, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_num_coll, tvb, suboffset, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_num_empty, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_C1G2_XPC_W1:
-                    PARAM_TREE_ADD_STAY(xpc_w1, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_xpc_w1, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
                 case LLRP_TV_C1G2_XPC_W2:
-                    PARAM_TREE_ADD_STAY(xpc_w2, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(param_tree, hf_llrp_xpc_w2, tvb, suboffset, 2, ENC_BIG_ENDIAN);
                     break;
             };
             /* Unlike for TLV's, real_len for TV's doesn't include the standard
@@ -2403,20 +2650,15 @@ dissect_llrp_parameters(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     return offset;
 }
 
-#undef PARAM_TREE_ADD_STAY
-#undef PARAM_TREE_ADD
-#undef PARAM_TREE_ADD_SPEC_STAY
-#undef PARAM_TREE_ADD_SPEC
-
-static guint
-dissect_llrp_impinj_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+static unsigned
+dissect_llrp_impinj_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
-    guint8 subtype;
+    uint8_t subtype;
 
-    subtype = tvb_get_guint8(tvb, offset);
+    subtype = tvb_get_uint8(tvb, offset);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " (Impinj - %s)",
-            val_to_str_ext(subtype, &impinj_msg_subtype_ext, "Unknown Type: %d"));
+            val_to_str_ext(pinfo->pool, subtype, &impinj_msg_subtype_ext, "Unknown Type: %d"));
     proto_tree_add_item(tree, hf_llrp_impinj_msg_type, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
 
@@ -2442,17 +2684,16 @@ dissect_llrp_impinj_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 static void
 dissect_llrp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        guint16 type, guint offset)
+        uint16_t type, unsigned offset)
 {
-    gboolean    ends_with_parameters;
-    guint8      requested_data;
-    guint16     antenna_id, gpi_port, gpo_port;
-    guint32     spec_id, vendor;
+    bool        ends_with_parameters;
+    uint8_t     requested_data;
+    uint32_t    vendor;
     proto_item *request_item, *antenna_item, *gpi_item, *gpo_item;
-    guint (*dissect_custom_message)(tvbuff_t *tvb,
-            packet_info *pinfo, proto_tree *tree, guint offset) = NULL;
+    unsigned (*dissect_custom_message)(tvbuff_t *tvb,
+            packet_info *pinfo, proto_tree *tree, unsigned offset) = NULL;
 
-    ends_with_parameters = FALSE;
+    ends_with_parameters = false;
     switch (type)
     {
         /* Simple cases just have normal TLV or TV parameters */
@@ -2483,7 +2724,7 @@ dissect_llrp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         case LLRP_TYPE_GET_ACCESSSPECS_RESPONSE:
         case LLRP_TYPE_GET_REPORT:
         case LLRP_TYPE_ENABLE_EVENTS_AND_REPORTS:
-            ends_with_parameters = TRUE;
+            ends_with_parameters = true;
             break;
         /* Some just have an ROSpec ID */
         case LLRP_TYPE_START_ROSPEC:
@@ -2491,65 +2732,35 @@ dissect_llrp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         case LLRP_TYPE_ENABLE_ROSPEC:
         case LLRP_TYPE_DISABLE_ROSPEC:
         case LLRP_TYPE_DELETE_ROSPEC:
-            spec_id = tvb_get_ntohl(tvb, offset);
-            if (spec_id == LLRP_ROSPEC_ALL)
-                proto_tree_add_uint_format(tree, hf_llrp_rospec, tvb,
-                        offset, 4, spec_id, "All ROSpecs (%u)", spec_id);
-            else
-                proto_tree_add_item(tree, hf_llrp_rospec, tvb,
-                        offset, 4, ENC_BIG_ENDIAN);
+            proto_tree_add_item(tree, hf_llrp_rospec, tvb, offset, 4, ENC_BIG_ENDIAN);
             offset += 4;
             break;
         /* Some just have an AccessSpec ID */
         case LLRP_TYPE_ENABLE_ACCESSSPEC:
         case LLRP_TYPE_DELETE_ACCESSSPEC:
         case LLRP_TYPE_DISABLE_ACCESSSPEC:
-            spec_id = tvb_get_ntohl(tvb, offset);
-            if (spec_id == LLRP_ACCESSSPEC_ALL)
-                proto_tree_add_uint_format(tree, hf_llrp_accessspec, tvb,
-                        offset, 4, spec_id, "All Access Specs (%u)", spec_id);
-            else
-                proto_tree_add_item(tree, hf_llrp_accessspec, tvb,
-                        offset, 4, ENC_BIG_ENDIAN);
+            proto_tree_add_item(tree, hf_llrp_accessspec, tvb, offset, 4, ENC_BIG_ENDIAN);
             offset += 4;
             break;
         case LLRP_TYPE_GET_READER_CAPABILITIES:
             proto_tree_add_item(tree, hf_llrp_req_cap, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
-            ends_with_parameters = TRUE;
+            ends_with_parameters = true;
             break;
         /* GET_READER_CONFIG is more complicated */
         case LLRP_TYPE_GET_READER_CONFIG:
-            antenna_id = tvb_get_ntohs(tvb, offset);
-            if (antenna_id == LLRP_ANTENNA_ALL)
-                antenna_item = proto_tree_add_uint_format(tree, hf_llrp_antenna_id, tvb,
-                        offset, 2, antenna_id, "All Antennas (%u)", antenna_id);
-            else
-                antenna_item = proto_tree_add_item(tree, hf_llrp_antenna_id, tvb,
-                        offset, 2, ENC_BIG_ENDIAN);
+            antenna_item = proto_tree_add_item(tree, hf_llrp_antenna_id, tvb, offset, 2, ENC_BIG_ENDIAN);
             offset += 2;
 
-            requested_data = tvb_get_guint8(tvb, offset);
+            requested_data = tvb_get_uint8(tvb, offset);
             request_item = proto_tree_add_item(tree, hf_llrp_req_conf, tvb,
                     offset, 1, ENC_BIG_ENDIAN);
             offset++;
 
-            gpi_port = tvb_get_ntohs(tvb, offset);
-            if (gpi_port == LLRP_GPI_PORT_ALL)
-                gpi_item = proto_tree_add_uint_format(tree, hf_llrp_gpi_port, tvb,
-                        offset, 2, gpi_port, "All GPI Ports (%u)", gpi_port);
-            else
-                gpi_item = proto_tree_add_item(tree, hf_llrp_gpi_port, tvb,
-                        offset, 2, ENC_BIG_ENDIAN);
+            gpi_item = proto_tree_add_item(tree, hf_llrp_gpi_port, tvb, offset, 2, ENC_BIG_ENDIAN);
             offset += 2;
 
-            gpo_port = tvb_get_ntohs(tvb, offset);
-            if (gpo_port == LLRP_GPO_PORT_ALL)
-                gpo_item = proto_tree_add_uint_format(tree, hf_llrp_gpo_port, tvb,
-                        offset, 2, gpo_port, "All GPO Ports (%u)", gpo_port);
-            else
-                gpo_item = proto_tree_add_item(tree, hf_llrp_gpo_port, tvb,
-                        offset, 2, ENC_BIG_ENDIAN);
+            gpo_item = proto_tree_add_item(tree, hf_llrp_gpo_port, tvb, offset, 2, ENC_BIG_ENDIAN);
             offset += 2;
 
             switch (requested_data)
@@ -2599,14 +2810,14 @@ dissect_llrp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                     proto_item_append_text(gpo_item, " (Ignored)");
                     break;
             };
-            ends_with_parameters = TRUE;
+            ends_with_parameters = true;
             break;
         /* END GET_READER_CONFIG */
         /* Misc */
         case LLRP_TYPE_SET_READER_CONFIG:
             proto_tree_add_item(tree, hf_llrp_rest_fact, tvb, offset, 1, ENC_NA);
             offset++;
-            ends_with_parameters = TRUE;
+            ends_with_parameters = true;
             break;
         case LLRP_TYPE_SET_PROTOCOL_VERSION:
             proto_tree_add_item(tree, hf_llrp_version, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2616,7 +2827,7 @@ dissect_llrp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             offset++;
             proto_tree_add_item(tree, hf_llrp_sup_ver, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
-            ends_with_parameters = TRUE;
+            ends_with_parameters = true;
             break;
         case LLRP_TYPE_CUSTOM_MESSAGE:
             vendor = tvb_get_ntohl(tvb, offset);
@@ -2626,7 +2837,7 @@ dissect_llrp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             switch(vendor) {
             case LLRP_VENDOR_IMPINJ:
                 dissect_custom_message = dissect_llrp_impinj_message;
-                ends_with_parameters = TRUE;
+                ends_with_parameters = true;
                 break;
             }
             if (dissect_custom_message)
@@ -2660,12 +2871,14 @@ dissect_llrp_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 {
     proto_item *ti;
     proto_tree *llrp_tree;
-    guint16     type;
-    guint32     len;
-    guint       offset = 0;
+    uint16_t    type;
+    uint32_t    len;
+    unsigned    offset = 0;
 
     /* Check that there's enough data */
-    DISSECTOR_ASSERT(tvb_reported_length(tvb) >= LLRP_HEADER_LENGTH);
+    if (tvb_reported_length(tvb) < LLRP_HEADER_LENGTH) {
+        return 0;
+    }
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "LLRP");
@@ -2675,7 +2888,7 @@ dissect_llrp_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
     type = tvb_get_ntohs(tvb, offset) & 0x03FF;
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)",
-                    val_to_str_ext(type, &message_types_ext, "Unknown Type: %d"));
+                    val_to_str_ext(pinfo->pool, type, &message_types_ext, "Unknown Type: %d"));
 
     ti = proto_tree_add_item(tree, proto_llrp, tvb, offset, -1, ENC_NA);
     llrp_tree = proto_item_add_subtree(ti, ett_llrp);
@@ -2704,18 +2917,18 @@ dissect_llrp_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 }
 
 /* Determine length of LLRP message */
-static guint
+static unsigned
 get_llrp_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
     /* Peek into the header to determine the total message length */
-    return (guint)tvb_get_ntohl(tvb, offset+2);
+    return (unsigned)tvb_get_ntohl(tvb, offset+2);
 }
 
 /* The main dissecting routine */
 static int
 dissect_llrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, LLRP_HEADER_LENGTH,
+    tcp_dissect_pdus(tvb, pinfo, tree, true, LLRP_HEADER_LENGTH,
         get_llrp_message_len, dissect_llrp_packet, data);
     return tvb_captured_length(tvb);
 }
@@ -2758,19 +2971,19 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_rospec,
-        { "ROSpec ID", "llrp.rospec", FT_UINT32, BASE_DEC, NULL, 0,
+        { "ROSpec ID", "llrp.rospec", FT_UINT32, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_all_rospecs), 0,
           NULL, HFILL }},
 
         { &hf_llrp_antenna_id,
-        { "Antenna ID", "llrp.antenna_id", FT_UINT16, BASE_DEC, NULL, 0,
+        { "Antenna ID", "llrp.antenna_id", FT_UINT16, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_all_antenna), 0,
           NULL, HFILL }},
 
         { &hf_llrp_gpi_port,
-        { "GPI Port Number", "llrp.gpi_port", FT_UINT16, BASE_DEC, NULL, 0,
+        { "GPI Port Number", "llrp.gpi_port", FT_UINT16, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_all_gpi_ports), 0,
           NULL, HFILL }},
 
         { &hf_llrp_gpo_port,
-        { "GPO Port Number", "llrp.gpo_port", FT_UINT16, BASE_DEC, NULL, 0,
+        { "GPO Port Number", "llrp.gpo_port", FT_UINT16, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_all_gpo_ports), 0,
           NULL, HFILL }},
 
         { &hf_llrp_rest_fact,
@@ -2778,7 +2991,7 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_accessspec,
-        { "Access Spec ID", "llrp.accessspec", FT_UINT32, BASE_DEC, NULL, 0,
+        { "Access Spec ID", "llrp.accessspec", FT_UINT32, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_all_access_specs), 0,
           NULL, HFILL }},
 
         { &hf_llrp_vendor,
@@ -2898,28 +3111,28 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_max_num_rospec,
-        { "Maximum number of ROSpecs", "llrp.param.max_num_rospec", FT_UINT32, BASE_DEC, NULL, 0,
+        { "Maximum number of ROSpecs", "llrp.param.max_num_rospec", FT_UINT32, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_no_limit), 0,
           NULL, HFILL }},
 
         { &hf_llrp_max_num_spec_per_rospec,
-        { "Maximum number of spec per ROSpec", "llrp.param.max_num_spec_per_rospec", FT_UINT32, BASE_DEC, NULL, 0,
+        { "Maximum number of spec per ROSpec", "llrp.param.max_num_spec_per_rospec", FT_UINT32, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_no_limit), 0,
           NULL, HFILL }},
 
         { &hf_llrp_max_num_inventory_per_aispec,
-        { "Maximum number of Inventory Spec per AISpec", "llrp.param.max_num_inventory_per_aispec", FT_UINT32, BASE_DEC, NULL, 0,
+        { "Maximum number of Inventory Spec per AISpec", "llrp.param.max_num_inventory_per_aispec", FT_UINT32, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_no_limit), 0,
           NULL, HFILL }},
 
         { &hf_llrp_max_num_accessspec,
-        { "Maximum number of AccessSpec", "llrp.param.max_num_accessspec", FT_UINT32, BASE_DEC, NULL, 0,
+        { "Maximum number of AccessSpec", "llrp.param.max_num_accessspec", FT_UINT32, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_no_limit), 0,
           NULL, HFILL }},
 
         { &hf_llrp_max_num_opspec_per_accressspec,
-        { "Maximum number of OpSpec per AccessSpec", "llrp.param.max_num_opspec_per_accressspec", FT_UINT32, BASE_DEC, NULL, 0,
+        { "Maximum number of OpSpec per AccessSpec", "llrp.param.max_num_opspec_per_accressspec", FT_UINT32, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_no_limit), 0,
           NULL, HFILL }},
 
         /* TODO add translation */
         { &hf_llrp_country_code,
-        { "Contry code", "llrp.param.country_code", FT_UINT16, BASE_DEC, NULL, 0,
+        { "Country code", "llrp.param.country_code", FT_UINT16, BASE_DEC, NULL, 0,
           NULL, HFILL }},
 
         { &hf_llrp_comm_standard,
@@ -2935,7 +3148,7 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_hop_table_id,
-        { "Hop table ID", "llrp.param.hop_table_id", FT_UINT8, BASE_DEC, NULL, 0,
+        { "Hop table ID", "llrp.param.hop_table_id", FT_UINT16, BASE_DEC, NULL, 0,
           NULL, HFILL }},
 
         { &hf_llrp_rfu,
@@ -3119,7 +3332,7 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_gpi_state,
-        { "GPI state", "llrp.param.gpi_state", FT_UINT16, BASE_DEC, NULL, 0,
+        { "GPI state", "llrp.param.gpi_state", FT_UINT8, BASE_DEC, NULL, 0,
           NULL, HFILL }},
 
         { &hf_llrp_hold_events_and_reports,
@@ -3299,7 +3512,7 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_max_num_filter_per_query,
-        { "Maximum number of select filters per query", "llrp.param.max_num_filter_per_query", FT_UINT16, BASE_DEC, NULL, 0,
+        { "Maximum number of select filters per query", "llrp.param.max_num_filter_per_query", FT_UINT16, BASE_DEC|BASE_SPECIAL_VALS, VALS(unique_no_limit), 0,
           NULL, HFILL }},
 
         { &hf_llrp_mode_ident,
@@ -3530,6 +3743,10 @@ proto_register_llrp(void)
         { "Vendor ID", "llrp.param.vendor_id", FT_UINT32, BASE_DEC, VALS(llrp_vendors), 0,
           NULL, HFILL }},
 
+        { &hf_llrp_vendor_unknown,
+        { "Vendor Unknown", "llrp.param.vendor_unknown", FT_BYTES, BASE_NONE, NULL, 0,
+          NULL, HFILL }},
+
         { &hf_llrp_impinj_param_type,
         { "Impinj parameter subtype", "llrp.param.impinj_param_type", FT_UINT32, BASE_DEC | BASE_EXT_STRING, &impinj_param_type_ext, 0,
           NULL, HFILL }},
@@ -3583,7 +3800,7 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_impinj_reduce_power_mode,
-        { "Recuced power mode", "llrp.param.impinj_reduce_power_mode", FT_UINT16, BASE_DEC, VALS(impinj_boolean), 0,
+        { "Reduced power mode", "llrp.param.impinj_reduce_power_mode", FT_UINT16, BASE_DEC, VALS(impinj_boolean), 0,
           NULL, HFILL }},
 
         { &hf_llrp_impinj_low_duty_mode,
@@ -3607,7 +3824,7 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_soft_ver,
-        { "Softwave version", "llrp.param.soft_ver", FT_UINT_STRING, BASE_NONE, NULL, 0,
+        { "Software version", "llrp.param.soft_ver", FT_UINT_STRING, BASE_NONE, NULL, 0,
           NULL, HFILL }},
 
         { &hf_llrp_firm_ver,
@@ -3643,7 +3860,7 @@ proto_register_llrp(void)
           NULL, HFILL }},
 
         { &hf_llrp_gpi_debounce,
-        { "GPI debounce timer Msec", "llrp.param.gpi_debounce", FT_UINT16, BASE_DEC, NULL, 0,
+        { "GPI debounce timer Msec", "llrp.param.gpi_debounce", FT_UINT32, BASE_DEC, NULL, 0,
           NULL, HFILL }},
 
         { &hf_llrp_temperature,
@@ -3772,41 +3989,39 @@ proto_register_llrp(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_llrp,
         &ett_llrp_param
     };
 
     static ei_register_info ei[] = {
-        { &ei_llrp_invalid_length, { "llrp.invalid_length_of_string_claimed", PI_MALFORMED, PI_ERROR, "invalid length of string: claimed %u, available %u.", EXPFILL }},
-        { &ei_llrp_req_conf, { "llrp.req_conf.invalid", PI_PROTOCOL, PI_ERROR, "Unrecognized configuration request: %u", EXPFILL }},
+        { &ei_llrp_invalid_length, { "llrp.invalid_length_of_string_claimed", PI_MALFORMED, PI_ERROR, "Invalid Length", EXPFILL }},
+        { &ei_llrp_req_conf, { "llrp.req_conf.invalid", PI_PROTOCOL, PI_ERROR, "Unrecognized configuration request", EXPFILL }},
     };
 
     expert_module_t* expert_llrp;
 
     /* Register the protocol name and description */
-    proto_llrp = proto_register_protocol("Low Level Reader Protocol",
-            "LLRP", "llrp");
+    proto_llrp = proto_register_protocol("Low Level Reader Protocol", "LLRP", "llrp");
 
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_llrp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
     expert_llrp = expert_register_protocol(proto_llrp);
     expert_register_field_array(expert_llrp, ei, array_length(ei));
+
+    llrp_handle = register_dissector("llrp", dissect_llrp, proto_llrp);
 }
 
 void
 proto_reg_handoff_llrp(void)
 {
-    dissector_handle_t llrp_handle;
-
-    llrp_handle = create_dissector_handle(dissect_llrp, proto_llrp);
-    dissector_add_uint("tcp.port", LLRP_PORT, llrp_handle);
+    dissector_add_uint_with_preference("tcp.port", LLRP_PORT, llrp_handle);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

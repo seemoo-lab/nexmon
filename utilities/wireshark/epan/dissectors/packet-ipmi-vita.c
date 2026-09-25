@@ -6,183 +6,172 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-ipmi.h"
 
 void proto_register_ipmi_vita(void);
 
 /* Tree type identifiers.
 */
-static gint ett_vita_ipmc = -1;
-static gint ett_vita_ipmb = -1;
-static gint ett_vita_vso = -1;
-static gint ett_vita_led_caps = -1;
-static gint ett_vita_led_color = -1;
-static gint ett_vita_led_flags = -1;
-static gint ett_vita_led_states = -1;
-static gint ett_vita_ipmb_state = -1;
-static gint ett_vita_fru_policy_bits = -1;
-static gint ett_vita_fan_properties = -1;
-static gint ett_vita_fru_control_caps = -1;
-static gint ett_vita_chassis_addr_type = -1;
-static gint ett_vita_chassis_addr = -1;
-static gint ett_vita_persistent_control_state = -1;
-static gint ett_vita_persistent_control_caps = -1;
+static int ett_vita_ipmc;
+static int ett_vita_ipmb;
+static int ett_vita_vso;
+static int ett_vita_led_caps;
+static int ett_vita_led_color;
+static int ett_vita_led_flags;
+static int ett_vita_led_states;
+static int ett_vita_ipmb_state;
+static int ett_vita_fru_policy_bits;
+static int ett_vita_fan_properties;
+static int ett_vita_fru_control_caps;
+static int ett_vita_chassis_addr_type;
+static int ett_vita_chassis_addr;
+static int ett_vita_persistent_control_state;
+static int ett_vita_persistent_control_caps;
 
 /* Field identifiers.
 */
-static gint hf_vita_reserved = -1;
-static gint hf_vita_fruid = -1;
-static gint hf_vita_addr_key_type = -1;
-static gint hf_vita_addr_key = -1;
-static gint hf_vita_hw_addr = -1;
-static gint hf_vita_ipmb_addr = -1;
-static gint hf_vita_site_type = -1;
-static gint hf_vita_site_num = -1;
-static gint hf_vita_ipmbl_addr = -1;
+static int hf_vita_reserved;
+static int hf_vita_fruid;
+static int hf_vita_addr_key_type;
+static int hf_vita_addr_key;
+static int hf_vita_hw_addr;
+static int hf_vita_ipmb_addr;
+static int hf_vita_site_type;
+static int hf_vita_site_num;
+static int hf_vita_ipmbl_addr;
 
-static gint hf_vita_chassis_identifier = -1;
-static gint hf_vita_chassis_identifier_type = -1;
-static gint hf_vita_chassis_identifier_length = -1;
-static gint hf_vita_ipmc = -1;
-static gint hf_vita_tier = -1;
-static gint hf_vita_layer = -1;
-static gint hf_vita_ipmb = -1;
-static gint hf_vita_ipmb_itfs = -1;
-static gint hf_vita_ipmb_freq = -1;
-static gint hf_vita_vso = -1;
-static gint hf_vita_vso_std = -1;
-static gint hf_vita_rev = -1;
-static gint hf_vita_max_fruid = -1;
-static gint hf_vita_ipmc_fruid = -1;
-static gint hf_vita_fru_control = -1;
+static int hf_vita_chassis_identifier;
+static int hf_vita_chassis_identifier_type;
+static int hf_vita_chassis_identifier_length;
+static int hf_vita_ipmc;
+static int hf_vita_tier;
+static int hf_vita_layer;
+static int hf_vita_ipmb;
+static int hf_vita_ipmb_itfs;
+static int hf_vita_ipmb_freq;
+static int hf_vita_vso;
+static int hf_vita_vso_std;
+static int hf_vita_rev;
+static int hf_vita_max_fruid;
+static int hf_vita_ipmc_fruid;
+static int hf_vita_fru_control;
 
-static gint hf_vita_led_count = -1;
-static gint hf_vita_led_id = -1;
-static gint hf_vita_led_caps = -1;
-static gint hf_vita_led_cap_blue = -1;
-static gint hf_vita_led_cap_red = -1;
-static gint hf_vita_led_cap_green = -1;
-static gint hf_vita_led_cap_amber = -1;
-static gint hf_vita_led_cap_orange = -1;
-static gint hf_vita_led_cap_white = -1;
-static gint hf_vita_led_def_loc_color = -1;
-static gint hf_vita_led_def_ovr_color = -1;
-static gint hf_vita_led_color = -1;
-static gint hf_vita_led_flags = -1;
-static gint hf_vita_led_flag_pwr = -1;
-static gint hf_vita_led_flag_hw_restrict = -1;
-static gint hf_vita_led_states = -1;
-static gint hf_vita_led_loc_func = -1;
-static gint hf_vita_led_loc_duration = -1;
-static gint hf_vita_led_loc_color = -1;
-static gint hf_vita_led_ovr_func = -1;
-static gint hf_vita_led_ovr_duration = -1;
-static gint hf_vita_led_ovr_color = -1;
-static gint hf_vita_led_lamp_test_duration = -1;
-static gint hf_vita_led_state_local = -1;
-static gint hf_vita_led_state_override = -1;
-static gint hf_vita_led_state_lamp_test = -1;
-static gint hf_vita_led_state_hw_restrict = -1;
+static int hf_vita_led_count;
+static int hf_vita_led_id;
+static int hf_vita_led_caps;
+static int hf_vita_led_cap_blue;
+static int hf_vita_led_cap_red;
+static int hf_vita_led_cap_green;
+static int hf_vita_led_cap_amber;
+static int hf_vita_led_cap_orange;
+static int hf_vita_led_cap_white;
+static int hf_vita_led_def_loc_color;
+static int hf_vita_led_def_ovr_color;
+static int hf_vita_led_color;
+static int hf_vita_led_flags;
+static int hf_vita_led_flag_pwr;
+static int hf_vita_led_flag_hw_restrict;
+static int hf_vita_led_states;
+static int hf_vita_led_loc_func;
+static int hf_vita_led_loc_duration;
+static int hf_vita_led_loc_color;
+static int hf_vita_led_ovr_func;
+static int hf_vita_led_ovr_duration;
+static int hf_vita_led_ovr_color;
+static int hf_vita_led_lamp_test_duration;
+static int hf_vita_led_state_local;
+static int hf_vita_led_state_override;
+static int hf_vita_led_state_lamp_test;
+static int hf_vita_led_state_hw_restrict;
 
-static gint hf_vita_ipmba_state = -1;
-static gint hf_vita_ipmbb_state = -1;
-static gint hf_vita_ipmb_state = -1;
-static gint hf_vita_ipmb_link_id = -1;
+static int hf_vita_ipmba_state;
+static int hf_vita_ipmbb_state;
+static int hf_vita_ipmb_state;
+static int hf_vita_ipmb_link_id;
 
-static gint hf_vita_fru_policy_mask_bits = -1;
-static gint hf_vita_fru_policy_set_bits = -1;
-static gint hf_vita_fru_policy_bits = -1;
-static gint hf_vita_fru_activation_locked = -1;
-static gint hf_vita_fru_deactivation_locked = -1;
-static gint hf_vita_fru_commanded_deactivation_ignored = -1;
-static gint hf_vita_fru_default_activation_locked = -1;
+static int hf_vita_fru_policy_mask_bits;
+static int hf_vita_fru_policy_set_bits;
+static int hf_vita_fru_policy_bits;
+static int hf_vita_fru_activation_locked;
+static int hf_vita_fru_deactivation_locked;
+static int hf_vita_fru_commanded_deactivation_ignored;
+static int hf_vita_fru_default_activation_locked;
 
-static gint hf_vita_fru_activation = -1;
+static int hf_vita_fru_activation;
 
-static gint hf_vita_record_id = -1;
+static int hf_vita_record_id;
 
-static gint hf_vita_fan_min_level = -1;
-static gint hf_vita_fan_max_level = -1;
-static gint hf_vita_fan_norm_level = -1;
-static gint hf_vita_fan_properties = -1;
-static gint hf_vita_fan_prop_local_control = -1;
-static gint hf_vita_fan_override_level = -1;
-static gint hf_vita_fan_local_level = -1;
-static gint hf_vita_fan_local_control = -1;
+static int hf_vita_fan_min_level;
+static int hf_vita_fan_max_level;
+static int hf_vita_fan_norm_level;
+static int hf_vita_fan_properties;
+static int hf_vita_fan_prop_local_control;
+static int hf_vita_fan_override_level;
+static int hf_vita_fan_local_level;
+static int hf_vita_fan_local_control;
 
-static gint hf_vita_ipmb_link_key_type = -1;
-static gint hf_vita_ipmb_link_key_value = -1;
-static gint hf_vita_ipmb_link_number = -1;
-static gint hf_vita_ipmb_sensor_number = -1;
+static int hf_vita_ipmb_link_key_type;
+static int hf_vita_ipmb_link_key_value;
+static int hf_vita_ipmb_link_number;
+static int hf_vita_ipmb_sensor_number;
 
-static gint hf_vita_active_chmc_ipmb_addr = -1;
-static gint hf_vita_backup_chmc_ipmb_addr = -1;
+static int hf_vita_active_chmc_ipmb_addr;
+static int hf_vita_backup_chmc_ipmb_addr;
 
-static gint hf_vita_fan_number = -1;
-static gint hf_vita_fan_policy = -1;
-static gint hf_vita_fan_policy_timeout = -1;
-static gint hf_vita_fan_coverage = -1;
+static int hf_vita_fan_number;
+static int hf_vita_fan_policy;
+static int hf_vita_fan_policy_timeout;
+static int hf_vita_fan_coverage;
 
-static gint hf_vita_fru_control_caps = -1;
-static gint hf_vita_fru_control_cap_cold = -1;
-static gint hf_vita_fru_control_cap_warm = -1;
-static gint hf_vita_fru_control_cap_grace = -1;
-static gint hf_vita_fru_control_cap_diag = -1;
-static gint hf_vita_fru_control_cap_pwr = -1;
+static int hf_vita_fru_control_caps;
+static int hf_vita_fru_control_cap_cold;
+static int hf_vita_fru_control_cap_warm;
+static int hf_vita_fru_control_cap_grace;
+static int hf_vita_fru_control_cap_diag;
+static int hf_vita_fru_control_cap_pwr;
 
-static gint hf_vita_fru_lock_operation = -1;
-static gint hf_vita_fru_lock_id = -1;
-static gint hf_vita_fru_lock_timestamp = -1;
+static int hf_vita_fru_lock_operation;
+static int hf_vita_fru_lock_id;
+static int hf_vita_fru_lock_timestamp;
 
-static gint hf_vita_fru_write_offset = -1;
-static gint hf_vita_fru_write_data = -1;
-static gint hf_vita_fru_write_count = -1;
+static int hf_vita_fru_write_offset;
+static int hf_vita_fru_write_data;
+static int hf_vita_fru_write_count;
 
-static gint hf_vita_chassis_addr_number = -1;
-static gint hf_vita_chassis_addr_timestamp = -1;
-static gint hf_vita_chassis_addr_count = -1;
-static gint hf_vita_chassis_max_unavail = -1;
-static gint hf_vita_chassis_addr_type = -1;
-static gint hf_vita_chassis_addr = -1;
-static gint hf_vita_chassis_addr_chmc = -1;
-static gint hf_vita_chassis_addr_format = -1;
-static gint hf_vita_ipv4_addr = -1;
-static gint hf_vita_rmcp_port = -1;
+static int hf_vita_chassis_addr_number;
+static int hf_vita_chassis_addr_timestamp;
+static int hf_vita_chassis_addr_count;
+static int hf_vita_chassis_max_unavail;
+static int hf_vita_chassis_addr_type;
+static int hf_vita_chassis_addr;
+static int hf_vita_chassis_addr_chmc;
+static int hf_vita_chassis_addr_format;
+static int hf_vita_ipv4_addr;
+static int hf_vita_rmcp_port;
 
-static gint hf_vita_persistent_control_state = -1;
-static gint hf_vita_persistent_control_cold = -1;
-static gint hf_vita_persistent_control_warm = -1;
-static gint hf_vita_persistent_control_mask = -1;
-static gint hf_vita_persistent_control_set = -1;
-static gint hf_vita_persistent_control_caps = -1;
-static gint hf_vita_persistent_control_cap_cold = -1;
-static gint hf_vita_persistent_control_cap_warm = -1;
+static int hf_vita_persistent_control_state;
+static int hf_vita_persistent_control_cold;
+static int hf_vita_persistent_control_warm;
+static int hf_vita_persistent_control_mask;
+static int hf_vita_persistent_control_set;
+static int hf_vita_persistent_control_caps;
+static int hf_vita_persistent_control_cap_cold;
+static int hf_vita_persistent_control_cap_warm;
 
-static gint hf_vita_fru_state_sensor_num = -1;
-static gint hf_vita_fru_health_sensor_num = -1;
-static gint hf_vita_fru_voltage_sensor_num = -1;
-static gint hf_vita_fru_temp_sensor_num = -1;
-static gint hf_vita_payload_test_results_sensor_num = -1;
-static gint hf_vita_payload_test_status_sensor_num = -1;
+static int hf_vita_fru_state_sensor_num;
+static int hf_vita_fru_health_sensor_num;
+static int hf_vita_fru_voltage_sensor_num;
+static int hf_vita_fru_temp_sensor_num;
+static int hf_vita_payload_test_results_sensor_num;
+static int hf_vita_payload_test_status_sensor_num;
 
 /* String values.
 */
@@ -389,7 +378,7 @@ static const value_string cc20[] = {
 
 /* Array of sub-tree identifiers (needed for registration).
 */
-static gint * const ett_ipmi_vita[] = {
+static int * const ett_ipmi_vita[] = {
 	&ett_vita_ipmc,
 	&ett_vita_ipmb,
 	&ett_vita_vso,
@@ -407,12 +396,12 @@ static gint * const ett_ipmi_vita[] = {
 	&ett_vita_persistent_control_caps
 };
 
-static const int * bits_vita_led_color[] = {
+static int * const bits_vita_led_color[] = {
 	&hf_vita_led_color,
 	NULL
 };
 
-static const int * bits_vita_fru_policy_bits[] = {
+static int * const bits_vita_fru_policy_bits[] = {
 	&hf_vita_fru_activation_locked,
 	&hf_vita_fru_deactivation_locked,
 	&hf_vita_fru_commanded_deactivation_ignored,
@@ -420,7 +409,7 @@ static const int * bits_vita_fru_policy_bits[] = {
 	NULL
 };
 
-static const int * bits_vita_persistent_control_state[] = {
+static int * const bits_vita_persistent_control_state[] = {
 	&hf_vita_persistent_control_cold,
 	&hf_vita_persistent_control_warm,
 	NULL
@@ -436,7 +425,7 @@ static hf_register_info hf_ipmi_vita[] = {
 		{ "Tier Functionality", "ipmi.vita.ipmc.tier",
 			FT_UINT8, BASE_HEX, VALS(str_vita_ipmc_tiers), 0x3, NULL, HFILL }},
 	{ &hf_vita_layer,
-		{ "Layer Functionality", "ipmi.vita.ipmc.tier",
+		{ "Layer Functionality", "ipmi.vita.ipmc.layer",
 			FT_UINT8, BASE_HEX, VALS(str_vita_ipmc_layers), 0x30, NULL, HFILL }},
 	{ &hf_vita_ipmb,
 		{ "IPMB Capabilities", "ipmi.vita.ipmb",
@@ -550,7 +539,7 @@ static hf_register_info hf_ipmi_vita[] = {
 		{ "Override State LED Function", "ipmi.vita.led.ovr.func",
 			FT_UINT8, BASE_DEC|BASE_RANGE_STRING, RVALS(str_vita_led_func), 0, NULL, HFILL }},
 	{ &hf_vita_led_ovr_duration,
-		{ "Override State On-Duration", "ipmi.vita.led.ovr.diration",
+		{ "Override State On-Duration", "ipmi.vita.led.ovr.duration",
 			FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_vita_led_ovr_color,
 		{ "Override State Color", "ipmi.vita.led.ovr.color",
@@ -562,7 +551,7 @@ static hf_register_info hf_ipmi_vita[] = {
 		{ "Local Control LED Function", "ipmi.vita.led.loc.func",
 			FT_UINT8, BASE_DEC|BASE_RANGE_STRING, RVALS(str_vita_led_func), 0, NULL, HFILL }},
 	{ &hf_vita_led_loc_duration,
-		{ "Local Control On-Duration", "ipmi.vita.led.loc.diration",
+		{ "Local Control On-Duration", "ipmi.vita.led.loc.duration",
 			FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_vita_led_loc_color,
 		{ "Local Control Color", "ipmi.vita.led.loc.color",
@@ -790,13 +779,13 @@ static hf_register_info hf_ipmi_vita[] = {
 static void
 cmd00_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const gint * bits_vita_ipmc[] = {
+	static int * const bits_vita_ipmc[] = {
 		&hf_vita_tier, &hf_vita_layer, NULL
 	};
-	static const gint * bits_vita_ipmb[] = {
+	static int * const bits_vita_ipmb[] = {
 		&hf_vita_ipmb_itfs, &hf_vita_ipmb_freq, NULL
 	};
-	static const gint * bits_vita_vso[] = {
+	static int * const bits_vita_vso[] = {
 		&hf_vita_vso_std, NULL
 	};
 
@@ -816,7 +805,7 @@ cmd00_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 cmd01_rq(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	guint len = tvb_captured_length(tvb);
+	unsigned len = tvb_captured_length(tvb);
 
 	if (len > 0) {
 		proto_tree_add_item(tree, hf_vita_fruid, tvb, 0, 1, ENC_LITTLE_ENDIAN);
@@ -852,9 +841,9 @@ cmd01_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 /* Get Chassis Identifier (response), Set Chassis Identifier (request)
 */
 static void
-cmd02_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+cmd02_rs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	ipmi_add_typelen(tree, hf_vita_chassis_identifier, hf_vita_chassis_identifier_type, hf_vita_chassis_identifier_length, tvb, 0, TRUE);
+	ipmi_add_typelen(pinfo, tree, hf_vita_chassis_identifier, hf_vita_chassis_identifier_type, hf_vita_chassis_identifier_length, tvb, 0, true);
 }
 
 /* FRU Control (request)
@@ -897,13 +886,13 @@ cmd06_rq(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 cmd06_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const gint * bits_vita_led_caps[] = {
+	static int * const bits_vita_led_caps[] = {
 		&hf_vita_led_cap_white, &hf_vita_led_cap_orange,
 		&hf_vita_led_cap_amber, &hf_vita_led_cap_green,
 		&hf_vita_led_cap_red, &hf_vita_led_cap_blue,
 		NULL
 	};
-	static const int * bits_vita_led_flags[] = {
+	static int * const bits_vita_led_flags[] = {
 		&hf_vita_led_flag_pwr,
 		&hf_vita_led_flag_hw_restrict,
 		NULL
@@ -937,7 +926,7 @@ cmd07_rq(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 cmd08_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int * bits_vita_led_states[] = {
+	static int * const bits_vita_led_states[] = {
 		&hf_vita_led_state_local,
 		&hf_vita_led_state_override,
 		&hf_vita_led_state_lamp_test,
@@ -966,7 +955,7 @@ cmd08_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 cmd09_rq(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int * bits_vita_ipmb_state[] = {
+	static int * const bits_vita_ipmb_state[] = {
 		&hf_vita_ipmb_state,
 		&hf_vita_ipmb_link_id,
 		NULL
@@ -1023,7 +1012,7 @@ cmd0D_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 cmd14_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int * bits_vita_fan_properties[] = {
+	static int * const bits_vita_fan_properties[] = {
 		&hf_vita_fan_prop_local_control,
 		NULL
 	};
@@ -1131,7 +1120,7 @@ cmd1D_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 cmd1E_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int * bits_vita_fru_control_caps[] = {
+	static int * const bits_vita_fru_control_caps[] = {
 		&hf_vita_fru_control_cap_cold,
 		&hf_vita_fru_control_cap_warm,
 		&hf_vita_fru_control_cap_grace,
@@ -1196,7 +1185,7 @@ static void
 cmd21_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
 	proto_item * item;
-	static const int * bits_vita_chassis_addr_type[] = {
+	static int * const bits_vita_chassis_addr_type[] = {
 		&hf_vita_chassis_addr_chmc,
 		&hf_vita_chassis_addr_format,
 		NULL
@@ -1211,7 +1200,7 @@ cmd21_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 			ENC_LITTLE_ENDIAN);
 	item = proto_tree_add_item(tree, hf_vita_chassis_addr, tvb, 8, -1, ENC_NA);
 
-	if (!(tvb_get_guint8(tvb, 8) & 0x7f)) {
+	if (!(tvb_get_uint8(tvb, 8) & 0x7f)) {
 		proto_tree * sub = proto_item_add_subtree(item, ett_vita_chassis_addr);
 		proto_tree_add_item(sub, hf_vita_ipv4_addr, tvb, 9, 4, ENC_BIG_ENDIAN);
 		proto_tree_add_item(sub, hf_vita_rmcp_port, tvb, 13, 2, ENC_BIG_ENDIAN);
@@ -1250,7 +1239,7 @@ cmd42_rq(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 cmd43_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int * bits_vita_persistent_control_caps[] = {
+	static int * const bits_vita_persistent_control_caps[] = {
 		&hf_vita_persistent_control_cap_cold,
 		&hf_vita_persistent_control_cap_warm,
 		NULL
@@ -1276,7 +1265,7 @@ cmd44_rs(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 
 /* Array of VITA 46.11 command descriptors.
 */
-static ipmi_cmd_t cmd_vita[] = {
+static const ipmi_cmd_t cmd_vita[] = {
 	{ 0x00, NULL,		cmd00_rs,	NULL, NULL, "[VITA] Get VSO Capabilities", 0 },
 	{ 0x01, cmd01_rq,	cmd01_rs,	NULL, NULL, "[VITA] Get Chassis Address Table Info", 0 },
 	{ 0x02, NULL,		cmd02_rs,	NULL, NULL, "[VITA] Get Chassis Identifier", 0 },
@@ -1314,7 +1303,7 @@ static ipmi_cmd_t cmd_vita[] = {
 void
 proto_register_ipmi_vita(void)
 {
-	static const guint8 sig_vita[1] = { 3 };
+	static const uint8_t sig_vita[1] = { 3 };
 
 	proto_register_field_array(proto_ipmi, hf_ipmi_vita,
 			array_length(hf_ipmi_vita));
@@ -1326,7 +1315,7 @@ proto_register_ipmi_vita(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

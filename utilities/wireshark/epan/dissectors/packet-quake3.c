@@ -9,19 +9,7 @@
  *
  * Copied from packet-quake2.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -42,36 +30,37 @@
 #include <epan/addr_resolv.h>
 
 void proto_register_quake3(void);
-static int proto_quake3 = -1;
+static dissector_handle_t quake3_handle;
+static int proto_quake3;
 
-static int hf_quake3_direction = -1;
-static int hf_quake3_connectionless = -1;
-static int hf_quake3_game = -1;
-static int hf_quake3_connectionless_marker = -1;
-static int hf_quake3_connectionless_text = -1;
-static int hf_quake3_connectionless_command = -1;
-static int hf_quake3_server_addr = -1;
-static int hf_quake3_server_port = -1;
-static int hf_quake3_game_seq1 = -1;
-static int hf_quake3_game_rel1 = -1;
-static int hf_quake3_game_seq2 = -1;
-static int hf_quake3_game_rel2 = -1;
-static int hf_quake3_game_qport = -1;
+static int hf_quake3_direction;
+static int hf_quake3_connectionless;
+static int hf_quake3_game;
+static int hf_quake3_connectionless_marker;
+static int hf_quake3_connectionless_text;
+static int hf_quake3_connectionless_command;
+static int hf_quake3_server_addr;
+static int hf_quake3_server_port;
+static int hf_quake3_game_seq1;
+static int hf_quake3_game_rel1;
+static int hf_quake3_game_seq2;
+static int hf_quake3_game_rel2;
+static int hf_quake3_game_qport;
 
-static gint ett_quake3 = -1;
-static gint ett_quake3_connectionless = -1;
-static gint ett_quake3_connectionless_text = -1;
-static gint ett_quake3_server = -1;
-static gint ett_quake3_game = -1;
-static gint ett_quake3_game_seq1 = -1;
-static gint ett_quake3_game_seq2 = -1;
-static gint ett_quake3_game_clc = -1;
-static gint ett_quake3_game_svc = -1;
+static int ett_quake3;
+static int ett_quake3_connectionless;
+static int ett_quake3_connectionless_text;
+static int ett_quake3_server;
+static int ett_quake3_game;
+static int ett_quake3_game_seq1;
+static int ett_quake3_game_seq2;
+static int ett_quake3_game_clc;
+static int ett_quake3_game_svc;
 
 #define QUAKE3_SERVER_PORT 27960
 #define QUAKE3_MASTER_PORT 27950
-static guint gbl_quake3_server_port=QUAKE3_SERVER_PORT;
-static guint gbl_quake3_master_port=QUAKE3_MASTER_PORT;
+static unsigned gbl_quake3_server_port=QUAKE3_SERVER_PORT;
+static unsigned gbl_quake3_master_port=QUAKE3_MASTER_PORT;
 
 
 static const value_string names_direction[] = {
@@ -140,13 +129,13 @@ dissect_quake3_ConnectionlessPacket(tvbuff_t *tvb, packet_info *pinfo _U_,
 	proto_tree	*cl_tree;
 	proto_item	*text_item = NULL;
 	proto_tree	*text_tree = NULL;
-	guint8		*text;
+	uint8_t		*text;
 	int		len;
 	int		offset;
-	guint32		marker;
+	uint32_t		marker;
 	int		command;
 	int		command_len;
-	gboolean	command_finished = FALSE;
+	bool	command_finished = false;
 
 	cl_tree = proto_tree_add_subtree(tree, tvb,
 			0, -1, ett_quake3_connectionless, NULL, "Connectionless");
@@ -168,7 +157,7 @@ dissect_quake3_ConnectionlessPacket(tvbuff_t *tvb, packet_info *pinfo _U_,
 	 * XXX - are non-ASCII characters supported and, if so, what
 	 * encoding is used for them?
 	 */
-	text = tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &len, ENC_ASCII|ENC_NA);
+	text = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &len, ENC_ASCII|ENC_NA);
 	if (cl_tree) {
 		text_item = proto_tree_add_string(cl_tree,
 				hf_quake3_connectionless_text,
@@ -257,14 +246,14 @@ dissect_quake3_ConnectionlessPacket(tvbuff_t *tvb, packet_info *pinfo _U_,
 			proto_tree_add_string(text_tree, hf_quake3_connectionless_command,
 					tvb, offset, command_len,
 					val_to_str_const(command, names_command, "Unknown"));
-		command_finished = TRUE;
+		command_finished = true;
 
 		/* now we decode all the rest */
 		base = offset + 18;
 		/* '/', ip-address in network order, port in network order */
 		while (tvb_reported_length_remaining(tvb, base) >= 7) {
-			guint32		ip_addr;
-			guint16		udp_port;
+			uint32_t		ip_addr;
+			uint16_t		udp_port;
 
 			ip_addr = tvb_get_ipv4(tvb, base + 1);
 			udp_port = tvb_get_ntohs(tvb, base + 5);
@@ -314,7 +303,7 @@ dissect_quake3_ConnectionlessPacket(tvbuff_t *tvb, packet_info *pinfo _U_,
 		*direction = DIR_UNKNOWN;
 	}
 
-	if (text_tree && command_finished == FALSE) {
+	if (text_tree && command_finished == false) {
 		proto_tree_add_string(text_tree, hf_quake3_connectionless_command,
 					tvb, offset, command_len,
 					val_to_str_const(command, names_command, "Unknown"));
@@ -356,12 +345,12 @@ dissect_quake3_GamePacket(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, int *direction)
 {
 	proto_tree	*game_tree;
-	guint32		seq1;
-	guint32		seq2;
+	uint32_t		seq1;
+	uint32_t		seq2;
 	int		rel1;
 	int		rel2;
 	int		offset;
-	guint		rest_length;
+	unsigned		rest_length;
 
 	*direction = (pinfo->destport == gbl_quake3_server_port) ?
 			DIR_C2S : DIR_S2C;
@@ -376,7 +365,7 @@ dissect_quake3_GamePacket(tvbuff_t *tvb, packet_info *pinfo,
 	if (game_tree) {
 		proto_tree *seq1_tree = proto_tree_add_subtree_format(game_tree,
 			tvb, offset, 2, ett_quake3_game_seq1, NULL, "Current Sequence: %u (%s)",
-			seq1, val_to_str(rel1,names_reliable,"%u"));
+			seq1, val_to_str(pinfo->pool, rel1,names_reliable,"%u"));
 		proto_tree_add_uint(seq1_tree, hf_quake3_game_seq1,
 				    tvb, offset, 2, seq1);
 		proto_tree_add_boolean(seq1_tree, hf_quake3_game_rel1,
@@ -390,7 +379,7 @@ dissect_quake3_GamePacket(tvbuff_t *tvb, packet_info *pinfo,
 	if (game_tree) {
 		proto_tree *seq2_tree = proto_tree_add_subtree_format(game_tree,
 			tvb, offset, 2, ett_quake3_game_seq2, NULL, "Acknowledge Sequence: %u (%s)",
-			seq2, val_to_str(rel2,names_reliable,"%u"));
+			seq2, val_to_str(pinfo->pool, rel2,names_reliable,"%u"));
 		proto_tree_add_uint(seq2_tree, hf_quake3_game_seq2,
 				    tvb, offset, 2, seq2);
 		proto_tree_add_boolean(seq2_tree, hf_quake3_game_rel2,
@@ -400,7 +389,7 @@ dissect_quake3_GamePacket(tvbuff_t *tvb, packet_info *pinfo,
 
 	if (*direction == DIR_C2S) {
 		/* client to server */
-		guint16 qport = tvb_get_letohs(tvb, offset);
+		uint16_t qport = tvb_get_letohs(tvb, offset);
 		if (game_tree) {
 			proto_tree_add_uint(game_tree, hf_quake3_game_qport,
 				tvb, offset, 2, qport);
@@ -451,7 +440,7 @@ dissect_quake3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 			quake3_tree,
 			hf_quake3_direction, tvb, 0, 0,
 			"Direction: %s",
-			val_to_str(direction,
+			val_to_str(pinfo->pool, direction,
 				   names_direction, "%u"));
 	}
 
@@ -476,10 +465,10 @@ dissect_quake3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	if (direction != DIR_UNKNOWN && dir_item)
 		proto_item_set_text(dir_item,
 					"Direction: %s",
-					val_to_str(direction,
+					val_to_str(pinfo->pool, direction,
 						names_direction, "%u"));
 
-	col_append_str(pinfo->cinfo, COL_INFO, val_to_str(direction,
+	col_append_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, direction,
 			names_direction, "%u"));
 	return tvb_captured_length(tvb);
 }
@@ -544,7 +533,7 @@ proto_register_quake3(void)
 			FT_UINT32, BASE_DEC, NULL, 0x0,
 			"Quake III Arena Client Port", HFILL }}
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_quake3,
 		&ett_quake3_connectionless,
 		&ett_quake3_connectionless_text,
@@ -557,14 +546,15 @@ proto_register_quake3(void)
 	};
 	module_t *quake3_module;
 
-	proto_quake3 = proto_register_protocol("Quake III Arena Network Protocol",
-						"QUAKE3", "quake3");
+	proto_quake3 = proto_register_protocol("Quake III Arena Network Protocol", "QUAKE3", "quake3");
 	proto_register_field_array(proto_quake3, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
+	/* Register the dissector handle */
+	quake3_handle = register_dissector("quake3", dissect_quake3, proto_quake3);
+
 	/* Register a configuration option for port */
-	quake3_module = prefs_register_protocol(proto_quake3,
-		proto_reg_handoff_quake3);
+	quake3_module = prefs_register_protocol(proto_quake3, proto_reg_handoff_quake3);
 	prefs_register_uint_preference(quake3_module, "udp.arena_port",
 					"Quake III Arena Server UDP Base Port",
 					"Set the UDP base port for the Quake III Arena Server",
@@ -579,16 +569,13 @@ proto_register_quake3(void)
 void
 proto_reg_handoff_quake3(void)
 {
-	static gboolean initialized=FALSE;
-	static dissector_handle_t quake3_handle;
-	static guint server_port;
-	static guint master_port;
+	static bool initialized=false;
+	static unsigned server_port;
+	static unsigned master_port;
 	int i;
 
 	if (!initialized) {
-		quake3_handle = create_dissector_handle(dissect_quake3,
-				proto_quake3);
-		initialized=TRUE;
+		initialized=true;
 	} else {
 		for (i=0;i<4;i++)
 			dissector_delete_uint("udp.port", server_port+i, quake3_handle);
@@ -600,7 +587,7 @@ proto_reg_handoff_quake3(void)
 	server_port = gbl_quake3_server_port;
 	master_port = gbl_quake3_master_port;
 
-	/* add dissectors */
+	/* add dissectors. Port preference names to specific to use "auto" */
 	for (i=0;i<4;i++)
 		dissector_add_uint("udp.port", gbl_quake3_server_port + i,
 			quake3_handle);
@@ -610,7 +597,7 @@ proto_reg_handoff_quake3(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

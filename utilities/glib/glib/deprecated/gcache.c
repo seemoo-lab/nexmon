@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,6 +30,11 @@
 
 #include "config.h"
 
+/* we know we are deprecated here, no need for warnings */
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
+
 #include "gcache.h"
 
 #include "gslice.h"
@@ -35,19 +42,18 @@
 #include "gtestutils.h"
 
 /**
- * SECTION:caches
- * @title: Caches
- * @short_description: caches allow sharing of complex data structures
- *                     to save resources
+ * GCache:
  *
- * A #GCache allows sharing of complex data structures, in order to
+ * A `GCache` allows sharing of complex data structures, in order to
  * save system resources.
  *
- * GCache uses keys and values. A GCache key describes the properties
- * of a particular resource. A GCache value is the actual resource.
+ * `GCache` uses keys and values. A `GCache` key describes the properties
+ * of a particular resource. A `GCache` value is the actual resource.
  *
- * GCache has been marked as deprecated, since this API is rarely
+ * `GCache` has been marked as deprecated, since this API is rarely
  * used and not very actively maintained.
+ *
+ * Deprecated:2.32: Use a #GHashTable instead
  */
 
 typedef struct _GCacheNode  GCacheNode;
@@ -59,15 +65,6 @@ struct _GCacheNode
   gint ref_count;
 };
 
-/**
- * GCache:
- *
- * The #GCache struct is an opaque data structure containing
- * information about a #GCache. It should only be accessed via the
- * following functions.
- *
- * Deprecated:2.32: Use a #GHashTable instead
- */
 struct _GCache
 {
   /* Called to create a value from a key */
@@ -140,6 +137,7 @@ g_cache_node_destroy (GCacheNode *node)
  * value corresponding to the key.
  *
  * Returns: a new #GCache value corresponding to the key.
+ * Deprecated:2.32: Use a #GHashTable instead
  */
 
 /**
@@ -150,19 +148,22 @@ g_cache_node_destroy (GCacheNode *node)
  * functions passed to g_cache_new(). The functions are passed a
  * pointer to the #GCache key or #GCache value and should free any
  * memory and other resources associated with it.
+ *
+ * Deprecated:2.32: Use a #GHashTable instead
  */
 
 /**
  * GCacheDupFunc:
- * @value: the #GCache key to destroy (<emphasis>not</emphasis> a
+ * @value: the #GCache key to destroy (__not__ a
  *         #GCache value as it seems)
  *
  * Specifies the type of the @key_dup_func function passed to
  * g_cache_new(). The function is passed a key
- * (<emphasis>not</emphasis> a value as the prototype implies) and
+ * (__not__ a value as the prototype implies) and
  * should return a duplicate of the key.
  *
  * Returns: a copy of the #GCache key
+ * Deprecated:2.32: Use a #GHashTable instead
  */
 GCache*
 g_cache_new (GCacheNewFunc      value_new_func,
@@ -299,7 +300,7 @@ g_cache_remove (GCache        *cache,
 /**
  * g_cache_key_foreach:
  * @cache: a #GCache
- * @func: the function to call with each #GCache key
+ * @func: (scope call): the function to call with each #GCache key
  * @user_data: user data to pass to the function
  *
  * Calls the given function for each of the keys in the #GCache.
@@ -325,7 +326,7 @@ g_cache_key_foreach (GCache   *cache,
 /**
  * g_cache_value_foreach:
  * @cache: a #GCache
- * @func: the function to call with each #GCache value
+ * @func: (scope call): the function to call with each #GCache value
  * @user_data: user data to pass to the function
  *
  * Calls the given function for each of the values in the #GCache.

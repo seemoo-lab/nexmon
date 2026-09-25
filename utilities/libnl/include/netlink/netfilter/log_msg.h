@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/netfilter/log_msg.h	Netfilter Log Message
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
@@ -23,6 +17,7 @@ extern "C" {
 
 struct nlmsghdr;
 struct nfnl_log_msg;
+struct nfnl_ct;
 
 extern struct nl_object_ops log_msg_obj_ops;
 
@@ -89,6 +84,36 @@ extern uint32_t		nfnl_log_msg_get_seq(const struct nfnl_log_msg *);
 extern void		nfnl_log_msg_set_seq_global(struct nfnl_log_msg *, uint32_t);
 extern int		nfnl_log_msg_test_seq_global(const struct nfnl_log_msg *);
 extern uint32_t		nfnl_log_msg_get_seq_global(const struct nfnl_log_msg *);
+
+extern void		nfnl_log_msg_set_hwtype(struct nfnl_log_msg *, uint16_t);
+extern int		nfnl_log_msg_test_hwtype(const struct nfnl_log_msg *);
+extern uint16_t		nfnl_log_msg_get_hwtype(const struct nfnl_log_msg *);
+
+extern void		nfnl_log_msg_set_hwlen(struct nfnl_log_msg *, uint16_t);
+extern int		nfnl_log_msg_test_hwlen(const struct nfnl_log_msg *);
+extern uint16_t		nfnl_log_msg_get_hwlen(const struct nfnl_log_msg *);
+
+extern int		nfnl_log_msg_set_hwheader(struct nfnl_log_msg *, void *, int);
+extern int		nfnl_log_msg_test_hwheader(const struct nfnl_log_msg *);
+extern const void *	nfnl_log_msg_get_hwheader(const struct nfnl_log_msg *, int *);
+
+extern void		nfnl_log_msg_set_vlan_proto(struct nfnl_log_msg *, uint16_t);
+extern int		nfnl_log_msg_test_vlan_proto(const struct nfnl_log_msg *);
+extern uint16_t		nfnl_log_msg_get_vlan_proto(const struct nfnl_log_msg *);
+extern void		nfnl_log_msg_set_vlan_tag(struct nfnl_log_msg *, uint16_t);
+extern int		nfnl_log_msg_test_vlan_tag(const struct nfnl_log_msg *);
+extern uint16_t		nfnl_log_msg_get_vlan_tag(const struct nfnl_log_msg *);
+extern uint16_t		nfnl_log_msg_get_vlan_id(const struct nfnl_log_msg *);
+extern uint16_t		nfnl_log_msg_get_vlan_cfi(const struct nfnl_log_msg *);
+extern uint16_t		nfnl_log_msg_get_vlan_prio(const struct nfnl_log_msg *);
+
+extern void		nfnl_log_msg_set_ct_info(struct nfnl_log_msg *, uint32_t);
+extern int		nfnl_log_msg_test_ct_info(const struct nfnl_log_msg *);
+extern uint32_t		nfnl_log_msg_get_ct_info(const struct nfnl_log_msg *);
+
+extern void		nfnl_log_msg_set_ct(struct nfnl_log_msg *, struct nfnl_ct *);
+extern int		nfnl_log_msg_test_ct(const struct nfnl_log_msg *);
+extern struct nfnl_ct * nfnl_log_msg_get_ct(const struct nfnl_log_msg *);
 
 #ifdef __cplusplus
 }

@@ -1,10 +1,10 @@
 /* Charset conversion with out-of-memory checking.
-   Copyright (C) 2001-2007, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2007, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible and Simon Josefsson.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,12 +13,17 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _XSTRICONVEH_H
 #define _XSTRICONVEH_H
 
-#include <stddef.h>
+/* This file uses _GL_ATTRIBUTE_MALLOC, HAVE_ICONV.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
+#include <stdlib.h>
 
 /* Get the 'enum iconv_ilseq_handler' and iconveh_t types, and the
    iconveh_open, iconveh_close declarations.  */
@@ -68,7 +73,8 @@ extern int
 extern char *
        xstr_cd_iconveh (const char *src,
                         const iconveh_t *cd,
-                        enum iconv_ilseq_handler handler);
+                        enum iconv_ilseq_handler handler)
+       _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
 
 #endif
 
@@ -104,7 +110,8 @@ extern int
 extern char *
        xstr_iconveh (const char *src,
                      const char *from_codeset, const char *to_codeset,
-                     enum iconv_ilseq_handler handler);
+                     enum iconv_ilseq_handler handler)
+       _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
 
 
 #ifdef __cplusplus

@@ -1,0 +1,105 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of DocBook support.
+
+# Example file taken from
+# https://sources.debian.org/src/python-activipy/0.1-9/debian/activipy_tester.dbk/
+cat <<\EOF > activipy_tester.xml
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+
+<!-- (c) 2015 W. Martin Borgert <debacle@debian.org>
+     Date: 2015-11-22
+     License of this manual: GPL-3+ -->
+
+<refentry>
+  <refmeta>
+    <refentrytitle>activipy_tester</refentrytitle>
+    <manvolnum>1</manvolnum>
+    <refmiscinfo class="source">activipy_tester</refmiscinfo>
+    <refmiscinfo class="manual">User Commands</refmiscinfo>
+  </refmeta>
+  <refnamediv>
+    <refname>activipy_tester</refname>
+
+    <refpurpose>Test for activitystreams correctness</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>activipy_tester</command>
+      <arg><option>-h</option></arg>
+      <arg><option>--help</option></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>
+      Run <command>activipy_tester --help</command> for more options.
+    </para>
+  </refsect1>
+</refentry>
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -o xg-db-1.tmp activipy_tester.xml || Exit 1
+func_filter_POT_Creation_Date xg-db-1.tmp xg-db-1.pot
+
+cat <<\EOF > xg-db-1.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: activipy_tester.xml:11 activipy_tester.xml:13 activipy_tester.xml:17
+msgid "activipy_tester"
+msgstr ""
+
+#: activipy_tester.xml:12
+msgid "1"
+msgstr ""
+
+#: activipy_tester.xml:14
+msgid "User Commands"
+msgstr ""
+
+#: activipy_tester.xml:19
+msgid "Test for activitystreams correctness"
+msgstr ""
+
+#: activipy_tester.xml:22
+msgid ""
+"<command>activipy_tester</command><arg><option>-h</option></"
+"arg><arg><option>--help</option></arg>"
+msgstr ""
+
+#: activipy_tester.xml:30
+msgid "Description"
+msgstr ""
+
+#: activipy_tester.xml:32
+msgid "Run <command>activipy_tester --help</command> for more options."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-db-1.ok xg-db-1.pot
+result=$?
+
+exit $result

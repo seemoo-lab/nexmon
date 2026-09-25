@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,6 +18,8 @@
 #include <epan/tap.h>
 #include <epan/stat_tap_ui.h>
 #include <epan/conversation_table.h>
+#include <wsutil/cmdarg_err.h>
+#include <wsutil/str_util.h>
 #include <ui/cli/tshark-tap.h>
 
 typedef struct _endpoints_t {
@@ -43,26 +33,26 @@ endpoints_draw(void *arg)
 {
 	conv_hash_t *hash = (conv_hash_t*)arg;
 	endpoints_t *iu = (endpoints_t *)hash->user_data;
-	hostlist_talker_t *host;
-	guint64 last_frames, max_frames;
-	guint i;
-	gboolean display_port = (!strncmp(iu->type, "TCP", 3) || !strncmp(iu->type, "UDP", 3) || !strncmp(iu->type, "SCTP", 4)) ? TRUE : FALSE;
+	endpoint_item_t *endpoint;
+	uint64_t last_frames, max_frames;
+	unsigned i;
+	bool display_port = (!strncmp(iu->type, "TCP", 3) || !strncmp(iu->type, "UDP", 3) || !strncmp(iu->type, "SCTP", 4)) ? true : false;
 
 	printf("================================================================================\n");
 	printf("%s Endpoints\n", iu->type);
 	printf("Filter:%s\n", iu->filter ? iu->filter : "<No Filter>");
 
-	printf("                       |  %sPackets  | |  Bytes  | | Tx Packets | | Tx Bytes | | Rx Packets | | Rx Bytes |\n",
-		display_port ? "Port  ||  " : "");
+	printf("                       | %sPackets | |  Bytes  | | Tx Packets | | Tx Bytes | | Rx Packets | | Rx Bytes |\n",
+		display_port ? " Port  | | " : "");
 
 	max_frames = UINT_MAX;
 	do {
 		last_frames = 0;
 		for (i=0; (iu->hash.conv_array && i < iu->hash.conv_array->len); i++) {
-			guint64 tot_frames;
+			uint64_t tot_frames;
 
-			host = &g_array_index(iu->hash.conv_array, hostlist_talker_t, i);
-			tot_frames = host->rx_frames + host->tx_frames;
+			endpoint = &g_array_index(iu->hash.conv_array, endpoint_item_t, i);
+			tot_frames = endpoint->rx_frames + endpoint->tx_frames;
 
 			if ((tot_frames > last_frames) && (tot_frames < max_frames)) {
 				last_frames = tot_frames;
@@ -70,39 +60,51 @@ endpoints_draw(void *arg)
 		}
 
 		for (i=0; (iu->hash.conv_array && i < iu->hash.conv_array->len); i++) {
-			guint64 tot_frames;
-			gchar *conversation_str, *port_str;
+			uint64_t tot_frames;
+			char *conversation_str, *port_str;
 
-			host = &g_array_index(iu->hash.conv_array, hostlist_talker_t, i);
-			tot_frames = host->rx_frames + host->tx_frames;
+			endpoint = &g_array_index(iu->hash.conv_array, endpoint_item_t, i);
+			tot_frames = endpoint->rx_frames + endpoint->tx_frames;
 
 			if (tot_frames == last_frames) {
 				/* XXX - TODO: make name resolution configurable (through gbl_resolv_flags?) */
-				conversation_str = get_conversation_address(NULL, &host->myaddress, TRUE);
+				conversation_str = get_conversation_address(NULL, &endpoint->myaddress, true);
 				if (display_port) {
 					/* XXX - TODO: make port resolution configurable (through gbl_resolv_flags?) */
-					port_str = get_conversation_port(NULL, host->port, host->ptype, TRUE);
-					printf("%-20s      %5s     %6" G_GINT64_MODIFIER "u     %9" G_GINT64_MODIFIER
-					       "u     %6" G_GINT64_MODIFIER "u       %9" G_GINT64_MODIFIER "u      %6"
-					       G_GINT64_MODIFIER "u       %9" G_GINT64_MODIFIER "u   \n",
+					port_str = get_endpoint_port(NULL, endpoint, true);
+					printf("%-20s      %5s",
 						conversation_str,
-						port_str,
-						host->tx_frames+host->rx_frames, host->tx_bytes+host->rx_bytes,
-						host->tx_frames, host->tx_bytes,
-						host->rx_frames, host->rx_bytes);
+						port_str);
 					wmem_free(NULL, port_str);
 				} else {
-					printf("%-20s      %6" G_GINT64_MODIFIER "u     %9" G_GINT64_MODIFIER
-					       "u     %6" G_GINT64_MODIFIER "u       %9" G_GINT64_MODIFIER "u      %6"
-					       G_GINT64_MODIFIER "u       %9" G_GINT64_MODIFIER "u   \n",
-						/* XXX - TODO: make name resolution configurable (through gbl_resolv_flags?) */
-						conversation_str,
-						host->tx_frames+host->rx_frames, host->tx_bytes+host->rx_bytes,
-						host->tx_frames, host->tx_bytes,
-						host->rx_frames, host->rx_bytes);
-
+					printf("%-20s",
+						conversation_str);
 				}
 				wmem_free(NULL, conversation_str);
+
+				if (!prefs.conv_machine_readable) {
+					char *rx_bytes, *tx_bytes, *total_bytes;
+					rx_bytes = format_size(endpoint->rx_bytes, FORMAT_SIZE_UNIT_BYTES, 0);
+					tx_bytes = format_size(endpoint->tx_bytes, FORMAT_SIZE_UNIT_BYTES, 0);
+					total_bytes = format_size(endpoint->tx_bytes + endpoint->rx_bytes, FORMAT_SIZE_UNIT_BYTES, 0);
+					printf("     %8" PRIu64 "   %-11s"
+						"  %8" PRIu64 "      %-11s"
+						"   %8" PRIu64 "      %-11s \n",
+						endpoint->tx_frames+endpoint->rx_frames,
+						total_bytes,
+						endpoint->tx_frames, tx_bytes,
+						endpoint->rx_frames, rx_bytes);
+					wmem_free(NULL, rx_bytes);
+					wmem_free(NULL, tx_bytes);
+					wmem_free(NULL, total_bytes);
+				} else {
+					printf("     %8" PRIu64 "   %9" PRIu64
+						"    %8" PRIu64 "      %9" PRIu64
+						"     %8" PRIu64 "      %9" PRIu64 "  \n",
+						endpoint->tx_frames+endpoint->rx_frames, endpoint->tx_bytes+endpoint->rx_bytes,
+						endpoint->tx_frames, endpoint->tx_bytes,
+						endpoint->rx_frames, endpoint->rx_bytes);
+				}
 			}
 		}
 		max_frames = last_frames;
@@ -110,7 +112,7 @@ endpoints_draw(void *arg)
 	printf("================================================================================\n");
 }
 
-void init_hostlists(struct register_ct *ct, const char *filter)
+void init_endpoints(struct register_ct *ct, const char *filter)
 {
 	endpoints_t *iu;
 	GString *error_string;
@@ -120,10 +122,10 @@ void init_hostlists(struct register_ct *ct, const char *filter)
 	iu->filter = g_strdup(filter);
 	iu->hash.user_data = iu;
 
-	error_string = register_tap_listener(proto_get_protocol_filter_name(get_conversation_proto_id(ct)), &iu->hash, filter, 0, NULL, get_hostlist_packet_func(ct), endpoints_draw);
+	error_string = register_tap_listener(proto_get_protocol_filter_name(get_conversation_proto_id(ct)), &iu->hash, filter, 0, NULL, get_endpoint_packet_func(ct), endpoints_draw, NULL);
 	if (error_string) {
 		g_free(iu);
-		fprintf(stderr, "tshark: Couldn't register endpoint tap: %s\n",
+		cmdarg_err("Couldn't register endpoint tap: %s",
 		    error_string->str);
 		g_string_free(error_string, TRUE);
 		exit(1);
@@ -132,7 +134,7 @@ void init_hostlists(struct register_ct *ct, const char *filter)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

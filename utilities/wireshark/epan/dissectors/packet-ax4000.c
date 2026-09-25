@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,18 +17,20 @@
 void proto_register_ax4000(void);
 void proto_reg_handoff_ax4000(void);
 
+static dissector_handle_t ax4000_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_ax4000 = -1;
-static int hf_ax4000_port = -1;
-static int hf_ax4000_chassis = -1;
-static int hf_ax4000_fill = -1;
-static int hf_ax4000_index = -1;
-static int hf_ax4000_timestamp = -1;
-static int hf_ax4000_seq = -1;
-static int hf_ax4000_crc = -1;
+static int proto_ax4000;
+static int hf_ax4000_port;
+static int hf_ax4000_chassis;
+static int hf_ax4000_fill;
+static int hf_ax4000_index;
+static int hf_ax4000_timestamp;
+static int hf_ax4000_seq;
+static int hf_ax4000_crc;
 
 /* Initialize the subtree pointers */
-static gint ett_ax4000 = -1;
+static int ett_ax4000;
 
 /* Code to actually dissect the packets */
 static int
@@ -49,47 +39,28 @@ dissect_ax4000(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	proto_item *ti;
 	proto_tree *ax4000_tree;
 
-	guint8  ax_port;
-	guint8  ax_chassis;
-	guint16 ax_index;
-	guint32 ax_seq;
-	guint32 ax_timestamp;
+	uint32_t ax_port, ax_chassis, ax_index, ax_seq, ax_timestamp;
 
 	/* Make entries in Protocol column and Info column on summary display */
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "AX4000");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	ax_port = tvb_get_guint8(tvb, 0);
-	ax_chassis = tvb_get_guint8(tvb, 1);
-	ax_index = tvb_get_ntohs(tvb, 2) & 0x0FFF;
-	ax_timestamp = tvb_get_letohl(tvb, 6);
-	ax_seq = tvb_get_letohl(tvb, 10);
+	/* create display subtree for the protocol */
+	ti = proto_tree_add_item(tree, proto_ax4000, tvb, 0, -1, ENC_NA);
+
+	ax4000_tree = proto_item_add_subtree(ti, ett_ax4000);
+
+	proto_tree_add_item_ret_uint(ax4000_tree, hf_ax4000_port, tvb, 0, 1, ENC_LITTLE_ENDIAN, &ax_port);
+	proto_tree_add_item_ret_uint(ax4000_tree, hf_ax4000_chassis, tvb, 1, 1, ENC_LITTLE_ENDIAN, &ax_chassis);
+	proto_tree_add_item(ax4000_tree, hf_ax4000_fill, tvb, 2, 1, ENC_BIG_ENDIAN);
+	proto_tree_add_item_ret_uint(ax4000_tree, hf_ax4000_index, tvb, 2, 2, ENC_BIG_ENDIAN, &ax_index);
+	proto_tree_add_item_ret_uint(ax4000_tree, hf_ax4000_timestamp, tvb, 6, 4, ENC_LITTLE_ENDIAN, &ax_timestamp);
+	proto_tree_add_item_ret_uint(ax4000_tree, hf_ax4000_seq, tvb, 10, 4, ENC_LITTLE_ENDIAN, &ax_seq);
+	proto_tree_add_item(ax4000_tree, hf_ax4000_crc, tvb, 14, 2, ENC_LITTLE_ENDIAN);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO,
 			"Chss:%u Prt:%u Idx:%u Seq:0x%08x TS:%.6f[msec]",
 			ax_chassis, ax_port, ax_index, ax_seq, ax_timestamp*1e-5);
-
-	if (tree) {
-		/* create display subtree for the protocol */
-		ti = proto_tree_add_item(tree, proto_ax4000, tvb, 0, -1, ENC_NA);
-
-		ax4000_tree = proto_item_add_subtree(ti, ett_ax4000);
-
-		proto_tree_add_uint(ax4000_tree,
-		    hf_ax4000_port, tvb, 0, 1, ax_port);
-		proto_tree_add_uint(ax4000_tree,
-		    hf_ax4000_chassis, tvb, 1, 1, ax_chassis);
-		proto_tree_add_item(ax4000_tree,
-		    hf_ax4000_fill, tvb, 2, 1, ENC_BIG_ENDIAN);
-		proto_tree_add_uint(ax4000_tree,
-		    hf_ax4000_index, tvb, 2, 2, ax_index);
-		proto_tree_add_uint(ax4000_tree,
-		    hf_ax4000_timestamp, tvb, 6, 4, ax_timestamp);
-		proto_tree_add_uint(ax4000_tree,
-		    hf_ax4000_seq, tvb, 10, 4, ax_seq);
-		proto_tree_add_uint(ax4000_tree,
-		    hf_ax4000_crc, tvb, 14, 2, tvb_get_letohs(tvb, 14));
-	}
 
 	return tvb_captured_length(tvb);
 }
@@ -142,7 +113,7 @@ proto_register_ax4000(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ax4000
 	};
 
@@ -153,6 +124,8 @@ proto_register_ax4000(void)
 	/* Required function calls to register the header fields and subtrees used */
 	proto_register_field_array(proto_ax4000, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	ax4000_handle = register_dissector("ax4000", dissect_ax4000, proto_ax4000);
 }
 
 #define AX4000_TCP_PORT 3357 /* assigned by IANA */
@@ -161,17 +134,13 @@ proto_register_ax4000(void)
 void
 proto_reg_handoff_ax4000(void)
 {
-	dissector_handle_t ax4000_handle;
-
-	ax4000_handle = create_dissector_handle(dissect_ax4000,
-	    proto_ax4000);
 	dissector_add_uint("ip.proto", IP_PROTO_AX4000, ax4000_handle);
-	dissector_add_uint("tcp.port", AX4000_TCP_PORT, ax4000_handle);
-	dissector_add_uint("udp.port", AX4000_UDP_PORT, ax4000_handle);
+	dissector_add_uint_with_preference("tcp.port", AX4000_TCP_PORT, ax4000_handle);
+	dissector_add_uint_with_preference("udp.port", AX4000_UDP_PORT, ax4000_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_GIOP_H
@@ -36,8 +24,8 @@
 #define GIOP_MAGIC_NUMBER 	0x47494F50  /* "GIOP" */
 
 typedef struct Version {
-  guint8 major;
-  guint8 minor;
+  uint8_t major;
+  uint8_t minor;
 } Version;
 
 
@@ -51,17 +39,17 @@ typedef struct MessageHeader {
 
   /* Common Data */
 
-  guint8 magic[4];
+  uint8_t magic[4];
   Version GIOP_version;
-  guint8 flags;			/* byte_order in 1.0 */
-  guint8 message_type;
-  guint32 message_size;
+  uint8_t flags;			/* byte_order in 1.0 */
+  uint8_t message_type;
+  uint32_t message_size;
 
   /* MSG dependent data */
 
-  guint32 req_id;               /* request id in MSG  */
-  guint32 rep_status;           /* reply status in MSG if available */
-  gchar *exception_id;          /* exception string if a USER EXCEPTION occurs  */
+  uint32_t req_id;               /* request id in MSG  */
+  uint32_t rep_status;           /* reply status in MSG if available */
+  char *exception_id;          /* exception string if a USER EXCEPTION occurs  */
 
 } MessageHeader;
 
@@ -97,8 +85,8 @@ typedef enum ReplyStatusType {
  * Prototype for sub dissector function calls.
  */
 
-typedef gboolean (giop_sub_dissector_t)(tvbuff_t *, packet_info *, proto_tree *, int *,
-				  MessageHeader *, const gchar * , gchar *);
+typedef bool (giop_sub_dissector_t)(tvbuff_t *, packet_info *, proto_tree *, int *,
+				  MessageHeader *, const char * , char *);
 
 /*
  * Generic Subdissector handle, wraps user info.
@@ -106,20 +94,20 @@ typedef gboolean (giop_sub_dissector_t)(tvbuff_t *, packet_info *, proto_tree *,
 
 typedef struct giop_sub_handle {
   giop_sub_dissector_t *sub_fn;  /* ptr to sub dissector function */
-  const gchar *sub_name;         /* subdissector string name */
+  const char *sub_name;         /* subdissector string name */
   protocol_t *sub_proto;         /* protocol_t for subprotocol */
 } giop_sub_handle_t;
 
 /* Main GIOP entry point */
 
-extern gboolean dissect_giop(tvbuff_t *, packet_info *, proto_tree *); /* new interface */
+extern bool dissect_giop(tvbuff_t *, packet_info *, proto_tree *); /* new interface */
 
 /*
  * GIOP Users register interest via this function.
  * This is for heuristic dissection
  */
 
-WS_DLL_PUBLIC void register_giop_user(giop_sub_dissector_t *sub, const gchar *name,
+WS_DLL_PUBLIC void register_giop_user(giop_sub_dissector_t *sub, const char *name,
     int sub_proto);
 
 /*
@@ -127,7 +115,7 @@ WS_DLL_PUBLIC void register_giop_user(giop_sub_dissector_t *sub, const gchar *na
  * This is for heuristic dissection
  */
 
-extern void delete_giop_user(giop_sub_dissector_t *sub, gchar *name);
+extern void delete_giop_user(giop_sub_dissector_t *sub, char *name);
 
 
 /*
@@ -135,16 +123,16 @@ extern void delete_giop_user(giop_sub_dissector_t *sub, gchar *name);
  * This is for explicit dissection.
  */
 
-WS_DLL_PUBLIC void register_giop_user_module(giop_sub_dissector_t *sub, const gchar *name,
-    const gchar *module, int sub_proto);
+WS_DLL_PUBLIC void register_giop_user_module(giop_sub_dissector_t *sub, const char *name,
+    const char *module, int sub_proto);
 
 /*
  * GIOP Users remove their module and interface names via this function.
  * This is for explicit dissection.
  */
 
-extern void delete_giop_user_module(giop_sub_dissector_t *sub, gchar *name,
-    gchar *module);
+extern void delete_giop_user_module(giop_sub_dissector_t *sub, char *name,
+    char *module);
 
 
 /*
@@ -156,7 +144,7 @@ extern void delete_giop_user_module(giop_sub_dissector_t *sub, gchar *name,
  * - Pseudo Object Types
  *
  *
- * Altough some of these look redundant, I have separated them
+ * Although some of these look redundant, I have separated them
  * out for all CDR types, to assist in auto generation of
  * IDL dissectors later, see idl2wrs -- FS
  *
@@ -171,7 +159,7 @@ extern void delete_giop_user_module(giop_sub_dissector_t *sub, gchar *name,
  */
 
 WS_DLL_PUBLIC void get_CDR_any(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_item *item,
-                        gint *offset, gboolean stream_is_big_endian,
+                        int *offset, bool stream_is_big_endian,
                         int boundary, MessageHeader * header);
 
 
@@ -182,7 +170,7 @@ WS_DLL_PUBLIC void get_CDR_any(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
  * has been processed.
  */
 
-WS_DLL_PUBLIC gboolean get_CDR_boolean(tvbuff_t *tvb, int *offset);
+WS_DLL_PUBLIC bool get_CDR_boolean(tvbuff_t *tvb, int *offset);
 
 
 /* Copy a 1 octet sequence from the tvbuff
@@ -192,7 +180,7 @@ WS_DLL_PUBLIC gboolean get_CDR_boolean(tvbuff_t *tvb, int *offset);
  * has been processed.
  */
 
-WS_DLL_PUBLIC guint8 get_CDR_char(tvbuff_t *tvb, int *offset);
+WS_DLL_PUBLIC uint8_t get_CDR_char(tvbuff_t *tvb, int *offset);
 
 
 
@@ -208,8 +196,8 @@ WS_DLL_PUBLIC guint8 get_CDR_char(tvbuff_t *tvb, int *offset);
  * have been processed.
  */
 
-WS_DLL_PUBLIC gdouble get_CDR_double(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC double get_CDR_double(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 
 /* Copy a 4 octet sequence from the tvbuff
@@ -223,8 +211,8 @@ WS_DLL_PUBLIC gdouble get_CDR_double(tvbuff_t *tvb, int *offset,
  * Enum values are encoded as unsigned long.
  */
 
-WS_DLL_PUBLIC guint32 get_CDR_enum(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC uint32_t get_CDR_enum(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 
 
@@ -243,7 +231,7 @@ WS_DLL_PUBLIC guint32 get_CDR_enum(tvbuff_t *tvb, int *offset,
  *
  *
  * As the fixed type could be any size, I will not try to fit it into our
- * simple types like gdouble or glong etc. I will just create a string buffer holding
+ * simple types like double or long etc. I will just create a string buffer holding
  * a  representation (after scale is applied), and with a decimal point or zero padding
  * inserted at the right place if necessary. The string is null terminated
  *
@@ -259,7 +247,7 @@ WS_DLL_PUBLIC guint32 get_CDR_enum(tvbuff_t *tvb, int *offset,
  */
 
 WS_DLL_PUBLIC void get_CDR_fixed(tvbuff_t *tvb, packet_info *pinfo, proto_item *item,
-                          gchar **seq, gint *offset, guint32 digits, gint32 scale);
+                          char **seq, int *offset, uint32_t digits, int32_t scale);
 
 
 /*
@@ -274,8 +262,8 @@ WS_DLL_PUBLIC void get_CDR_fixed(tvbuff_t *tvb, packet_info *pinfo, proto_item *
  * have been processed.
  */
 
-WS_DLL_PUBLIC gfloat get_CDR_float(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC float get_CDR_float(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 
 /*
@@ -283,7 +271,7 @@ WS_DLL_PUBLIC gfloat get_CDR_float(tvbuff_t *tvb, int *offset,
  */
 
 WS_DLL_PUBLIC void get_CDR_interface(tvbuff_t *tvb, packet_info *pinfo,
-    proto_tree *tree, int *offset, gboolean stream_is_big_endian, int boundary);
+    proto_tree *tree, int *offset, bool stream_is_big_endian, int boundary);
 
 
 /* Copy a 4 octet sequence from the tvbuff
@@ -295,8 +283,8 @@ WS_DLL_PUBLIC void get_CDR_interface(tvbuff_t *tvb, packet_info *pinfo,
  * have been processed.
  */
 
-WS_DLL_PUBLIC gint32 get_CDR_long(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC int32_t get_CDR_long(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 
 
@@ -309,18 +297,11 @@ WS_DLL_PUBLIC gint32 get_CDR_long(tvbuff_t *tvb, int *offset,
  * have been processed.
  */
 
-#ifdef G_HAVE_GLONG_DOUBLE
+/* FIX -- Cast long double to double until I figure this out -- FS*/
 
-WS_DLL_PUBLIC glong_double get_CDR_long_double(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
-#else
+WS_DLL_PUBLIC double get_CDR_long_double(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
-/* FIX -- Cast long double to gdouble until I figure this out -- FS*/
-
-WS_DLL_PUBLIC gdouble get_CDR_long_double(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
-
-#endif
 
 
 /* Copy an 8 octet sequence from the tvbuff
@@ -332,15 +313,15 @@ WS_DLL_PUBLIC gdouble get_CDR_long_double(tvbuff_t *tvb, int *offset,
  * have been processed.
  */
 
-WS_DLL_PUBLIC gint64 get_CDR_long_long(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC int64_t get_CDR_long_long(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 /*
  * Decode an Object type, and display it on the tree.
  */
 
 WS_DLL_PUBLIC void get_CDR_object(tvbuff_t *tvb, packet_info *pinfo,
-    proto_tree *tree, int *offset, gboolean stream_is_big_endian, int boundary);
+    proto_tree *tree, int *offset, bool stream_is_big_endian, int boundary);
 
 
 /* Copy a 1 octet sequence from the tvbuff
@@ -350,16 +331,14 @@ WS_DLL_PUBLIC void get_CDR_object(tvbuff_t *tvb, packet_info *pinfo,
  * has been processed.
  */
 
-WS_DLL_PUBLIC guint8 get_CDR_octet(tvbuff_t *tvb, int *offset);
+WS_DLL_PUBLIC uint8_t get_CDR_octet(tvbuff_t *tvb, int *offset);
 
 
 /* Copy a sequence of octets from the tvbuff.
- * Memory is allocated in packet pool and will be
- * automatically freed once the packet dissection is finished.
  * This function also increments offset by len.
  */
 
-WS_DLL_PUBLIC void get_CDR_octet_seq(tvbuff_t *tvb, const gchar **seq, int *offset, guint32 len);
+WS_DLL_PUBLIC void get_CDR_octet_seq(wmem_allocator_t *scope, tvbuff_t *tvb, const uint8_t **seq, int *offset, uint32_t len);
 
 /* Copy a 2 octet sequence from the tvbuff
  * which represents a signed short value, and convert
@@ -370,12 +349,12 @@ WS_DLL_PUBLIC void get_CDR_octet_seq(tvbuff_t *tvb, const gchar **seq, int *offs
  * have been processed.
  */
 
-WS_DLL_PUBLIC gint16 get_CDR_short(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC int16_t get_CDR_short(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 
-extern void giop_add_CDR_string(proto_tree *tree, tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary,
+WS_DLL_PUBLIC void giop_add_CDR_string(wmem_allocator_t* scope, proto_tree *tree, tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary,
     int hf);
 
 /* Copy an octet sequence from the tvbuff
@@ -385,9 +364,8 @@ extern void giop_add_CDR_string(proto_tree *tree, tvbuff_t *tvb, int *offset,
  * boundary for string values. (begins with an unsigned long LI)
  *
  * String sequence is copied to a buffer "seq".
- * Memory is allocated in packet pool and will be
- * automatically freed once the packet dissection is finished.
- * offset is then incremented  , to indicate the  octets which
+ * Memory is allocated in scope pool and will be automatically freed.
+ * offset is then incremented, to indicate the octets which
  * have been processed.
  *
  * returns number of octets in the sequence
@@ -397,8 +375,8 @@ extern void giop_add_CDR_string(proto_tree *tree, tvbuff_t *tvb, int *offset,
  *
  */
 
-WS_DLL_PUBLIC guint32 get_CDR_string(tvbuff_t *tvb, const gchar **seq, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC uint32_t get_CDR_string(wmem_allocator_t* scope, tvbuff_t *tvb, const char **seq, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 
 /* Process a sequence of octets that represent the
@@ -409,11 +387,12 @@ WS_DLL_PUBLIC guint32 get_CDR_string(tvbuff_t *tvb, const gchar **seq, int *offs
  * It will parse the TypeCode and output data to the "tree" provided
  * by the user
  *
- * It returns a guint32 representing a TCKind value.
+ * It returns a uint32_t representing a TCKind value.
  */
 
-WS_DLL_PUBLIC guint32 get_CDR_typeCode(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, gint *offset,
-    gboolean stream_is_big_endian, int boundary, MessageHeader * header );
+WS_DLL_PUBLIC uint32_t get_CDR_typeCode(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, int *offset,
+    bool stream_is_big_endian, int boundary, MessageHeader * header );
+
 
 /* Copy a 4 octet sequence from the tvbuff
  * which represents an unsigned long value, and convert
@@ -424,8 +403,8 @@ WS_DLL_PUBLIC guint32 get_CDR_typeCode(tvbuff_t *tvb, packet_info* pinfo, proto_
  * have been processed.
  */
 
-WS_DLL_PUBLIC guint32 get_CDR_ulong(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC uint32_t get_CDR_ulong(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 
 /* Copy an 8 octet sequence from the tvbuff
@@ -437,8 +416,8 @@ WS_DLL_PUBLIC guint32 get_CDR_ulong(tvbuff_t *tvb, int *offset,
  * have been processed.
  */
 
-WS_DLL_PUBLIC guint64 get_CDR_ulong_long(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC uint64_t get_CDR_ulong_long(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 /* Copy a 2 octet sequence from the tvbuff
  * which represents an unsigned short value, and convert
@@ -449,13 +428,11 @@ WS_DLL_PUBLIC guint64 get_CDR_ulong_long(tvbuff_t *tvb, int *offset,
  * have been processed.
  */
 
-WS_DLL_PUBLIC guint16 get_CDR_ushort(tvbuff_t *tvb, int *offset,
-    gboolean stream_is_big_endian, int boundary);
+WS_DLL_PUBLIC uint16_t get_CDR_ushort(tvbuff_t *tvb, int *offset,
+    bool stream_is_big_endian, int boundary);
 
 
 /* Copy a wchar from the tvbuff.
- * Memory is allocated in packet pool and will be
- * automatically freed once the packet dissection is finished.
  * This function also increments offset according to
  * the wchar size.
  *
@@ -464,7 +441,7 @@ WS_DLL_PUBLIC guint16 get_CDR_ushort(tvbuff_t *tvb, int *offset,
  * and therefore no size to add to the tree.
  *
  * For GIOP 1.2 read size of wchar and the size
- * octets. size is returned as a gint8.
+ * octets. size is returned as a int8_t.
  *
  * For both GIOP versions the wchar is returned
  * as a printable string.
@@ -483,15 +460,13 @@ WS_DLL_PUBLIC guint16 get_CDR_ushort(tvbuff_t *tvb, int *offset,
  * Wchar is not supported for GIOP 1.0.
  */
 
-WS_DLL_PUBLIC gint get_CDR_wchar(tvbuff_t *tvb, const gchar **seq, int *offset,
-    MessageHeader * header);
+WS_DLL_PUBLIC int get_CDR_wchar(wmem_allocator_t *scope, tvbuff_t *tvb,
+    const char **seq, int *offset, MessageHeader * header);
 
 
 /* Copy a wstring from the tvbuff.
- * Memory is allocated in packet pool and will be
- * automatically freed once the packet dissection is finished.
  * This function also increments offset, according to
- * wstring length. length is returned as guint32
+ * wstring length. length is returned as uint32_t
  */
 
 /* NOTE: This is very primitive in that it just reads
@@ -506,8 +481,9 @@ WS_DLL_PUBLIC gint get_CDR_wchar(tvbuff_t *tvb, const gchar **seq, int *offset,
  * Wstring is not supported for GIOP 1.0.
  */
 
-WS_DLL_PUBLIC guint32 get_CDR_wstring(tvbuff_t *tvb, const gchar **seq, int *offset,
-    gboolean stream_is_big_endian, int boundary, MessageHeader * header);
+WS_DLL_PUBLIC uint32_t get_CDR_wstring(wmem_allocator_t *scope, tvbuff_t *tvb,
+    const char **seq, int *offset, bool stream_is_big_endian, int boundary,
+    MessageHeader * header);
 
 
 
@@ -521,7 +497,7 @@ WS_DLL_PUBLIC guint32 get_CDR_wstring(tvbuff_t *tvb, const gchar **seq, int *off
 
 /* Determine the byte order from the GIOP MessageHeader */
 
-WS_DLL_PUBLIC gboolean is_big_endian (MessageHeader * header);
+WS_DLL_PUBLIC bool is_big_endian (MessageHeader * header);
 
 /*
  * get_encap_info() for any encapsulation  (eg:sequences)
@@ -529,11 +505,11 @@ WS_DLL_PUBLIC gboolean is_big_endian (MessageHeader * header);
  * and *offset, and returns the sequence length.
  */
 
-WS_DLL_PUBLIC guint32 get_CDR_encap_info(tvbuff_t *tvb, proto_tree *tree, gint *offset,
-			   gboolean old_stream_is_big_endian, guint32 old_boundary,
-			   gboolean *new_stream_is_big_endian_ptr, guint32 *new_boundary_ptr );
+WS_DLL_PUBLIC uint32_t get_CDR_encap_info(tvbuff_t *tvb, proto_tree *tree, int *offset,
+			   bool old_stream_is_big_endian, uint32_t old_boundary,
+			   bool *new_stream_is_big_endian_ptr, uint32_t *new_boundary_ptr );
 
-/* Take in an array of char and create a new ephemeral string.
+/* Take in an array of uint8_t and create a new ephemeral string.
  * Replace non-printable characters with periods.
  *
  * The array may contain \0's so don't use strdup
@@ -541,7 +517,7 @@ WS_DLL_PUBLIC guint32 get_CDR_encap_info(tvbuff_t *tvb, proto_tree *tree, gint *
  * the initial sequence.
  */
 
-WS_DLL_PUBLIC gchar * make_printable_string (const gchar *in, guint32 len);
+WS_DLL_PUBLIC char * make_printable_string (wmem_allocator_t *scope, const uint8_t *in, uint32_t len);
 
 /*
  * Enums for TCkind
@@ -609,15 +585,15 @@ typedef enum TCKind TCKind_t;
 
 /* Used for GIOP statistics */
 typedef struct _giop_info_value_t {
-  guint32      framenum;
+  uint32_t     framenum;
   address      *server_addr;
-  const gchar  *client_host;
-  const gchar  *service_host;
-  const gchar  *giop_op;
-  const gchar  *giop_resp;
+  const char   *client_host;
+  const char   *service_host;
+  const char   *giop_op;
+  const char   *giop_resp;
   time_t       time_ticks;
-  guint        time_ms;
-  gboolean     first_pass;
+  unsigned     time_ms;
+  bool         first_pass;
 } giop_info_value_t;
 
 

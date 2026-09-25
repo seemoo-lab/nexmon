@@ -3,12 +3,12 @@
 
 # Test general operation.
 
-cat <<EOF > men-test1.po
+cat <<\EOF > men-test1.pot
 # HEADER.
 #
 msgid ""
 msgstr ""
-"Content-Type: text/plain; charset=ASCII\n"
+"Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "height must be positive"
@@ -27,10 +27,10 @@ msgstr[1] ""
 EOF
 
 : ${MSGEN=msgen}
-${MSGEN} -o men-test1.tmp men-test1.po || Exit 1
+${MSGEN} -o men-test1.tmp men-test1.pot || Exit 1
 LC_ALL=C tr -d '\r' < men-test1.tmp > men-test1.out || Exit 1
 
-cat <<EOF > men-test1.ok
+cat <<\EOF > men-test1.ok
 # HEADER.
 #
 msgid ""
@@ -59,7 +59,7 @@ result=$?
 test $result = 0 || exit $result
 
 # Test --lang option.
-${MSGEN} --lang=fr -o men-test1.tmp men-test1.po || Exit 1
+${MSGEN} --lang=fr -o men-test1.tmp men-test1.pot || Exit 1
 grep "Language: fr" men-test1.tmp 2>&1 >/dev/null || Exit 1
 grep -v "Language: fr" men-test1.tmp | LC_ALL=C tr -d '\r' > men-test1.out || Exit 1
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test C# support: --add-comments option.
+# Test C# support: --add-comments option, string concatenation.
 
 cat <<\EOF > xg-cs-6.cs
 /* a */
@@ -15,7 +15,7 @@ ${XGETTEXT} --add-comments --omit-header --no-location --keyword=_ \
   -d xg-cs-6.tmp xg-cs-6.cs || Exit 1
 LC_ALL=C tr -d '\r' < xg-cs-6.tmp.po > xg-cs-6.po || Exit 1
 
-cat <<EOF > xg-cs-6.ok
+cat <<\EOF > xg-cs-6.ok
 #. a
 #. b
 #. c

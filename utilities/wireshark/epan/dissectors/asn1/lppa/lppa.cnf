@@ -1,6 +1,6 @@
 # lppa.cnf
 # llpa conformation file
-# Copyright 2011 Pascal Quantin
+# Copyright 2011-2024 Pascal Quantin
 
 #.OPT
 PER
@@ -31,28 +31,45 @@ InitiatingMessage/value initiatingMessagevalue
 UnsuccessfulOutcome/value unsuccessfulOutcome_value
 SuccessfulOutcome/value successfulOutcome_value
 ProtocolIE-Field/value ie_field_value
+ProtocolExtensionField/id ext_id
 
-#.FN_PARS ProtocolIE-ID  VAL_PTR=&ProtocolIE_ID
+#.FN_BODY ProtocolIE-ID VAL_PTR=&lppa_data->protocol_ie_id
+  struct lppa_private_data *lppa_data = lppa_get_private_data(actx->pinfo);
+%(DEFAULT_BODY)s
+
 #.FN_FTR ProtocolIE-ID
   if (tree) {
-    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s", val_to_str(ProtocolIE_ID, VALS(lppa_ProtocolIE_ID_vals), "unknown (%d)"));
+    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s",
+                           val_to_str(actx->pinfo->pool, lppa_data->protocol_ie_id, VALS(lppa_ProtocolIE_ID_vals), "unknown (%d)"));
   }
 #.END
 
-#.FN_PARS  ProcedureCode  VAL_PTR = &ProcedureCode
-#.FN_FTR ProcedureCode
-     col_add_fstr(actx->pinfo->cinfo, COL_INFO, "%s ",
-                 val_to_str(ProcedureCode, lppa_ProcedureCode_vals,
-                            "unknown message"));
+#.FN_BODY ProcedureCode  VAL_PTR = &lppa_data->procedure_code
+  struct lppa_private_data *lppa_data = lppa_get_private_data(actx->pinfo);
+
+%(DEFAULT_BODY)s
+
+  col_add_fstr(actx->pinfo->cinfo, COL_INFO, "%%s ",
+                 val_to_str_const(lppa_data->procedure_code, lppa_ProcedureCode_vals,
+                                  "unknown message"));
 #.END
 
 #.FN_PARS ProtocolIE-Field/value  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_ProtocolIEFieldValue
 
+#.FN_PARS ProtocolExtensionField/extensionValue  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_ProtocolExtensionFieldExtensionValue
+
 #.FN_PARS InitiatingMessage/value  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_InitiatingMessageValue
-
+#.FN_HDR InitiatingMessage/value
+  struct lppa_private_data *lppa_data = lppa_get_private_data(actx->pinfo);
+  lppa_data->message_type = INITIATING_MESSAGE;
 #.FN_PARS SuccessfulOutcome/value  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_SuccessfulOutcomeValue
-
+#.FN_HDR SuccessfulOutcome/value
+  struct lppa_private_data *lppa_data = lppa_get_private_data(actx->pinfo);
+  lppa_data->message_type = SUCCESSFUL_OUTCOME;
 #.FN_PARS UnsuccessfulOutcome/value  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_UnsuccessfulOutcomeValue
+#.FN_HDR UnsuccessfulOutcome/value
+  struct lppa_private_data *lppa_data = lppa_get_private_data(actx->pinfo);
+  lppa_data->message_type = UNSUCCESSFUL_OUTCOME;
 
 #.FN_HDR LPPA-PDU
 
@@ -60,6 +77,12 @@ ProtocolIE-Field/value ie_field_value
 
   col_append_sep_str(actx->pinfo->cinfo, COL_PROTOCOL, "/", "LPPa");
 #.END
+
+#.TYPE_ATTR
+BSSID TYPE=FT_ETHER
+
+#.TYPE_ATTR
+HESSID TYPE=FT_ETHER
 
 #.TYPE_ATTR
 # ProcedureCode
@@ -72,6 +95,8 @@ id-e-CIDMeasurementTermination       ProcedureCode
 id-oTDOAInformationExchange          ProcedureCode
 id-uTDOAInformationExchange          ProcedureCode
 id-uTDOAInformationUpdate            ProcedureCode
+id-assistanceInformationControl      ProcedureCode
+id-assistanceInformationFeedback     ProcedureCode
 
 # ProtocolIE-ID
 id-Cause                                   ProtocolIE-ID
@@ -88,8 +113,22 @@ id-OTDOA-Information-Type-Item             ProtocolIE-ID
 id-MeasurementQuantities-Item              ProtocolIE-ID
 id-RequestedSRSTransmissionCharacteristics ProtocolIE-ID
 id-ULConfiguration                         ProtocolIE-ID
-#.REGISTER
+id-Cell-Portion-ID                         ProtocolIE-ID
+id-InterRATMeasurementQuantities           ProtocolIE-ID
+id-InterRATMeasurementQuantities-Item      ProtocolIE-ID
+id-InterRATMeasurementResult               ProtocolIE-ID
+id-AddOTDOACells                           ProtocolIE-ID
+id-WLANMeasurementQuantities               ProtocolIE-ID
+id-WLANMeasurementQuantities-Item          ProtocolIE-ID
+id-WLANMeasurementResult                   ProtocolIE-ID
+id-Assistance-Information                  ProtocolIE-ID
+id-Broadcast                               ProtocolIE-ID
+id-AssistanceInformationFailureList        ProtocolIE-ID
+id-ResultsPerSSB-Index-List                ProtocolIE-ID
+id-ResultsPerSSB-Index-Item                ProtocolIE-ID
+id-NR-CGI                                  ProtocolIE-ID
 
+#.REGISTER
 #LPPA-PROTOCOL-IES
 MeasurementQuantities-Item              N lppa.ies id-MeasurementQuantities-Item
 ReportCharacteristics                   N lppa.ies id-ReportCharacteristics
@@ -105,6 +144,21 @@ Measurement-ID                          N lppa.ies id-E-SMLC-UE-Measurement-ID
 Measurement-ID                          N lppa.ies id-eNB-UE-Measurement-ID
 RequestedSRSTransmissionCharacteristics N lppa.ies id-RequestedSRSTransmissionCharacteristics
 ULConfiguration                         N lppa.ies id-ULConfiguration
+InterRATMeasurementQuantities           N lppa.ies id-InterRATMeasurementQuantities
+Cell-Portion-ID                         N lppa.ies id-Cell-Portion-ID
+InterRATMeasurementResult               N lppa.ies id-InterRATMeasurementResult
+InterRATMeasurementQuantities-Item      N lppa.ies id-InterRATMeasurementQuantities-Item
+WLANMeasurementQuantities               N lppa.ies id-WLANMeasurementQuantities
+WLANMeasurementResult                   N lppa.ies id-WLANMeasurementResult
+Add-OTDOACells                          N lppa.ies id-AddOTDOACells
+WLANMeasurementQuantities-Item          N lppa.ies id-WLANMeasurementQuantities-Item
+Assistance-Information                  N lppa.ies id-Assistance-Information
+Broadcast                               N lppa.ies id-Broadcast
+AssistanceInformationFailureList        N lppa.ies id-AssistanceInformationFailureList
+
+#LPPA-PROTOCOL-EXTENSION
+ResultsPerSSB-Index-List                N lppa.extension id-ResultsPerSSB-Index-List
+NR-CGI                                  N lppa.extension id-NR-CGI
 
 #LPPA-ELEMENTARY-PROCEDURE
 E-CIDMeasurementInitiationRequest  N lppa.proc.imsg id-e-CIDMeasurementInitiation
@@ -122,3 +176,5 @@ UTDOAInformationRequest            N lppa.proc.imsg id-uTDOAInformationExchange
 UTDOAInformationResponse           N lppa.proc.sout id-uTDOAInformationExchange
 UTDOAInformationFailure            N lppa.proc.uout id-uTDOAInformationExchange
 UTDOAInformationUpdate             N lppa.proc.imsg id-uTDOAInformationUpdate
+AssistanceInformationControl       N lppa.proc.imsg id-assistanceInformationControl
+AssistanceInformationFeedback      N lppa.proc.imsg id-assistanceInformationFeedback

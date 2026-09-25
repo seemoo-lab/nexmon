@@ -1,4 +1,5 @@
-/* profile.h
+/** @file
+ *
  * Definitions for dialog box for profiles editing.
  * Stig Bjorlykke <stig@bjorlykke.org>, 2008
  *
@@ -6,23 +7,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PROFILE_H__
 #define __PROFILE_H__
+
+#include <glib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,13 +29,18 @@ extern "C" {
 #define PROF_STAT_NEW      3
 #define PROF_STAT_CHANGED  4
 #define PROF_STAT_COPY     5
+#define PROF_STAT_IMPORT   6
 
 typedef struct {
     char     *name;             /* profile name */
     char     *reference;        /* profile reference */
     int       status;
-    gboolean  is_global;
-    gboolean  from_global;
+    bool      is_global;
+    bool      from_global;
+    bool      is_import;
+    // Settings
+    bool      prefs_changed;
+    char     *auto_switch_filter;
 } profile_def;
 
 /** @file
@@ -63,11 +59,12 @@ void init_profile_list(void);
  * @param status Current status
  * @param is_global Profile is in the global configuration directory
  * @param from_global Profile is copied from the global configuration directory
+ * @param is_import Profile has been imported and no directory has to be created
  *
  * @return A pointer to the new profile list
  */
 GList *add_to_profile_list(const char *name, const char *parent, int status,
-                           gboolean is_global, gboolean from_global);
+                           bool is_global, bool from_global, bool is_import);
 
 /** Refresh the current (non-edited) profile list.
  */
@@ -77,7 +74,7 @@ void copy_profile_list(void);
  *
  * @param edit_list Remove edited entries
  */
-void empty_profile_list(gboolean edit_list);
+void empty_profile_list(bool edit_list);
 
 /** Remove an entry from the profile list.
  *
@@ -99,8 +96,9 @@ GList * edited_profile_list(void);
 
 /** Apply the changes in the edited profile list
  * @return NULL if the operation was successful or an error message otherwise.
+ * The error message must be freed by the caller.
  */
-const gchar *apply_profile_changes(void);
+char *apply_profile_changes(void);
 
 /** Given a profile name, return the name of its parent profile.
  *
@@ -108,37 +106,24 @@ const gchar *apply_profile_changes(void);
  *
  * @return Parent profile name
  */
-const gchar *get_profile_parent (const gchar *profilename);
+const char *get_profile_parent(const char *profilename);
 
 /** Check the validity of a profile name.
  *
  * @param name Profile name
  * @return NULL if the name is valid or an error message otherwise.
  */
-gchar *profile_name_is_valid(const gchar *name);
+char *profile_name_is_valid(const char *name);
 
 /** Remove the current profile.
  *
- * @return TRUE if the current profile exists and was successfully deleted
- * or FALSE otherwise.
+ * @return true if the current profile exists and was successfully deleted
+ * or false otherwise.
  */
-gboolean delete_current_profile(void);
+bool delete_current_profile(void);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 #endif /* __PROFILE_H__ */
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

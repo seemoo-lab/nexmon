@@ -1,0 +1,105 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlDefAttr" kind="struct" language="C++" prot="public">
+    <compoundname>xmlDefAttr</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlDefAttr_1ae084e50c2ba4f2dc3128d319187c4ea8" prot="public" static="no" mutable="no">
+        <type>xmlHashedString</type>
+        <definition>xmlHashedString prefix</definition>
+        <argsstring></argsstring>
+        <name>prefix</name>
+        <qualifiedname>xmlDefAttr::prefix</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="951" column="21" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="951" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlDefAttr_1a14eb784e30efff2e50c4d6964e0e543e" prot="public" static="no" mutable="no">
+        <type>xmlHashedString</type>
+        <definition>xmlHashedString name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>xmlDefAttr::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="952" column="21" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="952" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlDefAttr_1a720fc5cd643838fcad40e55efb45d2a1" prot="public" static="no" mutable="no">
+        <type>xmlHashedString</type>
+        <definition>xmlHashedString value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>xmlDefAttr::value</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="953" column="21" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="953" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlDefAttr_1a5c5bf3ce10c7a6a2525b94adb724a116" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* valueEnd</definition>
+        <argsstring></argsstring>
+        <name>valueEnd</name>
+        <qualifiedname>xmlDefAttr::valueEnd</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="954" column="19" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="954" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlDefAttr_1a79267324f5bdd751611f0886cefa66cf" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int external</definition>
+        <argsstring></argsstring>
+        <name>external</name>
+        <qualifiedname>xmlDefAttr::external</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="955" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="955" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlDefAttr_1ab4c0b3d077dc5bfbae24bf988d4831bd" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int expandedSize</definition>
+        <argsstring></argsstring>
+        <name>expandedSize</name>
+        <qualifiedname>xmlDefAttr::expandedSize</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="956" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="956" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/parser.c" line="950" column="1" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="950" bodyend="957"/>
+    <listofallmembers>
+      <member refid="structxmlDefAttr_1ab4c0b3d077dc5bfbae24bf988d4831bd" prot="public" virt="non-virtual"><scope>xmlDefAttr</scope><name>expandedSize</name></member>
+      <member refid="structxmlDefAttr_1a79267324f5bdd751611f0886cefa66cf" prot="public" virt="non-virtual"><scope>xmlDefAttr</scope><name>external</name></member>
+      <member refid="structxmlDefAttr_1a14eb784e30efff2e50c4d6964e0e543e" prot="public" virt="non-virtual"><scope>xmlDefAttr</scope><name>name</name></member>
+      <member refid="structxmlDefAttr_1ae084e50c2ba4f2dc3128d319187c4ea8" prot="public" virt="non-virtual"><scope>xmlDefAttr</scope><name>prefix</name></member>
+      <member refid="structxmlDefAttr_1a720fc5cd643838fcad40e55efb45d2a1" prot="public" virt="non-virtual"><scope>xmlDefAttr</scope><name>value</name></member>
+      <member refid="structxmlDefAttr_1a5c5bf3ce10c7a6a2525b94adb724a116" prot="public" virt="non-virtual"><scope>xmlDefAttr</scope><name>valueEnd</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

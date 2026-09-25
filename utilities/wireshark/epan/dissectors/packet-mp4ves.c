@@ -7,22 +7,10 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * References:
- * http://www.ietf.org/rfc/rfc3016.txt?number=3016
+ * https://tools.ietf.org/html/rfc3016
  */
 
 #include "config.h"
@@ -40,37 +28,36 @@ void proto_register_mp4ves(void);
 void proto_reg_handoff_mp4ves(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_mp4ves	= -1;
+static int proto_mp4ves;
 
-static int hf_mp4ves_config = -1;
-static int hf_mp4ves_start_code_prefix = -1;
-static int hf_mp4ves_start_code = -1;
-static int hf_mp4ves_vop_coding_type = -1;
-static int hf_mp4ves_profile_and_level_indication = -1;
-static int hf_mp4ves_is_visual_object_identifier = -1;
-static int hf_mp4ves_visual_object_type = -1;
-static int hf_mp4ves_video_signal_type = -1;
-static int hf_mp4ves_stuffing = -1;
-static int hf_mp4ves_video_object_type_indication = -1;
-static int hf_mp4ves_random_accessible_vol = -1;
-static int hf_mp4ves_is_object_layer_identifier = -1;
-static int hf_mp4ves_aspect_ratio_info = -1;
-static int hf_mp4ves_vol_control_parameters = -1;
-static int hf_mp4ves_video_object_layer_shape = -1;
-static int hf_mp4ves_user_data = -1;
-static int hf_mp4ves_data = -1;
+static int hf_mp4ves_config;
+static int hf_mp4ves_start_code_prefix;
+static int hf_mp4ves_start_code;
+static int hf_mp4ves_vop_coding_type;
+static int hf_mp4ves_profile_and_level_indication;
+static int hf_mp4ves_is_visual_object_identifier;
+static int hf_mp4ves_visual_object_type;
+static int hf_mp4ves_video_signal_type;
+static int hf_mp4ves_stuffing;
+static int hf_mp4ves_video_object_type_indication;
+static int hf_mp4ves_random_accessible_vol;
+static int hf_mp4ves_is_object_layer_identifier;
+static int hf_mp4ves_aspect_ratio_info;
+static int hf_mp4ves_vol_control_parameters;
+static int hf_mp4ves_video_object_layer_shape;
+static int hf_mp4ves_user_data;
+static int hf_mp4ves_data;
 
 /* Initialize the subtree pointers */
-static int ett_mp4ves = -1;
-static int ett_mp4ves_config = -1;
+static int ett_mp4ves;
+static int ett_mp4ves_config;
 
-static expert_field ei_mp4ves_config_too_short = EI_INIT;
-static expert_field ei_mp4ves_not_dissected_bits = EI_INIT;
+static expert_field ei_mp4ves_config_too_short;
+static expert_field ei_mp4ves_not_dissected_bits;
 
-/* The dynamic payload type which will be dissected as MP4V-ES */
+static dissector_handle_t mp4ves_name_handle;
 
-static guint global_dynamic_payload_type = 0;
-
+static dissector_handle_t mp4ves_handle;
 
 /*
 14496-2, Annex G, Table G-1.
@@ -289,7 +276,7 @@ one_bit
 static int
 dissect_mp4ves_next_start_code(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int bit_offset)
 {
-	guint8 zero_bit;
+	uint8_t zero_bit;
 	int start_bit_offset;
 
 	start_bit_offset = bit_offset;
@@ -332,7 +319,7 @@ video_signal_type() {
 static int
 dissect_mp4ves_visual_object_type(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int bit_offset)
 {
-	guint8 video_signal_type, colour_description;
+	uint8_t video_signal_type, colour_description;
 
 	video_signal_type = tvb_get_bits8(tvb,bit_offset,1);
 	proto_tree_add_bits_item(tree, hf_mp4ves_video_signal_type, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
@@ -396,10 +383,10 @@ static const value_string mp4ves_video_object_layer_shape_vals[] = {
 static int
 dissect_mp4ves_VideoObjectLayer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int bit_offset)
 {
-	guint32 dword;
+	uint32_t dword;
 	int current_bit_offset;
-	guint8 octet, is_object_layer_identifier, aspect_ratio_info, vol_control_parameters, vbv_parameters;
-	guint8 video_object_layer_shape, video_object_layer_verid = 0;
+	uint8_t octet, is_object_layer_identifier, aspect_ratio_info, vol_control_parameters, vbv_parameters;
+	uint8_t video_object_layer_shape, video_object_layer_verid = 0;
 
 	/* if(next_bits() == video_object_layer_start_code) { */
 	dword = tvb_get_bits32(tvb,bit_offset, 24, ENC_BIG_ENDIAN);
@@ -545,9 +532,9 @@ VisualObject() {
 static int
 dissect_mp4ves_VisualObject(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int bit_offset)
 {
-	guint8 is_visual_object_identifier, visual_object_type;
-	guint32 dword;
-	guint8 octet;
+	uint8_t is_visual_object_identifier, visual_object_type;
+	uint32_t dword;
+	uint8_t octet;
 
 	is_visual_object_identifier = tvb_get_bits8(tvb,bit_offset,1);
 	proto_tree_add_bits_item(tree, hf_mp4ves_is_visual_object_identifier, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
@@ -612,7 +599,7 @@ dissect_mp4ves_VisualObject(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 static int
 dissect_mp4ves_VisualObjectSequence(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int bit_offset)
 {
-	guint32 dword;
+	uint32_t dword;
 
 	/*VisualObjectSequence() {
 	do {
@@ -687,7 +674,7 @@ dissect_mp4ves(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	int bit_offset = 0;
 	proto_item *item;
 	proto_tree *mp4ves_tree;
-	guint32 dword;
+	uint32_t dword;
 
 	/* Make entries in Protocol column and Info column on summary display */
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "MP4V-ES");
@@ -791,8 +778,8 @@ static int
 dissect_mp4ves_par_profile(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data)
 {
 	int offset = 0;
-	guint16 lvl;
-	const gchar *p = NULL;
+	uint16_t lvl;
+	const char *p = NULL;
 	asn1_ctx_t *actx;
 
 	/* Reject the packet if data is NULL */
@@ -813,8 +800,8 @@ static int
 dissect_mp4ves_par_video_object_type(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, void *data)
 {
 	int offset = 0;
-	guint16 lvl;
-	const gchar *p = NULL;
+	uint16_t lvl;
+	const char *p = NULL;
 	asn1_ctx_t *actx;
 
 	/* Reject the packet if data is NULL */
@@ -849,8 +836,8 @@ dissect_mp4ves_par_decoderConfigurationInformation(tvbuff_t *tvb, packet_info *p
 }
 
 typedef struct _mp4ves_capability_t {
-	const gchar *id;
-	const gchar *name;
+	const char *id;
+	const char *name;
 	dissector_t content_pdu;
 } mp4ves_capability_t;
 
@@ -864,7 +851,7 @@ static mp4ves_capability_t mp4ves_capability_tab[] = {
 	{ NULL, NULL, NULL },
 };
 
-static mp4ves_capability_t *find_cap(const gchar *id) {
+static mp4ves_capability_t *find_cap(const char *id) {
 	mp4ves_capability_t *ftr = NULL;
 	mp4ves_capability_t *f;
 
@@ -994,7 +981,7 @@ proto_register_mp4ves(void)
 	};
 
 /* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_mp4ves,
 		&ett_mp4ves_config,
 	};
@@ -1017,56 +1004,36 @@ proto_register_mp4ves(void)
 	expert_register_field_array(expert_mp4ves, ei, array_length(ei));
 	/* Register a configuration option for port */
 
-	register_dissector("mp4ves", dissect_mp4ves, proto_mp4ves);
+	mp4ves_handle = register_dissector("mp4ves", dissect_mp4ves, proto_mp4ves);
 	register_dissector("mp4ves_config", dissect_mp4ves_config, proto_mp4ves);
 
 	/* Register a configuration option for port */
-	mp4ves_module = prefs_register_protocol(proto_mp4ves, proto_reg_handoff_mp4ves);
+	mp4ves_module = prefs_register_protocol(proto_mp4ves, NULL);
 
-	prefs_register_uint_preference(mp4ves_module,
-				       "dynamic.payload.type",
-				       "MP4V-ES dynamic payload type",
-				       "The dynamic payload type which will be interpreted as MP4V-ES",
-				       10,
-				       &global_dynamic_payload_type);
+        prefs_register_obsolete_preference(mp4ves_module, "dynamic.payload.type");
 
 }
 
 void
 proto_reg_handoff_mp4ves(void)
 {
-	static dissector_handle_t mp4ves_handle;
-	static guint dynamic_payload_type;
-	static gboolean mp4ves_prefs_initialized = FALSE;
+	mp4ves_capability_t *ftr;
 
-	if (!mp4ves_prefs_initialized) {
-		dissector_handle_t mp4ves_name_handle;
-		mp4ves_capability_t *ftr;
+	dissector_add_string("rtp_dyn_payload_type","MP4V-ES", mp4ves_handle);
 
-		mp4ves_handle = find_dissector("mp4ves");
-		dissector_add_string("rtp_dyn_payload_type","MP4V-ES", mp4ves_handle);
-		mp4ves_prefs_initialized = TRUE;
-
-		mp4ves_name_handle = create_dissector_handle(dissect_mp4ves_name, proto_mp4ves);
-		for (ftr=mp4ves_capability_tab; ftr->id; ftr++) {
-		    if (ftr->name)
-				dissector_add_string("h245.gef.name", ftr->id, mp4ves_name_handle);
-			if (ftr->content_pdu)
-				dissector_add_string("h245.gef.content", ftr->id, create_dissector_handle(ftr->content_pdu, proto_mp4ves));
-		}
-	}else{
-		if ( dynamic_payload_type > 95 )
-			dissector_delete_uint("rtp.pt", dynamic_payload_type, mp4ves_handle);
+	mp4ves_name_handle = create_dissector_handle(dissect_mp4ves_name, proto_mp4ves);
+	for (ftr=mp4ves_capability_tab; ftr->id; ftr++) {
+	    if (ftr->name)
+			dissector_add_string("h245.gef.name", ftr->id, mp4ves_name_handle);
+		if (ftr->content_pdu)
+			dissector_add_string("h245.gef.content", ftr->id, create_dissector_handle(ftr->content_pdu, proto_mp4ves));
 	}
-	dynamic_payload_type = global_dynamic_payload_type;
 
-	if ( dynamic_payload_type > 95 ){
-		dissector_add_uint("rtp.pt", dynamic_payload_type, mp4ves_handle);
-	}
+	dissector_add_uint_range_with_preference("rtp.pt", "", mp4ves_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,6 +1,5 @@
 /* Writing C# satellite assemblies.
-   Copyright (C) 2003-2010, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 #include <alloca.h>
 
 /* Specification.  */
@@ -28,56 +27,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
 #include <sys/stat.h>
-#if !defined S_ISDIR && defined S_IFDIR
-# define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
-#endif
-#if !S_IRUSR && S_IREAD
-# define S_IRUSR S_IREAD
-#endif
-#if !S_IRUSR
-# define S_IRUSR 00400
-#endif
-#if !S_IWUSR && S_IWRITE
-# define S_IWUSR S_IWRITE
-#endif
-#if !S_IWUSR
-# define S_IWUSR 00200
-#endif
-#if !S_IXUSR && S_IEXEC
-# define S_IXUSR S_IEXEC
-#endif
-#if !S_IXUSR
-# define S_IXUSR 00100
-#endif
-#if !S_IRGRP
-# define S_IRGRP (S_IRUSR >> 3)
-#endif
-#if !S_IWGRP
-# define S_IWGRP (S_IWUSR >> 3)
-#endif
-#if !S_IXGRP
-# define S_IXGRP (S_IXUSR >> 3)
-#endif
-#if !S_IROTH
-# define S_IROTH (S_IRUSR >> 6)
-#endif
-#if !S_IWOTH
-# define S_IWOTH (S_IWUSR >> 6)
-#endif
-#if !S_IXOTH
-# define S_IXOTH (S_IXUSR >> 6)
-#endif
 
+#include <error.h>
+#include "attribute.h"
 #include "c-ctype.h"
 #include "relocatable.h"
-#include "error.h"
 #include "xerror.h"
 #include "csharpcomp.h"
 #include "message.h"
 #include "msgfmt.h"
 #include "msgl-iconv.h"
+#include "xerror-handler.h"
+#include "msgl-header.h"
 #include "plural-exp.h"
 #include "po-charset.h"
 #include "xalloc.h"
@@ -103,16 +65,14 @@ construct_class_name (const char *resource_name)
      assuming that every assembly will only ever contain one
      GettextResourceSet subclass, but this assumption would break the day
      we want to support multi-domain PO files in the same format...  */
-  bool valid;
-  const char *p;
 
   /* Test for a valid ASCII identifier:
      - nonempty,
      - first character is A..Za..z_ - see x-csharp.c:is_identifier_start.
      - next characters are A..Za..z_0..9 - see x-csharp.c:is_identifier_part.
    */
-  valid = (resource_name[0] != '\0');
-  for (p = resource_name; valid && *p != '\0'; p++)
+  bool valid = (resource_name[0] != '\0');
+  for (const char *p = resource_name; valid && *p != '\0'; p++)
     {
       char c = *p;
       if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '_')
@@ -127,9 +87,8 @@ construct_class_name (const char *resource_name)
       const char *str = resource_name;
       const char *str_limit = str + strlen (str);
       char *class_name = XNMALLOC (12 + 6 * (str_limit - str) + 1, char);
-      char *b;
 
-      b = class_name;
+      char *b = class_name;
       memcpy (b, "__UESCAPED__", 12); b += 12;
       while (str < str_limit)
         {
@@ -231,9 +190,8 @@ write_csharp_msgid (FILE *stream, message_ty *mp)
       size_t msgctxt_len = strlen (msgctxt);
       size_t msgid_len = strlen (msgid);
       size_t combined_len = msgctxt_len + 1 + msgid_len;
-      char *combined;
 
-      combined = (char *) xmalloca (combined_len);
+      char *combined = (char *) xmalloca (combined_len + 1);
       memcpy (combined, msgctxt, msgctxt_len);
       combined[msgctxt_len] = MSGCTXT_SEPARATOR;
       memcpy (combined + msgctxt_len + 1, msgid, msgid_len + 1);
@@ -253,18 +211,19 @@ write_csharp_msgstr (FILE *stream, message_ty *mp)
 {
   if (mp->msgid_plural != NULL)
     {
-      bool first;
-      const char *p;
-
       fprintf (stream, "new System.String[] { ");
-      for (p = mp->msgstr, first = true;
-           p < mp->msgstr + mp->msgstr_len;
-           p += strlen (p) + 1, first = false)
-        {
-          if (!first)
-            fprintf (stream, ", ");
-          write_csharp_string (stream, p);
-        }
+      {
+        bool first = true;
+        for (const char *p = mp->msgstr;
+             p < mp->msgstr + mp->msgstr_len;
+             p += strlen (p) + 1)
+          {
+            if (!first)
+              fprintf (stream, ", ");
+            write_csharp_string (stream, p);
+            first = false;
+          }
+      }
       fprintf (stream, " }");
     }
   else
@@ -401,7 +360,7 @@ write_csharp_expression (FILE *stream, const struct expression *exp, bool as_boo
               fprintf (stream, ")");
               return;
             }
-          /*FALLTHROUGH*/
+          FALLTHROUGH;
         case var:
         case mult:
         case divide:
@@ -498,15 +457,10 @@ write_csharp_expression (FILE *stream, const struct expression *exp, bool as_boo
 static void
 write_csharp_code (FILE *stream, const char *culture_name, const char *class_name, message_list_ty *mlp)
 {
-  const char *last_dot;
-  const char *class_name_last_part;
-  unsigned int plurals;
-  size_t j;
-
   fprintf (stream,
            "/* Automatically generated by GNU msgfmt.  Do not modify!  */\n");
 
-  /* We have to use a "using" statement here, to avoid a bug in the pnet-0.6.0
+  /* We chose to use a "using" statement here, to avoid a bug in the pnet-0.6.0
      compiler.  */
   fprintf (stream, "using GNU.Gettext;\n");
 
@@ -517,7 +471,9 @@ write_csharp_code (FILE *stream, const char *culture_name, const char *class_nam
   write_csharp_string (stream, culture_name);
   fprintf (stream, ")]\n");
 
-  last_dot = strrchr (class_name, '.');
+  const char *last_dot = strrchr (class_name, '.');
+
+  const char *class_name_last_part;
   if (last_dot != NULL)
     {
       fprintf (stream, "namespace ");
@@ -531,8 +487,8 @@ write_csharp_code (FILE *stream, const char *culture_name, const char *class_nam
            class_name_last_part);
 
   /* Determine whether there are plural messages.  */
-  plurals = 0;
-  for (j = 0; j < mlp->nitems; j++)
+  unsigned int plurals = 0;
+  for (size_t j = 0; j < mlp->nitems; j++)
     if (mlp->item[j]->msgid_plural != NULL)
       plurals++;
 
@@ -560,7 +516,7 @@ write_csharp_code (FILE *stream, const char *culture_name, const char *class_nam
   fprintf (stream, "          if (Table == null)\n");
   fprintf (stream, "            Table = new System.Collections.Hashtable();\n");
   fprintf (stream, "          System.Collections.Hashtable t = Table;\n");
-  for (j = 0; j < mlp->nitems; j++)
+  for (size_t j = 0; j < mlp->nitems; j++)
     {
       fprintf (stream, "          t.Add(");
       write_csharp_msgid (stream, mlp->item[j]);
@@ -579,7 +535,7 @@ write_csharp_code (FILE *stream, const char *culture_name, const char *class_nam
     {
       fprintf (stream, "  public static System.Collections.Hashtable GetMsgidPluralTable () {\n");
       fprintf (stream, "    System.Collections.Hashtable t = new System.Collections.Hashtable();\n");
-      for (j = 0; j < mlp->nitems; j++)
+      for (size_t j = 0; j < mlp->nitems; j++)
         if (mlp->item[j]->msgid_plural != NULL)
           {
             fprintf (stream, "    t.Add(");
@@ -595,11 +551,10 @@ write_csharp_code (FILE *stream, const char *culture_name, const char *class_nam
   /* Emit the PluralEval function.  It is a subroutine for GetPluralString.  */
   if (plurals)
     {
-      message_ty *header_entry;
+      message_ty *header_entry = message_list_search (mlp, NULL, "");
+
       const struct expression *plural;
       unsigned long int nplurals;
-
-      header_entry = message_list_search (mlp, NULL, "");
       extract_plural_expression (header_entry ? header_entry->msgstr : NULL,
                                  &plural, &nplurals);
 
@@ -624,26 +579,19 @@ msgdomain_write_csharp (message_list_ty *mlp, const char *canon_encoding,
                         const char *resource_name, const char *locale_name,
                         const char *directory)
 {
-  int retval;
-  struct temp_dir *tmpdir;
-  char *culture_name;
-  char *output_file;
-  char *class_name;
-  char *csharp_file_name;
-  FILE *csharp_file;
-  const char *gettextlibdir;
-  const char *csharp_sources[1];
-  const char *libdirs[1];
-  const char *libraries[1];
-
   /* If no entry for this resource/domain, don't even create the file.  */
   if (mlp->nitems == 0)
     return 0;
 
-  retval = 1;
+  int retval = 1;
 
   /* Convert the messages to Unicode.  */
-  iconv_message_list (mlp, canon_encoding, po_charset_utf8, NULL);
+  iconv_message_list (mlp, canon_encoding, po_charset_utf8, NULL,
+                      textmode_xerror_handler);
+
+  /* Support for "reproducible builds": Delete information that may vary
+     between builds in the same conditions.  */
+  message_list_delete_header_field (mlp, "POT-Creation-Date:");
 
   /* Create a temporary directory where we can put the C# file.
      A simple temporary file would also be possible but would require us to
@@ -651,7 +599,7 @@ msgdomain_write_csharp (message_list_ty *mlp, const char *canon_encoding,
      tmpnam(), tempnam() present a security risk, and on the other hand the
      function mkstemp() doesn't allow to specify a fixed suffix of the file.
      It is simpler to create a temporary directory.  */
-  tmpdir = create_temp_dir ("msg", NULL, false);
+  struct temp_dir *tmpdir = create_temp_dir ("msg", NULL, false);
   if (tmpdir == NULL)
     goto quit1;
 
@@ -660,14 +608,14 @@ msgdomain_write_csharp (message_list_ty *mlp, const char *canon_encoding,
     resource_name = "Messages";
 
   /* Convert the locale name to a .NET specific culture name.  */
-  culture_name = xstrdup (locale_name);
+  char *culture_name = xstrdup (locale_name);
   {
-    char *p;
-    for (p = culture_name; *p != '\0'; p++)
+    for (char *p = culture_name; *p != '\0'; p++)
       if (*p == '_')
         *p = '-';
-    if (strncmp (culture_name, "sr-CS", 5) == 0)
+    if (str_startswith (culture_name, "sr-CS"))
       memcpy (culture_name, "sr-SP", 5);
+    char *p;
     p = strchr (culture_name, '@');
     if (p != NULL)
       {
@@ -690,11 +638,12 @@ msgdomain_write_csharp (message_list_ty *mlp, const char *canon_encoding,
 
   /* Compute the output file name.  This code must be kept consistent with
      intl.cs, function GetSatelliteAssembly().  */
+  char *output_file;
   {
     char *output_dir = xconcatenated_filename (directory, culture_name, NULL);
-    struct stat statbuf;
 
     /* Try to create the output directory if it does not yet exist.  */
+    struct stat statbuf;
     if (stat (output_dir, &statbuf) < 0 && errno == ENOENT)
       if (mkdir (output_dir, S_IRUSR | S_IWUSR | S_IXUSR
                              | S_IRGRP | S_IWGRP | S_IXGRP
@@ -713,14 +662,14 @@ msgdomain_write_csharp (message_list_ty *mlp, const char *canon_encoding,
 
   /* Compute the class name.  This code must be kept consistent with intl.cs,
      function InstantiateResourceSet().  */
+  char *class_name;
   {
     char *class_name_part1 = construct_class_name (resource_name);
-    char *p;
 
     class_name =
       XNMALLOC (strlen (class_name_part1) + 1 + strlen (culture_name) + 1, char);
     sprintf (class_name, "%s_%s", class_name_part1, culture_name);
-    for (p = class_name + strlen (class_name_part1) + 1; *p != '\0'; p++)
+    for (char *p = class_name + strlen (class_name_part1) + 1; *p != '\0'; p++)
       if (*p == '-')
         *p = '_';
     free (class_name_part1);
@@ -728,12 +677,12 @@ msgdomain_write_csharp (message_list_ty *mlp, const char *canon_encoding,
 
   /* Compute the temporary C# file name.  It must end in ".cs", so that
      the C# compiler recognizes that it is C# source code.  */
-  csharp_file_name =
+  char *csharp_file_name =
     xconcatenated_filename (tmpdir->dir_name, "resset.cs", NULL);
 
   /* Create the C# file.  */
   register_temp_file (tmpdir, csharp_file_name);
-  csharp_file = fopen_temp (csharp_file_name, "w");
+  FILE *csharp_file = fopen_temp (csharp_file_name, "w", false);
   if (csharp_file == NULL)
     {
       error (0, errno, _("failed to create \"%s\""), csharp_file_name);
@@ -751,13 +700,16 @@ msgdomain_write_csharp (message_list_ty *mlp, const char *canon_encoding,
 
   /* Make it possible to override the .dll location.  This is
      necessary for running the testsuite before "make install".  */
-  gettextlibdir = getenv ("GETTEXTCSHARPLIBDIR");
+  const char *gettextlibdir = getenv ("GETTEXTCSHARPLIBDIR");
   if (gettextlibdir == NULL || gettextlibdir[0] == '\0')
     gettextlibdir = relocate (LIBDIR);
 
   /* Compile the C# file to a .dll file.  */
+  const char *csharp_sources[1];
   csharp_sources[0] = csharp_file_name;
+  const char *libdirs[1];
   libdirs[0] = gettextlibdir;
+  const char *libraries[1];
   libraries[0] = "GNU.Gettext";
   if (compile_csharp_class (csharp_sources, 1, libdirs, 1, libraries, 1,
                             output_file, true, false, verbose > 0))

@@ -12,19 +12,7 @@
  * Copied from packet-m2tp.c
  * Thanks to Heinz Prantner for his motivation and assistance
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -36,8 +24,8 @@
 void proto_register_cpfi(void);
 void proto_reg_handoff_cpfi(void);
 
-#define CPFI_DEFAULT_UDP_PORT      5000
-#define CPFI_DEFAULT_TTOT_UDP_PORT 5001
+#define CPFI_DEFAULT_UDP_PORT      5000 /* Not IANA registered */
+#define CPFI_DEFAULT_TTOT_UDP_PORT 5001 /* Not IANA registered */
 
 #define FIRST_TIO_CARD_ADDRESS    0x380
 
@@ -59,35 +47,34 @@ void proto_reg_handoff_cpfi(void);
 #define CPFI_EOF_ERROR_MASK   0x7FE00000
 
 /* configurable parameters */
-static guint gbl_cpfi_udp_port      = CPFI_DEFAULT_UDP_PORT;
-static guint gbl_cpfi_ttot_udp_port = CPFI_DEFAULT_TTOT_UDP_PORT;
-static gboolean cpfi_arrow_moves    = TRUE;
+static unsigned gbl_cpfi_ttot_udp_port = CPFI_DEFAULT_TTOT_UDP_PORT;
+static bool cpfi_arrow_moves    = true;
 
 /* Initialize the protocol and registered fields */
-static int proto_cpfi = -1;
-static int hf_cpfi_word_one = -1;
-static int hf_cpfi_word_two = -1;
+static int proto_cpfi;
+static int hf_cpfi_word_one;
+static int hf_cpfi_word_two;
 /* SOF word 1: */
-static int hf_cpfi_frame_type = -1;
-static int hf_cpfi_source = -1;
-static int hf_cpfi_dest = -1;
-static int hf_cpfi_SOF_type = -1;
-static int hf_cpfi_speed = -1;
-static int hf_cpfi_OPM_error = -1;
-static int hf_cpfi_from_LCM = -1;
+static int hf_cpfi_frame_type;
+static int hf_cpfi_source;
+static int hf_cpfi_dest;
+static int hf_cpfi_SOF_type;
+static int hf_cpfi_speed;
+static int hf_cpfi_OPM_error;
+static int hf_cpfi_from_LCM;
 /* EOF */
-static int hf_cpfi_CRC_32 = -1;
-static int hf_cpfi_EOF_type = -1;
+static int hf_cpfi_CRC_32;
+static int hf_cpfi_EOF_type;
 /* Hidden items */
-static int hf_cpfi_t_instance = -1;
-static int hf_cpfi_t_src_instance = -1;
-static int hf_cpfi_t_dst_instance = -1;
-static int hf_cpfi_t_board = -1;
-static int hf_cpfi_t_src_board = -1;
-static int hf_cpfi_t_dst_board = -1;
-static int hf_cpfi_t_port = -1;
-static int hf_cpfi_t_src_port = -1;
-static int hf_cpfi_t_dst_port = -1;
+static int hf_cpfi_t_instance;
+static int hf_cpfi_t_src_instance;
+static int hf_cpfi_t_dst_instance;
+static int hf_cpfi_t_board;
+static int hf_cpfi_t_src_board;
+static int hf_cpfi_t_dst_board;
+static int hf_cpfi_t_port;
+static int hf_cpfi_t_src_port;
+static int hf_cpfi_t_dst_port;
 
 static char src_str[20];
 static char dst_str[20];
@@ -100,10 +87,11 @@ static const char direction_and_port_string[] = "[%s %s %s] ";
 
 
 /* Initialize the subtree pointers */
-static gint ett_cpfi = -1;
-static gint ett_cpfi_header = -1;
-static gint ett_cpfi_footer = -1;
+static int ett_cpfi;
+static int ett_cpfi_header;
+static int ett_cpfi_footer;
 
+static dissector_handle_t cpfi_handle;
 static dissector_handle_t fc_handle;
 
 
@@ -146,19 +134,19 @@ static const value_string eof_type_vals[] = {
 static void
 dissect_cpfi_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-  guint32     word1;
+  uint32_t    word1;
 #if 0
-  guint32     word2;
+  uint32_t    word2;
 #endif
-  guint32     tda;
-  guint32     src;
-  guint8      src_instance = 0;
-  guint8      src_board    = 0;
-  guint8      src_port     = 0;
-  guint32     dst;
-  guint8      dst_instance = 0;
-  guint8      dst_board    = 0;
-  guint8      dst_port     = 0;
+  uint32_t    tda;
+  uint32_t    src;
+  uint8_t     src_instance = 0;
+  uint8_t     src_board    = 0;
+  uint8_t     src_port     = 0;
+  uint32_t    dst;
+  uint8_t     dst_instance = 0;
+  uint8_t     dst_board    = 0;
+  uint8_t     dst_port     = 0;
   proto_tree *extra_tree   = NULL;
 
   /* add a tree for the header */
@@ -179,44 +167,44 @@ dissect_cpfi_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   tda = (word1 & CPFI_DEST_MASK) >> CPFI_DEST_SHIFT;
   if ( tda >= FIRST_TIO_CARD_ADDRESS )
   {
-    g_strlcpy(src_str, " CPFI", sizeof(src_str));
+    (void) g_strlcpy(src_str, " CPFI", sizeof(src_str));
     src = 0;                            /* Make it smallest */
   }
   else
   {
-    const guint8 *srcmac;
+    const uint8_t *srcmac;
 
     /* Make sure this is an Ethernet address. */
     DISSECTOR_ASSERT(pinfo->src.type == AT_ETHER);
-    srcmac = (const guint8 *)pinfo->src.data;
+    srcmac = (const uint8_t *)pinfo->src.data;
 
     src_instance = srcmac[2]-1;
     src_board = tda >> 4;
     src_port = tda & 0x0f;
     src = (1 << 24)  +  (src_instance << 16) + (src_board << 8) + src_port;
-    g_snprintf(src_str, sizeof(src_str), "%u.%u.%u", src_instance, src_board, src_port);
+    snprintf(src_str, sizeof(src_str), "%u.%u.%u", src_instance, src_board, src_port);
   }
 
   /* Figure out where the frame is going. srcTDA is destination of frame! */
   tda = (word1 & CPFI_SOURCE_MASK) >> CPFI_SOURCE_SHIFT;
   if ( tda >= FIRST_TIO_CARD_ADDRESS )
   {
-    g_strlcpy(dst_str, " CPFI", sizeof(dst_str));
+    (void) g_strlcpy(dst_str, " CPFI", sizeof(dst_str));
     dst = 0;                            /* Make it smallest */
   }
   else
   {
-    const guint8 *dstmac;
+    const uint8_t *dstmac;
 
     /* Make sure this is an Ethernet address. */
     DISSECTOR_ASSERT(pinfo->dst.type == AT_ETHER);
-    dstmac = (const guint8 *)pinfo->dst.data;
+    dstmac = (const uint8_t *)pinfo->dst.data;
 
     dst_instance = dstmac[2]-1;
     dst_board = tda >> 4;
     dst_port = tda & 0x0f;
     dst = (1 << 24)  +  (dst_instance << 16) + (dst_board << 8) + dst_port;
-    g_snprintf(dst_str, sizeof(dst_str), "%u.%u.%u", dst_instance, dst_board, dst_port);
+    snprintf(dst_str, sizeof(dst_str), "%u.%u.%u", dst_instance, dst_board, dst_port);
   }
 
   /* Set up the source and destination and arrow per user configuration. */
@@ -239,32 +227,32 @@ dissect_cpfi_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     if ( src != 0 )
     {
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_instance, tvb, 0, 1, &src_instance);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_src_instance, tvb, 0, 1, &src_instance);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_board, tvb, 0, 1, &src_board);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_src_board, tvb, 0, 1, &src_board);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_port, tvb, 0, 1, &src_port);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_src_port, tvb, 0, 1, &src_port);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
     }
     if ( dst != 0 )
     {
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_instance, tvb, 0, 1, &dst_instance);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_dst_instance, tvb, 0, 1, &dst_instance);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_board, tvb, 0, 1, &dst_board);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_dst_board, tvb, 0, 1, &dst_board);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_port, tvb, 0, 1, &dst_port);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
       hidden_item = proto_tree_add_bytes(extra_tree, hf_cpfi_t_dst_port, tvb, 0, 1, &dst_port);
-      PROTO_ITEM_SET_HIDDEN(hidden_item);
+      proto_item_set_hidden(hidden_item);
     }
 
     /* add word 1 components to the protocol tree */
@@ -310,8 +298,8 @@ dissect_cpfi(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *tree, void *
   tvbuff_t   *header_tvb, *body_tvb, *footer_tvb;
   proto_item *cpfi_item = NULL;
   proto_tree *cpfi_tree = NULL;
-  gint        length, reported_length, body_length, reported_body_length;
-  guint8      frame_type;
+  int         length, reported_length, body_length, reported_body_length;
+  uint8_t     frame_type;
   fc_data_t fc_data;
 
   frame_type = (tvb_get_ntohl (message_tvb, 0) & CPFI_FRAME_TYPE_MASK) >> CPFI_FRAME_TYPE_SHIFT;
@@ -369,8 +357,8 @@ dissect_cpfi(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *tree, void *
   header_tvb = tvb_new_subset_length(message_tvb, 0, 8);
   dissect_cpfi_header(header_tvb, pinfo, cpfi_tree);
 
-  body_tvb = tvb_new_subset(message_tvb, 8, body_length, reported_body_length);
-  fc_data.ethertype = 0;
+  body_tvb = tvb_new_subset_length_caplen(message_tvb, 8, body_length, reported_body_length);
+  fc_data.ethertype = ETHERTYPE_UNK;
   call_dissector_with_data(fc_handle, body_tvb, pinfo, tree, &fc_data);
 
   /* add more info, now that FC added its */
@@ -378,11 +366,10 @@ dissect_cpfi(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *tree, void *
   col_prepend_fstr(pinfo->cinfo, COL_INFO, direction_and_port_string, left, arrow, right);
 
   /* Do the footer */
-  footer_tvb = tvb_new_subset(message_tvb, 8+body_length, length, 8);
+  footer_tvb = tvb_new_subset_length_caplen(message_tvb, 8+body_length, length, 8);
   dissect_cpfi_footer(footer_tvb, cpfi_tree);
 
-  return(tvb_reported_length(message_tvb));
-
+  return tvb_reported_length(message_tvb);
 }
 
 /* Register the protocol with Wireshark */
@@ -490,7 +477,7 @@ proto_register_cpfi(void)
 
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_cpfi,
     &ett_cpfi_header,
     &ett_cpfi_footer
@@ -506,10 +493,6 @@ proto_register_cpfi(void)
 
   /* Register our configuration options for CPFI */
   cpfi_module = prefs_register_protocol(proto_cpfi, proto_reg_handoff_cpfi);
-  prefs_register_uint_preference(cpfi_module, "udp.port", "CPFI UDP Port",
-                 "Set the port for CPFI messages (if other"
-                 " than the default of 5000)",
-                 10, &gbl_cpfi_udp_port);
   prefs_register_uint_preference(cpfi_module, "udp.port2", "InstanceToInstance UDP Port",
                  "Set the port for InstanceToInstance messages (if other"
                  " than the default of 5001)",
@@ -523,32 +506,30 @@ proto_register_cpfi(void)
                 " is always on the left.",
                 &cpfi_arrow_moves);
 
+    cpfi_handle = register_dissector("cpfi", dissect_cpfi, proto_cpfi);
 }
 
 void
 proto_reg_handoff_cpfi(void)
 {
-  static gboolean cpfi_init_complete = FALSE;
-  static dissector_handle_t cpfi_handle;
-  static guint cpfi_udp_port;
-  static guint cpfi_ttot_udp_port;
+  static bool cpfi_init_complete = false;
+  static unsigned cpfi_ttot_udp_port;
 
   if ( !cpfi_init_complete )
   {
-    fc_handle     = find_dissector_add_dependency("fc", proto_cpfi);
-    cpfi_handle   = create_dissector_handle(dissect_cpfi, proto_cpfi);
-    cpfi_init_complete = TRUE;
+    fc_handle = find_dissector_add_dependency("fc", proto_cpfi);
+    dissector_add_uint_with_preference("udp.port", CPFI_DEFAULT_UDP_PORT, cpfi_handle);
+    cpfi_init_complete = true;
   }
   else
   {
-    dissector_delete_uint("udp.port", cpfi_udp_port, cpfi_handle);
     dissector_delete_uint("udp.port", cpfi_ttot_udp_port, cpfi_handle);
   }
 
-  cpfi_udp_port      = gbl_cpfi_udp_port;
   cpfi_ttot_udp_port = gbl_cpfi_ttot_udp_port;
 
-  dissector_add_uint("udp.port", cpfi_udp_port, cpfi_handle);
+  /* Port preference has a specific enough name to not use
+     the "auto" preference */
   dissector_add_uint("udp.port", cpfi_ttot_udp_port, cpfi_handle);
 }
 

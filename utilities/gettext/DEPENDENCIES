@@ -2,96 +2,234 @@ The following packages should be installed before GNU gettext is installed
 (runtime dependencies that are also build dependencies):
 
 * GNU libiconv
-  + Not needed on systems with
-      - glibc 2.2 or newer, or
-      - MacOS X 10.3 or newer, or
-      - NetBSD 3.0 or newer.
+  + Not needed on systems with glibc and on NetBSD.
     But highly recommended on all other systems.
-    Needed for character set conversion of PO files from/to Unicode.
+    Needed for character set conversion of PO files from/to Unicode
+    and for the iconv_ostream class of libtextstyle.
   + Homepage:
-    http://www.gnu.org/software/libiconv/
+    https://www.gnu.org/software/libiconv/
   + Download:
-    http://ftp.gnu.org/gnu/libiconv/
-    ftp://ftp.gnu.org/gnu/libiconv/
+    https://ftp.gnu.org/gnu/libiconv/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: --,
+    - On Red Hat distributions: --.
+    - Other: https://repology.org/project/libiconv/versions
   + If it is installed in a nonstandard directory, pass the option
     --with-libiconv-prefix=DIR to 'configure'.
+  + On mingw, a slim alternative is the 'win-iconv' package version 0.0.8
+    from https://github.com/win-iconv/win-iconv .
 
 * GNU ncurses (preferred)
   or libtermcap (discouraged) or a curses library (legacy).
   + Highly recommended.
-    Needed for the --color option of the 'msgcat' program.
+    Needed for styling of terminal output (libtextstyle and the --color
+    option of the 'msgcat' program).
   + Homepage:
-    http://www.gnu.org/software/ncurses/
+    https://www.gnu.org/software/ncurses/
   + Download:
-    http://ftp.gnu.org/gnu/ncurses/
-    ftp://ftp.gnu.org/gnu/ncurses/
+    https://ftp.gnu.org/gnu/ncurses/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: libncurses-dev,
+    - On Red Hat distributions: ncurses-devel.
+    - Other: https://repology.org/project/ncurses/versions
   + If it is installed in a nonstandard directory, pass the option
-    --with-ncurses-prefix=DIR or --with-libtermcap-prefix to 'configure'.
+    --with-libncurses-prefix=DIR or --with-libtermcap-prefix to 'configure'.
 
 * libxml2
   + Recommended.
-    Needed for 'xgettext' and 'msgfmt', so that it can parse XML
-    files.  Also needed for the --color option of the various
-    programs.
+    Needed for 'xgettext' and 'msgfmt', so that it can parse XML files.
+    Also needed for the --color option of the various programs.
     If not present, a subset of libxml2 (included in this package) will be
     compiled into libgettextlib.
   + Homepage:
-    http://xmlsoft.org/
+    https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home
   + Download:
-    ftp://xmlsoft.org/libxml2/
+    https://download.gnome.org/sources/libxml2/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: libxml2-dev,
+    - On Red Hat distributions: libxml2-devel.
+    - Other: https://repology.org/project/libxml2/versions
   + If it is installed in a nonstandard directory, pass the option
     --with-libxml2-prefix=DIR to 'configure'.
 
-* A Java runtime and compiler (e.g. GNU gcj or kaffe).
+* libjson-c 0.13 or newer
+  + Recommended.
+    Needed for machine translation.
+    If not present, 'spit' will be a Python script instead of an executable.
+  + Homepage:
+    https://github.com/json-c/json-c/wiki
+  + Download:
+    https://s3.amazonaws.com/json-c_releases/releases/index.html
+  + Pre-built package name:
+    - On Debian and Debian-based systems: libjson-c-dev,
+    - On Red Hat distributions: json-c-devel.
+    - Other: https://repology.org/project/json-c/versions
+  + When building with the MS Visual C/C++ tool chain, version 0.19 or newer
+    is required.
+
+* libcurl
+  + Recommended.
+    Needed for machine translation.
+    If not present, 'spit' will be a Python script instead of an executable.
+  + Homepage:
+    https://curl.se/libcurl/
+  + Download:
+    https://curl.se/download.html
+  + Pre-built package name:
+    - On Debian and Debian-based systems: libcurl4-gnutls-dev or libcurl4-openssl-dev,
+    - On Red Hat distributions: libcurl-devel.
+    - Other: https://repology.org/project/curl/versions
+  + When building against a static libcurl on Windows, you need to include
+    "-DCURL_STATICLIB" in the CPPFLAGS.
+
+* libacl
+  + Recommended on Linux systems.
+    Needed so that the creation of backup files respects the access control
+    lists (ACLs) set on the original files.
+  + Homepage:
+    https://savannah.nongnu.org/projects/acl/
+  + Download:
+    https://download.savannah.nongnu.org/releases/acl/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: acl, libacl1-dev,
+    - On Red Hat distributions: acl, libacl-devel.
+    - Other: https://repology.org/project/acl/versions
+
+* libattr
+  + Recommended on Linux systems.
+    Needed so that the creation of backup files respects the access control
+    lists (ACLs) set on the original files, with fewer system calls.
+  + Homepage:
+    https://savannah.nongnu.org/projects/attr/
+  + Download:
+    https://download.savannah.nongnu.org/releases/attr/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: libattr1-dev,
+    - On Red Hat distributions: libattr-devel.
+    - Other: https://repology.org/project/attr/versions
+
+* A Java runtime and compiler (e.g. OpenJDK, AdoptOpenJDK, or kaffe).
   + Recommended.
     Needed for building libintl.jar.  Also needed for 'msgfmt' and
     'msgunfmt', so that they can handle Java classes and properties files.
   + Homepage:
-    http://gcc.gnu.org/java/
+    http://openjdk.java.net/
     http://www.kaffe.org/
   + Download:
-    http://ftp.gnu.org/gnu/gcc/
-    http://www.kaffe.org/ftp/pub/kaffe/v1.1.x-development/
+    http://openjdk.java.net/install/index.html
+    https://github.com/kaffe/kaffe
+  + Pre-built package name:
+    - On Debian and Debian-based systems:
+      openjdk-11-jdk or openjdk-8-jdk or openjdk-7-jdk,
+    - On Red Hat distributions:
+      java-11-openjdk or java-1.8.0-openjdk or java-1.7.0-openjdk.
+    - Other: https://repology.org/project/openjdk/versions
 
-* A C# runtime and compiler (e.g. pnet or mono).
+* A C# runtime and compiler (e.g. mono or dotnet).
   + Recommended.
     Needed for building GNU.Gettext.dll. Also needed for 'msgfmt' and
     'msgunfmt', so that they can handle C# resources and assemblies.
-  + Homepage:
-    http://www.southern-storm.com.au/portable_net.html
-  + Download:
-    http://www.southern-storm.com.au/portable_net.html#download
-    http://www.mono-project.com/Downloads
+  o Mono:
+    + Homepage:
+      https://www.mono-project.com/
+    + Download:
+      https://www.mono-project.com/download/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: mono-runtime,
+      - On Red Hat distributions: mono.
+      - Other: https://repology.org/project/mono/versions
+  o dotnet:
+    + Homepage:
+      https://dotnet.microsoft.com/
+    + Download:
+      https://dotnet.microsoft.com/en-us/download
+    + Pre-built package name:
+      - On Debian and Debian-based systems: dotnet7 or dotnet8,
+      - On Red Hat distributions: dotnet7.0 or dotnet8.0.
+      - Other: https://repology.org/project/dotnet/versions
   + If more than one C# is installed, pass the option --enable-csharp=IMPL
     to 'configure', to disambiguate.
+
+* A D compiler and runtime (e.g. gdc, ldc2, or dmd).
+  + Recommended.
+    Needed for building libintl_d.a.
+  o gdc:
+    + Homepage:
+      https://wiki.dlang.org/GDC
+      https://gcc.gnu.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: gdc,
+      - On Red Hat distributions: gcc-gdc.
+      - Other: --
+  o ldc2:
+    + Homepage:
+      https://wiki.dlang.org/LDC
+    + Download:
+      https://github.com/ldc-developers/ldc/tags
+    + Pre-built package name:
+      - On Debian and Debian-based systems: ldc,
+      - On Red Hat distributions: ldc.
+      - Other: https://repology.org/project/ldc/versions
+  o dmd:
+    + Homepage:
+      https://wiki.dlang.org/DMD
+    + Download:
+      https://dlang.org/download.html
+    + Pre-built package name:
+      - On Debian and Debian-based systems: --,
+      - On Red Hat distributions: --.
+      - Other: https://repology.org/project/dmd/versions
+  + If more than one D compiler is installed, set the environment variable
+    DC, to disambiguate.
+
+* The GNU Modula-2 compiler and runtime.
+  + Recommended.
+    Needed for building libintl_m2.so.
+  + Homepage:
+    https://www.nongnu.org/gm2/about.html
+    https://gcc.gnu.org/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: gm2,
+    - On Red Hat distributions: gcc-gm2, libgm2.
+    - Other: https://repology.org/project/gcc-gm2/versions
 
 * git 1.6 or newer
   + Recommended.
     Needed by the 'autopoint' program, if not configured with --without-git
     or --with-cvs.
   + Homepage:
-    http://git-scm.com/
+    https://git-scm.com/
   + Download:
-    http://www.kernel.org/pub/software/scm/git/
+    https://www.kernel.org/pub/software/scm/git/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: git,
+    - On Red Hat distributions: git.
+    - Other: https://repology.org/project/git/versions
 
 * The archiving utility 'tar'.
   + Recommended.
     Needed for the 'autopoint' program.
     Either the platform's native tar, or GNU tar.
   + Homepage:
-    http://www.gnu.org/software/tar/
+    https://www.gnu.org/software/tar/
   + Download:
-    http://ftp.gnu.org/gnu/tar/
-    ftp://ftp.gnu.org/gnu/tar/
+    https://ftp.gnu.org/gnu/tar/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: tar,
+    - On Red Hat distributions: tar.
+    - Other: https://repology.org/project/tar/versions
 
 * The GNU compression utility 'gzip'.
   + Recommended.
     Needed for the 'autopoint' program.
   + Homepage:
-    http://www.gnu.org/software/gzip/
+    https://www.gnu.org/software/gzip/
   + Download:
-    http://ftp.gnu.org/gnu/gzip/
-    ftp://ftp.gnu.org/gnu/gzip/
+    https://ftp.gnu.org/gnu/gzip/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: gzip,
+    - On Red Hat distributions: gzip.
+    - Other: https://repology.org/project/gzip/versions
 
 * The compression utility 'bzip2'.
   + Recommended.
@@ -100,38 +238,22 @@ The following packages should be installed before GNU gettext is installed
     http://www.bzip.org/
   + Download:
     http://www.bzip.org/downloads.html
+  + Pre-built package name:
+    - On Debian and Debian-based systems: bzip2,
+    - On Red Hat distributions: bzip2.
+    - Other: https://repology.org/project/bzip2/versions
 
 * The compression utility 'xz'.
   + Recommended.
     Needed for the 'autopoint' program, if not configured with --without-xz.
   + Homepage:
-    http://tukaani.org/xz/
+    https://tukaani.org/xz/
   + Download:
-    http://tukaani.org/xz/
-
-* GNOME glib2
-  + Optional.
-    Needed for the --color option of the various programs.
-    If not present, a subset of libglib2 (included in this package) will be
-    compiled into libgettextlib.
-  + Homepage:
-    http://developer.gnome.org/arch/gtk/glib.html
-  + Download:
-    http://ftp.gnome.org/pub/GNOME/sources/glib/
-  + If it is installed in a nonstandard directory, pass the option
-    --with-libglib-2.0-prefix=DIR to 'configure'.
-
-* GNOME libcroco 0.6.1 or newer
-  + Optional.
-    Needed for the --color option of the various programs.
-    If not present, a copy of libcroco-0.6.1 (included in this package) will
-    be compiled into libgettextlib.
-  + Homepage:
-    http://www.freespiders.org/projects/libcroco/
-  + Download:
-    http://ftp.gnome.org/pub/GNOME/sources/libcroco/0.6/
-  + If it is installed in a nonstandard directory, pass the option
-    --with-libcroco-0.6-prefix=DIR to 'configure'.
+    https://tukaani.org/xz/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: xz-utils,
+    - On Red Hat distributions: xz.
+    - Other: https://repology.org/project/xz/versions
 
 * GNU libunistring
   + Optional.
@@ -139,10 +261,13 @@ The following packages should be installed before GNU gettext is installed
     If not present, a subset of libunistring (included in this package) will
     be compiled into libgettextlib.
   + Homepage:
-    http://www.gnu.org/software/libunistring/
+    https://www.gnu.org/software/libunistring/
   + Download:
-    http://ftp.gnu.org/gnu/libunistring/
-    ftp://ftp.gnu.org/gnu/libunistring/
+    https://ftp.gnu.org/gnu/libunistring/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: libunistring-dev,
+    - On Red Hat distributions: libunistring-devel.
+    - Other: https://repology.org/project/libunistring/versions
   + If it is installed in a nonstandard directory, pass the option
     --with-libunistring-prefix=DIR to 'configure'.
 
@@ -150,16 +275,48 @@ The following packages should be installed before GNU gettext is installed
   + Optional but deprecated.
     Needed by the 'autopoint' program, if configured with --with-cvs.
   + Homepage:
-    http://ximbiot.com/cvs/wiki/index.php?title=Main_Page
-    http://www.nongnu.org/cvs/
+    https://www.nongnu.org/cvs/
   + Download:
-    http://ftp.gnu.org/non-gnu/cvs/
+    https://ftp.gnu.org/non-gnu/cvs/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: cvs,
+    - On Red Hat distributions: cvs.
+    - Other: https://repology.org/project/cvs/versions
 
 
 The following packages should be installed when GNU gettext is installed
 (runtime dependencies, but not build dependencies):
 
-None.
+* The Gnulib localizations.
+  + Recommended.
+    Needed for localization of some of the programs to the user's language.
+  + Documentation:
+    https://www.gnu.org/software/gnulib/manual/html_node/Localization.html
+  + Download:
+    https://ftp.gnu.org/gnu/gnulib/gnulib-l10n-*
+
+* Python 3.7 or newer.
+  + Recommended if GNU Gettext was built without libjson-c or without libcurl.
+    Needed for machine translation.
+  + Homepage:
+    https://www.python.org/
+  + Download:
+    https://www.python.org/downloads/
+  + Pre-built package name:
+    - On Debian and Debian-based systems: python3,
+    - On Red Hat distributions: python3.
+    - Other: https://repology.org/project/python/versions
+* The Python module 'requests'.
+  + Recommended if GNU Gettext was built without libjson-c or without libcurl.
+    Needed for machine translation.
+  + Homepage:
+    https://pypi.org/project/requests/
+  + Download:
+    https://pypi.org/project/requests/#files
+  + Pre-built package name:
+    - On Debian and Debian-based systems: python3-requests,
+    - On Red Hat distributions: python-requests.
+    - Other: https://repology.org/project/python%3Arequests/versions
 
 
 The following should be installed when GNU gettext is built, but are not
@@ -167,54 +324,62 @@ needed later, once it is installed (build dependencies, but not runtime
 dependencies):
 
 * A C runtime, compiler, linker, etc.
-  + Mandatory. Either the platform's native 'cc', or GCC 2.95 or newer.
+  + Mandatory.
+    Either the platform's native 'cc', or GCC 4.4 or newer.
   + GCC Homepage:
-    http://gcc.gnu.org/
+    https://gcc.gnu.org/
   + Download:
-    http://ftp.gnu.org/gnu/gcc/
-    ftp://ftp.gnu.org/gnu/gcc/
+    https://ftp.gnu.org/gnu/gcc/
 
 * A 'make' utility.
-  + Mandatory. Either the platform's native 'make' (for in-tree builds only),
+  + Mandatory.
+    Either the platform's native 'make' (for in-tree builds only),
     or GNU Make 3.79.1 or newer.
   + GNU Make Homepage:
-    http://www.gnu.org/software/make/
+    https://www.gnu.org/software/make/
   + Download:
-    http://ftp.gnu.org/gnu/make/
-    ftp://ftp.gnu.org/gnu/make/
+    https://ftp.gnu.org/gnu/make/
 
 * A shell
-  + Mandatory. Either the platform's native 'sh', or Bash.
+  + Mandatory.
+    Either the platform's native 'sh', or Bash.
   + Homepage:
-    http://www.gnu.org/software/bash/
+    https://www.gnu.org/software/bash/
   + Download:
-    http://ftp.gnu.org/gnu/bash/
-    ftp://ftp.gnu.org/gnu/bash/
+    https://ftp.gnu.org/gnu/bash/
 
 * Core POSIX utilities, including:
     [ basename cat chgrp chmod chown cp dd echo expand expr
     false hostname install kill ln ls md5sum mkdir mkfifo
     mknod mv printenv pwd rm rmdir sleep sort tee test touch
     true uname
-  + Mandatory. Either the platform's native utilities, or GNU coreutils.
+  + Mandatory.
+    Either the platform's native utilities, or GNU coreutils.
   + Homepage:
-    http://www.gnu.org/software/coreutils/
+    https://www.gnu.org/software/coreutils/
   + Download:
-    http://ftp.gnu.org/gnu/coreutils/
-    ftp://ftp.gnu.org/gnu/coreutils/
+    https://ftp.gnu.org/gnu/coreutils/
 
 * The comparison utilities 'cmp' and 'diff'.
-  + Mandatory. Either the platform's native utilities, or GNU diffutils.
+  + Mandatory.
+    Either the platform's native utilities, or GNU diffutils.
   + Homepage:
-    http://www.gnu.org/software/diffutils/
+    https://www.gnu.org/software/diffutils/
   + Download:
-    http://ftp.gnu.org/gnu/diffutils/
-    ftp://ftp.gnu.org/gnu/diffutils/
+    https://ftp.gnu.org/gnu/diffutils/
 
 * Grep.
-  + Mandatory. Either the platform's native grep, or GNU grep.
+  + Mandatory.
+    Either the platform's native grep, or GNU grep.
   + Homepage:
-    http://www.gnu.org/software/grep/
+    https://www.gnu.org/software/grep/
   + Download:
-    http://ftp.gnu.org/gnu/grep/
-    ftp://ftp.gnu.org/gnu/grep/
+    https://ftp.gnu.org/gnu/grep/
+
+* Awk.
+  + Mandatory.
+    Either the platform's native awk, mawk, or nawk, or GNU awk.
+  + Homepage:
+    https://www.gnu.org/software/gawk/
+  + Download:
+    https://ftp.gnu.org/gnu/gawk/

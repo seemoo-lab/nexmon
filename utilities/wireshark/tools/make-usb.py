@@ -1,42 +1,47 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # make-usb - Creates a file containing vendor and product ids.
-# It use the databases at
-# http://www.linux-usb.org/usb.ids
+# It use the databases from
+# - The USB ID Repository: https://usb-ids.gowdy.us (http://www.linux-usb.org), mirrored at Sourceforge
+# - libgphoto2 from gPhoto: https://github.com/gphoto/libgphoto2 (http://gphoto.org), available at GitHub
 # to create our file epan/dissectors/usb.c
-#
-# It also uses the values culled out of libgphoto2 using usb-ptp-extract-models.pl
 
 import re
 import sys
-
-if sys.version_info[0] < 3:
-    import urllib
-else:
-    import urllib.request, urllib.error, urllib.parse
+import urllib.request, urllib.error, urllib.parse
 
 MODE_IDLE           = 0
 MODE_VENDOR_PRODUCT = 1
-MIN_VENDORS = 2900 # 2948 as of 2015-06-28
-MIN_PRODUCTS = 15000 # 15415 as of 2015-06-28
+MIN_VENDORS = 3400 # 3409 as of 2020-11-15
+MIN_PRODUCTS = 20000 # 20361 as of 2020-11-15
 
 mode = MODE_IDLE
 
-# Grab from linux-usb.org
-if sys.version_info[0] < 3:
-    response = urllib.urlopen('http://www.linux-usb.org/usb.ids')
-else:
-    response = urllib.request.urlopen('http://www.linux-usb.org/usb.ids')
-lines = response.read().splitlines()
+req_headers = { 'User-Agent': 'Wireshark make-usb' }
+req = urllib.request.Request('https://sourceforge.net/p/linux-usb/repo/HEAD/tree/trunk/htdocs/usb.ids?format=raw', headers=req_headers)
+response = urllib.request.urlopen(req)
+lines = response.read().decode('UTF-8', 'replace').splitlines()
 
 vendors  = dict()
 products = dict()
 vendors_str="static const value_string usb_vendors_vals[] = {\n"
 products_str="static const value_string usb_products_vals[] = {\n"
 
+# Escape backslashes, quotes, control characters and non-ASCII characters.
+escapes = {}
+for i in range(256):
+    if i in b'\\"':
+        escapes[i] = '\\%c' % i
+    elif i in range(0x20, 0x80) or i in b'\t':
+        escapes[i] = chr(i)
+    else:
+        escapes[i] = '\\%03o' % i
 
-for line in lines:
-    line = line.rstrip()
+for utf8line in lines:
+    # Convert single backslashes to double (escaped) backslashes, escape quotes, etc.
+    utf8line = utf8line.rstrip()
+    utf8line = re.sub(r"\?+", "?", utf8line)
+    line = ''.join(escapes[byte] for byte in utf8line.encode('utf8'))
 
     if line == "# Vendors, devices and interfaces. Please keep sorted.":
         mode = MODE_VENDOR_PRODUCT
@@ -48,18 +53,48 @@ for line in lines:
     if mode == MODE_VENDOR_PRODUCT:
         if re.match("^[0-9a-f]{4}", line):
             last_vendor=line[:4]
-            vendors[last_vendor] = re.sub("\"", "\\\"", re.sub("\?+", "?", repr(line[4:].strip())[1:-1].replace("\\", "\\\\")))
+            vendors[last_vendor] = line[4:].strip()
         elif re.match("^\t[0-9a-f]{4}", line):
             line = line.strip()
             product = "%s%s"%(last_vendor, line[:4])
-            products[product] = re.sub("\"", "\\\"", re.sub("\?+", "?", repr(line[4:].strip())[1:-1].replace("\\", "\\\\")))
+            products[product] = line[4:].strip()
 
+req = urllib.request.Request('https://raw.githubusercontent.com/gphoto/libgphoto2/master/camlibs/ptp2/library.c', headers=req_headers)
+response = urllib.request.urlopen(req)
+lines = response.read().decode('UTF-8', 'replace').splitlines()
 
-# Grab from libgphoto (indirectly through tools/usb-ptp-extract-models.pl)
-u = open('tools/usb-ptp-extract-models.txt','r')
-for line in u.readlines():
-    fields=line.split()
-    products[fields[0]]= ' '.join(fields[1:])
+mode = MODE_IDLE
+
+for line in lines:
+    if mode == MODE_IDLE and re.match(r".*\bmodels\[\]", line):
+        mode = MODE_VENDOR_PRODUCT
+        continue
+
+    if mode == MODE_VENDOR_PRODUCT and re.match(r"};", line):
+        mode = MODE_IDLE
+
+    if mode == MODE_IDLE:
+        continue
+
+    m = re.match(r"\s*{\"(.*):(.*)\",\s*0x([0-9a-fA-F]{4}),\s*0x([0-9a-fA-F]{4}),.*},", line)
+    if m is not None:
+        manuf = m.group(1).strip()
+        model = re.sub(r"\(.*\)", "", m.group(2)).strip()
+        product = m.group(3) + m.group(4)
+        products[product] = ' '.join((manuf, model))
+
+req = urllib.request.Request('https://raw.githubusercontent.com/gphoto/libgphoto2/master/camlibs/ptp2/music-players.h', headers=req_headers)
+response = urllib.request.urlopen(req)
+lines = response.read().decode('UTF-8', 'replace').splitlines()
+
+for line in lines:
+    m = re.match(r"\s*{\s*\"(.*)\",\s*0x([0-9a-fA-F]{4}),\s*\"(.*)\",\s*0x([0-9a-fA-F]{4}),", line)
+    if m is not None:
+        manuf = m.group(1).strip()
+        model = m.group(3).strip()
+        product = m.group(2) + m.group(4)
+        products[product] = ' '.join((manuf, model))
+
 
 if (len(vendors) < MIN_VENDORS):
     sys.stderr.write("Not enough vendors: %d\n" % len(vendors))
@@ -69,6 +104,7 @@ if (len(products) < MIN_PRODUCTS):
     sys.stderr.write("Not enough products: %d\n" % len(products))
     sys.exit(1)
 
+vendors = {k.lower(): v for k, v in vendors.items()}
 for v in sorted(vendors):
     vendors_str += "    { 0x%s, \"%s\" },\n"%(v,vendors[v])
 
@@ -76,6 +112,7 @@ vendors_str += """    { 0, NULL }\n};
 value_string_ext ext_usb_vendors_vals = VALUE_STRING_EXT_INIT(usb_vendors_vals);
 """
 
+products = {k.lower(): v for k, v in products.items()}
 for p in sorted(products):
     products_str += "    { 0x%s, \"%s\" },\n"%(p,products[p])
 
@@ -105,19 +142,7 @@ header="""/* usb.c
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*

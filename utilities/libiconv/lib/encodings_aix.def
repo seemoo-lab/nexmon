@@ -1,20 +1,19 @@
-/* Copyright (C) 2000-2002, 2008 Free Software Foundation, Inc.
+/* Copyright (C) 2000-2026 Free Software Foundation, Inc.
    This file is part of the GNU LIBICONV Library.
 
    The GNU LIBICONV Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU Library General Public
-   License as published by the Free Software Foundation; either version 2
+   and/or modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either version 2.1
    of the License, or (at your option) any later version.
 
    The GNU LIBICONV Library is distributed in the hope that it will be
    useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
+   You should have received a copy of the GNU Lesser General Public
    License along with the GNU LIBICONV Library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, Inc., 51 Franklin Street,
-   Fifth Floor, Boston, MA 02110-1301, USA.  */
+   If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Encodings used by system dependent locales on AIX. */
 
@@ -22,8 +21,8 @@ DEFENCODING(( "CP856",
             ),
             cp856,
             { cp856_mbtowc, NULL },       { cp856_wctomb, NULL })
-#ifdef USE_AIX_ALIASES
-DEFALIAS(     "IBM-856",                /* AIX */
+#if defined USE_AIX_ALIASES || defined USE_OS2_ALIASES
+DEFALIAS(     "IBM-856",                /* AIX, OS/2 */
             cp856)
 #endif
 
@@ -31,8 +30,8 @@ DEFENCODING(( "CP922",
             ),
             cp922,
             { cp922_mbtowc, NULL },       { cp922_wctomb, NULL })
-#ifdef USE_AIX_ALIASES
-DEFALIAS(     "IBM-922",                /* AIX */
+#if defined USE_AIX_ALIASES || defined USE_OS2_ALIASES
+DEFALIAS(     "IBM-922",                /* AIX, OS/2 */
             cp922)
 #endif
 
@@ -40,8 +39,14 @@ DEFENCODING(( "CP943",
             ),
             cp943,
             { cp943_mbtowc, NULL },       { cp943_wctomb, NULL })
-#ifdef USE_AIX_ALIASES
-DEFALIAS(     "IBM-943",                /* AIX */
+#if defined USE_AIX_ALIASES || defined USE_OS2_ALIASES
+DEFALIAS(     "IBM-943",                /* AIX, OS/2 */
+            cp943)
+#endif
+#ifdef USE_OS2_ALIASES
+DEFALIAS(     "SJIS-1",                 /* OS/2 */
+            cp943)
+DEFALIAS(     "SJIS-2",                 /* OS/2 */
             cp943)
 #endif
 
@@ -58,8 +63,8 @@ DEFENCODING(( "CP1124",
             ),
             cp1124,
             { cp1124_mbtowc, NULL },      { cp1124_wctomb, NULL })
-#ifdef USE_AIX_ALIASES
-DEFALIAS(     "IBM-1124",               /* AIX */
+#if defined USE_AIX_ALIASES || defined USE_OS2_ALIASES
+DEFALIAS(     "IBM-1124",               /* AIX, OS/2 */
             cp1124)
 #endif
 

@@ -1,10 +1,10 @@
 /* Java CLASSPATH handling.
-   Copyright (C) 2001-2003, 2006, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2006, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,9 +13,13 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#include <config.h>
+/* If CLASSPATHVAR is defined, this file is being #included, and config.h is
+   therefore already included.  */
+#if !defined CLASSPATHVAR
+# include <config.h>
+#endif
 
 /* Specification.  */
 #include "classpath.h"
@@ -33,7 +37,7 @@
 #endif
 
 /* Separator in PATH like lists of pathnames.  */
-#if ((defined _WIN32 || defined __WIN32__) && !defined __CYGWIN__) || defined __EMX__ || defined __DJGPP__
+#if (defined _WIN32 && !defined __CYGWIN__) || defined __EMX__ || defined __DJGPP__
   /* Native Windows, OS/2, DOS */
 # define PATH_SEPARATOR ';'
 #else
@@ -48,42 +52,38 @@ char *
 new_classpath (const char * const *classpaths, unsigned int classpaths_count,
                bool use_minimal_classpath)
 {
-  const char *old_classpath;
-  unsigned int length;
-  unsigned int i;
-  char *result;
-  char *p;
-
-  old_classpath = (use_minimal_classpath ? NULL : getenv (CLASSPATHVAR));
+  const char *old_classpath = (use_minimal_classpath ? NULL : getenv (CLASSPATHVAR));
   if (old_classpath == NULL)
     old_classpath = "";
 
-  length = 0;
-  for (i = 0; i < classpaths_count; i++)
+  unsigned int length = 0;
+  for (unsigned int i = 0; i < classpaths_count; i++)
     length += strlen (classpaths[i]) + 1;
   length += strlen (old_classpath);
   if (classpaths_count > 0 && old_classpath[0] == '\0')
     length--;
 
-  result = XNMALLOC (length + 1, char);
-  p = result;
-  for (i = 0; i < classpaths_count; i++)
-    {
-      memcpy (p, classpaths[i], strlen (classpaths[i]));
-      p += strlen (classpaths[i]);
-      *p++ = PATH_SEPARATOR;
-    }
-  if (old_classpath[0] != '\0')
-    {
-      memcpy (p, old_classpath, strlen (old_classpath));
-      p += strlen (old_classpath);
-    }
-  else
-    {
-      if (classpaths_count > 0)
-        p--;
-    }
-  *p = '\0';
+  char *result = XNMALLOC (length + 1, char);
+  {
+    char *p = result;
+    for (unsigned int i = 0; i < classpaths_count; i++)
+      {
+        memcpy (p, classpaths[i], strlen (classpaths[i]));
+        p += strlen (classpaths[i]);
+        *p++ = PATH_SEPARATOR;
+      }
+    if (old_classpath[0] != '\0')
+      {
+        memcpy (p, old_classpath, strlen (old_classpath));
+        p += strlen (old_classpath);
+      }
+    else
+      {
+        if (classpaths_count > 0)
+          p--;
+      }
+    *p = '\0';
+  }
 
   return result;
 }

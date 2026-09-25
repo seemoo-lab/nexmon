@@ -1,9 +1,9 @@
 /* Test of log10*() function family.
-   Copyright (C) 2012-2016 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,13 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 static void
 test_function (void)
 {
-  int i;
-  int j;
   const DOUBLE TWO_MANT_DIG =
     /* Assume MANT_DIG <= 5 * 31.
        Use the identity
@@ -47,7 +45,7 @@ test_function (void)
 #if defined __i386__ && defined __FreeBSD__
        /* On FreeBSD/x86 6.4, the 'long double' type really has only 53 bits of
           precision in the compiler but 64 bits of precision at runtime.  See
-          <http://lists.gnu.org/archive/html/bug-gnulib/2008-07/msg00063.html>.
+          <https://lists.gnu.org/r/bug-gnulib/2008-07/msg00063.html>.
           The compiler has truncated all 'long double' literals in log10l.c to
           53 bits of precision.  */
        L_(18.0)
@@ -56,7 +54,7 @@ test_function (void)
 #endif
        : L_(3.0));
 
-    for (i = 0; i < SIZEOF (RANDOM); i++)
+    for (int i = 0; i < SIZEOF (RANDOM); i++)
       {
         DOUBLE x = L_(16.0) * RANDOM[i] + L_(1.0); /* 1.0 <= x <= 17.0 */
         DOUBLE y = LOG10 (x);
@@ -76,7 +74,7 @@ test_function (void)
 #if defined __i386__ && defined __FreeBSD__
        /* On FreeBSD/x86 6.4, the 'long double' type really has only 53 bits of
           precision in the compiler but 64 bits of precision at runtime.  See
-          <http://lists.gnu.org/archive/html/bug-gnulib/2008-07/msg00063.html>.
+          <https://lists.gnu.org/r/bug-gnulib/2008-07/msg00063.html>.
           The compiler has truncated all 'long double' literals in log10l.c to
           53 bits of precision.  */
        L_(38.0)
@@ -85,8 +83,8 @@ test_function (void)
 #endif
        : L_(5.0));
 
-    for (i = 0; i < SIZEOF (RANDOM) / 5; i++)
-      for (j = 0; j < SIZEOF (RANDOM) / 5; j++)
+    for (int i = 0; i < SIZEOF (RANDOM) / 5; i++)
+      for (int j = 0; j < SIZEOF (RANDOM) / 5; j++)
         {
           DOUBLE x = L_(17.0) / (L_(16.0) - L_(15.0) * RANDOM[i]) - L_(1.0);
           DOUBLE y = L_(17.0) / (L_(16.0) - L_(15.0) * RANDOM[j]) - L_(1.0);

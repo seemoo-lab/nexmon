@@ -6,28 +6,31 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+/* bit positions for flags in header */
+#define GRE_CHECKSUM            0x8000
+#define GRE_ROUTING             0x4000
+#define GRE_KEY                 0x2000
+#define GRE_SEQUENCE            0x1000
+#define GRE_STRICTSOURCE        0x0800
+#define GRE_RECURSION           0x0700
+#define GRE_ACK                 0x0080  /* only in special PPTPized GRE header */
+#define GRE_RESERVED_PPP        0x0078  /* only in special PPTPized GRE header */
+#define GRE_RESERVED            0x00F8
+#define GRE_VERSION             0x0007
+
+/* GRE type values that aren't also Ethernet type values */
 #define GRE_KEEPALIVE		0x0000
+#define GRE_CISCO_CDP		0x2000
 #define GRE_NHRP		0x2001
 #define GRE_WCCP		0x883E
 #define GRE_ERSPAN_88BE		0x88BE
 #define GRE_ERSPAN_22EB		0x22EB
 #define GRE_MIKROTIK_EOIP	0x6400
 #define GRE_AIROHIVE		0xFEAE
+#define GRE_GREBONDING		0xB7EA
 /* ************************************************************************* */
 /*              Aruba GRE Encapsulation ID                                   */
 /* ************************************************************************* */
@@ -56,5 +59,27 @@
 #define GRE_ARUBA_8360		0x8360
 #define GRE_ARUBA_8370		0x8370
 #define GRE_ARUBA_9000		0x9000
+#define GRE_ARUBA_9100          0x9100
+#define GRE_ARUBA_9110          0x9110
+#define GRE_ARUBA_9120          0x9120
+#define GRE_ARUBA_9130          0x9130
+#define GRE_ARUBA_9140          0x9140
+#define GRE_ARUBA_9150          0x9150
+#define GRE_ARUBA_9160          0x9160
+#define GRE_ARUBA_9170          0x9170
+#define GRE_ARUBA_9180          0x9180
+#define GRE_ARUBA_9190          0x9190
+#define GRE_ARUBA_91A0          0x91A0
+#define GRE_ARUBA_91B0          0x91B0
+#define GRE_ARUBA_91C0          0x91C0
+#define GRE_ARUBA_91D0          0x91D0
+#define GRE_ARUBA_91E0          0x91E0
+#define GRE_ARUBA_91F0          0x91F0
+
 
 extern const value_string gre_typevals[];
+
+typedef struct gre_hdr_info {
+	uint16_t		flags_and_ver;
+	uint32_t		key;
+} gre_hdr_info_t;

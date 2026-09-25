@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,6 +17,8 @@
 #include <epan/asn1.h>
 #include <epan/expert.h>
 #include <epan/strutil.h>
+#include <epan/proto_data.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -46,38 +36,34 @@
 #define PSNAME "P1"
 #define PFNAME "p1"
 
-static guint global_p1_tcp_port = 102;
-static dissector_handle_t tpkt_handle;
-static void prefs_register_p1(void); /* forward declaration for use in preferences registration */
-
 /* Initialize the protocol and registered fields */
-static int proto_p1 = -1;
-static int proto_p3 = -1;
+static int proto_p1;
+static int proto_p3;
 
-static int hf_p1_MTS_APDU_PDU = -1;
-static int hf_p1_MTABindArgument_PDU = -1;
-static int hf_p1_MTABindResult_PDU = -1;
-static int hf_p1_MTABindError_PDU = -1;
+static int hf_p1_MTS_APDU_PDU;
+static int hf_p1_MTABindArgument_PDU;
+static int hf_p1_MTABindResult_PDU;
+static int hf_p1_MTABindError_PDU;
 
 #include "packet-p1-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_p1 = -1;
-static gint ett_p3 = -1;
-static gint ett_p1_content_unknown = -1;
-static gint ett_p1_bilateral_information = -1;
-static gint ett_p1_additional_information = -1;
-static gint ett_p1_unknown_standard_extension = -1;
-static gint ett_p1_unknown_extension_attribute_type = -1;
-static gint ett_p1_unknown_tokendata_type = -1;
+static int ett_p1;
+static int ett_p3;
+static int ett_p1_content_unknown;
+static int ett_p1_bilateral_information;
+static int ett_p1_additional_information;
+static int ett_p1_unknown_standard_extension;
+static int ett_p1_unknown_extension_attribute_type;
+static int ett_p1_unknown_tokendata_type;
 #include "packet-p1-ett.c"
 
-static expert_field ei_p1_unknown_extension_attribute_type = EI_INIT;
-static expert_field ei_p1_unknown_standard_extension = EI_INIT;
-static expert_field ei_p1_unknown_built_in_content_type = EI_INIT;
-static expert_field ei_p1_unknown_tokendata_type = EI_INIT;
-static expert_field ei_p1_unsupported_pdu = EI_INIT;
-static expert_field ei_p1_zero_pdu = EI_INIT;
+static expert_field ei_p1_unknown_extension_attribute_type;
+static expert_field ei_p1_unknown_standard_extension;
+static expert_field ei_p1_unknown_built_in_content_type;
+static expert_field ei_p1_unknown_tokendata_type;
+static expert_field ei_p1_unsupported_pdu;
+static expert_field ei_p1_zero_pdu;
 
 /* Dissector tables */
 static dissector_table_t p1_extension_dissector_table;
@@ -88,20 +74,19 @@ static dissector_handle_t p1_handle;
 
 #include "packet-p1-table.c"   /* operation and error codes */
 
-#define P1_ADDRESS_CTX "p1-address-ctx"
 typedef struct p1_address_ctx {
-    gboolean do_address;
+    bool do_address;
     const char *content_type_id;
-    gboolean report_unknown_content_type;
+    bool report_unknown_content_type;
     wmem_strbuf_t* oraddress;
 } p1_address_ctx_t;
 
-static void set_do_address(asn1_ctx_t* actx, gboolean do_address)
+static void set_do_address(asn1_ctx_t* actx, bool do_address)
 {
     p1_address_ctx_t* ctx;
 
     if (actx->subtree.tree_ctx == NULL) {
-        actx->subtree.tree_ctx = wmem_new0(wmem_packet_scope(), p1_address_ctx_t);
+        actx->subtree.tree_ctx = wmem_new0(actx->pinfo->pool, p1_address_ctx_t);
     }
 
     ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
@@ -112,10 +97,8 @@ static p1_address_ctx_t *get_do_address_ctx(asn1_ctx_t* actx)
 {
     p1_address_ctx_t* ctx = NULL;
 
-    if (actx->pinfo->private_table) {
-        /* First check if called from an extension attribute */
-        ctx = (p1_address_ctx_t *)g_hash_table_lookup(actx->pinfo->private_table, P1_ADDRESS_CTX);
-    }
+    /* First check if called from an extension attribute */
+    ctx = (p1_address_ctx_t *)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_p1, 0);
 
     if (!ctx) {
         ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
@@ -133,7 +116,7 @@ static void do_address(const char* addr, tvbuff_t* tvb_string, asn1_ctx_t* actx)
             wmem_strbuf_append(ctx->oraddress, addr);
         }
         if (tvb_string) {
-            wmem_strbuf_append(ctx->oraddress, tvb_format_text(tvb_string, 0, tvb_captured_length(tvb_string)));
+            wmem_strbuf_append(ctx->oraddress, tvb_format_text(actx->pinfo->pool, tvb_string, 0, tvb_captured_length(tvb_string)));
         }
     }
 }
@@ -146,7 +129,7 @@ static void do_address_str(const char* addr, tvbuff_t* tvb_string, asn1_ctx_t* a
     do_address(addr, tvb_string, actx);
 
     if (ctx && ctx->do_address && ddatype && tvb_string)
-        wmem_strbuf_append(ddatype, tvb_format_text(tvb_string, 0, tvb_captured_length(tvb_string)));
+        wmem_strbuf_append(ddatype, tvb_format_text(actx->pinfo->pool, tvb_string, 0, tvb_captured_length(tvb_string)));
 }
 
 static void do_address_str_tree(const char* addr, tvbuff_t* tvb_string, asn1_ctx_t* actx, proto_tree* tree)
@@ -158,7 +141,7 @@ static void do_address_str_tree(const char* addr, tvbuff_t* tvb_string, asn1_ctx
 
     if (ctx && ctx->do_address && tvb_string && ddatype) {
         if (wmem_strbuf_get_len(ddatype) > 0) {
-            proto_item_append_text (tree, " (%s=%s)", wmem_strbuf_get_str(ddatype), tvb_format_text(tvb_string, 0, tvb_captured_length(tvb_string)));
+            proto_item_append_text (tree, " (%s=%s)", wmem_strbuf_get_str(ddatype), tvb_format_text(actx->pinfo->pool, tvb_string, 0, tvb_captured_length(tvb_string)));
         }
     }
 }
@@ -178,12 +161,12 @@ static const ros_info_t p3_ros_info = {
   p3_err_tab
 };
 
-void p1_initialize_content_globals (asn1_ctx_t* actx, proto_tree *tree, gboolean report_unknown_cont_type)
+void p1_initialize_content_globals (asn1_ctx_t* actx, proto_tree *tree, bool report_unknown_cont_type)
 {
     p1_address_ctx_t* ctx;
 
     if (actx->subtree.tree_ctx == NULL) {
-        actx->subtree.tree_ctx = wmem_new0(wmem_packet_scope(), p1_address_ctx_t);
+        actx->subtree.tree_ctx = wmem_new0(actx->pinfo->pool, p1_address_ctx_t);
     }
 
     ctx = (p1_address_ctx_t*)actx->subtree.tree_ctx;
@@ -217,10 +200,10 @@ dissect_p1_mts_apdu (tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
     proto_item *item=NULL;
     proto_tree *tree=NULL;
     asn1_ctx_t asn1_ctx;
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
     /* save parent_tree so subdissectors can create new top nodes */
-    p1_initialize_content_globals (&asn1_ctx, parent_tree, TRUE);
+    p1_initialize_content_globals (&asn1_ctx, parent_tree, true);
 
     if (parent_tree) {
         item = proto_tree_add_item(parent_tree, proto_p1, tvb, 0, -1, ENC_NA);
@@ -230,8 +213,8 @@ dissect_p1_mts_apdu (tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "P1");
       col_set_str(pinfo->cinfo, COL_INFO, "Transfer");
 
-    dissect_p1_MTS_APDU (FALSE, tvb, 0, &asn1_ctx, tree, hf_p1_MTS_APDU_PDU);
-    p1_initialize_content_globals (&asn1_ctx, NULL, FALSE);
+    dissect_p1_MTS_APDU (false, tvb, 0, &asn1_ctx, tree, hf_p1_MTS_APDU_PDU);
+    p1_initialize_content_globals (&asn1_ctx, NULL, false);
     return tvb_captured_length(tvb);
 }
 
@@ -246,11 +229,11 @@ dissect_p1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* dat
     proto_item *item;
     proto_tree *tree;
     struct SESSION_DATA_STRUCTURE* session;
-    int (*p1_dissector)(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) = NULL;
+    int (*p1_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) = NULL;
     const char *p1_op_name;
-    int hf_p1_index = -1;
+    int hf_p1_index = 0;
     asn1_ctx_t asn1_ctx;
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
     /* do we have operation information from the ROS dissector? */
     if (data == NULL)
@@ -258,7 +241,7 @@ dissect_p1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* dat
     session  = (struct SESSION_DATA_STRUCTURE*)data;
 
     /* save parent_tree so subdissectors can create new top nodes */
-    p1_initialize_content_globals (&asn1_ctx, parent_tree, TRUE);
+    p1_initialize_content_globals (&asn1_ctx, parent_tree, true);
 
     asn1_ctx.private_data = session;
 
@@ -298,13 +281,13 @@ dissect_p1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* dat
 
     while (tvb_reported_length_remaining(tvb, offset) > 0) {
         old_offset=offset;
-        offset=(*p1_dissector)(FALSE, tvb, offset, &asn1_ctx , tree, hf_p1_index);
+        offset=(*p1_dissector)(false, tvb, offset, &asn1_ctx , tree, hf_p1_index);
         if (offset == old_offset) {
             proto_tree_add_expert(tree, pinfo, &ei_p1_zero_pdu, tvb, offset, -1);
             break;
         }
     }
-    p1_initialize_content_globals (&asn1_ctx, NULL, FALSE);
+    p1_initialize_content_globals (&asn1_ctx, NULL, false);
     return tvb_captured_length(tvb);
 }
 
@@ -339,7 +322,7 @@ void proto_register_p1(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_p1,
     &ett_p3,
     &ett_p1_content_unknown,
@@ -381,12 +364,15 @@ void proto_register_p1(void) {
 
   /* Register our configuration options for P1, particularly our port */
 
-  p1_module = prefs_register_protocol_subtree("OSI/X.400", proto_p1, prefs_register_p1);
+  p1_module = prefs_register_protocol_subtree("OSI/X.400", proto_p1, NULL);
+  /* For reading older preference files with "x411." preferences */
+  prefs_register_module_alias("x411", p1_module);
 
-  prefs_register_uint_preference(p1_module, "tcp.port", "P1 TCP Port",
-                 "Set the port for P1 operations (if other"
-                 " than the default of 102)",
-                 10, &global_p1_tcp_port);
+  prefs_register_obsolete_preference(p1_module, "tcp.port");
+
+  prefs_register_static_text_preference(p1_module, "tcp_port_info",
+            "The TCP ports used by the P1 protocol should be added to the TPKT preference \"TPKT TCP ports\", or by selecting \"TPKT\" as the \"Transport\" protocol in the \"Decode As\" dialog.",
+            "P1 TCP Port preference moved information");
 
   register_ber_syntax_dissector("P1 Message", proto_p1, dissect_p1_mts_apdu);
 #include "packet-p1-syn-reg.c"
@@ -402,19 +388,16 @@ void proto_reg_handoff_p1(void) {
   oid_add_from_string("id-ac-mts-transfer","2.6.0.1.6");
 
   /* ABSTRACT SYNTAXES */
-  register_rtse_oid_dissector_handle("2.6.0.2.12", p1_handle, 0, "id-as-mta-rtse", TRUE);
-  register_rtse_oid_dissector_handle("2.6.0.2.7", p1_handle, 0, "id-as-mtse", FALSE);
+  register_rtse_oid_dissector_handle("2.6.0.2.12", p1_handle, 0, "id-as-mta-rtse", true);
+  register_rtse_oid_dissector_handle("2.6.0.2.7", p1_handle, 0, "id-as-mtse", false);
 
 
-  register_rtse_oid_dissector_handle("applicationProtocol.1", p1_handle, 0, "mts-transfer-protocol-1984", FALSE);
-  register_rtse_oid_dissector_handle("applicationProtocol.12", p1_handle, 0, "mta-transfer-protocol", FALSE);
+  register_rtse_oid_dissector_handle("applicationProtocol.1", p1_handle, 0, "mts-transfer-protocol-1984", false);
+  register_rtse_oid_dissector_handle("applicationProtocol.12", p1_handle, 0, "mta-transfer-protocol", false);
 
   /* the ROS dissector will use the registered P3 ros info */
-  register_rtse_oid_dissector_handle(id_as_mts_rtse, NULL, 0, "id-as-mts-rtse", TRUE);
-  register_rtse_oid_dissector_handle(id_as_msse, NULL, 0, "id-as-msse", TRUE);
-
-  /* remember the tpkt handler for change in preferences */
-  tpkt_handle = find_dissector("tpkt");
+  register_rtse_oid_dissector_handle(id_as_mts_rtse, NULL, 0, "id-as-mts-rtse", true);
+  register_rtse_oid_dissector_handle(id_as_msse, NULL, 0, "id-as-msse", true);
 
   /* APPLICATION CONTEXT */
 
@@ -426,39 +409,21 @@ void proto_reg_handoff_p1(void) {
 
   /* Register P3 with ROS */
 
-  register_ros_protocol_info(id_as_msse, &p3_ros_info, 0, "id-as-msse", FALSE);
+  register_ros_protocol_info(id_as_msse, &p3_ros_info, 0, "id-as-msse", false);
 
-  register_ros_protocol_info(id_as_mdse_88, &p3_ros_info, 0, "id-as-mdse-88", FALSE);
-  register_ros_protocol_info(id_as_mdse_94, &p3_ros_info, 0, "id-as-mdse-94", FALSE);
+  register_ros_protocol_info(id_as_mdse_88, &p3_ros_info, 0, "id-as-mdse-88", false);
+  register_ros_protocol_info(id_as_mdse_94, &p3_ros_info, 0, "id-as-mdse-94", false);
 
-  register_ros_protocol_info(id_as_mase_88, &p3_ros_info, 0, "id-as-mase-88", FALSE);
-  register_ros_protocol_info(id_as_mase_94, &p3_ros_info, 0, "id-as-mase-94", FALSE);
+  register_ros_protocol_info(id_as_mase_88, &p3_ros_info, 0, "id-as-mase-88", false);
+  register_ros_protocol_info(id_as_mase_94, &p3_ros_info, 0, "id-as-mase-94", false);
 
-  register_ros_protocol_info(id_as_mts, &p3_ros_info, 0, "id-as-mts", FALSE);
-  register_ros_protocol_info(id_as_mts_rtse, &p3_ros_info, 0, "id-as-mts-rtse", TRUE);
-
-}
-
-static void
-prefs_register_p1(void)
-{
-  static guint tcp_port = 0;
-
-  /* de-register the old port */
-  /* port 102 is registered by TPKT - don't undo this! */
-  if ((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_delete_uint("tcp.port", tcp_port, tpkt_handle);
-
-  /* Set our port number for future use */
-  tcp_port = global_p1_tcp_port;
-
-  if ((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_add_uint("tcp.port", tcp_port, tpkt_handle);
+  register_ros_protocol_info(id_as_mts, &p3_ros_info, 0, "id-as-mts", false);
+  register_ros_protocol_info(id_as_mts_rtse, &p3_ros_info, 0, "id-as-mts-rtse", true);
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

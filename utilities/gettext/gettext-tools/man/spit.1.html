@@ -1,0 +1,166 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SPIT</title>
+
+</head>
+<body>
+
+<h1 align="center">SPIT</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+<a href="#REPORTING BUGS">REPORTING BUGS</a><br>
+<a href="#COPYRIGHT">COPYRIGHT</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">spit -
+translate some text through a Large Language Model</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>spit</b>
+[<i>OPTION</i>...]</p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Passes standard
+input to a Large Language Model (LLM) instance and prints
+the response. With the <b>--to</b> option, it
+translates standard input to the specified language through
+a Large Language Model (LLM) and prints the translation.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Warning: The
+output might not be what you expect. It might be of the
+wrong form, be of poor quality, or reflect some biases.</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--species</b>=<i>TYPE</i></p>
+
+<p style="margin-left:22%;">Specifies the type of LLM. The
+default and only valid value is &rsquo;ollama&rsquo;.</p>
+
+
+<p style="margin-left:11%;"><b>--url</b>=<i>URL</i></p>
+
+<p style="margin-left:22%;">Specifies the URL of the server
+that runs the LLM.</p>
+
+<p style="margin-left:11%;"><b>-m</b>,
+<b>--model</b>=<i>MODEL</i></p>
+
+<p style="margin-left:22%;">Specifies the model to use.</p>
+
+
+<p style="margin-left:11%;"><b>--to</b>=<i>LANGUAGE</i></p>
+
+<p style="margin-left:22%;">Specifies the target
+language.</p>
+
+
+<p style="margin-left:11%;"><b>--prompt</b>=<i>TEXT</i></p>
+
+<p style="margin-left:22%;">Specifies the prompt to use
+before standard input. This option overrides the
+<b>--to</b> option.</p>
+
+
+<p style="margin-left:11%;"><b>--postprocess</b>=<i>COMMAND</i></p>
+
+<p style="margin-left:22%;">Specifies a command to
+post-process the output.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Informative
+output: <b><br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">Display this help and exit.</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">Output version information and
+exit.</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Written by
+Bruno Haible.</p>
+
+<h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
+
+<h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 2025-2026 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">The full
+documentation for <b>spit</b> is maintained as a Texinfo
+manual. If the <b>info</b> and <b>spit</b> programs are
+properly installed at your site, the command</p>
+
+<p style="margin-left:22%; margin-top: 1em"><b>info
+spit</b></p>
+
+<p style="margin-left:11%; margin-top: 1em">should give you
+access to the complete manual.</p>
+<hr>
+</body>
+</html>

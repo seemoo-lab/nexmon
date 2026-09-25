@@ -9,19 +9,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 #requires -version 2
 
@@ -30,17 +18,9 @@
 Creates Wix components required for Qt packaging.
 
 .DESCRIPTION
-This script creates an Wix-compatible include file based on the following Qt
-versions:
-
-  - 5.3 and later: A list of DLLs and directories based on the output of the
-    "windeployqt" utility. Windeployqt lists the DLLs required to run a Qt
-    application. (The initial version that shipped with Qt 5.2 is unusable.)
-
-  - 5.2 and earlier: A hard-coded list of Qt DLLs and directories appropriate
-    for earlier Qt versions.
-
-  - None: A dummy file.
+This script creates n Wix-compatible include file based on the output of
+windeployqt. If Qt is present, version 5.3 or later is required.
+Otherwise a dummy file will be created.
 
 If building with Qt, QMake must be in your PATH.
 
@@ -78,141 +58,91 @@ try {
     $wixComponents += @("<!-- Qt version " + $qtVersion ; "-->
 ")
 
-    if ($qtVersion -ge "5.3") {
-        # Qt 5.3 or later. Windeployqt is present and works
+    if ($qtVersion -lt "5.3") {
+        Throw "Qt " + $qtVersion + " found. 5.3 or later is required."
+    }
 
-        $wdqtList = windeployqt `
-            --release `
-            --no-compiler-runtime `
-            --list relative `
-            $Executable
+    # windeployqt lists translation files that it don't exist (e.g.
+    # qtbase_ar.qm), so we handle those by hand.
+    # https://bugreports.qt.io/browse/QTBUG-65974
+    $wdqtList = windeployqt `
+        --release `
+        --no-compiler-runtime `
+        --no-translations `
+        --list relative `
+        $Executable
 
-        $dllPath = Split-Path -Parent $Executable
+    $dllPath = Split-Path -Parent $Executable
 
-        $dllList = "   <Fragment>
+    $dllList = "   <Fragment>
      <DirectoryRef Id=`"INSTALLFOLDER`">
 "
-        $dirList = ""
-		$currentDir = ""
-		$startDirList = "   <Fragment>
+    $dirList = ""
+    $currentDir = ""
+    $startDirList = "   <Fragment>
      <DirectoryRef Id=`"INSTALLFOLDER`">
 "
-		$endDirList = "       </Directory>
+    $endDirList = "       </Directory>
      </DirectoryRef>
    </Fragment>
 "
-		$currentDirList = $startDirList
+    $currentDirList = $startDirList
 
-        $componentGroup = "   <Fragment>
+    $componentGroup = "   <Fragment>
       <ComponentGroup Id=`"CG.QtDependencies`">
 "
-        foreach ($entry in $wdqtList) {
-            $dir = Split-Path -Parent $entry
-            if ($dir) {
-				if ($dir -ne $currentDir) {
-					if ($currentDir -ne "") { # for everything but first directory found
-						$currentDirList += $endDirList
+    foreach ($entry in $wdqtList) {
+        if ((Split-Path $entry -Leaf) -eq "icuuc.dll") {
+            Write-Host "Skipping system library: $($entry)"
+            continue
+        }
 
-						# Previous directory complete, add to list
-						$dirList += $currentDirList
-					} else {
-					}
+        $dir = Split-Path -Parent $entry
+        $wix_name = $entry -ireplace "[^a-z0-9]", "_"
 
-					$currentDirList = $startDirList + "       <Directory Id=`"dir$dir`" Name=`"$dir`">
-"
+        if ($dir) {
+            if ($dir -ne $currentDir) {
+                if ($currentDir -ne "") { # for everything but first directory found
+                    $currentDirList += $endDirList
 
-					$currentDir = $dir
-				}
+                    # Previous directory complete, add to list
+                    $dirList += $currentDirList
+                }
 
+                $currentDirList = $startDirList + "       <Directory Id=`"dir$dir`" Name=`"$dir`">
+    "
 
-				$wix_name = $entry -replace "[\\|\.]", "_"
-                $currentDirList += "           <Component Id=`"cmp$wix_name`" Guid=`"*`">
+                $currentDir = $dir
+            }
+
+            $currentDirList += "           <Component Id=`"cmp$wix_name`" Guid=`"*`">
               <File Id=`"fil$wix_name`" KeyPath=`"yes`" Source=`"`$(var.Staging.Dir)\$entry`" />
            </Component>
 "
-				$componentGroup += "         <ComponentRef Id=`"cmp$wix_name`" />
+            $componentGroup += "         <ComponentRef Id=`"cmp$wix_name`" />
 "
-            } else {
-
-               $dllList += "       <Component Id=`"cmp$entry`" Guid=`"*`">
-          <File Id=`"fil$entry`" KeyPath=`"yes`" Source=`"`$(var.Staging.Dir)\$entry`" />
+        } else {
+            $dllList += "       <Component Id=`"cmp$wix_name`" Guid=`"*`">
+          <File Id=`"fil$wix_name`" KeyPath=`"yes`" Source=`"`$(var.Staging.Dir)\$entry`" />
        </Component>
 "
-			  $componentGroup += "         <ComponentRef Id=`"cmp$entry`" />
+            $componentGroup += "         <ComponentRef Id=`"cmp$wix_name`" />
 "
-            }
         }
-
-		#finish up the last directory
-		$currentDirList += $endDirList
-		$dirList += $currentDirList
-
-		$dllList += "     </DirectoryRef>
-   </Fragment>
-"
-		$componentGroup += "      </ComponentGroup>
-   </Fragment>
-"
-
-        $wixComponents += $dllList + $dirList + $componentGroup
-
-    } elseif ($qtVersion -ge "5.0") {
-        # Qt 5.0 - 5.2. Windeployqt is buggy or not present
-
-        $wixComponents += @"
-    <Fragment>
-      <DirectoryRef Id=`"INSTALLFOLDER`">
-        <Component Id=`"cmpQt5Core_dll`" Guid=`"*`">
-          <File Id=`"filQt5Core_dll`" KeyPath=`"yes`" Source=`"`$(var.WiresharkQt.Dir)\Qt5Core.dll`" />
-        </Component>
-        <Component Id=`"cmpQt5Gui_dll`" Guid=`"*`">
-          <File Id=`"filQt5Gui_dll`" KeyPath=`"yes`" Source=`"`$(var.WiresharkQt.Dir)\Qt5Gui.dll`" />
-        </Component>
-        <Component Id=`"cmpQt5Widgets_dll`" Guid=`"*`">
-          <File Id=`"filQt5Widgets_dll`" KeyPath=`"yes`" Source=`"`$(var.WiresharkQt.Dir)\Qt5Widgets.dll`" />
-        </Component>
-        <Component Id=`"cmpQt5PrintSupport_dll`" Guid=`"*`">
-          <File Id=`"filQt5PrintSupport_dll`" KeyPath=`"yes`" Source=`"`$(var.WiresharkQt.Dir)\Qt5PrintSupport.dll`" />
-        </Component>
-        <Component Id=`"cmpQwindows_dll`" Guid=`"*`">
-          <File Id=`"filQwindows_dll`" KeyPath=`"yes`" Source=`"`$(var.WiresharkQt.Dir)\platforms\qwindows.dll`" />
-        </Component>
-      </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <ComponentGroup Id=`"CG.QtDependencies`">
-          <ComponentRef Id=`"cmpQt5Core_dll`" />
-          <ComponentRef Id=`"cmpQt5Gui_dll`" />
-          <ComponentRef Id=`"cmpQt5Widgets_dll`" />
-          <ComponentRef Id=`"cmpQt5PrintSupport_dll`" />
-          <ComponentRef Id=`"cmpQwindows_dll`" />
-        </ComponentGroup>
-    </Fragment>
-"@
-
-    } else {
-        # Assume Qt 4
-
-        $wixComponents += @"
-    <Fragment>
-      <DirectoryRef Id=`"INSTALLFOLDER`">
-        <Component Id=`"cmpQt4Core_dll`" Guid=`"*`">
-          <File Id=`"filQt4Core_dll`" KeyPath=`"yes`" Source=`"`$(var.WiresharkQt.Dir)\QtCore4.dll`" />
-        </Component>
-        <Component Id=`"cmpQt4Gui_dll`" Guid=`"*`">
-          <File Id=`"filQt4Gui_dll`" KeyPath=`"yes`" Source=`"`$(var.WiresharkQt.Dir)\QtGui4.dll`" />
-        </Component>
-      </DirectoryRef>
-    </Fragment>
-    <Fragment>
-        <ComponentGroup Id=`"CG.QtDependencies`">
-          <ComponentRef Id=`"cmpQt4Core_dll`" />
-          <ComponentRef Id=`"cmpQt4Gui_dll`" />
-        </ComponentGroup>
-    </Fragment>
-"@
-
     }
+
+    #finish up the last directory
+    $currentDirList += $endDirList
+    $dirList += $currentDirList
+
+    $dllList += "     </DirectoryRef>
+   </Fragment>
+"
+    $componentGroup += "      </ComponentGroup>
+   </Fragment>
+"
+
+    $wixComponents += $dllList + $dirList + $componentGroup
 
     $wixComponents += @"
 </Wix>

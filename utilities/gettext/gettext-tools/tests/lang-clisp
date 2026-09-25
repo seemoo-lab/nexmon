@@ -22,7 +22,7 @@ EOF
 ${XGETTEXT} -o prog.tmp --omit-header --no-location prog.lisp || Exit 1
 LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
 
-cat <<EOF > prog.ok
+cat <<\EOF > prog.ok
 msgid "'Your command, please?', asked the waiter."
 msgstr ""
 
@@ -73,7 +73,7 @@ test -d fr || mkdir fr
 test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} -o fr/LC_MESSAGES/prog.mo fr.po
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
 
 # Test for presence of clisp version 2.28 or newer with gettext support.
 # Use clisp for the comparison of the version numbers; neither 'expr' nor 'bc'
@@ -132,17 +132,21 @@ cat <<\EOF > prog.oku
 EUR remplace FF.
 EOF
 
+# Unset environment variables, so that LC_ALL becomes effective.
+# (clisp that uses the *gettext functions in NetBSD libc does not work right
+# if we set LANGUAGE to the empty string.)
+unset CLISP_LANGUAGE
+unset LANGUAGE
+
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
 if test $LOCALE_FR != none; then
-  prepare_locale_ fr $LOCALE_FR
-  CLISP_LANGUAGE= LANGUAGE= LC_ALL=$LOCALE_FR clisp prog.lisp 2 > prog.tmp || Exit 1
+  LC_ALL=$LOCALE_FR clisp prog.lisp 2 > prog.tmp || Exit 1
   LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1
   ${DIFF} prog.ok prog.out || Exit 1
 fi
 if test $LOCALE_FR_UTF8 != none; then
-  prepare_locale_ fr $LOCALE_FR_UTF8
-  CLISP_LANGUAGE= LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 clisp prog.lisp 2 > prog.tmp || Exit 1
+  LC_ALL=$LOCALE_FR_UTF8 clisp prog.lisp 2 > prog.tmp || Exit 1
   LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1
   ${DIFF} prog.oku prog.out || Exit 1
 fi

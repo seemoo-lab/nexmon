@@ -1,0 +1,2198 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="schematron_8c" kind="file" language="C++">
+    <compoundname>schematron.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes local="no">string.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="uri_8h" local="no">libxml/uri.h</includes>
+    <includes refid="xpath_8h" local="no">libxml/xpath.h</includes>
+    <includes refid="xpathInternals_8h" local="no">libxml/xpathInternals.h</includes>
+    <includes refid="pattern_8h" local="no">libxml/pattern.h</includes>
+    <includes refid="schematron_8h" local="no">libxml/schematron.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/memory.h</includes>
+    <incdepgraph>
+      <node id="25">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="30">
+        <label>libxml/pattern.h</label>
+        <link refid="pattern_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="31">
+        <label>libxml/schematron.h</label>
+        <link refid="schematron_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/uri.h</label>
+        <link refid="uri_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/xpath.h</label>
+        <link refid="xpath_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="29">
+        <label>libxml/xpathInternals.h</label>
+        <link refid="xpathInternals_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/schematron.c</label>
+        <link refid="schematron_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="7">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="10">
+        <label>limits.h</label>
+      </node>
+      <node id="32">
+        <label>private/error.h</label>
+      </node>
+      <node id="33">
+        <label>private/memory.h</label>
+      </node>
+      <node id="12">
+        <label>stdarg.h</label>
+      </node>
+      <node id="16">
+        <label>stddef.h</label>
+      </node>
+      <node id="9">
+        <label>stdio.h</label>
+      </node>
+      <node id="3">
+        <label>stdlib.h</label>
+      </node>
+      <node id="4">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlSchematronLet" prot="public">_xmlSchematronLet</innerclass>
+    <innerclass refid="struct__xmlSchematronTest" prot="public">_xmlSchematronTest</innerclass>
+    <innerclass refid="struct__xmlSchematronRule" prot="public">_xmlSchematronRule</innerclass>
+    <innerclass refid="struct__xmlSchematronPattern" prot="public">_xmlSchematronPattern</innerclass>
+    <innerclass refid="struct__xmlSchematron" prot="public">_xmlSchematron</innerclass>
+    <innerclass refid="struct__xmlSchematronValidCtxt" prot="public">_xmlSchematronValidCtxt</innerclass>
+    <innerclass refid="struct__xmlSchematronParserCtxt" prot="public">_xmlSchematronParserCtxt</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="schematron_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="23" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="23" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schematron_8c_1a582b1e5ace18077297e9c6952275990d" prot="public" static="no">
+        <name>SCHEMATRON_PARSE_OPTIONS</name>
+        <initializer><ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442cae26a8ac158a3bd80902cf3f6bfcbff9b" kindref="member">XML_PARSE_NOENT</ref></initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="41" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schematron_8c_1a0b83c3b87f920b6f2b794f6118096354" prot="public" static="no">
+        <name>SCT_OLD_NS</name>
+        <initializer><ref refid="xmlstring_8h_1ad0a78338bf196a676079310a7b9c7599" kindref="member">BAD_CAST</ref> &quot;http://www.ascc.net/xml/schematron&quot;</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="43" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schematron_8c_1a24c667f5633dcc252fbfb22297c285a8" prot="public" static="no">
+        <name>XML_SCHEMATRON_NS</name>
+        <initializer><ref refid="xmlstring_8h_1ad0a78338bf196a676079310a7b9c7599" kindref="member">BAD_CAST</ref> &quot;http://purl.oclc.org/dsdl/schematron&quot;</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="45" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schematron_8c_1aad6b7b286d1802db29bbf00c9808feb2" prot="public" static="no">
+        <name>IS_SCHEMATRON</name>
+        <param><defname>node</defname></param>
+        <param><defname>elem</defname></param>
+        <initializer>   ((node != NULL) &amp;&amp; (node-&gt;type == <ref refid="tree_8h_1a6d83aa11b89106b2ec14162b1474c8fcace504c13108197f63cda76cd2725f96e" kindref="member">XML_ELEMENT_NODE</ref> ) &amp;&amp;              \
+    (node-&gt;ns != NULL) &amp;&amp;                                               \
+    (<ref refid="xmlstring_8h_1a2299004933166f79d1b841c73669a5d6" kindref="member">xmlStrEqual</ref>(node-&gt;name, (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *) elem)) &amp;&amp;                \
+    ((<ref refid="xmlstring_8h_1a2299004933166f79d1b841c73669a5d6" kindref="member">xmlStrEqual</ref>(node-&gt;ns-&gt;href, xmlSchematronNs)) ||                  \
+     (<ref refid="xmlstring_8h_1a2299004933166f79d1b841c73669a5d6" kindref="member">xmlStrEqual</ref>(node-&gt;ns-&gt;href, xmlOldSchematronNs))))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="51" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="51" bodyend="56"/>
+      </memberdef>
+      <memberdef kind="define" id="schematron_8c_1a2ed201e9f4a244035b0a64c14f19a5c4" prot="public" static="no">
+        <name>NEXT_SCHEMATRON</name>
+        <param><defname>node</defname></param>
+        <initializer>   while (node != NULL) {                                               \
+       if ((node-&gt;type == <ref refid="tree_8h_1a6d83aa11b89106b2ec14162b1474c8fcace504c13108197f63cda76cd2725f96e" kindref="member">XML_ELEMENT_NODE</ref> ) &amp;&amp; (node-&gt;ns != NULL) &amp;&amp;   \
+           ((<ref refid="xmlstring_8h_1a2299004933166f79d1b841c73669a5d6" kindref="member">xmlStrEqual</ref>(node-&gt;ns-&gt;href, xmlSchematronNs)) ||           \
+            (<ref refid="xmlstring_8h_1a2299004933166f79d1b841c73669a5d6" kindref="member">xmlStrEqual</ref>(node-&gt;ns-&gt;href, xmlOldSchematronNs))))         \
+           break;                                                       \
+       node = node-&gt;next;                                               \
+   }</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="58" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="58" bodyend="65"/>
+      </memberdef>
+      <memberdef kind="define" id="schematron_8c_1a7cf179a76b8c64300f63e09fed3d379e" prot="public" static="no">
+        <name>XML_STRON_CTXT_PARSER</name>
+        <initializer>1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="207" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="207" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schematron_8c_1ac52205275550d27f560fd846dada5e3f" prot="public" static="no">
+        <name>XML_STRON_CTXT_VALIDATOR</name>
+        <initializer>2</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="208" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="208" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="schematron_8c_1af5e01517bfbbffcc730e554f76a4729b" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSchematronTestType</name>
+        <enumvalue id="schematron_8c_1af5e01517bfbbffcc730e554f76a4729ba6d38220db0e0750f761bf0ba1032bb1c" prot="public">
+          <name>XML_SCHEMATRON_ASSERT</name>
+          <initializer>=1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schematron_8c_1af5e01517bfbbffcc730e554f76a4729ba509e82f739dc91eff73d5b0e393fe106" prot="public">
+          <name>XML_SCHEMATRON_REPORT</name>
+          <initializer>=2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="67" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="67" bodyend="70"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="schematron_8c_1abe5fba2f0fbf09641f89848d5cb0e551" prot="public" static="no">
+        <type>struct _xmlSchematronLet</type>
+        <definition>typedef struct _xmlSchematronLet xmlSchematronLet</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronLet</name>
+        <briefdescription>
+<para>A Schematron let variable. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="75" column="32" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="75" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8c_1a9ffb361d3455732a1bb3a11aa7ac5566" prot="public" static="no">
+        <type>xmlSchematronLet *</type>
+        <definition>typedef xmlSchematronLet* xmlSchematronLetPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronLetPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="76" column="26" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="76" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8c_1a56e494d9daacfc58b0818c1f9d3d4a6f" prot="public" static="no">
+        <type>struct _xmlSchematronTest</type>
+        <definition>typedef struct _xmlSchematronTest xmlSchematronTest</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronTest</name>
+        <briefdescription>
+<para>A Schematrons test, either an assert or a report. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="86" column="33" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="86" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8c_1a492e91c0fd6611b3c505da2939d51bd6" prot="public" static="no">
+        <type>xmlSchematronTest *</type>
+        <definition>typedef xmlSchematronTest* xmlSchematronTestPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronTestPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="87" column="27" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="87" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8c_1a1e41339b2de89eab677eb6b65a7f3164" prot="public" static="no">
+        <type>struct _xmlSchematronRule</type>
+        <definition>typedef struct _xmlSchematronRule xmlSchematronRule</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronRule</name>
+        <briefdescription>
+<para>A Schematrons rule. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="100" column="33" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="100" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8c_1ab2ce164aa3073d6eb550fe0a5ebf1634" prot="public" static="no">
+        <type>xmlSchematronRule *</type>
+        <definition>typedef xmlSchematronRule* xmlSchematronRulePtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronRulePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="101" column="27" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="101" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8c_1abc09b06b4a92ca2b795edf62c082755c" prot="public" static="no">
+        <type>struct _xmlSchematronPattern</type>
+        <definition>typedef struct _xmlSchematronPattern xmlSchematronPattern</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronPattern</name>
+        <briefdescription>
+<para>A Schematrons pattern. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="116" column="36" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="116" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schematron_8c_1a9c6187c0fd44d00594a1d1ef4caf2869" prot="public" static="no">
+        <type>xmlSchematronPattern *</type>
+        <definition>typedef xmlSchematronPattern* xmlSchematronPatternPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronPatternPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="117" column="30" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="117" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="schematron_8c_1a18c7b09f8331c8619527398651deac13" prot="public" static="yes" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* xmlSchematronNs</definition>
+        <argsstring></argsstring>
+        <name>xmlSchematronNs</name>
+        <initializer>= (<ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *) &quot;http://purl.oclc.org/dsdl/schematron&quot;</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="48" column="22" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="schematron_8c_1a685a0bc21d43d6eda54fad7b6e18fbf7" prot="public" static="yes" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* xmlOldSchematronNs</definition>
+        <argsstring></argsstring>
+        <name>xmlOldSchematronNs</name>
+        <initializer>= (<ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *) &quot;http://www.ascc.net/xml/schematron&quot;</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="49" column="22" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="49" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="schematron_8c_1afd3315e3733ad6f96db9c959edc5f7e3" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronPErrMemory</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt)</argsstring>
+        <name>xmlSchematronPErrMemory</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Handle an out of memory condition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="222" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="222" bodyend="227"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1aa2f5c648fa3d757422aaad9123f312f4" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronPErr</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt, xmlNodePtr node, int error, const char *msg, const xmlChar *str1, const xmlChar *str2)</argsstring>
+        <name>xmlSchematronPErr</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>error</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str1</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str2</declname>
+        </param>
+        <briefdescription>
+<para>Handle a parser error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the parsing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the context node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error code </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra data </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="240" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="240" bodyend="266"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1ae158e9599c9b5a011fe0e73668f3c4b0" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronVErrMemory</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr ctxt)</argsstring>
+        <name>xmlSchematronVErrMemory</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Handle an out of memory condition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="274" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="274" bodyend="281"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a2b0d447d8ae4e9e6a21ce4338cca29df" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronVErr</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr ctxt, int error, const char *msg, const xmlChar *str1)</argsstring>
+        <name>xmlSchematronVErr</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>error</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str1</declname>
+        </param>
+        <briefdescription>
+<para>Handle a validation error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error code </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra data </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="292" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="292" bodyend="318"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a53810263414b1fbb9d6fd561d76fa2ff" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlSchematronTestPtr</type>
+        <definition>static xmlSchematronTestPtr xmlSchematronAddTest</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt, xmlSchematronTestType type, xmlSchematronRulePtr rule, xmlNodePtr node, xmlChar *test, xmlChar *report)</argsstring>
+        <name>xmlSchematronAddTest</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronTestType</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>xmlSchematronRulePtr</type>
+          <declname>rule</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>test</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>report</declname>
+        </param>
+        <briefdescription>
+<para>Add a test to a schematron. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parsing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the type of test </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>rule</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the parent rule </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node hosting the test </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>test</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the associated test </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>report</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the associated report string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new pointer or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="338" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="338" bodyend="385"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1ada1d819e893fe4d80074940b3b3ee0dc" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronFreeTests</definition>
+        <argsstring>(xmlSchematronTestPtr tests)</argsstring>
+        <name>xmlSchematronFreeTests</name>
+        <param>
+          <type>xmlSchematronTestPtr</type>
+          <declname>tests</declname>
+        </param>
+        <briefdescription>
+<para>Free a list of tests. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tests</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a list of tests </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="393" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="393" bodyend="407"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a9ad4533159f26b5d978c0b4ce1f7dfc6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronFreeLets</definition>
+        <argsstring>(xmlSchematronLetPtr lets)</argsstring>
+        <name>xmlSchematronFreeLets</name>
+        <param>
+          <type>xmlSchematronLetPtr</type>
+          <declname>lets</declname>
+        </param>
+        <briefdescription>
+<para>Free a list of let variables. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>lets</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a list of let variables </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="415" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="415" bodyend="427"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1aff14e730e77857deac46d6c52fda3ea7" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlSchematronRulePtr</type>
+        <definition>static xmlSchematronRulePtr xmlSchematronAddRule</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt, xmlSchematronPtr schema, xmlSchematronPatternPtr pat, xmlNodePtr node, xmlChar *context, xmlChar *report)</argsstring>
+        <name>xmlSchematronAddRule</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronPtr</type>
+          <declname>schema</declname>
+        </param>
+        <param>
+          <type>xmlSchematronPatternPtr</type>
+          <declname>pat</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>context</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>report</declname>
+        </param>
+        <briefdescription>
+<para>Add a rule to a schematron. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parsing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pat</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pattern </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node hosting the rule </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>context</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the associated context string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>report</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the associated report string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new pointer or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="441" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="441" bodyend="496"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a3e59d27b95fdf59e6db3084439feea3c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronFreeRules</definition>
+        <argsstring>(xmlSchematronRulePtr rules)</argsstring>
+        <name>xmlSchematronFreeRules</name>
+        <param>
+          <type>xmlSchematronRulePtr</type>
+          <declname>rules</declname>
+        </param>
+        <briefdescription>
+<para>Free a list of rules. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>rules</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a list of rules </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="504" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="504" bodyend="522"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a2ff2306f3e5d3633a358fb12c48b97f6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlSchematronPatternPtr</type>
+        <definition>static xmlSchematronPatternPtr xmlSchematronAddPattern</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt, xmlSchematronPtr schema, xmlNodePtr node, xmlChar *name)</argsstring>
+        <name>xmlSchematronAddPattern</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronPtr</type>
+          <declname>schema</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Add a pattern to a schematron. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parsing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node hosting the pattern </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new pointer or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="534" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="534" bodyend="560"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a23a9266ee36d19da1e92721f30eac8ee" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronFreePatterns</definition>
+        <argsstring>(xmlSchematronPatternPtr patterns)</argsstring>
+        <name>xmlSchematronFreePatterns</name>
+        <param>
+          <type>xmlSchematronPatternPtr</type>
+          <declname>patterns</declname>
+        </param>
+        <briefdescription>
+<para>Free a list of patterns. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>patterns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a list of patterns </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="568" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="568" bodyend="578"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1acd454a1dea335989346bafe3e56c4fc6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlSchematronPtr</type>
+        <definition>static xmlSchematronPtr xmlSchematronNewSchematron</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt)</argsstring>
+        <name>xmlSchematronNewSchematron</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Allocate a new Schematron structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the newly allocated structure or NULL in case or error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="587" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="587" bodyend="601"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a68eb5fd617240e236d624e2fa87f891d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchematronFree</definition>
+        <argsstring>(xmlSchematron *schema)</argsstring>
+        <name>xmlSchematronFree</name>
+        <param>
+          <type><ref refid="schematron_8h_1adda7fc895133f8b277ef9e2d89d2f1c9" kindref="member">xmlSchematron</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Deallocate a Schematron structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="609" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="609" bodyend="624"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1acdad0143ffe1b636b649ffab3a83b6a2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+        <definition>xmlSchematronParserCtxt * xmlSchematronNewParserCtxt</definition>
+        <argsstring>(const char *URL)</argsstring>
+        <name>xmlSchematronNewParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schematrons parse context for that file/resource expected to contain an XML Schematrons file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the location of the schema </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="634" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="634" bodyend="661"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a0a01a23788b54b6cb9ce2cfb719481ca" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+        <definition>xmlSchematronParserCtxt * xmlSchematronNewMemParserCtxt</definition>
+        <argsstring>(const char *buffer, int size)</argsstring>
+        <name>xmlSchematronNewMemParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>buffer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schematrons parse context for that memory buffer expected to contain an XML Schematrons file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a char array containing the schemas </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size of the array </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="672" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="672" bodyend="697"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a7d5cde2d168a5b37ed1acc31e456f0ed" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+        <definition>xmlSchematronParserCtxt * xmlSchematronNewDocParserCtxt</definition>
+        <argsstring>(xmlDoc *doc)</argsstring>
+        <name>xmlSchematronNewDocParserCtxt</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schematrons parse context for that document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NB. The document may be modified during the parsing process.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a preparsed document tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="707" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="707" bodyend="734"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1ab57ee2ace830a40da34354115c9c11b9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchematronFreeParserCtxt</definition>
+        <argsstring>(xmlSchematronParserCtxt *ctxt)</argsstring>
+        <name>xmlSchematronFreeParserCtxt</name>
+        <param>
+          <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free the resources associated to the schema parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="742" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="742" bodyend="755"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a1269fbdcbf3580c88e93bd1363ab28bb" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronAddNamespace</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt, const xmlChar *prefix, const xmlChar *ns)</argsstring>
+        <name>xmlSchematronAddNamespace</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Add a namespace definition in the context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="830" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="830" bodyend="862"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1adca9dc92032949425f19aae990c8166e" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronParseTestReportMsg</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt, xmlNodePtr con)</argsstring>
+        <name>xmlSchematronParseTestReportMsg</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>con</declname>
+        </param>
+        <briefdescription>
+<para>Format the message content of the assert or report test. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>con</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the assert or report node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="871" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="871" bodyend="911"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1acf4a2f395f35dd243e87e33102f9dd39" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronParseRule</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt, xmlSchematronPatternPtr pattern, xmlNodePtr rule)</argsstring>
+        <name>xmlSchematronParseRule</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronPatternPtr</type>
+          <declname>pattern</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>rule</declname>
+        </param>
+        <briefdescription>
+<para>parse a rule element </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pattern</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pattern </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>rule</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the rule node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="921" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="921" bodyend="1094"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a680a227c9eafa1d7e797fe1f53b3aa25" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronParsePattern</definition>
+        <argsstring>(xmlSchematronParserCtxtPtr ctxt, xmlNodePtr pat)</argsstring>
+        <name>xmlSchematronParsePattern</name>
+        <param>
+          <type>xmlSchematronParserCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>pat</declname>
+        </param>
+        <briefdescription>
+<para>parse a pattern element </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pat</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pattern node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1103" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1103" bodyend="1141"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1ab947b7f0d51bbb56d59feac0098b75fb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1adda7fc895133f8b277ef9e2d89d2f1c9" kindref="member">xmlSchematron</ref> *</type>
+        <definition>xmlSchematron * xmlSchematronParse</definition>
+        <argsstring>(xmlSchematronParserCtxt *ctxt)</argsstring>
+        <name>xmlSchematronParse</name>
+        <param>
+          <type><ref refid="schematron_8h_1add30ab4331d57071e2e7c18461b38cbc" kindref="member">xmlSchematronParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>parse a schema definition resource and build an internal XML Schema structure which can be used to validate instances. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the internal XML Schematron structure built from the resource or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1217" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1217" bodyend="1374"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a502358fd815e9a9085da90e578a63b01" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlXPathObjectPtr</type>
+        <definition>static xmlXPathObjectPtr xmlSchematronGetNode</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr ctxt, xmlNodePtr cur, const xmlChar *xpath)</argsstring>
+        <name>xmlSchematronGetNode</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>xpath</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1383" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1383" bodyend="1391"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1aa33b3ebe33de79ca6c992e21ec5af67a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronReportOutput</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr ctxt, xmlNodePtr cur, const char *msg)</argsstring>
+        <name>xmlSchematronReportOutput</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <briefdescription>
+<para>Output part of the report to whatever channel the user selected. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node tested </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message output </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1401" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1401" bodyend="1406"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1adc74289cbb7d2f2ec42e78ee64c007eb" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>static xmlChar * xmlSchematronFormatReport</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr ctxt, xmlNodePtr test, xmlNodePtr cur)</argsstring>
+        <name>xmlSchematronFormatReport</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>test</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Build the string being reported to the user. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>test</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the test node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node tested </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a report string or NULL in case of error. The string needs to be deallocated by the caller </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1418" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1418" bodyend="1553"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1acfa15b9445bfa2a0d49729b015f84b28" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronReportSuccess</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr ctxt, xmlSchematronTestPtr test, xmlNodePtr cur, xmlSchematronPatternPtr pattern, int success)</argsstring>
+        <name>xmlSchematronReportSuccess</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronTestPtr</type>
+          <declname>test</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>xmlSchematronPatternPtr</type>
+          <declname>pattern</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>success</declname>
+        </param>
+        <briefdescription>
+<para>called from the validation engine when an assert or report test have been done. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>test</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compiled test </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node tested </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pattern</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pattern </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>success</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>boolean value for the result </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1566" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1566" bodyend="1643"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a4fd3e937d4f28e4361d525769e829d7c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlSchematronReportPattern</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr ctxt, xmlSchematronPatternPtr pattern)</argsstring>
+        <name>xmlSchematronReportPattern</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronPatternPtr</type>
+          <declname>pattern</declname>
+        </param>
+        <briefdescription>
+<para>called from the validation engine when starting to check a pattern </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pattern</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1652" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1652" bodyend="1668"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a6b1158c2a9aabf5481104fc8af6104e7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchematronSetValidStructuredErrors</definition>
+        <argsstring>(xmlSchematronValidCtxt *ctxt, xmlStructuredErrorFunc serror, void *ctx)</argsstring>
+        <name>xmlSchematronSetValidStructuredErrors</name>
+        <param>
+          <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>serror</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the structured error callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Schematron validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>serror</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the structured error function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1685" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1685" bodyend="1694"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1ae041c96b507947a0d12f63aba473fc03" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+        <definition>xmlSchematronValidCtxt * xmlSchematronNewValidCtxt</definition>
+        <argsstring>(xmlSchematron *schema, int options)</argsstring>
+        <name>xmlSchematronNewValidCtxt</name>
+        <param>
+          <type><ref refid="schematron_8h_1adda7fc895133f8b277ef9e2d89d2f1c9" kindref="member">xmlSchematron</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schematrons validation context based on the given schema. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a precompiled XML Schematrons </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of <ref refid="schematron_8h_1af73b22af2a6af6225c5fe5082e54af71" kindref="member">xmlSchematronValidOptions</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the validation context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1704" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1704" bodyend="1735"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a97a4f050f918828dc0623e7ba5751084" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchematronFreeValidCtxt</definition>
+        <argsstring>(xmlSchematronValidCtxt *ctxt)</argsstring>
+        <name>xmlSchematronFreeValidCtxt</name>
+        <param>
+          <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free the resources associated to the schema validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1743" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1743" bodyend="1752"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a098ddbc00be8d7497996e7c11c279075" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlNodePtr</type>
+        <definition>static xmlNodePtr xmlSchematronNextNode</definition>
+        <argsstring>(xmlNodePtr cur)</argsstring>
+        <name>xmlSchematronNextNode</name>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1755" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1755" bodyend="1787"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a6db6c21259a28eaee718d55b08f58fb0" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlSchematronRunTest</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr ctxt, xmlSchematronTestPtr test, xmlDocPtr instance, xmlNodePtr cur, xmlSchematronPatternPtr pattern)</argsstring>
+        <name>xmlSchematronRunTest</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronTestPtr</type>
+          <declname>test</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>instance</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>xmlSchematronPatternPtr</type>
+          <declname>pattern</declname>
+        </param>
+        <briefdescription>
+<para>Validate a rule against a tree instance at a given position. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>test</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current test </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>instance</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document instance tree </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node in the instance </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pattern</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pattern </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 in case of success, 0 if error and -1 in case of internal error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1800" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1800" bodyend="1848"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1ae156ff97f4384c501e0a54ac01f3e1ab" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlSchematronRegisterVariables</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr vctxt, xmlXPathContextPtr ctxt, xmlSchematronLetPtr let, xmlDocPtr instance, xmlNodePtr cur)</argsstring>
+        <name>xmlSchematronRegisterVariables</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>xmlXPathContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronLetPtr</type>
+          <declname>let</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>instance</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Registers a list of let variables to the current context of <computeroutput>cur</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>vctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XPath context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>let</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of let variables </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>instance</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document instance tree </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of errors, otherwise 0 </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1861" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1861" bodyend="1886"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1ad89b25bb743c6090a9ae98e2ec4f66c2" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlSchematronUnregisterVariables</definition>
+        <argsstring>(xmlSchematronValidCtxtPtr vctxt, xmlXPathContextPtr ctxt, xmlSchematronLetPtr let)</argsstring>
+        <name>xmlSchematronUnregisterVariables</name>
+        <param>
+          <type>xmlSchematronValidCtxtPtr</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>xmlXPathContextPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlSchematronLetPtr</type>
+          <declname>let</declname>
+        </param>
+        <briefdescription>
+<para>Unregisters a list of let variables from the context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>vctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XPath context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>let</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of let variables </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of errors, otherwise 0 </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1897" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1897" bodyend="1910"/>
+      </memberdef>
+      <memberdef kind="function" id="schematron_8c_1a0e8113b6f6e06a05363e79ba2fd3bbf7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchematronValidateDoc</definition>
+        <argsstring>(xmlSchematronValidCtxt *ctxt, xmlDoc *instance)</argsstring>
+        <name>xmlSchematronValidateDoc</name>
+        <param>
+          <type><ref refid="schematron_8h_1a0ee76ce4548aaa22741adf1a826df3d1" kindref="member">xmlSchematronValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>instance</declname>
+        </param>
+        <briefdescription>
+<para>Validate a tree instance against the schematron. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>instance</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document instance tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of internal error and an error count otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="1921" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="1921" bodyend="2011"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/schematron.c"/>
+  </compounddef>
+</doxygen>

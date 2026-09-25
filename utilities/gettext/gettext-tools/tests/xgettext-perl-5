@@ -1,9 +1,9 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test Perl support: --add-comments option.
+# Test Perl support: --add-comments option, strings with embedded expressions.
 
-cat <<EOF > xg-pl-5.pl
+cat <<\EOF > xg-pl-5.pl
 # This comment will not be extracted.
 print gettext "help";
 #  TRANSLATORS: This is an extracted comment.
@@ -13,6 +13,11 @@ print gettext "Hey Jude";
 # TRANSLATORS:
 #    Nickname of the Beatles
 print gettext "The Fabulous Four";
+# Strings with embedded expressions, a.k.a. interpolated strings.
+print gettext "embedded_1_$foo bar";
+print gettext "embedded_2_${foo}bar";
+print gettext "embedded_3_$array[func(gettext 'embedded_3_sub1')]_bar_$array[func(gettext 'embedded_3_sub2')]_baz";
+print gettext "embedded_4";
 EOF
 
 : ${XGETTEXT=xgettext}
@@ -20,7 +25,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-pl-5.tmp xg-pl-5.pl || Exit 1
 LC_ALL=C tr -d '\r' < xg-pl-5.tmp.po > xg-pl-5.po || Exit 1
 
-cat <<EOF > xg-pl-5.ok
+cat <<\EOF > xg-pl-5.ok
 msgid "help"
 msgstr ""
 
@@ -34,6 +39,15 @@ msgstr ""
 #. TRANSLATORS:
 #. Nickname of the Beatles
 msgid "The Fabulous Four"
+msgstr ""
+
+msgid "embedded_3_sub1"
+msgstr ""
+
+msgid "embedded_3_sub2"
+msgstr ""
+
+msgid "embedded_4"
 msgstr ""
 EOF
 

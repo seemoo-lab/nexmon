@@ -1,75 +1,86 @@
 #! /bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test multi-domain handling.
+# Test that untranslated messages that are brought over from the .pot file
+# get the right number of msgstrs.
 
 cat <<\EOF > mm-test8.po
-domain "foo-de"
+# Irish translations.
 msgid ""
-msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n==2 ? 1 : 2;\n"
 
-# Das ist ein Kommentar.
-msgid "hello"
-msgstr "Hallo"
-
-# Noch einer.
-msgid "bye"
-msgstr "Tschüß"
-
-domain "foo-fr"
-msgid ""
-msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
-
-# Ceci est un commentaire.
-msgid "hello"
-msgstr "Salut"
-
-# Encore un.
-msgid "bye"
-msgstr "A bientôt"
+#, c-format
+msgid "'Your command, please?', asked the waiter."
+msgstr ""
 EOF
 
-cat <<EOF > mm-test8.pot
-msgid "Hello"
+cat <<\EOF > mm-test8.pot
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#, c-format
+msgid "'Your command, please?', asked the waiter."
+msgstr ""
+
+#, c-format
+msgid "a piece of cake"
+msgid_plural "%d pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+
+#, c-format
+msgid "%s is replaced by %s."
 msgstr ""
 EOF
 
 : ${MSGMERGE=msgmerge}
-${MSGMERGE} --multi-domain -q -o mm-test8.tmp mm-test8.po mm-test8.pot || Exit 1
-LC_ALL=C tr -d '\r' < mm-test8.tmp > mm-test8.out || Exit 1
+${MSGMERGE} -q -o mm-test8.tmp.po mm-test8.po mm-test8.pot || Exit 1
+LC_ALL=C tr -d '\r' < mm-test8.tmp.po > mm-test8.new.po || Exit 1
 
 cat <<\EOF > mm-test8.ok
-domain "foo-de"
-
+# Irish translations.
 msgid ""
-msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n==2 ? 1 : 2;\n"
 
-# Das ist ein Kommentar.
-#, fuzzy
-msgid "Hello"
-msgstr "Hallo"
+#, c-format
+msgid "'Your command, please?', asked the waiter."
+msgstr ""
 
-# Noch einer.
-#~ msgid "bye"
-#~ msgstr "Tschüß"
+#, c-format
+msgid "a piece of cake"
+msgid_plural "%d pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
-domain "foo-fr"
-
-msgid ""
-msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
-
-# Ceci est un commentaire.
-#, fuzzy
-msgid "Hello"
-msgstr "Salut"
-
-# Encore un.
-#~ msgid "bye"
-#~ msgstr "A bientôt"
+#, c-format
+msgid "%s is replaced by %s."
+msgstr ""
 EOF
 
 : ${DIFF=diff}
-${DIFF} mm-test8.ok mm-test8.out
+${DIFF} mm-test8.ok mm-test8.new.po
 result=$?
 
 exit $result

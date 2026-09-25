@@ -1,5 +1,5 @@
 
-#include "gdbus-object-manager-example/gdbus-example-objectmanager-generated.h"
+#include "gdbus-object-manager-example/objectmanager-gen.h"
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -53,7 +53,7 @@ on_animal_poke (ExampleAnimal          *animal,
   g_assert_not_reached ();
 
  out:
-  return TRUE; /* to indicate that the method was handled */
+  return G_DBUS_METHOD_INVOCATION_HANDLED;
 }
 
 

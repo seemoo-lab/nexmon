@@ -1,4 +1,5 @@
-/* nlpid.h
+/** @file
+ *
  * Definitions of OSI NLPIDs (Network Layer Protocol IDs)
  * Laurent Deniel <laurent.deniel@free.fr>
  *
@@ -6,25 +7,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __NLPID_H__
 #define __NLPID_H__
 
-#include <epan/value_string.h>
+#include <wsutil/value_string.h>
 
 /* X.263 / ISO/IEC TR 9577 NLPID values. */
 
@@ -41,11 +30,12 @@
 #define NLPID_ISO8473_CLNP	0x81	/* X.233 */
 #define NLPID_ISO9542_ESIS	0x82
 #define NLPID_ISO10589_ISIS	0x83
-#define NLPID_ISO10747_IDRP     0x85
+#define NLPID_ISO10747_IDRP	0x85
 #define NLPID_ISO9542X25_ESIS	0x8a
 #define NLPID_ISO10030		0x8c
 #define NLPID_ISO11577		0x8d	/* X.273 */
 #define NLPID_IP6		0x8e
+#define NLPID_AVAYA_IPVPN	0x8f	/* Avaya/Extreme Fabric (SPBM) IPVPN */
 #define NLPID_COMPRESSED	0xb0	/* "Data compression protocol" */
 #define NLPID_TRILL		0xc0
 #define NLPID_SNDCF		0xc1	/* "SubNetwork Dependent Convergence Function */

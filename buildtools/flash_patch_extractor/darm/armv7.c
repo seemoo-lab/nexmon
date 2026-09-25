@@ -131,6 +131,7 @@ static int armv7_disas_uncond(darm_t *d, uint32_t w)
         // we fall-through here, as 0b011 also handles the PLD and PLI
         // instructions
 
+        /* fall through */
     case b011:
         // if the 24th bit is set, then this is a PLD instruction, otherwise
         // it's a PLI instruction
@@ -732,6 +733,7 @@ static int armv7_disas_cond(darm_t *d, uint32_t w)
             return 0;
         }
 
+        /* fall through */
     case T_ARM_SM:
         switch ((uint32_t) d->instr) {
         case I_SMMUL:
@@ -807,6 +809,7 @@ static int armv7_disas_cond(darm_t *d, uint32_t w)
             break;
         }
 
+        /* fall through */
     case T_ARM_PAS:
         // we have a lookup table with size 64, for all parallel signed and
         // unsigned addition and subtraction instructions

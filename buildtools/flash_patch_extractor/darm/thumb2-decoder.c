@@ -1204,6 +1204,7 @@ darm_instr_t thumb2_misc_op(darm_t *d, uint16_t w, uint16_t w2)
             return I_QDSUB;
         }
 
+        /* fall through */
     case 1:
         d->instr_type = T_THUMB2_RD_RM_REG;
         switch (op2) {
@@ -1223,6 +1224,7 @@ darm_instr_t thumb2_misc_op(darm_t *d, uint16_t w, uint16_t w2)
             return I_REVSH;
         }
 
+        /* fall through */
     case 2:
         if(op2 == 0) {
             return I_SEL;

@@ -4656,6 +4656,102 @@ msgstr[1] "%s பைட்கள்"
 msgid "%.1f KB"
 msgstr "%.1f KB"
 
+msgctxt "full month name with day"
+msgid "January"
+msgstr "ஜனவரி"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "பிப்ரவரி"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "மார்ச்"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "ஏப்ரல்"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "மே"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "ஜூன்"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "ஜூலை"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "ஆகஸ்ட்"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "செப்டம்பர்"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "அக்டோபர்"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "நவம்பர்"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "டிசம்பர்"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "ஜன"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "பிப்"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "மார்"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "ஏப்"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "மே"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "ஜூன்"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "ஜூலை"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "ஆகஸ்"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "செப்"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "அக்"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "நவ்"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "டிசம்"
+
 #~ msgid ""
 #~ "Error processing input file with xmllint:\n"
 #~ "%s"

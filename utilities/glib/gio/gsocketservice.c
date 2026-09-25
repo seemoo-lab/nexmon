@@ -3,10 +3,12 @@
  * Copyright © 2009 Codethink Limited
  * Copyright © 2009 Red Hat, Inc
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,37 +23,33 @@
  */
 
 /**
- * SECTION:gsocketservice
- * @title: GSocketService
- * @short_description: Make it easy to implement a network service
- * @include: gio/gio.h
- * @see_also: #GThreadedSocketService, #GSocketListener.
+ * GSocketService:
  *
- * A #GSocketService is an object that represents a service that
+ * A `GSocketService` is an object that represents a service that
  * is provided to the network or over local sockets.  When a new
- * connection is made to the service the #GSocketService::incoming
+ * connection is made to the service the [signal@Gio.SocketService::incoming]
  * signal is emitted.
  *
- * A #GSocketService is a subclass of #GSocketListener and you need
+ * A `GSocketService` is a subclass of [class@Gio.SocketListener] and you need
  * to add the addresses you want to accept connections on with the
- * #GSocketListener APIs.
+ * [class@Gio.SocketListener] APIs.
  *
  * There are two options for implementing a network service based on
- * #GSocketService. The first is to create the service using
- * g_socket_service_new() and to connect to the #GSocketService::incoming
- * signal. The second is to subclass #GSocketService and override the
- * default signal handler implementation.
+ * `GSocketService`. The first is to create the service using
+ * [ctor@Gio.SocketService.new] and to connect to the
+ * [signal@Gio.SocketService::incoming] signal. The second is to subclass
+ * `GSocketService` and override the default signal handler implementation.
  *
  * In either case, the handler must immediately return, or else it
  * will block additional incoming connections from being serviced.
  * If you are interested in writing connection handlers that contain
- * blocking code then see #GThreadedSocketService.
+ * blocking code then see [class@Gio.ThreadedSocketService].
  *
  * The socket service runs on the main loop of the 
- * [thread-default context][g-main-context-push-thread-default-context]
- * of the thread it is created in, and is not
- * threadsafe in general. However, the calls to start and stop the
- * service are thread-safe so these can be used from threads that
+ * thread-default context (see
+ * [method@GLib.MainContext.push_thread_default]) of the thread it is
+ * created in, and is not threadsafe in general. However, the calls to start and
+ * stop the service are thread-safe so these can be used from threads that
  * handle incoming clients.
  *
  * Since: 2.22
@@ -64,6 +62,7 @@
 #include "gsocketlistener.h"
 #include "gsocketconnection.h"
 #include "glibintl.h"
+#include "gmarshal-internal.h"
 
 struct _GSocketServicePrivate
 {
@@ -251,8 +250,10 @@ g_socket_service_is_active (GSocketService *service)
  * g_socket_service_start:
  * @service: a #GSocketService
  *
- * Starts the service, i.e. start accepting connections
- * from the added sockets when the mainloop runs.
+ * Restarts the service, i.e. start accepting connections
+ * from the added sockets when the mainloop runs. This only needs
+ * to be called after the service has been stopped from
+ * g_socket_service_stop().
  *
  * This call is thread-safe, so it may be called from a thread
  * handling an incoming client request.
@@ -282,6 +283,10 @@ g_socket_service_start (GSocketService *service)
  * g_socket_service_start() again later to begin listening again. To
  * close the listening sockets, call g_socket_listener_close(). (This
  * will happen automatically when the #GSocketService is finalized.)
+ *
+ * This must be called before calling g_socket_listener_close() as
+ * the socket service will start accepting connections immediately
+ * when a new socket is added.
  *
  * Since: 2.22
  */
@@ -321,7 +326,7 @@ g_socket_service_class_init (GSocketServiceClass *class)
    * GSocketService::incoming:
    * @service: the #GSocketService
    * @connection: a new #GSocketConnection object
-   * @source_object: (allow-none): the source_object passed to
+   * @source_object: (nullable): the source_object passed to
    *     g_socket_listener_add_address()
    *
    * The ::incoming signal is emitted when a new incoming connection
@@ -340,8 +345,12 @@ g_socket_service_class_init (GSocketServiceClass *class)
     g_signal_new (I_("incoming"), G_TYPE_FROM_CLASS (class), G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (GSocketServiceClass, incoming),
                   g_signal_accumulator_true_handled, NULL,
-                  NULL, G_TYPE_BOOLEAN,
+                  _g_cclosure_marshal_BOOLEAN__OBJECT_OBJECT,
+                  G_TYPE_BOOLEAN,
                   2, G_TYPE_SOCKET_CONNECTION, G_TYPE_OBJECT);
+  g_signal_set_va_marshaller (g_socket_service_incoming_signal,
+                              G_TYPE_FROM_CLASS (class),
+                              _g_cclosure_marshal_BOOLEAN__OBJECT_OBJECTv);
 
   /**
    * GSocketService:active:
@@ -351,9 +360,7 @@ g_socket_service_class_init (GSocketServiceClass *class)
    * Since: 2.46
    */
   g_object_class_install_property (gobject_class, PROP_ACTIVE,
-                                   g_param_spec_boolean ("active",
-                                                         P_("Active"),
-                                                         P_("Whether the service is currently accepting connections"),
+                                   g_param_spec_boolean ("active", NULL, NULL,
                                                          TRUE,
                                                          G_PARAM_CONSTRUCT | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
@@ -400,6 +407,10 @@ g_socket_service_ready (GObject      *object,
  * Creates a new #GSocketService with no sockets to listen for.
  * New listeners can be added with e.g. g_socket_listener_add_address()
  * or g_socket_listener_add_inet_port().
+ *
+ * New services are created active, there is no need to call
+ * g_socket_service_start(), unless g_socket_service_stop() has been
+ * called before.
  *
  * Returns: a new #GSocketService.
  *

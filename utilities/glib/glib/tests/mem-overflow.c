@@ -1,5 +1,7 @@
-/* Unit tests for g
+/* Unit tests for gmem
  * Copyright (C) 2010 Red Hat, Inc.
+ *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
  *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
@@ -21,8 +23,10 @@
 
 /* We test for errors in optimize-only definitions in gmem.h */
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && __GNUC__ > 6
 #pragma GCC optimize (1)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Walloc-size-larger-than="
 #endif
 
 #include "glib.h"
@@ -30,15 +34,17 @@
 
 static gsize a = G_MAXSIZE / 10 + 10;
 static gsize b = 10;
+static gsize c = 0;
 typedef char X[10];
 
-#define MEM_OVERFLOW_TEST(name, code) \
+#define MEM_OVERFLOW_TEST(name, code) MEM_OVERFLOW_TEST_FULL(name, code, g_free)
+#define MEM_OVERFLOW_TEST_FULL(name, code, free_func) \
 static void                           \
 mem_overflow_ ## name (void)          \
 {                                     \
   gpointer p;                         \
   code;                               \
-  g_free (p);                         \
+  free_func (p);                      \
   exit (0);                           \
 }
 
@@ -65,6 +71,12 @@ MEM_OVERFLOW_TEST (new0_b, p = g_new0 (X, b))
 
 MEM_OVERFLOW_TEST (renew_a, p = g_malloc (1); p = g_renew (X, p, a))
 MEM_OVERFLOW_TEST (renew_b, p = g_malloc (1); p = g_renew (X, p, b))
+
+MEM_OVERFLOW_TEST_FULL (aligned_alloc_a, p = g_aligned_alloc (a, sizeof(X), 16), g_aligned_free)
+MEM_OVERFLOW_TEST_FULL (aligned_alloc_b, p = g_aligned_alloc (b, sizeof(X), 16), g_aligned_free)
+
+MEM_OVERFLOW_TEST_FULL (aligned_alloc0_a, p = g_aligned_alloc0 (a, sizeof(X), 16), g_aligned_free)
+MEM_OVERFLOW_TEST_FULL (aligned_alloc0_b, p = g_aligned_alloc0 (b, sizeof(X), 16), g_aligned_free)
 
 static void
 mem_overflow_malloc_0 (void)
@@ -95,6 +107,9 @@ mem_overflow (void)
 #define CHECK_PASS(P)	p = (P); g_assert (p == NULL);
 #define CHECK_FAIL(P)	p = (P); g_assert (p != NULL);
 
+  /* CHECK if return value is NULL for adhering to API... */
+#define CHECK_NULL(P)	p = (P); g_assert (p == NULL);
+
   CHECK_PASS (g_try_malloc_n (a, a));
   CHECK_PASS (g_try_malloc_n (a, b));
   CHECK_PASS (g_try_malloc_n (b, a));
@@ -118,6 +133,8 @@ mem_overflow (void)
   CHECK_FAIL (g_try_new (X, b));
   g_free (p);
 
+  CHECK_NULL (g_try_new (X, c));
+
   CHECK_PASS (g_try_new0 (X, a));
   CHECK_FAIL (g_try_new0 (X, b));
   g_free (p);
@@ -130,7 +147,8 @@ mem_overflow (void)
 #define CHECK_SUBPROCESS_FAIL(name) do { \
       if (g_test_undefined ()) \
         { \
-          g_test_trap_subprocess ("/mem/overflow/subprocess/" #name, 0, 0); \
+          g_test_trap_subprocess ("/mem/overflow/subprocess/" #name, 0, \
+                                  G_TEST_SUBPROCESS_DEFAULT); \
           g_test_trap_assert_failed(); \
         } \
     } while (0)
@@ -138,7 +156,8 @@ mem_overflow (void)
 #define CHECK_SUBPROCESS_PASS(name) do { \
       if (g_test_undefined ()) \
         { \
-          g_test_trap_subprocess ("/mem/overflow/subprocess/" #name, 0, 0); \
+          g_test_trap_subprocess ("/mem/overflow/subprocess/" #name, 0, \
+                                  G_TEST_SUBPROCESS_DEFAULT); \
           g_test_trap_assert_passed(); \
         } \
     } while (0)
@@ -169,6 +188,12 @@ mem_overflow (void)
 
   CHECK_SUBPROCESS_PASS (malloc_0);
   CHECK_SUBPROCESS_PASS (realloc_0);
+
+  CHECK_SUBPROCESS_FAIL (aligned_alloc_a);
+  CHECK_SUBPROCESS_PASS (aligned_alloc_b);
+
+  CHECK_SUBPROCESS_FAIL (aligned_alloc0_a);
+  CHECK_SUBPROCESS_PASS (aligned_alloc0_b);
 }
 
 #ifdef __GNUC__
@@ -189,13 +214,18 @@ empty_alloc_subprocess (void)
 static void
 empty_alloc (void)
 {
-  g_test_bug ("615379");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=615379");
 
   g_assert_cmpint (sizeof (Empty), ==, 0);
 
-  g_test_trap_subprocess ("/mem/empty-alloc/subprocess", 0, 0);
+  g_test_trap_subprocess ("/mem/empty-alloc/subprocess", 0,
+                          G_TEST_SUBPROCESS_DEFAULT);
   g_test_trap_assert_passed ();
 }
+#endif
+
+#if defined(__GNUC__) && __GNUC__ > 6
+#pragma GCC diagnostic pop
 #endif
 
 int
@@ -203,8 +233,6 @@ main (int   argc,
       char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
-
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/mem/overflow", mem_overflow);
   g_test_add_func ("/mem/overflow/subprocess/malloc_n_a_a", mem_overflow_malloc_n_a_a);
@@ -227,6 +255,10 @@ main (int   argc,
   g_test_add_func ("/mem/overflow/subprocess/renew_b", mem_overflow_renew_b);
   g_test_add_func ("/mem/overflow/subprocess/malloc_0", mem_overflow_malloc_0);
   g_test_add_func ("/mem/overflow/subprocess/realloc_0", mem_overflow_realloc_0);
+  g_test_add_func ("/mem/overflow/subprocess/aligned_alloc_a", mem_overflow_aligned_alloc_a);
+  g_test_add_func ("/mem/overflow/subprocess/aligned_alloc_b", mem_overflow_aligned_alloc_b);
+  g_test_add_func ("/mem/overflow/subprocess/aligned_alloc0_a", mem_overflow_aligned_alloc0_a);
+  g_test_add_func ("/mem/overflow/subprocess/aligned_alloc0_b", mem_overflow_aligned_alloc0_b);
 
 #ifdef __GNUC__
   g_test_add_func ("/mem/empty-alloc", empty_alloc);

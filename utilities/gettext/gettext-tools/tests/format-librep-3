@@ -1,0 +1,47 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of librep format strings like "100% complete".
+
+cat <<\EOF > f-lr-3.jl
+(_ "Test 1a is 100% complete")
+(format nil (_ "Test 1b is 100% complete") 120)
+(_ "Test 2a from 0% complete to 100% complete")
+(format nil (_ "Test 2b from 0% complete to 100% complete") 120 121)
+(_ "Test 3a of %s is 100% complete")
+(format nil (_ "Test 3b of %s is 100% complete") "foo" 120)
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d f-lr-3.tmp f-lr-3.jl || Exit 1
+LC_ALL=C tr -d '\r' < f-lr-3.tmp.po > f-lr-3.po || Exit 1
+
+cat <<\EOF > f-lr-3.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+#, librep-format
+msgid "Test 1b is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, librep-format
+msgid "Test 2b from 0% complete to 100% complete"
+msgstr ""
+
+#, librep-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+
+#, librep-format
+msgid "Test 3b of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-lr-3.ok f-lr-3.po
+result=$?
+
+exit $result

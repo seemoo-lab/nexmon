@@ -3,9 +3,9 @@ dnl This file is in the public domain.
 dnl
 dnl Configuration file - processed by autoconf.
 
-AC_INIT
-AC_CONFIG_SRCDIR(hello.ycp)
-AM_INIT_AUTOMAKE(hello-ycp, 0)
+AC_INIT([hello-ycp], [0])
+AC_CONFIG_SRCDIR([hello.ycp])
+AM_INIT_AUTOMAKE([1.11])
 
 dnl Check for availability of YaST's engine.
 test -f /usr/lib/YaST2/bin/y2base || {
@@ -16,7 +16,7 @@ test -f /usr/lib/YaST2/bin/y2base || {
 dnl The installed program must know where to find its message catalogs.
 dnl Unfortunately, YaST hard codes the message catalog directory.
 localedir=/usr/share/YaST2/locale
-AC_SUBST(localedir)
+AC_SUBST([localedir])
 
 dnl Support for the po directory.
 AM_PO_SUBDIRS

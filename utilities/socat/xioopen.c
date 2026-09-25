@@ -417,7 +417,6 @@ xiofile_t *socat_open(const char *addrs0, int rw, int flags) {
    const char *addrs;
    xiosingle_t *sfdA;	/* what we just parse(d) */
    xiosingle_t *sfdB;	/* what we just parse(d) - second part of dual */
-   int newpipesep = 1;	/* dual address: 1%0 instead of 0!!1 */
    int reverseA, reverseB=0;
    bool currentisendpoint = false;
    int mayleftA, mayrightA,  mayleftB, mayrightB;

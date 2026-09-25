@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,12 +17,12 @@
 void proto_register_sadmind(void);
 void proto_reg_handoff_sadmind(void);
 
-static int proto_sadmind = -1;
-static int hf_sadmind_procedure_v1 = -1;
-static int hf_sadmind_procedure_v2 = -1;
-static int hf_sadmind_procedure_v3 = -1;
+static int proto_sadmind;
+static int hf_sadmind_procedure_v1;
+static int hf_sadmind_procedure_v2;
+static int hf_sadmind_procedure_v3;
 
-static gint ett_sadmind = -1;
+static int ett_sadmind;
 
 #define SADMIND_PROGRAM	100232
 
@@ -92,7 +80,7 @@ proto_register_sadmind(void)
 			VALS(sadmind3_proc_vals), 0, NULL, HFILL }}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_sadmind,
 	};
 
@@ -110,7 +98,7 @@ proto_reg_handoff_sadmind(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

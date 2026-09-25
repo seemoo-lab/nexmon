@@ -4,10 +4,12 @@
  *
  * Copyright (C) 2008 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,26 +43,17 @@
 
 
 /**
- * SECTION:gnetworkservice
- * @short_description: A GSocketConnectable for resolving SRV records
- * @include: gio/gio.h
+ * GNetworkService:
  *
- * Like #GNetworkAddress does with hostnames, #GNetworkService
+ * Like [class@Gio.NetworkAddress] does with hostnames, `GNetworkService`
  * provides an easy way to resolve a SRV record, and then attempt to
  * connect to one of the hosts that implements that service, handling
  * service priority/weighting, multiple IP addresses, and multiple
  * address families.
  *
- * See #GSrvTarget for more information about SRV records, and see
- * #GSocketConnectable for and example of using the connectable
+ * See [struct@Gio.SrvTarget] for more information about SRV records, and see
+ * [iface@Gio.SocketConnectable] for an example of using the connectable
  * interface.
- */
-
-/**
- * GNetworkService:
- *
- * A #GSocketConnectable for resolving a SRV record and connecting to
- * that service.
  */
 
 struct _GNetworkServicePrivate
@@ -121,34 +114,57 @@ g_network_service_class_init (GNetworkServiceClass *klass)
   gobject_class->get_property = g_network_service_get_property;
   gobject_class->finalize = g_network_service_finalize;
 
+  /**
+   * GNetworkService:service:
+   *
+   * Service name, for example `ldap`.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_SERVICE,
-                                   g_param_spec_string ("service",
-                                                        P_("Service"),
-                                                        P_("Service name, eg \"ldap\""),
+                                   g_param_spec_string ("service", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GNetworkService:protocol:
+   *
+   * Network protocol, for example `tcp`.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_PROTOCOL,
-                                   g_param_spec_string ("protocol",
-                                                        P_("Protocol"),
-                                                        P_("Network protocol, eg \"tcp\""),
+                                   g_param_spec_string ("protocol", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GNetworkService:domain:
+   *
+   * Network domain, for example `example.com`.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_DOMAIN,
-                                   g_param_spec_string ("domain",
-                                                        P_("Domain"),
-                                                        P_("Network domain, eg, \"example.com\""),
+                                   g_param_spec_string ("domain", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GNetworkService:scheme:
+   *
+   * Network scheme (default is to use service).
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class, PROP_DOMAIN,
-                                   g_param_spec_string ("scheme",
-                                                        P_("Scheme"),
-                                                        P_("Network scheme (default is to use service)"),
+                                   g_param_spec_string ("scheme", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_STATIC_STRINGS));
@@ -318,7 +334,7 @@ g_network_service_get_domain (GNetworkService *srv)
  * g_network_service_get_scheme:
  * @srv: a #GNetworkService
  *
- * Get's the URI scheme used to resolve proxies. By default, the service name
+ * Gets the URI scheme used to resolve proxies. By default, the service name
  * is used as scheme.
  *
  * Returns: @srv's scheme name
@@ -362,17 +378,17 @@ static GList *
 g_network_service_fallback_targets (GNetworkService *srv)
 {
   GSrvTarget *target;
-  struct servent *entry;
+  gboolean has_port;
   guint16 port;
 
-  entry = getservbyname (srv->priv->service, "tcp");
-  port = entry ? g_ntohs (entry->s_port) : 0;
+  has_port = g_getservbyname_ntohs (srv->priv->service, "tcp", &port);
+
 #ifdef HAVE_ENDSERVENT
   endservent ();
 #endif
 
-  if (entry == NULL)
-      return NULL;
+  if (!has_port)
+    return NULL;
 
   target = g_srv_target_new (srv->priv->domain, port, 0, 0);
   return g_list_append (NULL, target);
@@ -445,7 +461,7 @@ g_network_service_address_enumerator_next (GSocketAddressEnumerator  *enumerator
     {
       if (srv_enum->addr_enum == NULL && srv_enum->t)
         {
-          GError *error = NULL;
+          GError *my_error = NULL;
           gchar *uri;
           gchar *hostname;
           GSocketConnectable *addr;
@@ -465,23 +481,27 @@ g_network_service_address_enumerator_next (GSocketAddressEnumerator  *enumerator
               continue;
             }
 
-          uri = _g_uri_from_authority (g_network_service_get_scheme (srv_enum->srv),
-                                       hostname,
-                                       g_srv_target_get_port (target),
-                                       NULL);
+          uri = g_uri_join (G_URI_FLAGS_NONE,
+                            g_network_service_get_scheme (srv_enum->srv),
+                            NULL,
+                            hostname,
+                            g_srv_target_get_port (target),
+                            "",
+                            NULL,
+                            NULL);
           g_free (hostname);
 
           addr = g_network_address_parse_uri (uri,
                                               g_srv_target_get_port (target),
-                                              &error);
+                                              &my_error);
           g_free (uri);
 
           if (addr == NULL)
             {
               if (srv_enum->error == NULL)
-                srv_enum->error = error;
+                srv_enum->error = my_error;
               else
-                g_error_free (error);
+                g_error_free (my_error);
               continue;
             }
 
@@ -494,18 +514,18 @@ g_network_service_address_enumerator_next (GSocketAddressEnumerator  *enumerator
 
       if (srv_enum->addr_enum)
         {
-          GError *error = NULL;
+          GError *my_error = NULL;
 
           ret = g_socket_address_enumerator_next (srv_enum->addr_enum,
                                                   cancellable,
-                                                  &error);
+                                                  &my_error);
 
-          if (error)
+          if (my_error)
             {
               if (srv_enum->error == NULL)
-                srv_enum->error = error;
+                srv_enum->error = my_error;
               else
-                g_error_free (error);
+                g_error_free (my_error);
             }
 
           if (!ret)
@@ -545,6 +565,7 @@ g_network_service_address_enumerator_next_async (GSocketAddressEnumerator  *enum
   GTask *task;
 
   task = g_task_new (enumerator, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_network_service_address_enumerator_next_async);
 
   /* If we haven't yet resolved srv, do that */
   if (!srv_enum->srv->priv->targets)
@@ -728,7 +749,7 @@ g_network_service_connectable_enumerate (GSocketConnectable *connectable)
   GNetworkServiceAddressEnumerator *srv_enum;
 
   srv_enum = g_object_new (G_TYPE_NETWORK_SERVICE_ADDRESS_ENUMERATOR, NULL);
-  srv_enum->srv = g_object_ref (connectable);
+  srv_enum->srv = g_object_ref (G_NETWORK_SERVICE (connectable));
   srv_enum->resolver = g_resolver_get_default ();
   srv_enum->use_proxy = FALSE;
 

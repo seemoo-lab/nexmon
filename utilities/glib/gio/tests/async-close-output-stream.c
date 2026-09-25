@@ -1,6 +1,8 @@
 /* GLib testing framework examples and tests
  * Authors: Jesse van den Kieboom <jessevdk@gnome.org>
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -147,9 +149,9 @@ prepare_data (SetupData *data,
 
   data->expected_size = g_memory_output_stream_get_data_size (G_MEMORY_OUTPUT_STREAM (data->data_stream));
 
-  g_assert_cmpint (data->expected_size, >, 0);
+  g_assert_cmpuint (data->expected_size, >, 0);
 
-  data->expected_output = g_memdup (written, (guint)data->expected_size);
+  data->expected_output = g_memdup2 (written, data->expected_size);
 
   /* then recreate the streams and prepare them for the asynchronous close */
   destroy_streams (data);
@@ -164,7 +166,7 @@ test_without_flush (SetupData     *data,
 {
   prepare_data (data, FALSE);
 
-  g_test_bug ("617937");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=617937");
 
   /* just close asynchronously */
   g_output_stream_close_async (data->conv_stream,
@@ -181,7 +183,7 @@ test_with_flush (SetupData *data, gconstpointer user_data)
 {
   GError *error = NULL;
 
-  g_test_bug ("617937");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=617937");
 
   prepare_data (data, TRUE);
 
@@ -222,7 +224,7 @@ static void
 test_with_async_flush (SetupData     *data,
                        gconstpointer  user_data)
 {
-  g_test_bug ("617937");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=617937");
 
   prepare_data (data, TRUE);
 
@@ -243,8 +245,6 @@ main (int   argc,
   SetupData *data;
 
   g_test_init (&argc, &argv, NULL);
-
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   data = g_slice_new (SetupData);
 

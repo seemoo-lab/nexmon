@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlUnicodeRange" kind="struct" language="C++" prot="public">
+    <compoundname>xmlUnicodeRange</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlUnicodeRange_1aff16fa69b99a46571a914c04fe82df2c" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* rangename</definition>
+        <argsstring></argsstring>
+        <name>rangename</name>
+        <qualifiedname>xmlUnicodeRange::rangename</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="70" column="16" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="70" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlUnicodeRange_1a0e5dd95606dcf1a6b4d6eb2cb623a5b3" prot="public" static="no" mutable="no">
+        <type>const xmlChRangeGroup</type>
+        <definition>const xmlChRangeGroup group</definition>
+        <argsstring></argsstring>
+        <name>group</name>
+        <qualifiedname>xmlUnicodeRange::group</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="71" column="27" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="71" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="69" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="69" bodyend="72"/>
+    <listofallmembers>
+      <member refid="structxmlUnicodeRange_1a0e5dd95606dcf1a6b4d6eb2cb623a5b3" prot="public" virt="non-virtual"><scope>xmlUnicodeRange</scope><name>group</name></member>
+      <member refid="structxmlUnicodeRange_1aff16fa69b99a46571a914c04fe82df2c" prot="public" virt="non-virtual"><scope>xmlUnicodeRange</scope><name>rangename</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

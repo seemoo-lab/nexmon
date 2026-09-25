@@ -4,58 +4,46 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_ALCAP_H
 #define PACKET_ALCAP_H
 
-#include <epan/dissectors/packet-e164.h>
+#include "packet-e164.h"
 
-extern void alcap_tree_from_bearer_key(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo, const gchar* key);
+extern void alcap_tree_from_bearer_key(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo, const char* key);
 
 typedef struct _alcap_msg_data_t {
-    guint msg_type;
-    guint framenum;
+    unsigned msg_type;
+    unsigned framenum;
     struct _alcap_msg_data_t* next;
     struct _alcap_msg_data_t* last;
 } alcap_msg_data_t;
 
 typedef struct _alcap_leg_info_t  {
-	guint32 dsaid;
-	guint32 osaid;
-	guint32 pathid;
-	guint32 cid;
-	guint32 sugr;
-	gchar* orig_nsap;
-	gchar* dest_nsap;
+	uint32_t dsaid;
+	uint32_t osaid;
+	uint32_t pathid;
+	uint32_t cid;
+	uint32_t sugr;
+	char* orig_nsap;
+	char* dest_nsap;
     alcap_msg_data_t* msgs;
-    guint release_cause;
+    unsigned release_cause;
 } alcap_leg_info_t;
 
 
 typedef struct _alcap_message_info_t {
-	guint msg_type;
-	guint32 dsaid;
-	guint32 osaid;
-	guint32 pathid;
-	guint32 cid;
-	guint32 sugr;
-	gchar* orig_nsap;
-	gchar* dest_nsap;
-    guint release_cause;
+	unsigned msg_type;
+	uint32_t dsaid;
+	uint32_t osaid;
+	uint32_t pathid;
+	uint32_t cid;
+	uint32_t sugr;
+	char* orig_nsap;
+	char* dest_nsap;
+    unsigned release_cause;
 } alcap_message_info_t;
 
 #endif

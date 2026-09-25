@@ -37,24 +37,25 @@ unset GETTEXTDATADIR
 unset GETTEXTDATADIRS
 unset XDG_DATA_DIRS
 
+LC_MESSAGES=C LC_ALL= \
 ${XGETTEXT} -o /dev/null input.a 2>&1 | grep 'is unknown; will try C' 2>&1 >/dev/null
 result=$?
 test $result = 0 || Exit 1
 
-GETTEXTDATADIR=a
-export GETTEXTDATADIR
+GETTEXTDATADIR=a \
+LC_MESSAGES=C LC_ALL= \
 ${XGETTEXT} -o /dev/null input.a 2>&1 | grep 'is unknown; will try C' 2>&1 >/dev/null
 result=$?
 test $result = 0 && Exit 1
 
-GETTEXTDATADIRS=b:a
-export GETTEXTDATADIRS
+GETTEXTDATADIRS=b:a \
+LC_MESSAGES=C LC_ALL= \
 ${XGETTEXT} -o /dev/null input.b 2>&1 | grep 'is unknown; will try C' 2>&1 >/dev/null
 result=$?
 test $result = 0 && Exit 1
 
-XDG_DATA_DIRS=xa
-export XDG_DATA_DIRS
+XDG_DATA_DIRS=xa \
+LC_MESSAGES=C LC_ALL= \
 ${XGETTEXT} -o /dev/null input.xa 2>&1 | grep 'is unknown; will try C' 2>&1 >/dev/null
 result=$?
 test $result = 0 && Exit 1

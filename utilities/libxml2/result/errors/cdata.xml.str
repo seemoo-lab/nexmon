@@ -1,0 +1,5 @@
+./test/errors/cdata.xml:2: I/O error : Invalid bytes in character encoding
+Bytes: 0xE1 0x72 0x5D 0x5D
+<A><![CDATA[C
+             ^
+./test/errors/cdata.xml : failed to parse

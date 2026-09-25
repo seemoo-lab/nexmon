@@ -12,19 +12,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -37,6 +25,8 @@
 void proto_register_slow_protocols(void);
 void proto_reg_handoff_slow_protocols(void);
 
+static dissector_handle_t slow_protocols_handle;
+
 static dissector_table_t slow_protocols_dissector_table;
 
 static const value_string subtype_vals[] = {
@@ -48,13 +38,13 @@ static const value_string subtype_vals[] = {
 };
 
 /* Initialise the protocol and registered fields */
-static int proto_slow = -1;
+static int proto_slow;
 
-static int hf_slow_subtype = -1;
+static int hf_slow_subtype;
 
 /* Initialise the subtree pointers */
 
-static gint ett_slow = -1;
+static int ett_slow;
 
 /*
  * Name: dissect_slow_protocols
@@ -76,13 +66,13 @@ static gint ett_slow = -1;
 static int
 dissect_slow_protocols(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint8      subtype;
+    uint8_t     subtype;
     proto_tree *pdu_tree;
     proto_item *pdu_item;
     tvbuff_t   *next_tvb;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Slow Protocols");
-    subtype = tvb_get_guint8(tvb, 0);
+    subtype = tvb_get_uint8(tvb, 0);
     col_add_fstr(pinfo->cinfo, COL_INFO, "Subtype = %u", subtype);
 
     if (tree)
@@ -95,9 +85,10 @@ dissect_slow_protocols(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     }
 
     next_tvb = tvb_new_subset_remaining(tvb, 1);
-    if (!dissector_try_uint_new(slow_protocols_dissector_table, subtype,
-                                next_tvb, pinfo, tree, TRUE, NULL))
+    if (!dissector_try_uint_with_data(slow_protocols_dissector_table, subtype,
+                                next_tvb, pinfo, tree, true, NULL))
         call_data_dissector(next_tvb, pinfo, tree);
+    set_actual_length(tvb, tvb_captured_length(next_tvb) + 1);
 
     return tvb_captured_length(tvb);
 }
@@ -118,19 +109,22 @@ proto_register_slow_protocols(void)
 
     /* Setup protocol subtree array */
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_slow,
     };
 
 
     /* Register the protocol name and description */
 
-    proto_slow = proto_register_protocol("Slow Protocols", "802.3 Slow protocols", "slow");
+    proto_slow = proto_register_protocol("802.3 Slow protocols", "Slow Protocols", "slow");
 
     /* Required function calls to register the header fields and subtrees used */
 
     proto_register_field_array(proto_slow, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    /* Register the dissector handle */
+    slow_protocols_handle = register_dissector("slow", dissect_slow_protocols, proto_slow);
 
     /* subdissector code */
     slow_protocols_dissector_table = register_dissector_table("slow.subtype",
@@ -141,14 +135,11 @@ proto_register_slow_protocols(void)
 void
 proto_reg_handoff_slow_protocols(void)
 {
-    dissector_handle_t slow_protocols_handle;
-
-    slow_protocols_handle = create_dissector_handle(dissect_slow_protocols, proto_slow);
     dissector_add_uint("ethertype", ETHERTYPE_SLOW_PROTOCOLS, slow_protocols_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

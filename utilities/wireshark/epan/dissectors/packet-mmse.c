@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  * ----------
  *
  * Dissector of an encoded Multimedia message PDU, as defined by the WAPForum
@@ -38,11 +26,15 @@
 #include <epan/expert.h>
 #include <epan/to_str.h>
 #include <epan/strutil.h>
+#include <epan/iana_charsets.h>
 #include "packet-wap.h"
 #include "packet-wsp.h"
 
 void proto_register_mmse(void);
 void proto_reg_handoff_mmse(void);
+
+static dissector_handle_t mmse_standalone_handle;
+static dissector_handle_t mmse_encapsulated_handle;
 
 #define MM_QUOTE                0x7F    /* Quoted string        */
 
@@ -67,7 +59,7 @@ void proto_reg_handoff_mmse(void);
  */
 static int dissect_mmse_standalone(tvbuff_t *, packet_info *, proto_tree *, void*);
 static void dissect_mmse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        guint8 pdut, const char *message_type);
+        uint8_t pdut, const char *message_type);
 
 /*
  * Header field values
@@ -184,7 +176,7 @@ static const value_string vals_mm_header_names[] = {
         { MM_CONTENT_HDR,               "Content" },
         { MM_START_HDR,                 "X-Mms-Start" },
         { MM_ADDITIONAL_HDR,            "Additional-headers" },
-        { MM_DISTRIBUION_IND_HDR,       "X-Mms-Distribution-Indcator" },
+        { MM_DISTRIBUION_IND_HDR,       "X-Mms-Distribution-Indicator" },
         { MM_ELEMENT_DESCR_HDR,         "X-Mms-Element-Descriptor" },
         { MM_LIMIT_HDR,                 "X-Mms-Limit" },
 
@@ -193,63 +185,63 @@ static const value_string vals_mm_header_names[] = {
 /*
  * Initialize the protocol and registered fields
  */
-static int proto_mmse = -1;
+static int proto_mmse;
 
-static int hf_mmse_message_type         = -1;
-static int hf_mmse_transaction_id       = -1;
-static int hf_mmse_mms_version          = -1;
-static int hf_mmse_bcc                  = -1;
-static int hf_mmse_cc                   = -1;
-static int hf_mmse_content_location     = -1;
-static int hf_mmse_date                 = -1;
-static int hf_mmse_delivery_report      = -1;
-static int hf_mmse_delivery_time_abs    = -1;
-static int hf_mmse_delivery_time_rel    = -1;
-static int hf_mmse_expiry_abs           = -1;
-static int hf_mmse_expiry_rel           = -1;
-static int hf_mmse_from                 = -1;
-static int hf_mmse_message_class_id     = -1;
-static int hf_mmse_message_class_str    = -1;
-static int hf_mmse_message_id           = -1;
-static int hf_mmse_message_size         = -1;
-static int hf_mmse_priority             = -1;
-static int hf_mmse_read_reply           = -1;
-static int hf_mmse_report_allowed       = -1;
-static int hf_mmse_response_status      = -1;
-static int hf_mmse_response_text        = -1;
-static int hf_mmse_sender_visibility    = -1;
-static int hf_mmse_status               = -1;
-static int hf_mmse_subject              = -1;
-static int hf_mmse_to                   = -1;
-/* static int hf_mmse_content_type              = -1; */
-static int hf_mmse_ffheader             = -1;
+static int hf_mmse_message_type;
+static int hf_mmse_transaction_id;
+static int hf_mmse_mms_version;
+static int hf_mmse_bcc;
+static int hf_mmse_cc;
+static int hf_mmse_content_location;
+static int hf_mmse_date;
+static int hf_mmse_delivery_report;
+static int hf_mmse_delivery_time_abs;
+static int hf_mmse_delivery_time_rel;
+static int hf_mmse_expiry_abs;
+static int hf_mmse_expiry_rel;
+static int hf_mmse_from;
+static int hf_mmse_message_class_id;
+static int hf_mmse_message_class_str;
+static int hf_mmse_message_id;
+static int hf_mmse_message_size;
+static int hf_mmse_priority;
+static int hf_mmse_read_reply;
+static int hf_mmse_report_allowed;
+static int hf_mmse_response_status;
+static int hf_mmse_response_text;
+static int hf_mmse_sender_visibility;
+static int hf_mmse_status;
+static int hf_mmse_subject;
+static int hf_mmse_to;
+/* static int hf_mmse_content_type; */
+static int hf_mmse_ffheader;
 /* MMSE 1.1 */
-static int hf_mmse_read_report          = -1;
-static int hf_mmse_retrieve_status      = -1;
-static int hf_mmse_retrieve_text        = -1;
-static int hf_mmse_read_status          = -1;
-static int hf_mmse_reply_charging       = -1;
-static int hf_mmse_reply_charging_deadline_abs  = -1;
-static int hf_mmse_reply_charging_deadline_rel  = -1;
-static int hf_mmse_reply_charging_id    = -1;
-static int hf_mmse_reply_charging_size  = -1;
-static int hf_mmse_prev_sent_by = -1;
-static int hf_mmse_prev_sent_by_fwd_count       = -1;
-static int hf_mmse_prev_sent_by_address = -1;
-static int hf_mmse_prev_sent_date       = -1;
-static int hf_mmse_prev_sent_date_fwd_count     = -1;
-static int hf_mmse_prev_sent_date_date  = -1;
-static int hf_mmse_header_uint = -1;
-static int hf_mmse_header_string = -1;
-static int hf_mmse_header_bytes = -1;
+static int hf_mmse_read_report;
+static int hf_mmse_retrieve_status;
+static int hf_mmse_retrieve_text;
+static int hf_mmse_read_status;
+static int hf_mmse_reply_charging;
+static int hf_mmse_reply_charging_deadline_abs;
+static int hf_mmse_reply_charging_deadline_rel;
+static int hf_mmse_reply_charging_id;
+static int hf_mmse_reply_charging_size;
+static int hf_mmse_prev_sent_by;
+static int hf_mmse_prev_sent_by_fwd_count;
+static int hf_mmse_prev_sent_by_address;
+static int hf_mmse_prev_sent_date;
+static int hf_mmse_prev_sent_date_fwd_count;
+static int hf_mmse_prev_sent_date_date;
+static int hf_mmse_header_uint;
+static int hf_mmse_header_string;
+static int hf_mmse_header_bytes;
 
 /*
  * Initialize the subtree pointers
  */
-static gint ett_mmse                    = -1;
-static gint ett_mmse_hdr_details        = -1;
+static int ett_mmse;
+static int ett_mmse_hdr_details;
 
-static expert_field ei_mmse_oversized_uintvar = EI_INIT;
+static expert_field ei_mmse_oversized_uintvar;
 
 /*
  * Valuestrings for PDU types
@@ -401,6 +393,9 @@ static const value_string vals_message_status[] = {
 };
 
 static const value_string vals_retrieve_status[] = {
+    /* MMS 1.1 */
+    { 0x80, "Ok" },
+
     /*
      * Transient errors
      */
@@ -447,25 +442,32 @@ static const value_string vals_reply_charging[] = {
  *
  * \param       tvb     The buffer with PDU-data
  * \param       offset  Offset within that buffer
+ * \param       pool    wmem allocation pool from which to allocate
+ *                      memory for strval
  * \param       strval  Pointer to variable into which to put pointer to
  *                      buffer allocated to hold the text; must be freed
  *                      when no longer used
  *
  * \return              The length in bytes of the entire field
  */
-static guint
-get_text_string(tvbuff_t *tvb, guint offset, const char **strval)
+static unsigned
+get_text_string(tvbuff_t *tvb, unsigned offset, wmem_allocator_t *pool, const char **strval)
 {
-    guint        len;
+    unsigned     len;
 
     DebugLog(("get_text_string(tvb = %p, offset = %u, **strval) - start\n",
                 tvb, offset));
-    len = tvb_strsize(tvb, offset);
-    DebugLog((" [1] tvb_strsize(tvb, offset) == %u\n", len));
-    if (tvb_get_guint8(tvb, offset) == MM_QUOTE)
-        *strval = (const char *)tvb_memdup(wmem_packet_scope(), tvb, offset+1, len-1);
-    else
-        *strval = (const char *)tvb_memdup(wmem_packet_scope(), tvb, offset, len);
+    /* OMA-TS-MMS-CONF says that Text-string encoding is always US-ASCII.
+     * (In other WSP protocols it might be the document encoding.)
+     * It is allowed to be Base64 or Quoted-Printable encoded, but
+     * we won't bother with that.
+     */
+    if (tvb_get_uint8(tvb, offset) == MM_QUOTE) {
+        *strval = (const char *)tvb_get_stringz_enc(pool, tvb, offset+1, &len, ENC_ASCII);
+        len += 1;
+    } else {
+        *strval = (const char *)tvb_get_stringz_enc(pool, tvb, offset, &len, ENC_ASCII);
+    }
     DebugLog((" [3] Return(len) == %u\n", len));
     return len;
 }
@@ -487,53 +489,25 @@ get_text_string(tvbuff_t *tvb, guint offset, const char **strval)
  *
  * \return                      The actual value of "Value-length"
  */
-static guint
-get_value_length(tvbuff_t *tvb, guint offset, guint *byte_count, packet_info *pinfo)
+static unsigned
+get_value_length(tvbuff_t *tvb, unsigned offset, unsigned *byte_count, packet_info *pinfo)
 {
-    guint        field;
+    unsigned     field;
 
-    field = tvb_get_guint8(tvb, offset++);
+    field = tvb_get_uint8(tvb, offset++);
     if (field < 31)
         *byte_count = 1;
     else {                      /* Must be 31 so, Uintvar follows       */
-        field = tvb_get_guintvar(tvb, offset, byte_count, pinfo, &ei_mmse_oversized_uintvar);
+        field = tvb_get_uintvar(tvb, offset, byte_count, pinfo, &ei_mmse_oversized_uintvar);
         (*byte_count)++;
     }
+
+    /* The packet says there are this many bytes; ensure they're there.
+     * We do this here because several callers do math on the length we
+     * return here and may not catch an overflow.
+     */
+    tvb_ensure_bytes_exist(tvb, offset, field);
     return field;
-}
-
-/*!
- * Decodes an Encoded-string-value from the protocol data
- *      Encoded-string-value = Text-string | Value-length Char-set Text-string
- *
- * \param       tvb     The buffer with PDU-data
- * \param       offset  Offset within that buffer
- * \param       strval  Pointer to variable into which to put pointer to
- *                      buffer allocated to hold the text; must be freed
- *                      when no longer used
- *
- * \return              The length in bytes of the entire field
- */
-static guint
-get_encoded_strval(tvbuff_t *tvb, guint offset, const char **strval, packet_info *pinfo)
-{
-    guint        field;
-    guint        length;
-    guint        count;
-
-    field = tvb_get_guint8(tvb, offset);
-
-    if (field < 32) {
-        length = get_value_length(tvb, offset, &count, pinfo);
-        if (length < 2) {
-            *strval = "";
-        } else {
-            /* \todo    Something with "Char-set", skip for now */
-            *strval = (char *)tvb_get_string_enc(wmem_packet_scope(), tvb, offset + count + 1, length - 1, ENC_ASCII);
-        }
-        return count + length;
-    } else
-        return get_text_string(tvb, offset, strval);
 }
 
 /*!
@@ -552,15 +526,15 @@ get_encoded_strval(tvbuff_t *tvb, guint offset, const char **strval, packet_info
  *
  * \note        A maximum of 4-byte integers will be handled.
  */
-static guint
-get_long_integer(tvbuff_t *tvb, guint offset, guint *byte_count)
+static unsigned
+get_long_integer(tvbuff_t *tvb, unsigned offset, unsigned *byte_count)
 {
-    guint        val;
+    unsigned     val;
 
-    *byte_count = tvb_get_guint8(tvb, offset++);
+    *byte_count = tvb_get_uint8(tvb, offset++);
     switch (*byte_count) {
         case 1:
-            val = tvb_get_guint8(tvb, offset);
+            val = tvb_get_uint8(tvb, offset);
             break;
         case 2:
             val = tvb_get_ntohs(tvb, offset);
@@ -597,13 +571,13 @@ get_long_integer(tvbuff_t *tvb, guint offset, guint *byte_count)
  *
  * \note        A maximum of 4-byte integers will be handled.
  */
-static guint
-get_integer_value(tvbuff_t *tvb, guint offset, guint *byte_count)
+static unsigned
+get_integer_value(tvbuff_t *tvb, unsigned offset, unsigned *byte_count)
 {
-    guint        val;
-    guint8 peek;
+    unsigned     val;
+    uint8_t peek;
 
-    peek = tvb_get_guint8(tvb, offset++);
+    peek = tvb_get_uint8(tvb, offset++);
     if (peek & 0x80) {
         val = peek & 0x7F;
         *byte_count = 1;
@@ -612,7 +586,7 @@ get_integer_value(tvbuff_t *tvb, guint offset, guint *byte_count)
         *byte_count = peek;
         switch (peek) {
         case 1:
-            val = tvb_get_guint8(tvb, offset);
+            val = tvb_get_uint8(tvb, offset);
             break;
         case 2:
             val = tvb_get_ntohs(tvb, offset);
@@ -632,11 +606,53 @@ get_integer_value(tvbuff_t *tvb, guint offset, guint *byte_count)
     return val;
 }
 
-/* Code to actually dissect the packets */
-static gboolean
-dissect_mmse_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+/*!
+ * Decodes an Encoded-string-value from the protocol data
+ *      Encoded-string-value = Text-string | Value-length Char-set Text-string
+ *
+ * \param       tvb     The buffer with PDU-data
+ * \param       offset  Offset within that buffer
+ * \param       strval  Pointer to variable into which to put pointer to
+ *                      buffer allocated to hold the text; must be freed
+ *                      when no longer used
+ *
+ * \return              The length in bytes of the entire field
+ */
+static unsigned
+get_encoded_strval(tvbuff_t *tvb, unsigned offset, const char **strval, packet_info *pinfo)
 {
-    guint8       pdut;
+    unsigned     field;
+    unsigned     length;
+    unsigned     count, count1;
+    unsigned     charset;
+
+    field = tvb_get_uint8(tvb, offset);
+
+    if (field < 32) {
+        length = get_value_length(tvb, offset, &count, pinfo);
+        if (length < 2) {
+            *strval = "";
+        } else {
+            /* OMA-TS-MMS-CONF says that char-set is encoded as an integer
+             * value, so don't bother to handle the string case. */
+            field = tvb_get_uint8(tvb, offset + count);
+            if ((field < 32) | (field & 0x80)) {
+                charset = get_integer_value(tvb, offset + count, &count1);
+                *strval = (char *)tvb_get_string_enc(pinfo->pool, tvb, offset + count + count1, length - count1, mibenum_charset_to_encoding(charset));
+            } else {
+                *strval = (char *)tvb_get_string_enc(pinfo->pool, tvb, offset + count, length, ENC_ASCII);
+            }
+        }
+        return count + length;
+    } else
+        return get_text_string(tvb, offset, pinfo->pool, strval);
+}
+
+/* Code to actually dissect the packets */
+static bool
+dissect_mmse_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    uint8_t      pdut;
 
         DebugLog(("dissect_mmse_heur()\n"));
     /*
@@ -644,34 +660,33 @@ dissect_mmse_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
      * field must make sense and followed by either Transaction-Id
      * or MMS-Version header
      */
-    if (tvb_get_guint8(tvb, 0) != MM_MTYPE_HDR)
-        return FALSE;
-    pdut = tvb_get_guint8(tvb, 1);
+    if (tvb_get_uint8(tvb, 0) != MM_MTYPE_HDR)
+        return false;
+    pdut = tvb_get_uint8(tvb, 1);
     if (try_val_to_str(pdut, vals_message_type) == NULL)
-        return FALSE;
-    if ((tvb_get_guint8(tvb, 2) != MM_TID_HDR) &&
-        (tvb_get_guint8(tvb, 2) != MM_VERSION_HDR))
-        return FALSE;
+        return false;
+    if ((tvb_get_uint8(tvb, 2) != MM_TID_HDR) &&
+        (tvb_get_uint8(tvb, 2) != MM_VERSION_HDR))
+        return false;
     dissect_mmse_standalone(tvb, pinfo, tree, data);
-    return TRUE;
+    return true;
 }
 
 static int
 dissect_mmse_standalone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint8       pdut;
+    uint8_t      pdut;
     const char   *message_type;
 
     DebugLog(("dissect_mmse_standalone() - START (Packet %u)\n",
                 pinfo->num));
 
-    pdut = tvb_get_guint8(tvb, 1);
-    message_type = val_to_str(pdut, vals_message_type, "Unknown type %u");
+    pdut = tvb_get_uint8(tvb, 1);
+    message_type = val_to_str(pinfo->pool, pdut, vals_message_type, "Unknown type %u");
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "MMSE");
-
-        col_add_fstr(pinfo->cinfo, COL_INFO, "MMS %s", message_type);
+    col_add_fstr(pinfo->cinfo, COL_INFO, "MMS %s", message_type);
 
     dissect_mmse(tvb, pinfo, tree, pdut, message_type);
     return tvb_captured_length(tvb);
@@ -680,33 +695,32 @@ dissect_mmse_standalone(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 static int
 dissect_mmse_encapsulated(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint8       pdut;
+    uint8_t      pdut;
     const char   *message_type;
 
     DebugLog(("dissect_mmse_encapsulated() - START (Packet %u)\n",
                 pinfo->num));
 
-    pdut = tvb_get_guint8(tvb, 1);
-    message_type = val_to_str(pdut, vals_message_type, "Unknown type %u");
+    pdut = tvb_get_uint8(tvb, 1);
+    message_type = val_to_str(pinfo->pool, pdut, vals_message_type, "Unknown type %u");
 
     /* Make entries in Info column on summary display */
-        col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "(MMS %s)",
-                message_type);
+    col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "(MMS %s)", message_type);
 
     dissect_mmse(tvb, pinfo, tree, pdut, message_type);
     return tvb_captured_length(tvb);
 }
 
 static void
-dissect_mmse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint8 pdut,
+dissect_mmse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint8_t pdut,
         const char *message_type)
 {
-    guint        offset;
-    guint8       field = 0;
+    unsigned     offset, old_offset;
+    uint8_t      field = 0;
     const char   *strval;
-    guint        length;
-    guint        count;
-    guint8       version = 0x80; /* Default to MMSE 1.0 */
+    unsigned     length;
+    unsigned     count;
+    uint8_t      version = 0x80; /* Default to MMSE 1.0 */
 
     /* Set up structures needed to add the protocol subtree and manage it */
     proto_item  *ti = NULL;
@@ -714,598 +728,539 @@ dissect_mmse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint8 pdut,
 
     DebugLog(("dissect_mmse() - START (Packet %u)\n", pinfo->num));
 
-    /* If tree == NULL then we are only interested in protocol dissection
-     * up to reassembly and handoff to subdissectors if applicable; the
-     * columns must be set appropriately too.
-     * If tree != NULL then we also want to display the protocol tree
-     * with its fields.
-     *
-     * In the interest of speed, skip protocol tree item generation
-     * if tree is NULL.
-     */
-    if (tree) {
-        DebugLog(("tree != NULL\n"));
+    ti = proto_tree_add_item(tree, proto_mmse, tvb, 0, -1, ENC_NA);
+    proto_item_append_text(ti, ", Type: %s", message_type);
+    /* create display subtree for the protocol */
+    mmse_tree = proto_item_add_subtree(ti, ett_mmse);
 
-        ti = proto_tree_add_item(tree, proto_mmse, tvb, 0, -1, ENC_NA);
-        proto_item_append_text(ti, ", Type: %s", message_type);
-        /* create display subtree for the protocol */
-        mmse_tree = proto_item_add_subtree(ti, ett_mmse);
-
-        /* Report PDU-type      */
-        proto_tree_add_uint(mmse_tree, hf_mmse_message_type, tvb, 0, 2, pdut);
-    }
+    /* Report PDU-type      */
+    proto_tree_add_uint(mmse_tree, hf_mmse_message_type, tvb, 0, 2, pdut);
 
     offset = 2;                 /* Skip Message-Type    */
+    old_offset = 1;
 
     /*
      * Cycle through MMS-headers
      *
-     * NOTE - some PDUs may convey content which can be handed off
+     * NOTE - some PDUs may convey content that can be handed off
      *        to subdissectors.
      */
-    if (tree || pdu_has_content(pdut)) {
-        while ((offset < tvb_reported_length(tvb)) &&
-               (field = tvb_get_guint8(tvb, offset++)) != MM_CTYPE_HDR)
+    if (tree == NULL && !pdu_has_content(pdut)) {
+        DebugLog(("tree == NULL and PDU has no potential content\n"));
+        return;
+    }
+
+    while ((offset < tvb_reported_length(tvb)) &&
+            (field = tvb_get_uint8(tvb, offset++)) != MM_CTYPE_HDR)
+    {
+        DebugLog(("\tField =  0x%02X (offset = %u): %s\n",
+                    field, offset,
+                    val_to_str(pinfo->pool, field, vals_mm_header_names,
+                        "Unknown MMS header 0x%02X")));
+        switch (field)
         {
-            DebugLog(("\tField =  0x%02X (offset = %u): %s\n",
-                        field, offset,
-                        val_to_str(field, vals_mm_header_names,
-                            "Unknown MMS header 0x%02X")));
-            switch (field)
-            {
-                case MM_TID_HDR:                /* Text-string  */
-                    length = get_text_string(tvb, offset, &strval);
-                    if (tree) {
-                        proto_tree_add_string(mmse_tree, hf_mmse_transaction_id,
-                                tvb, offset - 1, length + 1,strval);
-                    }
-                    offset += length;
-                    break;
-                case MM_VERSION_HDR:            /* nibble-Major/nibble-minor*/
-                    version = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        guint8   major, minor;
-                        char    *vers_string;
+            case MM_TID_HDR:                /* Text-string  */
+                length = get_text_string(tvb, offset, pinfo->pool, &strval);
+                proto_tree_add_string(mmse_tree, hf_mmse_transaction_id,
+                        tvb, offset - 1, length + 1,strval);
+                offset += length;
+                break;
+            case MM_VERSION_HDR:            /* nibble-Major/nibble-minor*/
+                {
+                    uint8_t  major, minor;
+                    char    *vers_string;
 
-                        major = (version & 0x70) >> 4;
-                        minor = version & 0x0F;
-                        if (minor == 0x0F)
-                            vers_string = wmem_strdup_printf(wmem_packet_scope(), "%u", major);
-                        else
-                            vers_string = wmem_strdup_printf(wmem_packet_scope(), "%u.%u", major, minor);
-                        proto_tree_add_string(mmse_tree, hf_mmse_mms_version,
-                                tvb, offset - 2, 2, vers_string);
-                    }
-                    break;
-                case MM_BCC_HDR:                /* Encoded-string-value */
-                    length = get_encoded_strval(tvb, offset, &strval, pinfo);
-                    if (tree) {
-                        proto_tree_add_string(mmse_tree, hf_mmse_bcc, tvb,
-                                offset - 1, length + 1, strval);
-                    }
-                    offset += length;
-                    break;
-                case MM_CC_HDR:                 /* Encoded-string-value */
-                    length = get_encoded_strval(tvb, offset, &strval, pinfo);
-                    if (tree) {
-                        proto_tree_add_string(mmse_tree, hf_mmse_cc, tvb,
-                                offset - 1, length + 1, strval);
-                    }
-                    offset += length;
-                    break;
-                case MM_CLOCATION_HDR:          /* Uri-value            */
-                    if (pdut == PDU_M_MBOX_DELETE_CONF) {
-                        /* General form with length */
-                        length = tvb_get_guint8(tvb, offset);
-                        if (length == 0x1F) {
-                            guint length_len = 0;
-                            length = tvb_get_guintvar(tvb, offset + 1,
-                                    &length_len, pinfo, &ei_mmse_oversized_uintvar);
-                            length += 1 + length_len;
-                        } else {
-                            length += 1;
-                        }
-                        proto_tree_add_string(mmse_tree,
-                                    hf_mmse_content_location,
-                                    tvb, offset - 1, length + 1,
-                                    "<Undecoded value for m-mbox-delete-conf>");
+                    version = tvb_get_uint8(tvb, offset++);
+                    major = (version & 0x70) >> 4;
+                    minor = version & 0x0F;
+                    if (minor == 0x0F)
+                        vers_string = wmem_strdup_printf(pinfo->pool, "%u", major);
+                    else
+                        vers_string = wmem_strdup_printf(pinfo->pool, "%u.%u", major, minor);
+                    proto_tree_add_string(mmse_tree, hf_mmse_mms_version,
+                            tvb, offset - 2, 2, vers_string);
+                }
+                break;
+            case MM_BCC_HDR:                /* Encoded-string-value */
+                length = get_encoded_strval(tvb, offset, &strval, pinfo);
+                proto_tree_add_string(mmse_tree, hf_mmse_bcc, tvb,
+                        offset - 1, length + 1, strval);
+                offset += length;
+                break;
+            case MM_CC_HDR:                 /* Encoded-string-value */
+                length = get_encoded_strval(tvb, offset, &strval, pinfo);
+                proto_tree_add_string(mmse_tree, hf_mmse_cc, tvb,
+                        offset - 1, length + 1, strval);
+                offset += length;
+                break;
+            case MM_CLOCATION_HDR:          /* Uri-value            */
+                if (pdut == PDU_M_MBOX_DELETE_CONF) {
+                    /* General form with length */
+                    length = tvb_get_uint8(tvb, offset);
+                    if (length == 0x1F) {
+                        unsigned length_len = 0;
+                        length = tvb_get_uintvar(tvb, offset + 1,
+                                &length_len, pinfo, &ei_mmse_oversized_uintvar);
+                        length += 1 + length_len;
                     } else {
-                        length = get_text_string(tvb, offset, &strval);
-                        if (tree) {
-                            proto_tree_add_string(mmse_tree,
-                                    hf_mmse_content_location,
-                                    tvb, offset - 1, length + 1, strval);
-                        }
+                        length += 1;
                     }
-                    offset += length;
-                    break;
-                case MM_DATE_HDR:               /* Long-integer         */
-                    {
-                        guint            tval;
-                        nstime_t         tmptime;
+                    proto_tree_add_string(mmse_tree,
+                            hf_mmse_content_location,
+                            tvb, offset - 1, length + 1,
+                            "<Undecoded value for m-mbox-delete-conf>");
+                } else {
+                    length = get_text_string(tvb, offset, pinfo->pool, &strval);
+                    proto_tree_add_string(mmse_tree,
+                            hf_mmse_content_location,
+                            tvb, offset - 1, length + 1, strval);
+                }
+                offset += length;
+                break;
+            case MM_DATE_HDR:               /* Long-integer         */
+                {
+                    unsigned         tval;
+                    nstime_t         tmptime;
 
-                        tval = get_long_integer(tvb, offset, &count);
-                        tmptime.secs = tval;
-                        tmptime.nsecs = 0;
-                        proto_tree_add_time(mmse_tree, hf_mmse_date, tvb,
-                                    offset - 1, count + 1, &tmptime);
-                    }
-                    offset += count;
-                    break;
-                case MM_DREPORT_HDR:            /* Yes|No               */
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree,
-                                hf_mmse_delivery_report,
-                                tvb, offset - 2, 2, field);
-                    }
-                    break;
-                case MM_DTIME_HDR:
+                    tval = get_long_integer(tvb, offset, &count);
+                    tmptime.secs = tval;
+                    tmptime.nsecs = 0;
+                    proto_tree_add_time(mmse_tree, hf_mmse_date, tvb,
+                            offset - 1, count + 1, &tmptime);
+                }
+                offset += count;
+                break;
+            case MM_DREPORT_HDR:            /* Yes|No               */
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree,
+                        hf_mmse_delivery_report,
+                        tvb, offset - 2, 2, field);
+                break;
+            case MM_DTIME_HDR:
+                {
+                    unsigned         tval;
+                    nstime_t         tmptime;
+                    unsigned         cnt;
+
                     /*
                      * Value-length(Absolute-token Date-value|
                      *              Relative-token Delta-seconds-value)
                      */
                     length = get_value_length(tvb, offset, &count, pinfo);
-                    field = tvb_get_guint8(tvb, offset + count);
-                    if (tree) {
-                        guint            tval;
-                        nstime_t         tmptime;
-                        guint            cnt;
+                    field = tvb_get_uint8(tvb, offset + count);
 
-                        tval =  get_long_integer(tvb, offset + count + 1, &cnt);
-                        tmptime.secs = tval;
-                        tmptime.nsecs = 0;
+                    tval =  get_long_integer(tvb, offset + count + 1, &cnt);
+                    tmptime.secs = tval;
+                    tmptime.nsecs = 0;
 
-                        if (field == 0x80)
-                            proto_tree_add_time(mmse_tree,
-                                    hf_mmse_delivery_time_abs,
-                                    tvb, offset - 1,
-                                    length + count + 1, &tmptime);
-                        else
-                            proto_tree_add_time(mmse_tree,
-                                    hf_mmse_delivery_time_rel,
-                                    tvb, offset - 1,
-                                    length + count + 1, &tmptime);
-                    }
-                    offset += length + count;
-                    break;
-                case MM_EXPIRY_HDR:
+                    if (field == 0x80)
+                        proto_tree_add_time(mmse_tree,
+                                hf_mmse_delivery_time_abs,
+                                tvb, offset - 1,
+                                length + count + 1, &tmptime);
+                    else
+                        proto_tree_add_time(mmse_tree,
+                                hf_mmse_delivery_time_rel,
+                                tvb, offset - 1,
+                                length + count + 1, &tmptime);
+                }
+                offset += length + count;
+                break;
+            case MM_EXPIRY_HDR:
+                {
+                    unsigned         tval;
+                    nstime_t         tmptime;
+                    unsigned         cnt;
+
                     /*
                      * Value-length(Absolute-token Date-value|
                      *              Relative-token Delta-seconds-value)
                      */
                     length = get_value_length(tvb, offset, &count, pinfo);
-                    field = tvb_get_guint8(tvb, offset + count);
-                    if (tree) {
-                        guint            tval;
-                        nstime_t         tmptime;
-                        guint            cnt;
+                    field = tvb_get_uint8(tvb, offset + count);
 
-                        tval = get_long_integer(tvb, offset + count + 1, &cnt);
-                        tmptime.secs = tval;
-                        tmptime.nsecs = 0;
+                    tval = get_long_integer(tvb, offset + count + 1, &cnt);
+                    tmptime.secs = tval;
+                    tmptime.nsecs = 0;
 
-                        if (field == 0x80)
-                            proto_tree_add_time(mmse_tree, hf_mmse_expiry_abs,
-                                    tvb, offset - 1,
-                                    length + count + 1, &tmptime);
-                        else
-                            proto_tree_add_time(mmse_tree, hf_mmse_expiry_rel,
-                                    tvb, offset - 1,
-                                    length + count + 1, &tmptime);
-                    }
-                    offset += length + count;
-                    break;
-                case MM_FROM_HDR:
-                    /*
-                     * Value-length(Address-present-token Encoded-string-value
-                     *              |Insert-address-token)
-                     */
-                    length = get_value_length(tvb, offset, &count, pinfo);
-                    if (tree) {
-                        field = tvb_get_guint8(tvb, offset + count);
-                        if (field == 0x81) {
-                            proto_tree_add_string(mmse_tree, hf_mmse_from, tvb,
-                                    offset-1, length + count + 1,
-                                    "<insert address>");
-                        } else {
-                            (void) get_encoded_strval(tvb, offset + count + 1,
-                                                      &strval, pinfo);
-                            proto_tree_add_string(mmse_tree, hf_mmse_from, tvb,
-                                    offset-1, length + count + 1, strval);
-                        }
-                    }
-                    offset += length + count;
-                    break;
-                case MM_MCLASS_HDR:
-                    /*
-                     * Class-identifier|Text-string
-                     */
-                    field = tvb_get_guint8(tvb, offset);
-                    if (field & 0x80) {
-                        offset++;
-                        if (tree) {
-                            proto_tree_add_uint(mmse_tree,
-                                    hf_mmse_message_class_id,
-                                    tvb, offset - 2, 2, field);
-                        }
+                    if (field == 0x80)
+                        proto_tree_add_time(mmse_tree, hf_mmse_expiry_abs,
+                                tvb, offset - 1,
+                                length + count + 1, &tmptime);
+                    else
+                        proto_tree_add_time(mmse_tree, hf_mmse_expiry_rel,
+                                tvb, offset - 1,
+                                length + count + 1, &tmptime);
+                }
+                offset += length + count;
+                break;
+            case MM_FROM_HDR:
+                /*
+                 * Value-length(Address-present-token Encoded-string-value
+                 *              |Insert-address-token)
+                 */
+                length = get_value_length(tvb, offset, &count, pinfo);
+                field = tvb_get_uint8(tvb, offset + count);
+                if (field == 0x81) {
+                    proto_tree_add_string(mmse_tree, hf_mmse_from, tvb,
+                            offset-1, length + count + 1,
+                            "<insert address>");
+                } else {
+                    (void) get_encoded_strval(tvb, offset + count + 1,
+                            &strval, pinfo);
+                    proto_tree_add_string(mmse_tree, hf_mmse_from, tvb,
+                            offset-1, length + count + 1, strval);
+                }
+                offset += length + count;
+                break;
+            case MM_MCLASS_HDR:
+                /*
+                 * Class-identifier|Text-string
+                 */
+                field = tvb_get_uint8(tvb, offset);
+                if (field & 0x80) {
+                    offset++;
+                    proto_tree_add_uint(mmse_tree,
+                            hf_mmse_message_class_id,
+                            tvb, offset - 2, 2, field);
+                } else {
+                    length = get_text_string(tvb, offset, pinfo->pool, &strval);
+                    proto_tree_add_string(mmse_tree,
+                            hf_mmse_message_class_str,
+                            tvb, offset - 1, length + 1,
+                            strval);
+                    offset += length;
+                }
+                break;
+            case MM_MID_HDR:                /* Text-string          */
+                length = get_text_string(tvb, offset, pinfo->pool, &strval);
+                proto_tree_add_string(mmse_tree, hf_mmse_message_id,
+                        tvb, offset - 1, length + 1, strval);
+                offset += length;
+                break;
+            case MM_MSIZE_HDR:              /* Long-integer         */
+                length = get_long_integer(tvb, offset, &count);
+                proto_tree_add_uint(mmse_tree, hf_mmse_message_size,
+                        tvb, offset - 1, count + 1, length);
+                offset += count;
+                break;
+            case MM_PRIORITY_HDR:           /* Low|Normal|High      */
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree, hf_mmse_priority, tvb,
+                        offset - 2, 2, field);
+                break;
+            case MM_RREPLY_HDR:             /* Yes|No               */
+                field = tvb_get_uint8(tvb, offset++);
+                if (version == 0x80) { /* MMSE 1.0 */
+                    proto_tree_add_uint(mmse_tree, hf_mmse_read_reply,
+                            tvb, offset - 2, 2, field);
+                } else {
+                    proto_tree_add_uint(mmse_tree, hf_mmse_read_report,
+                            tvb, offset - 2, 2, field);
+                }
+                break;
+            case MM_RALLOWED_HDR:           /* Yes|No               */
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree, hf_mmse_report_allowed,
+                        tvb, offset - 2, 2, field);
+                break;
+            case MM_RSTATUS_HDR:
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree, hf_mmse_response_status,
+                        tvb, offset - 2, 2, field);
+                break;
+            case MM_RTEXT_HDR:              /* Encoded-string-value */
+                if (pdut == PDU_M_MBOX_DELETE_CONF) {
+                    /* General form with length */
+                    length = tvb_get_uint8(tvb, offset);
+                    if (length == 0x1F) {
+                        unsigned length_len = 0;
+                        length = tvb_get_uintvar(tvb, offset + 1,
+                                &length_len, pinfo, &ei_mmse_oversized_uintvar);
+                        length += 1 + length_len;
                     } else {
-                        length = get_text_string(tvb, offset, &strval);
-                        if (tree) {
-                            proto_tree_add_string(mmse_tree,
-                                    hf_mmse_message_class_str,
-                                    tvb, offset - 1, length + 1,
-                                    strval);
-                        }
-                        offset += length;
+                        length += 1;
                     }
-                    break;
-                case MM_MID_HDR:                /* Text-string          */
-                    length = get_text_string(tvb, offset, &strval);
-                    if (tree) {
-                        proto_tree_add_string(mmse_tree, hf_mmse_message_id,
-                                tvb, offset - 1, length + 1, strval);
-                    }
-                    offset += length;
-                    break;
-                case MM_MSIZE_HDR:              /* Long-integer         */
-                    length = get_long_integer(tvb, offset, &count);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree, hf_mmse_message_size,
-                                tvb, offset - 1, count + 1, length);
-                    }
-                    offset += count;
-                    break;
-                case MM_PRIORITY_HDR:           /* Low|Normal|High      */
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree, hf_mmse_priority, tvb,
-                                offset - 2, 2, field);
-                    }
-                    break;
-                case MM_RREPLY_HDR:             /* Yes|No               */
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        if (version == 0x80) { /* MMSE 1.0 */
-                            proto_tree_add_uint(mmse_tree, hf_mmse_read_reply,
-                                    tvb, offset - 2, 2, field);
-                        } else {
-                            proto_tree_add_uint(mmse_tree, hf_mmse_read_report,
-                                    tvb, offset - 2, 2, field);
-                        }
-                    }
-                    break;
-                case MM_RALLOWED_HDR:           /* Yes|No               */
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree, hf_mmse_report_allowed,
-                                tvb, offset - 2, 2, field);
-                    }
-                    break;
-                case MM_RSTATUS_HDR:
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree, hf_mmse_response_status,
-                                tvb, offset - 2, 2, field);
-                    }
-                    break;
-                case MM_RTEXT_HDR:              /* Encoded-string-value */
-                    if (pdut == PDU_M_MBOX_DELETE_CONF) {
-                        /* General form with length */
-                        length = tvb_get_guint8(tvb, offset);
-                        if (length == 0x1F) {
-                            guint length_len = 0;
-                            length = tvb_get_guintvar(tvb, offset + 1,
-                                    &length_len, pinfo, &ei_mmse_oversized_uintvar);
-                            length += 1 + length_len;
-                        } else {
-                            length += 1;
-                        }
-                        if (tree) {
-                            proto_tree_add_string(mmse_tree,
-                                    hf_mmse_content_location,
-                                    tvb, offset - 1, length + 1,
-                                    "<Undecoded value for m-mbox-delete-conf>");
-                        }
-                    } else {
-                        length = get_encoded_strval(tvb, offset, &strval, pinfo);
-                        if (tree) {
-                            proto_tree_add_string(mmse_tree,
-                                    hf_mmse_response_text, tvb, offset - 1,
-                                    length + 1, strval);
-                        }
-                    }
-                    offset += length;
-                    break;
-                case MM_SVISIBILITY_HDR:        /* Hide|Show            */
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree,hf_mmse_sender_visibility,
-                                tvb, offset - 2, 2, field);
-                    }
-                    break;
-                case MM_STATUS_HDR:
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree, hf_mmse_status, tvb,
-                                offset - 2, 2, field);
-                    }
-                    break;
-                case MM_SUBJECT_HDR:            /* Encoded-string-value */
+                    proto_tree_add_string(mmse_tree,
+                            hf_mmse_content_location,
+                            tvb, offset - 1, length + 1,
+                            "<Undecoded value for m-mbox-delete-conf>");
+                } else {
                     length = get_encoded_strval(tvb, offset, &strval, pinfo);
-                    if (tree) {
-                        proto_tree_add_string(mmse_tree, hf_mmse_subject, tvb,
-                                offset - 1, length + 1, strval);
-                    }
-                    offset += length;
-                    break;
-                case MM_TO_HDR:                 /* Encoded-string-value */
-                    length = get_encoded_strval(tvb, offset, &strval, pinfo);
-                    if (tree) {
-                        proto_tree_add_string(mmse_tree, hf_mmse_to, tvb,
-                                offset - 1, length + 1, strval);
-                    }
-                    offset += length;
-                    break;
+                    proto_tree_add_string(mmse_tree,
+                            hf_mmse_response_text, tvb, offset - 1,
+                            length + 1, strval);
+                }
+                offset += length;
+                break;
+            case MM_SVISIBILITY_HDR:        /* Hide|Show            */
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree,hf_mmse_sender_visibility,
+                        tvb, offset - 2, 2, field);
+                break;
+            case MM_STATUS_HDR:
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree, hf_mmse_status, tvb,
+                        offset - 2, 2, field);
+                break;
+            case MM_SUBJECT_HDR:            /* Encoded-string-value */
+                length = get_encoded_strval(tvb, offset, &strval, pinfo);
+                proto_tree_add_string(mmse_tree, hf_mmse_subject, tvb,
+                        offset - 1, length + 1, strval);
+                offset += length;
+                break;
+            case MM_TO_HDR:                 /* Encoded-string-value */
+                length = get_encoded_strval(tvb, offset, &strval, pinfo);
+                proto_tree_add_string(mmse_tree, hf_mmse_to, tvb,
+                        offset - 1, length + 1, strval);
+                offset += length;
+                break;
 
                 /*
                  * MMS Encapsulation 1.1
                  */
-                case MM_RETRIEVE_STATUS_HDR:    /* Well-known-value */
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree, hf_mmse_retrieve_status,
-                                tvb, offset - 2, 2, field);
-                    }
-                    break;
-                case MM_RETRIEVE_TEXT_HDR:
-                    if (pdut == PDU_M_MBOX_DELETE_CONF) {
-                        /* General form with length */
-                        length = tvb_get_guint8(tvb, offset);
-                        if (length == 0x1F) {
-                            guint length_len = 0;
-                            length = tvb_get_guintvar(tvb, offset + 1,
-                                    &length_len, pinfo, &ei_mmse_oversized_uintvar);
-                            length += 1 + length_len;
-                        } else {
-                            length += 1;
-                        }
-                        if (tree) {
-                            proto_tree_add_string(mmse_tree,
-                                    hf_mmse_content_location,
-                                    tvb, offset - 1, length + 1,
-                                    "<Undecoded value for m-mbox-delete-conf>");
-                        }
+            case MM_RETRIEVE_STATUS_HDR:    /* Well-known-value */
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree, hf_mmse_retrieve_status,
+                        tvb, offset - 2, 2, field);
+                break;
+            case MM_RETRIEVE_TEXT_HDR:
+                if (pdut == PDU_M_MBOX_DELETE_CONF) {
+                    /* General form with length */
+                    length = tvb_get_uint8(tvb, offset);
+                    if (length == 0x1F) {
+                        unsigned length_len = 0;
+                        length = tvb_get_uintvar(tvb, offset + 1,
+                                &length_len, pinfo, &ei_mmse_oversized_uintvar);
+                        length += 1 + length_len;
                     } else {
-                        /* Encoded-string-value */
-                        length = get_encoded_strval(tvb, offset, &strval, pinfo);
-                        if (tree) {
-                            proto_tree_add_string(mmse_tree,
-                                    hf_mmse_retrieve_text, tvb, offset - 1,
-                                    length + 1, strval);
-                        }
+                        length += 1;
                     }
-                    offset += length;
-                    break;
-                case MM_READ_STATUS_HDR:        /* Well-known-value */
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree, hf_mmse_read_status,
-                                tvb, offset - 2, 2, field);
-                    }
-                    break;
-                case MM_REPLY_CHARGING_HDR:     /* Well-known-value */
-                    field = tvb_get_guint8(tvb, offset++);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree, hf_mmse_reply_charging,
-                                tvb, offset - 2, 2, field);
-                    }
-                    break;
-                case MM_REPLY_CHARGING_DEADLINE_HDR:    /* Well-known-value */
+
+                    proto_tree_add_string(mmse_tree,
+                            hf_mmse_content_location,
+                            tvb, offset - 1, length + 1,
+                            "<Undecoded value for m-mbox-delete-conf>");
+                } else {
+                    /* Encoded-string-value */
+                    length = get_encoded_strval(tvb, offset, &strval, pinfo);
+                    proto_tree_add_string(mmse_tree,
+                            hf_mmse_retrieve_text, tvb, offset - 1,
+                            length + 1, strval);
+                }
+                offset += length;
+                break;
+            case MM_READ_STATUS_HDR:        /* Well-known-value */
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree, hf_mmse_read_status,
+                        tvb, offset - 2, 2, field);
+                break;
+            case MM_REPLY_CHARGING_HDR:     /* Well-known-value */
+                field = tvb_get_uint8(tvb, offset++);
+                proto_tree_add_uint(mmse_tree, hf_mmse_reply_charging,
+                        tvb, offset - 2, 2, field);
+                break;
+            case MM_REPLY_CHARGING_DEADLINE_HDR:    /* Well-known-value */
+                {
+                    unsigned         tval;
+                    nstime_t         tmptime;
+                    unsigned         cnt;
+
                     /*
                      * Value-length(Absolute-token Date-value|
                      *              Relative-token Delta-seconds-value)
                      */
+
                     length = get_value_length(tvb, offset, &count, pinfo);
-                    field = tvb_get_guint8(tvb, offset + count);
-                    if (tree) {
-                        guint            tval;
-                        nstime_t         tmptime;
-                        guint            cnt;
+                    field = tvb_get_uint8(tvb, offset + count);
 
-                        tval = get_long_integer(tvb, offset + count + 1, &cnt);
-                        tmptime.secs = tval;
-                        tmptime.nsecs = 0;
+                    tval = get_long_integer(tvb, offset + count + 1, &cnt);
+                    tmptime.secs = tval;
+                    tmptime.nsecs = 0;
 
-                        if (field == 0x80)
-                            proto_tree_add_time(mmse_tree, hf_mmse_reply_charging_deadline_abs,
-                                    tvb, offset - 1,
-                                    length + count + 1, &tmptime);
-                        else
-                            proto_tree_add_time(mmse_tree, hf_mmse_reply_charging_deadline_rel,
-                                    tvb, offset - 1,
-                                    length + count + 1, &tmptime);
-                    }
-                    offset += length + count;
-                    break;
-                case MM_REPLY_CHARGING_ID_HDR:  /* Text-string */
-                    length = get_text_string(tvb, offset, &strval);
-                    if (tree) {
-                        proto_tree_add_string(mmse_tree,
-                                hf_mmse_reply_charging_id,
-                                tvb, offset - 1, length + 1, strval);
-                    }
-                    offset += length;
-                    break;
-                case MM_REPLY_CHARGING_SIZE_HDR:        /* Long-integer */
-                    length = get_long_integer(tvb, offset, &count);
-                    if (tree) {
-                        proto_tree_add_uint(mmse_tree,
-                                hf_mmse_reply_charging_size,
-                                tvb, offset - 1, count + 1, length);
-                    }
-                    offset += count;
-                    break;
-                case MM_PREV_SENT_BY_HDR:
+                    if (field == 0x80)
+                        proto_tree_add_time(mmse_tree, hf_mmse_reply_charging_deadline_abs,
+                                tvb, offset - 1,
+                                length + count + 1, &tmptime);
+                    else
+                        proto_tree_add_time(mmse_tree, hf_mmse_reply_charging_deadline_rel,
+                                tvb, offset - 1,
+                                length + count + 1, &tmptime);
+                }
+                offset += length + count;
+                break;
+            case MM_REPLY_CHARGING_ID_HDR:  /* Text-string */
+                length = get_text_string(tvb, offset, pinfo->pool, &strval);
+                proto_tree_add_string(mmse_tree,
+                        hf_mmse_reply_charging_id,
+                        tvb, offset - 1, length + 1, strval);
+                offset += length;
+                break;
+            case MM_REPLY_CHARGING_SIZE_HDR:        /* Long-integer */
+                length = get_long_integer(tvb, offset, &count);
+                proto_tree_add_uint(mmse_tree,
+                        hf_mmse_reply_charging_size,
+                        tvb, offset - 1, count + 1, length);
+                offset += count;
+                break;
+            case MM_PREV_SENT_BY_HDR:
+                {
+                    uint32_t fwd_count, count1, count2;
+                    proto_tree *subtree = NULL;
+                    proto_item *tii = NULL;
+
                     /* Value-length Integer-value Encoded-string-value */
                     length = get_value_length(tvb, offset, &count, pinfo);
-                    if (tree) {
-                        guint32 fwd_count, count1, count2;
-                        proto_tree *subtree = NULL;
-                        proto_item *tii = NULL;
-                        /* 1. Forwarded-count-value := Integer-value */
-                        fwd_count = get_integer_value(tvb, offset + count,
+
+                    /* 1. Forwarded-count-value := Integer-value */
+                    fwd_count = get_integer_value(tvb, offset + count,
                             &count1);
-                        /* 2. Encoded-string-value */
-                        count2 = get_encoded_strval(tvb,
-                                offset + count + count1, &strval, pinfo);
-                        /* Now render the fields */
-                        tii = proto_tree_add_string_format(mmse_tree,
-                                hf_mmse_prev_sent_by,
-                                tvb, offset - 1, 1 + count + length,
-                                strval, "%s (Forwarded-count=%u)",
-                                format_text(strval, strlen(strval)),
-                                fwd_count);
-                        subtree = proto_item_add_subtree(tii,
-                                ett_mmse_hdr_details);
-                        proto_tree_add_uint(subtree,
-                                hf_mmse_prev_sent_by_fwd_count,
-                                tvb, offset + count, count1, fwd_count);
-                        proto_tree_add_string(subtree,
-                                hf_mmse_prev_sent_by_address,
-                                tvb, offset + count + count1, count2, strval);
-                    }
-                    offset += length + count;
-                    break;
-                case MM_PREV_SENT_DATE_HDR:
+                    /* 2. Encoded-string-value */
+                    count2 = get_encoded_strval(tvb,
+                            offset + count + count1, &strval, pinfo);
+                    /* Now render the fields */
+                    tii = proto_tree_add_string_format(mmse_tree,
+                            hf_mmse_prev_sent_by,
+                            tvb, offset - 1, 1 + count + length,
+                            strval, "%s (Forwarded-count=%u)",
+                            format_text(pinfo->pool, strval, strlen(strval)),
+                            fwd_count);
+                    subtree = proto_item_add_subtree(tii,
+                            ett_mmse_hdr_details);
+                    proto_tree_add_uint(subtree,
+                            hf_mmse_prev_sent_by_fwd_count,
+                            tvb, offset + count, count1, fwd_count);
+                    proto_tree_add_string(subtree,
+                            hf_mmse_prev_sent_by_address,
+                            tvb, offset + count + count1, count2, strval);
+                }
+                offset += length + count;
+                break;
+            case MM_PREV_SENT_DATE_HDR:
+                {
+                    uint32_t fwd_count, count1, count2;
+                    unsigned         tval;
+                    nstime_t         tmptime;
+                    proto_tree *subtree = NULL;
+                    proto_item *tii = NULL;
+
                     /* Value-Length Forwarded-count-value Date-value */
                     length = get_value_length(tvb, offset, &count, pinfo);
-                    if (tree) {
-                        guint32 fwd_count, count1, count2;
-                        guint            tval;
-                        nstime_t         tmptime;
-                        proto_tree *subtree = NULL;
-                        proto_item *tii = NULL;
-                        /* 1. Forwarded-count-value := Integer-value */
-                        fwd_count = get_integer_value(tvb, offset + count,
-                            &count1);
-                        /* 2. Date-value := Long-integer */
-                        tval = get_long_integer(tvb, offset + count + count1,
-                                &count2);
-                        tmptime.secs = tval;
-                        tmptime.nsecs = 0;
-                        strval = abs_time_to_str(wmem_packet_scope(), &tmptime, ABSOLUTE_TIME_LOCAL,
-                            TRUE);
-                        /* Now render the fields */
-                        tii = proto_tree_add_string_format(mmse_tree,
-                                hf_mmse_prev_sent_date,
-                                tvb, offset - 1, 1 + count + length,
-                                strval, "%s (Forwarded-count=%u)",
-                                format_text(strval, strlen(strval)),
-                                fwd_count);
-                        subtree = proto_item_add_subtree(tii,
-                                ett_mmse_hdr_details);
-                        proto_tree_add_uint(subtree,
-                                hf_mmse_prev_sent_date_fwd_count,
-                                tvb, offset + count, count1, fwd_count);
-                        proto_tree_add_string(subtree,
-                                hf_mmse_prev_sent_date_date,
-                                tvb, offset + count + count1, count2, strval);
-                    }
-                    offset += length + count;
-                    break;
+                    /* 1. Forwarded-count-value := Integer-value */
+                    fwd_count = get_integer_value(tvb, offset + count, &count1);
+                    /* 2. Date-value := Long-integer */
+                    tval = get_long_integer(tvb, offset + count + count1,
+                            &count2);
+                    tmptime.secs = tval;
+                    tmptime.nsecs = 0;
+                    strval = abs_time_to_str(pinfo->pool, &tmptime, ABSOLUTE_TIME_LOCAL,
+                            true);
+                    /* Now render the fields */
+                    tii = proto_tree_add_string_format(mmse_tree,
+                            hf_mmse_prev_sent_date,
+                            tvb, offset - 1, 1 + count + length,
+                            strval, "%s (Forwarded-count=%u)",
+                            format_text(pinfo->pool, strval, strlen(strval)),
+                            fwd_count);
+                    subtree = proto_item_add_subtree(tii,
+                            ett_mmse_hdr_details);
+                    proto_tree_add_uint(subtree,
+                            hf_mmse_prev_sent_date_fwd_count,
+                            tvb, offset + count, count1, fwd_count);
+                    proto_tree_add_string(subtree,
+                            hf_mmse_prev_sent_date_date,
+                            tvb, offset + count + count1, count2, strval);
+                }
+                offset += length + count;
+                break;
 
                 /* MMS Encapsulation 1.2 */
 
-                default:
-                    if (field & 0x80) { /* Well-known WSP header encoding */
-                        guint8 peek = tvb_get_guint8(tvb, offset);
-                        const char *hdr_name = val_to_str(field, vals_mm_header_names,
-                                "Unknown field (0x%02x)");
-            const char *str;
-                        DebugLog(("\t\tUndecoded well-known header: %s\n",
-                                    hdr_name));
+            default:
+                if (field & 0x80) { /* Well-known WSP header encoding */
+                    uint8_t peek = tvb_get_uint8(tvb, offset);
+                    const char *hdr_name = val_to_str(pinfo->pool, field, vals_mm_header_names,
+                            "Unknown field (0x%02x)");
+                    const char *str;
+                    DebugLog(("\t\tUndecoded well-known header: %s\n",
+                                hdr_name));
 
-                        if (peek & 0x80) { /* Well-known value */
-                            length = 1;
-                            if (tree) {
-                                proto_tree_add_uint_format(mmse_tree, hf_mmse_header_uint, tvb, offset - 1,
-                                        length + 1, peek,
-                                        "%s: <Well-known value 0x%02x>"
-                                        " (not decoded)",
-                                        hdr_name, peek);
-                            }
-                        } else if ((peek == 0) || (peek >= 0x20)) { /* Text */
-                            length = get_text_string(tvb, offset, &strval);
-                            if (tree) {
-                                str = format_text(strval, strlen(strval));
-                                proto_tree_add_string_format(mmse_tree, hf_mmse_header_string, tvb, offset - 1,
-                                        length + 1, str, "%s: %s (Not decoded)", hdr_name, str);
-                            }
-                        } else { /* General form with length */
-                            if (peek == 0x1F) { /* Value length in guintvar */
-                                guint length_len = 0;
-                                length = 1 + tvb_get_guintvar(tvb, offset + 1,
-                                        &length_len, pinfo, &ei_mmse_oversized_uintvar);
-                                length += length_len;
-                            } else { /* Value length in octet */
-                                length = 1 + tvb_get_guint8(tvb, offset);
-                            }
-                            if (tree) {
-                                proto_tree_add_bytes_format(mmse_tree, hf_mmse_header_bytes, tvb, offset - 1,
-                                        length + 1, NULL, "%s: "
-                                        "<Value in general form> (not decoded)",
-                                        hdr_name);
-                            }
+                    if (peek & 0x80) { /* Well-known value */
+                        length = 1;
+                        proto_tree_add_uint_format(mmse_tree, hf_mmse_header_uint, tvb, offset - 1,
+                                length + 1, peek,
+                                "%s: <Well-known value 0x%02x>"
+                                " (not decoded)",
+                                hdr_name, peek);
+                    } else if ((peek == 0) || (peek >= 0x20)) { /* Text */
+                        length = get_text_string(tvb, offset, pinfo->pool, &strval);
+                        str = format_text(pinfo->pool, strval, strlen(strval));
+                        proto_tree_add_string_format(mmse_tree, hf_mmse_header_string, tvb, offset - 1,
+                                length + 1, str, "%s: %s (Not decoded)", hdr_name, str);
+                    } else { /* General form with length */
+                        if (peek == 0x1F) { /* Value length in uintvar */
+                            unsigned length_len = 0;
+                            length = 1 + tvb_get_uintvar(tvb, offset + 1,
+                                    &length_len, pinfo, &ei_mmse_oversized_uintvar);
+                            length += length_len;
+                        } else { /* Value length in octet */
+                            length = 1 + tvb_get_uint8(tvb, offset);
                         }
-                        offset += length;
-                    } else { /* Literal WSP header encoding */
-                        guint            length2;
-                        const char       *strval2;
-
-                        --offset;
-                        length = get_text_string(tvb, offset, &strval);
-                        DebugLog(("\t\tUndecoded literal header: %s\n",
-                                    strval));
-                        length2= get_text_string(tvb, offset+length, &strval2);
-
-                        if (tree) {
-                            proto_tree_add_string_format(mmse_tree,
-                                    hf_mmse_ffheader, tvb, offset,
-                                    length + length2,
-                                    tvb_get_string_enc(wmem_packet_scope(), tvb, offset,
-                                            length + length2, ENC_ASCII),
-                                    "%s: %s",
-                                    format_text(strval, strlen(strval)),
-                                    format_text(strval2, strlen(strval2)));
-                        }
-                        offset += length + length2;
+                        proto_tree_add_bytes_format(mmse_tree, hf_mmse_header_bytes, tvb, offset - 1,
+                                length + 1, NULL, "%s: "
+                                "<Value in general form> (not decoded)",
+                                hdr_name);
                     }
-                    break;
-            }
-            DebugLog(("\tEnd(case)\n"));
-        }
-        DebugLog(("\tEnd(switch)\n"));
-        if (field == MM_CTYPE_HDR) {
-            /*
-             * Eeehh, we're now actually back to good old WSP content-type
-             * encoding. Let's steal that from the WSP-dissector.
-             */
-            tvbuff_t    *tmp_tvb;
-            guint        type;
-            const char  *type_str;
+                    offset += length;
+                } else { /* Literal WSP header encoding */
+                    unsigned         length2;
+                    const char       *strval2;
 
-            DebugLog(("Content-Type: [from WSP dissector]\n"));
-            DebugLog(("Calling add_content_type() in WSP dissector\n"));
-            offset = add_content_type(mmse_tree, pinfo, tvb, offset, &type, &type_str);
-            DebugLog(("Generating new TVB subset (offset = %u)\n", offset));
-            tmp_tvb = tvb_new_subset_remaining(tvb, offset);
-            DebugLog(("Add POST data\n"));
-            add_post_data(mmse_tree, tmp_tvb, type, type_str, pinfo);
-            DebugLog(("Done!\n"));
+                    --offset;
+                    length = get_text_string(tvb, offset, pinfo->pool, &strval);
+                    DebugLog(("\t\tUndecoded literal header: %s\n",
+                                strval));
+                    length2= get_text_string(tvb, offset+length, pinfo->pool, &strval2);
+
+                    proto_tree_add_string_format(mmse_tree,
+                            hf_mmse_ffheader, tvb, offset,
+                            length + length2,
+                            tvb_get_string_enc(pinfo->pool, tvb, offset,
+                                length + length2, ENC_ASCII),
+                            "%s: %s",
+                            format_text(pinfo->pool, strval, strlen(strval)),
+                            format_text(pinfo->pool, strval2, strlen(strval2)));
+
+                    offset += length + length2;
+                }
+                break;
         }
-    } else {
-        DebugLog(("tree == NULL and PDU has no potential content\n"));
+        DebugLog(("\tEnd(case)\n"));
+
+        if (offset <= old_offset) {
+            REPORT_DISSECTOR_BUG("Offset isn't increasing (offset=%u, old offset=%u)", offset, old_offset);
+        }
+        old_offset = offset;
+    }
+
+    DebugLog(("\tEnd(switch)\n"));
+    if (field == MM_CTYPE_HDR) {
+        /*
+         * Eeehh, we're now actually back to good old WSP content-type
+         * encoding. Let's steal that from the WSP-dissector.
+         */
+        tvbuff_t    *tmp_tvb;
+        unsigned     type;
+        const char  *type_str;
+
+        DebugLog(("Content-Type: [from WSP dissector]\n"));
+        DebugLog(("Calling add_content_type() in WSP dissector\n"));
+        offset = add_content_type(mmse_tree, pinfo, tvb, offset, &type, &type_str);
+        DebugLog(("Generating new TVB subset (offset = %u)\n", offset));
+        tmp_tvb = tvb_new_subset_remaining(tvb, offset);
+        DebugLog(("Add POST data\n"));
+        add_post_data(mmse_tree, tmp_tvb, type, type_str, pinfo);
+        DebugLog(("Done!\n"));
     }
 
     /* If this protocol has a sub-dissector call it here, see section 1.8 */
@@ -1646,7 +1601,7 @@ proto_register_mmse(void)
 
     };
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mmse,
         &ett_mmse_hdr_details,
     };
@@ -1667,6 +1622,10 @@ proto_register_mmse(void)
 
     expert_mmse = expert_register_protocol(proto_mmse);
     expert_register_field_array(expert_mmse, ei, array_length(ei));
+
+    /* Register the dissectors */
+    mmse_standalone_handle = register_dissector("mmse", dissect_mmse_standalone, proto_mmse);
+    mmse_encapsulated_handle = register_dissector("mmse_encapsulated", dissect_mmse_encapsulated, proto_mmse);
 }
 
 /* If this dissector uses sub-dissector registration add registration routine.
@@ -1676,14 +1635,7 @@ proto_register_mmse(void)
 void
 proto_reg_handoff_mmse(void)
 {
-    dissector_handle_t mmse_standalone_handle;
-    dissector_handle_t mmse_encapsulated_handle;
-
     heur_dissector_add("wsp", dissect_mmse_heur, "MMS Message Encapsulation over WSP", "mmse_wsp", proto_mmse, HEURISTIC_ENABLE);
-    mmse_standalone_handle = create_dissector_handle(
-            dissect_mmse_standalone, proto_mmse);
-    mmse_encapsulated_handle = create_dissector_handle(
-            dissect_mmse_encapsulated, proto_mmse);
         /* As the media types for WSP and HTTP are the same, the WSP dissector
          * uses the same string dissector table as the HTTP protocol. */
     dissector_add_string("media_type",
@@ -1693,7 +1645,7 @@ proto_reg_handoff_mmse(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

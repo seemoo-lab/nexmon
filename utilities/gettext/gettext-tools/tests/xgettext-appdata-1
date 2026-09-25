@@ -1,9 +1,9 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test of AppData support.
+# Test of AppData support: HTML markup.
 
-cat <<EOF > xg-gs-1-empty.appdata.xml
+cat <<\EOF > xg-gs-1-empty.appdata.xml
 <?xml version="1.0"?>
 <component type="desktop"/>
 EOF
@@ -15,7 +15,7 @@ test $? = 0 || {
   Exit 77
 }
 
-cat <<EOF > xg-gs-1.appdata.xml
+cat <<\EOF > xg-gs-1.appdata.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2013 First Lastname <your@email.com> -->
 <component type="desktop">
@@ -57,9 +57,10 @@ cat <<EOF > xg-gs-1.appdata.xml
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} --add-comments -o - xg-gs-1.appdata.xml | grep -v 'POT-Creation-Date' > xg-gs-1.pot || Exit 1
+${XGETTEXT} --add-comments -o xg-gs-1.tmp xg-gs-1.appdata.xml || Exit 1
+func_filter_POT_Creation_Date xg-gs-1.tmp xg-gs-1.pot
 
-cat <<EOF > xg-gs-1.ok
+cat <<\EOF > xg-gs-1.ok
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.

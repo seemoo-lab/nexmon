@@ -1,0 +1,73 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: global type definitions.
+# Note: For this test case, 'xgotext' fails to extract "Test 1".
+
+cat <<\EOF > xg-go-12.go
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"github.com/leonelquinteros/gotext"
+)
+
+var NL1 = func () *gotext.Locale {
+	return gotext.NewLocale(".", "fr_FR")
+}
+
+
+type NotLocale2 struct {
+	a int
+}
+
+func (nl NotLocale2) Get (s string) string {
+	return s + strconv.Itoa(nl.a)
+}
+
+var NL2 = func () NotLocale2 {
+	return NotLocale2{}
+}
+
+
+type NotLocale3 struct {
+	b int
+	Get func (s string) string
+}
+
+var NL3 = func () NotLocale3 {
+	return NotLocale3{}
+}
+
+
+type NotLocale4 interface {
+	Get (s string) string
+}
+
+var NL4 = func () NotLocale4 {
+	return * new (NotLocale4)
+}
+
+
+func main () {
+	fmt.Println(NL1().Get("Test 1"))
+	fmt.Println(NL2().Get("Test 2"))
+	fmt.Println(NL3().Get("Test 3"))
+	fmt.Println(NL4().Get("Test 4"))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-12.tmp xg-go-12.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-12.tmp.po > xg-go-12.po || Exit 1
+
+cat <<\EOF > xg-go-12.ok
+msgid "Test 1"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-12.ok xg-go-12.po || Exit 1
+
+exit 0

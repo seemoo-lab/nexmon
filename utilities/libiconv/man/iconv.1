@@ -1,4 +1,4 @@
-.\" Copyright (c) Bruno Haible <bruno@clisp.org>
+.\" Copyright (c) Free Software Foundation, Inc.
 .\"
 .\" This is free documentation; you can redistribute it and/or
 .\" modify it under the terms of the GNU General Public License as
@@ -9,7 +9,7 @@
 .\"   OpenGroup's Single Unix specification http://www.UNIX-systems.org/online.html
 .\"   POSIX 2001 draft6
 .\"
-.TH ICONV 1  "March 31, 2007" "GNU" "Linux Programmer's Manual"
+.TH ICONV 1  "December 15, 2024" "GNU"
 .SH NAME
 iconv \- character set conversion
 .SH SYNOPSIS
@@ -84,6 +84,10 @@ supported encodings, in a system dependent format. For the libiconv
 implementation, the names are printed in upper case, separated by whitespace,
 and alias names of an encoding are listed on the same line as the encoding
 itself.
+.SH ENVIRONMENT
+Conversion from/to EBCDIC encodings can be modified in a specific way:
+If the environment variable \fBICONV_EBCDIC_ZOS_UNIX\fP is set to a non-empty
+value, the EBCDIC newline 0x15 will get mapped to LF instead of NEL.
 .SH EXAMPLES
 .TP
 \fBiconv \-f ISO\-8859\-1 \-t UTF\-8\fP
@@ -102,7 +106,7 @@ bytes and for valid but unconvertible characters.
 \fBiconv \-\-list\fP
 lists the supported encodings.
 .SH "CONFORMING TO"
-POSIX:2001
+POSIX:2024
 .SH "SEE ALSO"
 .BR iconv_open (3),
 .BR locale (7)

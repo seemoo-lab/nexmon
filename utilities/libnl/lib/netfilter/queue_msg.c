@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/queue_msg.c	Netfilter Queue Messages
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2007, 2008 Patrick McHardy <kaber@trash.net>
  * Copyright (c) 2010       Karl Hiramoto <karl@hiramoto.org>
  */
@@ -17,27 +11,21 @@
  * @{
  */
 
+#include "nl-default.h"
+
 #include <sys/types.h>
+
 #include <linux/netfilter/nfnetlink_queue.h>
 
-#include <netlink-local.h>
 #include <netlink/attr.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/queue_msg.h>
 
-static struct nl_cache_ops nfnl_queue_msg_ops;
+#include "nl-netfilter.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
-#if __BYTE_ORDER == __BIG_ENDIAN
-static uint64_t ntohll(uint64_t x)
-{
-	return x;
-}
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-static uint64_t ntohll(uint64_t x)
-{
-	return __bswap_64(x);
-}
-#endif
+static struct nl_cache_ops nfnl_queue_msg_ops;
 
 static struct nla_policy queue_policy[NFQA_MAX+1] = {
 	[NFQA_PACKET_HDR]		= {
@@ -152,22 +140,23 @@ static int queue_msg_parser(struct nl_cache_ops *ops, struct sockaddr_nl *who,
 	int err;
 
 	if ((err = nfnlmsg_queue_msg_parse(nlh, &msg)) < 0)
-		goto errout;
+		return err;
 
 	err = pp->pp_cb((struct nl_object *) msg, pp);
-errout:
 	nfnl_queue_msg_put(msg);
 	return err;
 }
 
 /** @} */
 
-struct nl_msg *nfnl_queue_msg_build_verdict(const struct nfnl_queue_msg *msg)
+static struct nl_msg *
+__nfnl_queue_msg_build_verdict(const struct nfnl_queue_msg *msg,
+							   uint8_t type)
 {
 	struct nl_msg *nlmsg;
 	struct nfqnl_msg_verdict_hdr verdict;
 
-	nlmsg = nfnlmsg_alloc_simple(NFNL_SUBSYS_QUEUE, NFQNL_MSG_VERDICT, 0,
+	nlmsg = nfnlmsg_alloc_simple(NFNL_SUBSYS_QUEUE, type, 0,
 				     nfnl_queue_msg_get_family(msg),
 				     nfnl_queue_msg_get_group(msg));
 	if (nlmsg == NULL)
@@ -190,6 +179,18 @@ nla_put_failure:
 	return NULL;
 }
 
+struct nl_msg *
+nfnl_queue_msg_build_verdict(const struct nfnl_queue_msg *msg)
+{
+	return __nfnl_queue_msg_build_verdict(msg, NFQNL_MSG_VERDICT);
+}
+
+struct nl_msg *
+nfnl_queue_msg_build_verdict_batch(const struct nfnl_queue_msg *msg)
+{
+	return __nfnl_queue_msg_build_verdict(msg, NFQNL_MSG_VERDICT_BATCH);
+}
+
 /**
 * Send a message verdict/mark
 * @arg nlh            netlink messsage header
@@ -203,6 +204,29 @@ int nfnl_queue_msg_send_verdict(struct nl_sock *nlh,
 	int err;
 
 	nlmsg = nfnl_queue_msg_build_verdict(msg);
+	if (nlmsg == NULL)
+		return -NLE_NOMEM;
+
+	err = nl_send_auto_complete(nlh, nlmsg);
+	nlmsg_free(nlmsg);
+	if (err < 0)
+		return err;
+	return wait_for_ack(nlh);
+}
+
+/**
+* Send a message batched verdict/mark
+* @arg nlh            netlink messsage header
+* @arg msg            queue msg
+* @return 0 on OK or error code
+*/
+int nfnl_queue_msg_send_verdict_batch(struct nl_sock *nlh,
+									  const struct nfnl_queue_msg *msg)
+{
+	struct nl_msg *nlmsg;
+	int err;
+
+	nlmsg = nfnl_queue_msg_build_verdict_batch(msg);
 	if (nlmsg == NULL)
 		return -NLE_NOMEM;
 
@@ -249,7 +273,7 @@ int nfnl_queue_msg_send_verdict_payload(struct nl_sock *nlh,
 	iov[2].iov_base = (void *) payload_data;
 	iov[2].iov_len = NLA_ALIGN(payload_len);
 
-	nl_auto_complete(nlh, nlmsg);
+	nl_complete_msg(nlh, nlmsg);
 	err = nl_send_iovec(nlh, nlmsg, iov, 3);
 
 	nlmsg_free(nlmsg);
@@ -271,12 +295,12 @@ static struct nl_cache_ops nfnl_queue_msg_ops = {
 	.co_obj_ops		= &queue_msg_obj_ops,
 };
 
-static void __init nfnl_msg_queue_init(void)
+static void _nl_init nfnl_msg_queue_init(void)
 {
 	nl_cache_mngt_register(&nfnl_queue_msg_ops);
 }
 
-static void __exit nfnl_queue_msg_exit(void)
+static void _nl_exit nfnl_queue_msg_exit(void)
 {
 	nl_cache_mngt_unregister(&nfnl_queue_msg_ops);
 }

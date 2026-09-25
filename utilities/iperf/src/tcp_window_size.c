@@ -1,48 +1,48 @@
-/*--------------------------------------------------------------- 
- * Copyright (c) 1999,2000,2001,2002,2003                              
- * The Board of Trustees of the University of Illinois            
- * All Rights Reserved.                                           
- *--------------------------------------------------------------- 
- * Permission is hereby granted, free of charge, to any person    
- * obtaining a copy of this software (Iperf) and associated       
- * documentation files (the "Software"), to deal in the Software  
- * without restriction, including without limitation the          
- * rights to use, copy, modify, merge, publish, distribute,        
- * sublicense, and/or sell copies of the Software, and to permit     
+/*---------------------------------------------------------------
+ * Copyright (c) 1999,2000,2001,2002,2003
+ * The Board of Trustees of the University of Illinois
+ * All Rights Reserved.
+ *---------------------------------------------------------------
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software (Iperf) and associated
+ * documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit
  * persons to whom the Software is furnished to do
- * so, subject to the following conditions: 
+ * so, subject to the following conditions:
  *
- *     
- * Redistributions of source code must retain the above 
- * copyright notice, this list of conditions and 
- * the following disclaimers. 
  *
- *     
- * Redistributions in binary form must reproduce the above 
- * copyright notice, this list of conditions and the following 
- * disclaimers in the documentation and/or other materials 
- * provided with the distribution. 
- * 
- *     
- * Neither the names of the University of Illinois, NCSA, 
- * nor the names of its contributors may be used to endorse 
+ * Redistributions of source code must retain the above
+ * copyright notice, this list of conditions and
+ * the following disclaimers.
+ *
+ *
+ * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following
+ * disclaimers in the documentation and/or other materials
+ * provided with the distribution.
+ *
+ *
+ * Neither the names of the University of Illinois, NCSA,
+ * nor the names of its contributors may be used to endorse
  * or promote products derived from this Software without
- * specific prior written permission. 
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
- * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT 
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+ * specific prior written permission.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * ________________________________________________________________
- * National Laboratory for Applied Network Research 
- * National Center for Supercomputing Applications 
- * University of Illinois at Urbana-Champaign 
+ * National Laboratory for Applied Network Research
+ * National Center for Supercomputing Applications
+ * University of Illinois at Urbana-Champaign
  * http://www.ncsa.uiuc.edu
- * ________________________________________________________________ 
+ * ________________________________________________________________
  *
  * tcp_window_size.c
  * by Mark Gates <mgates@nlanr.net>
@@ -70,30 +70,27 @@ extern "C" {
  * returns -1 on error, 0 on no error.
  * ------------------------------------------------------------------- */
 
-int setsock_tcp_windowsize( int inSock, int inTCPWin, int inSend ) {
+int setsock_tcp_windowsize (int inSock, int inTCPWin, int inSend) {
 #ifdef SO_SNDBUF
     int rc;
     int newTCPWin;
 
-    assert( inSock >= 0 );
-
-    if ( inTCPWin > 0 ) {
-
+    assert(inSock >= 0);
+    if (inTCPWin > 0) {
 #ifdef TCP_WINSHIFT
-
         /* UNICOS requires setting the winshift explicitly */
-        if ( inTCPWin > 65535 ) {
+        if (inTCPWin > 65535) {
             int winShift = 0;
             int scaledWin = inTCPWin >> 16;
-            while ( scaledWin > 0 ) {
+            while (scaledWin > 0) {
                 scaledWin >>= 1;
                 winShift++;
             }
 
             /* set TCP window shift */
-            rc = setsockopt( inSock, IPPROTO_TCP, TCP_WINSHIFT,
-                             (char*) &winShift, sizeof( winShift ));
-            if ( rc < 0 ) {
+            rc = setsockopt(inSock, IPPROTO_TCP, TCP_WINSHIFT,
+                             (char*) &winShift, sizeof(winShift));
+            if (rc < 0) {
                 return rc;
             }
 
@@ -106,38 +103,37 @@ int setsock_tcp_windowsize( int inSock, int inTCPWin, int inSend ) {
         /* On AIX, RFC 1323 extensions can be set system-wide,
          * using the 'no' network options command. But we can also set them
          * per-socket, so let's try just in case. */
-        if ( inTCPWin > 65535 ) {
+        if (inTCPWin > 65535) {
             /* enable RFC 1323 */
             int on = 1;
-            rc = setsockopt( inSock, IPPROTO_TCP, TCP_RFC1323,
-                             (char*) &on, sizeof( on ));
-            if ( rc < 0 ) {
+            rc = setsockopt(inSock, IPPROTO_TCP, TCP_RFC1323,
+                             (char*) &on, sizeof(on));
+            if (rc < 0) {
                 return rc;
             }
         }
 #endif /* TCP_RFC1323 */
 
-        if ( !inSend ) {
+        if (!inSend) {
             /* receive buffer -- set
              * note: results are verified after connect() or listen(),
              * since some OS's don't show the corrected value until then. */
             newTCPWin = inTCPWin;
-            rc = setsockopt( inSock, SOL_SOCKET, SO_RCVBUF,
-                             (char*) &newTCPWin, sizeof( newTCPWin ));
+            rc = setsockopt(inSock, SOL_SOCKET, SO_RCVBUF,
+                             (char*) &newTCPWin, sizeof(newTCPWin));
         } else {
             /* send buffer -- set
              * note: results are verified after connect() or listen(),
              * since some OS's don't show the corrected value until then. */
             newTCPWin = inTCPWin;
-            rc = setsockopt( inSock, SOL_SOCKET, SO_SNDBUF,
-                             (char*) &newTCPWin, sizeof( newTCPWin ));
+            rc = setsockopt(inSock, SOL_SOCKET, SO_SNDBUF,
+                             (char*) &newTCPWin, sizeof(newTCPWin));
         }
-        if ( rc < 0 ) {
+        if (rc < 0) {
             return rc;
         }
     }
 #endif /* SO_SNDBUF */
-
     return 0;
 } /* end setsock_tcp_windowsize */
 
@@ -146,32 +142,86 @@ int setsock_tcp_windowsize( int inSock, int inTCPWin, int inSend ) {
  * or -1 on error.
  * ------------------------------------------------------------------- */
 
-int getsock_tcp_windowsize( int inSock, int inSend ) {
-    int theTCPWin = 0;
-
+int getsock_tcp_windowsize (int inSock, int inSend) {
+    int rc = -1;
 #ifdef SO_SNDBUF
+    Socklen_t len;
+    int theTCPWin = 0;
+    /* send buffer -- query for buffer size */
+    len = sizeof(theTCPWin);
+    if (inSend) {
+        rc = getsockopt(inSock, SOL_SOCKET, SO_SNDBUF,
+                         (char*) &theTCPWin, &len);
+    } else {
+        rc = getsockopt(inSock, SOL_SOCKET, SO_RCVBUF,
+                         (char*) &theTCPWin, &len);
+    }
+    if (rc == 0) {
+        rc = theTCPWin;
+    }
+#endif
+    return rc;
+} /* end getsock_tcp_windowsize */
+
+#if HAVE_DECL_TCP_WINDOW_CLAMP
+int setsock_tcp_windowclamp (int inSock, int clampsize) {
+    assert(inSock >= 0);
+    assert(clampsize > 0);
+    int rc;
+    Socklen_t len;
+
+    len = sizeof(clampsize);
+    rc = setsockopt(inSock, IPPROTO_TCP, TCP_WINDOW_CLAMP, (char*)(&clampsize), len);
+    WARN_errno(rc == SOCKET_ERROR, "setsockopt TCP_WINDOW_CLAMP");
+    return rc;
+}
+
+int getsock_tcp_windowclamp (int inSock) {
+    assert(inSock >= 0);
+    int clamp = 0;
     int rc;
     Socklen_t len;
 
     /* send buffer -- query for buffer size */
-    len = sizeof( theTCPWin );
-    if ( inSend ) {
-        rc = getsockopt( inSock, SOL_SOCKET, SO_SNDBUF,
-                         (char*) &theTCPWin, &len );
-    } else {
-        rc = getsockopt( inSock, SOL_SOCKET, SO_RCVBUF,
-                         (char*) &theTCPWin, &len );
+    len = sizeof(clamp);
+    rc = getsockopt(inSock, IPPROTO_TCP, TCP_WINDOW_CLAMP, (char*)(&clamp), &len);
+    WARN_errno(rc == SOCKET_ERROR, "getsockopt TCP_WINDOW_CLAMP");
+    if (rc < 0) {
+	return rc;
     }
-    if ( rc < 0 ) {
-        return rc;
-    }
-
+    return clamp;
+}
 #endif
 
-    return theTCPWin;
-} /* end getsock_tcp_windowsize */
+#if HAVE_DECL_TCP_NOTSENT_LOWAT
+int setsock_tcp_notsent_low_watermark (int inSock, int watermark) {
+    assert(inSock >= 0);
+    assert(watermark > 0);
+    int rc;
+    Socklen_t len;
 
+    len = sizeof(watermark);
+    rc = setsockopt(inSock, IPPROTO_TCP, TCP_NOTSENT_LOWAT, (char*)(&watermark), len);
+    WARN_errno(rc == SOCKET_ERROR, "setsockopt TCP_NOTSENT_LOWAT");
+    return rc;
+}
+
+int getsock_tcp_notsent_low_watermark (int inSock) {
+    assert(inSock >= 0);
+    int watermark = 0;
+    int rc;
+    Socklen_t len;
+
+    /* send buffer -- query for buffer size */
+    len = sizeof(watermark);
+    rc = getsockopt(inSock, IPPROTO_TCP, TCP_NOTSENT_LOWAT, (char*)(&watermark), &len);
+    WARN_errno(rc == SOCKET_ERROR, "getsockopt TCP_NOTSENT_LOWAT");
+    if (rc < 0) {
+	return rc;
+    }
+    return watermark;
+}
+#endif
 #ifdef __cplusplus
 } /* end extern "C" */
 #endif
-

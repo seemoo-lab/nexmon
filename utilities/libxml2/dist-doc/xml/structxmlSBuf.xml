@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlSBuf" kind="struct" language="C++" prot="public">
+    <compoundname>xmlSBuf</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlSBuf_1a6677d24730d1e9910f9969ad3973c604" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* mem</definition>
+        <argsstring></argsstring>
+        <name>mem</name>
+        <qualifiedname>xmlSBuf::mem</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="675" column="13" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="675" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlSBuf_1a245260f6f74972558f61b85227df5aae" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <qualifiedname>xmlSBuf::size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="676" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="676" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlSBuf_1a72c3879aebe2d6eb552ab90c25bf1898" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned cap</definition>
+        <argsstring></argsstring>
+        <name>cap</name>
+        <qualifiedname>xmlSBuf::cap</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="677" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="677" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlSBuf_1ab7f9f93166652405b05132713a53cf2c" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned max</definition>
+        <argsstring></argsstring>
+        <name>max</name>
+        <qualifiedname>xmlSBuf::max</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="678" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="678" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlSBuf_1a405804b8d31bd7075682acda11e29e37" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>xmlParserErrors code</definition>
+        <argsstring></argsstring>
+        <name>code</name>
+        <qualifiedname>xmlSBuf::code</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="679" column="21" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="679" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/parser.c" line="674" column="1" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="674" bodyend="680"/>
+    <listofallmembers>
+      <member refid="structxmlSBuf_1a72c3879aebe2d6eb552ab90c25bf1898" prot="public" virt="non-virtual"><scope>xmlSBuf</scope><name>cap</name></member>
+      <member refid="structxmlSBuf_1a405804b8d31bd7075682acda11e29e37" prot="public" virt="non-virtual"><scope>xmlSBuf</scope><name>code</name></member>
+      <member refid="structxmlSBuf_1ab7f9f93166652405b05132713a53cf2c" prot="public" virt="non-virtual"><scope>xmlSBuf</scope><name>max</name></member>
+      <member refid="structxmlSBuf_1a6677d24730d1e9910f9969ad3973c604" prot="public" virt="non-virtual"><scope>xmlSBuf</scope><name>mem</name></member>
+      <member refid="structxmlSBuf_1a245260f6f74972558f61b85227df5aae" prot="public" virt="non-virtual"><scope>xmlSBuf</scope><name>size</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

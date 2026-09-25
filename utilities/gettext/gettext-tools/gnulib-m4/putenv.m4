@@ -1,8 +1,10 @@
-# putenv.m4 serial 20
-dnl Copyright (C) 2002-2016 Free Software Foundation, Inc.
+# putenv.m4
+# serial 28
+dnl Copyright (C) 2002-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl From Jim Meyering.
 dnl
@@ -14,33 +16,41 @@ AC_DEFUN([gl_FUNC_PUTENV],
   AC_REQUIRE([gl_STDLIB_H_DEFAULTS])
   AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
   AC_CACHE_CHECK([for putenv compatible with GNU and SVID],
-   [gl_cv_func_svid_putenv],
-   [AC_RUN_IFELSE([AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[[
-    /* Put it in env.  */
-    if (putenv ("CONFTEST_putenv=val"))
-      return 1;
+    [gl_cv_func_svid_putenv],
+    [AC_RUN_IFELSE(
+       [AC_LANG_PROGRAM(
+          [AC_INCLUDES_DEFAULT
+           GL_MDA_DEFINES],
+          [[
+            /* Put it in env.  */
+            if (putenv ("CONFTEST_putenv=val"))
+              return 1;
 
-    /* Try to remove it.  */
-    if (putenv ("CONFTEST_putenv"))
-      return 2;
+            /* Try to remove it.  */
+            if (putenv ("CONFTEST_putenv"))
+              return 2;
 
-    /* Make sure it was deleted.  */
-    if (getenv ("CONFTEST_putenv") != 0)
-      return 3;
+            /* Make sure it was deleted.  */
+            if (getenv ("CONFTEST_putenv") != 0)
+              return 3;
 
-    return 0;
-              ]])],
-             gl_cv_func_svid_putenv=yes,
-             gl_cv_func_svid_putenv=no,
-             dnl When crosscompiling, assume putenv is broken.
-             [case "$host_os" in
-                        # Guess yes on glibc systems.
-                *-gnu*) gl_cv_func_svid_putenv="guessing yes" ;;
-                        # If we don't know, assume the worst.
-                *)      gl_cv_func_svid_putenv="guessing no" ;;
-              esac
-             ])
-   ])
+            return 0;
+          ]])],
+       [gl_cv_func_svid_putenv=yes],
+       [gl_cv_func_svid_putenv=no],
+       [dnl When crosscompiling, assume putenv is broken.
+        case "$host_os" in
+                              # Guess yes on glibc systems.
+          *-gnu* | gnu*)      gl_cv_func_svid_putenv="guessing yes" ;;
+                              # Guess yes on musl systems.
+          *-musl* | midipix*) gl_cv_func_svid_putenv="guessing yes" ;;
+                              # Guess no on native Windows.
+          mingw* | windows*)  gl_cv_func_svid_putenv="guessing no" ;;
+                              # If we don't know, obey --enable-cross-guesses.
+          *)                  gl_cv_func_svid_putenv="$gl_cross_guess_normal" ;;
+        esac
+       ])
+    ])
   case "$gl_cv_func_svid_putenv" in
     *yes) ;;
     *)
@@ -52,5 +62,5 @@ AC_DEFUN([gl_FUNC_PUTENV],
 # Prerequisites of lib/putenv.c.
 AC_DEFUN([gl_PREREQ_PUTENV],
 [
-  AC_CHECK_DECLS([_putenv])
+  AC_CHECK_DECLS_ONCE([_putenv])
 ])

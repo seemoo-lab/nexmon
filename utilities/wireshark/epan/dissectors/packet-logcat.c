@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,34 +19,34 @@
 #include <epan/prefs.h>
 #include <wiretap/wtap.h>
 
-static int proto_logcat = -1;
+static int proto_logcat;
 
-static int hf_logcat_version = -1;
-static int hf_logcat_length = -1;
-static int hf_logcat_padding = -1;
-static int hf_logcat_header_size = -1;
-static int hf_logcat_pid = -1;
-static int hf_logcat_tid = -1;
-static int hf_logcat_timestamp = -1;
-static int hf_logcat_timestamp_seconds = -1;
-static int hf_logcat_timestamp_nanoseconds = -1;
-static int hf_logcat_euid = -1;
-static int hf_logcat_priority = -1;
-static int hf_logcat_tag = -1;
-static int hf_logcat_log = -1;
+static int hf_logcat_version;
+static int hf_logcat_length;
+static int hf_logcat_padding;
+static int hf_logcat_header_size;
+static int hf_logcat_pid;
+static int hf_logcat_tid;
+static int hf_logcat_timestamp;
+static int hf_logcat_timestamp_seconds;
+static int hf_logcat_timestamp_nanoseconds;
+static int hf_logcat_euid;
+static int hf_logcat_priority;
+static int hf_logcat_tag;
+static int hf_logcat_log;
 
-static gint ett_logcat = -1;
-static gint ett_logcat_timestamp = -1;
-static gint ett_logcat_log = -1;
+static int ett_logcat;
+static int ett_logcat_timestamp;
+static int ett_logcat_log;
 
 static dissector_handle_t logcat_handle;
 static dissector_handle_t data_text_lines_handle;
 
-static gint exported_pdu_tap = -1;
+static int exported_pdu_tap = -1;
 
-static expert_field ei_invalid_payload_length = EI_INIT;
+static expert_field ei_invalid_payload_length;
 
-static gboolean  pref_one_line_info_column = TRUE;
+static bool  pref_one_line_info_column = true;
 
 const value_string priority_vals[] = {
     { 0x00,  "Unknown" },
@@ -76,9 +64,9 @@ const value_string priority_vals[] = {
 void proto_register_logcat(void);
 void proto_reg_handoff_logcat(void);
 
-static gint detect_version(tvbuff_t *tvb, gint offset) {
-    guint16         payload_length;
-    guint16         try_header_size;
+static int detect_version(tvbuff_t *tvb, int offset) {
+    uint16_t        payload_length;
+    uint16_t        try_header_size;
 
     payload_length  = tvb_get_letohs(tvb, offset);
     try_header_size = tvb_get_letohs(tvb, offset + 2);
@@ -95,17 +83,17 @@ static gint detect_version(tvbuff_t *tvb, gint offset) {
 static int
 dissect_logcat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    gint         offset = 0;
+    int          offset = 0;
     proto_tree  *maintree;
     proto_item  *mainitem;
     proto_tree  *subtree;
     proto_item  *subitem;
-    guint16      length;
-    guint16      check_length;
-    guint32      string_length;
-    gint         logger_version;
-    guint8      *log;
-    gchar       *c;
+    uint16_t     length;
+    uint16_t     check_length;
+    uint32_t     string_length;
+    int          logger_version;
+    uint8_t     *log;
+    char        *c;
     tvbuff_t    *next_tvb;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Logcat");
@@ -117,7 +105,7 @@ dissect_logcat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     logger_version = detect_version(tvb, offset);
 
     subitem = proto_tree_add_uint(maintree, hf_logcat_version, tvb, offset, 0, logger_version);
-    PROTO_ITEM_SET_GENERATED(subitem);
+    proto_item_set_generated(subitem);
 
     proto_tree_add_item(maintree, hf_logcat_length, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     length = tvb_get_letohs(tvb, offset);
@@ -156,7 +144,7 @@ dissect_logcat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     check_length = 1;
 
     string_length = tvb_strsize(tvb, offset);
-    proto_tree_add_item(maintree, hf_logcat_tag, tvb, offset, string_length, ENC_UTF_8 | ENC_NA);
+    proto_tree_add_item(maintree, hf_logcat_tag, tvb, offset, string_length, ENC_UTF_8);
 
     set_address_tvb(&pinfo->src, AT_STRINGZ, string_length + 1, tvb, offset);
     set_address(&pinfo->dst, AT_STRINGZ, 7, "Logcat");
@@ -165,17 +153,17 @@ dissect_logcat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     check_length += string_length;
 
     string_length = length - string_length - 1;
-    log = tvb_get_string_enc(wmem_packet_scope(), tvb, offset, string_length, ENC_UTF_8);
+    log = tvb_get_string_enc(pinfo->pool, tvb, offset, string_length, ENC_UTF_8);
 
     /* New line characters convert to spaces to ensure column Info display one line */
     if (pref_one_line_info_column) {
-    while ((c = g_utf8_strchr(log, string_length, '\n')))
-        *c = ' ';
-    while ((c = g_utf8_strchr(log, string_length, '\r')))
-        *c = ' ';
+        while ((c = g_utf8_strchr(log, string_length, '\n')))
+            *c = ' ';
+        while ((c = g_utf8_strchr(log, string_length, '\r')))
+            *c = ' ';
     }
 
-    subitem = proto_tree_add_item(maintree, hf_logcat_log, tvb, offset, string_length, ENC_UTF_8 | ENC_NA);
+    subitem = proto_tree_add_item(maintree, hf_logcat_log, tvb, offset, string_length, ENC_UTF_8);
     subtree = proto_item_add_subtree(subitem, ett_logcat_log);
 
     next_tvb = tvb_new_subset_length(tvb, offset, string_length - 1);
@@ -190,7 +178,7 @@ dissect_logcat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
 
     if (have_tap_listener(exported_pdu_tap)) {
 
-        exp_pdu_data_t *exp_pdu_data = export_pdu_create_tags(pinfo, "logcat", EXP_PDU_TAG_PROTO_NAME, NULL);
+        exp_pdu_data_t *exp_pdu_data = export_pdu_create_tags(pinfo, "logcat", EXP_PDU_TAG_DISSECTOR_NAME, NULL);
 
         exp_pdu_data->tvb_captured_length = tvb_captured_length(tvb);
         exp_pdu_data->tvb_reported_length = tvb_reported_length(tvb);
@@ -264,17 +252,17 @@ proto_register_logcat(void)
         },
         { &hf_logcat_tag,
             { "Tag",                             "logcat.tag",
-            FT_STRINGZ, STR_UNICODE, NULL, 0x00,
+            FT_STRINGZ, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_logcat_log,
             { "Log",                             "logcat.log",
-            FT_STRINGZ, STR_UNICODE, NULL, 0x00,
+            FT_STRINGZ, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_logcat,
         &ett_logcat_timestamp,
         &ett_logcat_log
@@ -309,11 +297,11 @@ proto_reg_handoff_logcat(void)
 
     dissector_add_uint("wtap_encap", WTAP_ENCAP_LOGCAT, logcat_handle);
 
-    dissector_add_for_decode_as("tcp.port", logcat_handle);
+    dissector_add_for_decode_as_with_preference("tcp.port", logcat_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

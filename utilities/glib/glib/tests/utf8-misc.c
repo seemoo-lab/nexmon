@@ -1,6 +1,8 @@
 /* Unit tests for utilities
  * Copyright (C) 2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -128,6 +130,88 @@ test_utf8_substring (void)
   r = g_utf8_substring ("abc\xe2\x82\xa0gh\xe2\x82\xa4", 2, 5);
   g_assert_cmpstr (r, ==, "c\xe2\x82\xa0g");
   g_free (r);
+
+  r = g_utf8_substring ("abcd", 1, -1);
+  g_assert_cmpstr (r, ==, "bcd");
+  g_free (r);
+}
+
+static void
+test_utf8_make_valid (void)
+{
+  gchar *r;
+
+  /* valid UTF8 */
+  r = g_utf8_make_valid ("\xe2\x82\xa0gh\xe2\x82\xa4jl", -1);
+  g_assert_cmpstr (r, ==, "\xe2\x82\xa0gh\xe2\x82\xa4jl");
+  g_free (r);
+
+  /* invalid UTF8 */
+  r = g_utf8_make_valid ("\xe2\x82\xa0gh\xe2\xffjl", -1);
+  g_assert_cmpstr (r, ==, "\xe2\x82\xa0gh\xef\xbf\xbd\xef\xbf\xbdjl");
+  g_free (r);
+
+  /* invalid UTF8 without nul terminator followed by something unfortunate */
+  r = g_utf8_make_valid ("Bj\xc3\xb8", 3);
+  g_assert_cmpstr (r, ==, "Bj\xef\xbf\xbd");
+  g_free (r);
+
+  /* invalid UTF8 with embedded nul */
+  r = g_utf8_make_valid ("\xe2\x82\xa0gh\xe2\x00jl", 9);
+  g_assert_cmpstr (r, ==, "\xe2\x82\xa0gh\xef\xbf\xbd\xef\xbf\xbdjl");
+  g_free (r);
+}
+
+static void
+truncate_middle_helper (const char *in_str,
+                        gsize       truncate_len,
+                        const char *out_str)
+{
+  gchar *string = g_utf8_truncate_middle (in_str, truncate_len);
+  g_assert_cmpstr (string, ==, out_str);
+  g_free (string);
+}
+
+static void
+test_utf8_truncate_middle (void)
+{
+  truncate_middle_helper ("foo", 0, "");
+  truncate_middle_helper ("foo", 1, "…");
+  truncate_middle_helper ("foo", 2, "…o");
+  truncate_middle_helper ("foo", 3, "foo");
+  truncate_middle_helper ("foo", 4, "foo");
+  truncate_middle_helper ("foo", 5, "foo");
+  truncate_middle_helper ("foo", 6, "foo");
+  truncate_middle_helper ("foo", 7, "foo");
+
+  truncate_middle_helper ("a_much_longer_foo", 0, "");
+  truncate_middle_helper ("a_much_longer_foo", 1, "…");
+  truncate_middle_helper ("a_much_longer_foo", 2, "…o");
+  truncate_middle_helper ("a_much_longer_foo", 3, "a…o");
+  truncate_middle_helper ("a_much_longer_foo", 4, "a…oo");
+  truncate_middle_helper ("a_much_longer_foo", 5, "a_…oo");
+  truncate_middle_helper ("a_much_longer_foo", 6, "a_…foo");
+  truncate_middle_helper ("a_much_longer_foo", 7, "a_m…foo");
+  truncate_middle_helper ("a_much_longer_foo", 8, "a_m…_foo");
+  truncate_middle_helper ("a_much_longer_foo", 9, "a_mu…_foo");
+
+  truncate_middle_helper ("something_even", 8, "som…even");
+  truncate_middle_helper ("something_odd", 8, "som…_odd");
+  truncate_middle_helper ("something_even", 9, "some…even");
+  truncate_middle_helper ("something_odd", 9, "some…_odd");
+  truncate_middle_helper ("something_even", 10, "some…_even");
+  truncate_middle_helper ("something_odd", 10, "some…g_odd");
+  truncate_middle_helper ("something_even", 11, "somet…_even");
+  truncate_middle_helper ("something_odd", 11, "somet…g_odd");
+  truncate_middle_helper ("something_even", 12, "somet…g_even");
+  truncate_middle_helper ("something_odd", 12, "somet…ng_odd");
+  truncate_middle_helper ("something_even", 13, "someth…g_even");
+  truncate_middle_helper ("something_odd", 13, "something_odd");
+  truncate_middle_helper ("something_even", 14, "something_even");
+  truncate_middle_helper ("something_odd", 13, "something_odd");
+
+  truncate_middle_helper ("ääääääääää", 5, "ää…ää");
+  truncate_middle_helper ("あぃいぅうぇえぉ", 7, "あぃい…ぇえぉ");
 }
 
 int
@@ -141,6 +225,8 @@ main (int   argc,
   g_test_add_func ("/utf8/strrchr", test_utf8_strrchr);
   g_test_add_func ("/utf8/reverse", test_utf8_reverse);
   g_test_add_func ("/utf8/substring", test_utf8_substring);
+  g_test_add_func ("/utf8/make-valid", test_utf8_make_valid);
+  g_test_add_func ("/utf8/truncate-middle", test_utf8_truncate_middle);
 
   return g_test_run();
 }

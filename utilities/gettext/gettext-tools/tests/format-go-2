@@ -1,0 +1,523 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test checking of Go format strings.
+
+cat <<\EOF > f-go-2.data
+# Valid: %% doesn't count
+msgid  "abc%%def"
+msgstr "xyz"
+# Invalid: invalid msgstr
+msgid  "abc%%def"
+msgstr "xyz%"
+# Valid: same arguments
+msgid  "abc%s%xdef"
+msgstr "xyz%s%x"
+# Valid: same arguments, with different widths
+msgid  "abc%2sdef"
+msgstr "xyz%3s"
+# Valid: same arguments but in numbered syntax
+msgid  "abc%s%xdef"
+msgstr "xyz%[1]s%[2]x"
+# Valid: permutation
+msgid  "abc%s%x%cdef"
+msgstr "xyz%[3]c%[2]x%[1]s"
+# Invalid: too few arguments
+msgid  "abc%[2]xdef%[1]s"
+msgstr "xyz%[1]]s"
+# Invalid: too few arguments
+msgid  "abc%sdef%x"
+msgstr "xyz%s"
+# Invalid: too many arguments
+msgid  "abc%xdef"
+msgstr "xyz%xvw%c"
+# Valid: same numbered arguments, with different widths
+msgid  "abc%5[2]s%4[1]s"
+msgstr "xyz%4[2]s%5[1]s"
+# Invalid: missing argument
+msgid  "abc%[2]sdef%[1]x"
+msgstr "xyz%[1]x"
+# Invalid: missing argument
+msgid  "abc%[1]sdef%[2]x"
+msgstr "xyz%[2]x"
+# Invalid: added argument
+msgid  "abc%[1]xdef"
+msgstr "xyz%[1]xvw%[2]c"
+# Valid: uses arguments 1, 2
+msgid  "abc%[1]d%d"
+msgstr "xyz%d%d"
+# Valid: uses argument 1
+msgid  "abc%d%[1]d"
+msgstr "xyz%d"
+# Valid: uses arguments 2, 3
+msgid  "abc%[2]d%d"
+msgstr "xyz%[3]d%[2]d"
+# Invalid: uses arguments 2, 3
+msgid  "abc%[2]d%d"
+msgstr "xyz%d%d%d"
+# Valid: uses arguments 1, 2
+msgid  "abc%d%[2]d"
+msgstr "xyz%d%d"
+# Valid: uses argument 2
+msgid  "abc%[2]d%[2]d"
+msgstr "xyz%[2]d"
+# Invalid: uses argument 2
+msgid  "abc%[2]d%[2]d"
+msgstr "xyz%d%d"
+# Valid: uses arguments 1, 2
+msgid  "abc%[1]d%d%[2]d"
+msgstr "xyz%d%d"
+# Valid: uses arguments 1, 2
+msgid  "abc%d%[1]d%[2]d"
+msgstr "xyz%d%d"
+# Valid: uses arguments 1, 2, 3
+msgid  "abc%[2]d%d%[1]d"
+msgstr "xyz%d%d%d"
+# Valid: uses arguments 1, 2
+msgid  "abc%d%[2]d%[1]d"
+msgstr "xyz%d%d"
+# Valid: uses arguments 1, 2, 3
+msgid  "abc%[1]d%[2]d%d"
+msgstr "xyz%d%d%d"
+# Valid: uses arguments 1, 2
+msgid  "abc%[2]d%[1]d%d"
+msgstr "xyz%d%d"
+# Valid: type compatibility
+msgid  "abc%c"
+msgstr "xyz%U"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%E"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%f"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%F"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%g"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%G"
+# Valid: type compatibility
+msgid  "abc%d"
+msgstr "xyz%o"
+# Valid: type compatibility
+msgid  "abc%x"
+msgstr "xyz%X"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%T"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%t"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%c"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%s"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%q"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%d"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%v"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%t"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%c"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%s"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%q"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%d"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%T"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%t"
+msgstr "xyz%c"
+# Invalid: type incompatibility
+msgid  "abc%t"
+msgstr "xyz%s"
+# Invalid: type incompatibility
+msgid  "abc%t"
+msgstr "xyz%q"
+# Invalid: type incompatibility
+msgid  "abc%t"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%t"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%t"
+msgstr "xyz%d"
+# Invalid: type incompatibility
+msgid  "abc%t"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%t"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%s"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%q"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%d"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%c"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%q"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%d"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%s"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%q"
+msgstr "xyz%e"
+# Invalid: type incompatibility
+msgid  "abc%q"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%q"
+msgstr "xyz%d"
+# Invalid: type incompatibility
+msgid  "abc%q"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%q"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%O"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%d"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%e"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%O"
+msgstr "xyz%d"
+# Invalid: type incompatibility
+msgid  "abc%O"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%O"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%d"
+msgstr "xyz%b"
+# Invalid: type incompatibility
+msgid  "abc%d"
+msgstr "xyz%x"
+# Invalid: type incompatibility
+msgid  "abc%b"
+msgstr "xyz%x"
+# Valid: intersected type compatibility
+msgid  "abc%t"
+msgstr "xyz%[1]v%[1]t"
+# Valid: intersected type compatibility
+msgid  "abc%c"
+msgstr "xyz%[1]v%[1]c"
+# Valid: intersected type compatibility
+msgid  "abc%s"
+msgstr "xyz%[1]v%[1]s"
+# Valid: intersected type compatibility
+msgid  "abc%q"
+msgstr "xyz%[1]v%[1]q"
+# Valid: intersected type compatibility
+msgid  "abc%e"
+msgstr "xyz%[1]v%[1]e"
+# Valid: intersected type compatibility
+msgid  "abc%O"
+msgstr "xyz%[1]v%[1]O"
+# Valid: intersected type compatibility
+msgid  "abc%d"
+msgstr "xyz%[1]v%[1]d"
+# Valid: intersected type compatibility
+msgid  "abc%b"
+msgstr "xyz%[1]v%[1]b"
+# Valid: intersected type compatibility
+msgid  "abc%x"
+msgstr "xyz%[1]v%[1]x"
+# Invalid: intersected type incompatibility
+msgid  "abc%t"
+msgstr "xyz%[1]t%[1]c"
+# Invalid: intersected type incompatibility
+msgid  "abc%c"
+msgstr "xyz%[1]t%[1]c"
+# Invalid: intersected type incompatibility
+msgid  "abc%t"
+msgstr "xyz%[1]t%[1]s"
+# Invalid: intersected type incompatibility
+msgid  "abc%s"
+msgstr "xyz%[1]t%[1]s"
+# Invalid: intersected type incompatibility
+msgid  "abc%t"
+msgstr "xyz%[1]t%[1]q"
+# Invalid: intersected type incompatibility
+msgid  "abc%q"
+msgstr "xyz%[1]t%[1]q"
+# Invalid: intersected type incompatibility
+msgid  "abc%t"
+msgstr "xyz%[1]t%[1]e"
+# Invalid: intersected type incompatibility
+msgid  "abc%e"
+msgstr "xyz%[1]t%[1]e"
+# Invalid: intersected type incompatibility
+msgid  "abc%t"
+msgstr "xyz%[1]t%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%O"
+msgstr "xyz%[1]t%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%t"
+msgstr "xyz%[1]t%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%d"
+msgstr "xyz%[1]t%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%t"
+msgstr "xyz%[1]t%[1]b"
+# Invalid: intersected type incompatibility
+msgid  "abc%b"
+msgstr "xyz%[1]t%[1]b"
+# Invalid: intersected type incompatibility
+msgid  "abc%t"
+msgstr "xyz%[1]t%[1]x"
+# Invalid: intersected type incompatibility
+msgid  "abc%x"
+msgstr "xyz%[1]t%[1]x"
+# Invalid: intersected type incompatibility
+msgid  "abc%c"
+msgstr "xyz%[1]c%[1]s"
+# Invalid: intersected type incompatibility
+msgid  "abc%s"
+msgstr "xyz%[1]c%[1]s"
+# Valid: intersected type compatibility
+msgid  "abc%c"
+msgstr "xyz%[1]c%[1]q"
+# Invalid: intersected type incompatibility
+msgid  "abc%c"
+msgstr "xyz%[1]c%[1]e"
+# Invalid: intersected type incompatibility
+msgid  "abc%e"
+msgstr "xyz%[1]c%[1]e"
+# Invalid: intersected type incompatibility
+msgid  "abc%c"
+msgstr "xyz%[1]c%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%O"
+msgstr "xyz%[1]c%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%c"
+msgstr "xyz%[1]c%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%d"
+msgstr "xyz%[1]c%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%c"
+msgstr "xyz%[1]c%[1]b"
+# Invalid: intersected type incompatibility
+msgid  "abc%b"
+msgstr "xyz%[1]c%[1]b"
+# Invalid: intersected type incompatibility
+msgid  "abc%c"
+msgstr "xyz%[1]c%[1]x"
+# Invalid: intersected type incompatibility
+msgid  "abc%x"
+msgstr "xyz%[1]c%[1]x"
+# Valid: intersected type compatibility
+msgid  "abc%s"
+msgstr "xyz%[1]s%[1]q"
+# Invalid: intersected type incompatibility
+msgid  "abc%s"
+msgstr "xyz%[1]s%[1]e"
+# Invalid: intersected type incompatibility
+msgid  "abc%e"
+msgstr "xyz%[1]s%[1]e"
+# Invalid: intersected type incompatibility
+msgid  "abc%s"
+msgstr "xyz%[1]s%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%O"
+msgstr "xyz%[1]s%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%s"
+msgstr "xyz%[1]s%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%d"
+msgstr "xyz%[1]s%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%s"
+msgstr "xyz%[1]s%[1]b"
+# Invalid: intersected type incompatibility
+msgid  "abc%b"
+msgstr "xyz%[1]s%[1]b"
+# Valid: intersected type compatibility
+msgid  "abc%s"
+msgstr "xyz%[1]s%[1]x"
+# Invalid: intersected type incompatibility
+msgid  "abc%q"
+msgstr "xyz%[1]q%[1]e"
+# Invalid: intersected type incompatibility
+msgid  "abc%e"
+msgstr "xyz%[1]q%[1]e"
+# Invalid: intersected type incompatibility
+msgid  "abc%q"
+msgstr "xyz%[1]q%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%O"
+msgstr "xyz%[1]q%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%q"
+msgstr "xyz%[1]q%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%d"
+msgstr "xyz%[1]q%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%q"
+msgstr "xyz%[1]q%[1]b"
+# Invalid: intersected type incompatibility
+msgid  "abc%b"
+msgstr "xyz%[1]q%[1]b"
+# Valid: intersected type compatibility
+msgid  "abc%s"
+msgstr "xyz%[1]q%[1]x"
+# Invalid: intersected type incompatibility
+msgid  "abc%e"
+msgstr "xyz%[1]e%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%O"
+msgstr "xyz%[1]e%[1]O"
+# Invalid: intersected type incompatibility
+msgid  "abc%e"
+msgstr "xyz%[1]e%[1]d"
+# Invalid: intersected type incompatibility
+msgid  "abc%d"
+msgstr "xyz%[1]e%[1]d"
+# Valid: intersected type compatibility
+msgid  "abc%e"
+msgstr "xyz%[1]e%[1]b"
+# Valid: intersected type compatibility
+msgid  "abc%e"
+msgstr "xyz%[1]e%[1]x"
+# Valid: intersected type compatibility
+msgid  "abc%O"
+msgstr "xyz%[1]O%[1]d"
+# Valid: intersected type compatibility
+msgid  "abc%O"
+msgstr "xyz%[1]O%[1]b"
+# Valid: intersected type compatibility
+msgid  "abc%O"
+msgstr "xyz%[1]O%[1]x"
+# Valid: intersected type compatibility
+msgid  "abc%d"
+msgstr "xyz%[1]d%[1]b"
+# Valid: intersected type compatibility
+msgid  "abc%d"
+msgstr "xyz%[1]d%[1]x"
+# Valid: intersected type compatibility
+msgid  "abc%b"
+msgstr "xyz%[1]b%[1]x"
+# Valid: intersected type compatibility
+msgid  "abc%O"
+msgstr "xyz%[1]*[1]d"
+# Valid: intersected type compatibility
+msgid  "abc%O"
+msgstr "xyz%.[1]*[1]d"
+EOF
+
+: ${MSGFMT=msgfmt}
+n=0
+while read comment; do
+  read msgid_line
+  read msgstr_line
+  n=`expr $n + 1`
+  cat <<EOF > f-go-2-$n.po
+#, go-format
+${msgid_line}
+${msgstr_line}
+EOF
+  fail=
+  if echo "$comment" | grep 'Valid:' > /dev/null; then
+    if ${MSGFMT} --check-format -o f-go-2-$n.mo f-go-2-$n.po; then
+      :
+    else
+      fail=yes
+    fi
+  else
+    ${MSGFMT} --check-format -o f-go-2-$n.mo f-go-2-$n.po 2> /dev/null
+    if test $? = 1; then
+      :
+    else
+      fail=yes
+    fi
+  fi
+  if test -n "$fail"; then
+    echo "Format string checking error:" 1>&2
+    cat f-go-2-$n.po 1>&2
+    Exit 1
+  fi
+  rm -f f-go-2-$n.po f-go-2-$n.mo
+done < f-go-2.data
+
+Exit 0

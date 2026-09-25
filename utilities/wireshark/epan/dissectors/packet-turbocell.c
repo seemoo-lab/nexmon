@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This dissector was written entirely from reverse engineering captured
@@ -28,7 +16,7 @@
  * networks, contact kiltedtaco@xxxxxxxxx */
 
 /* 2008-08-05 : Added support for aggregate frames.
- * AP mode, NWID and sat mode fiels identification were
+ * AP mode, NWID and sat mode fields identification were
  * taken from http://aphopper.sourceforge.net/turbocell.html
  * everything else is based on (educated) guesses.
 */
@@ -52,30 +40,30 @@
 void proto_register_turbocell(void);
 void proto_reg_handoff_turbocell(void);
 
-static int proto_turbocell = -1;
-static int proto_aggregate = -1;
+static int proto_turbocell;
+static int proto_aggregate;
 
-static int hf_turbocell_type = -1;
-static int hf_turbocell_dst = -1;
-static int hf_turbocell_counter = -1;
-static int hf_turbocell_name = -1;
-static int hf_turbocell_nwid = -1;
-static int hf_turbocell_satmode = -1;
-static int hf_turbocell_unknown = -1;
-static int hf_turbocell_timestamp = -1;
-static int hf_turbocell_station = -1;
-static int hf_turbocell_ip = -1;
+static int hf_turbocell_type;
+static int hf_turbocell_dst;
+static int hf_turbocell_counter;
+static int hf_turbocell_name;
+static int hf_turbocell_nwid;
+static int hf_turbocell_satmode;
+static int hf_turbocell_unknown;
+static int hf_turbocell_timestamp;
+static int hf_turbocell_station;
+static int hf_turbocell_ip;
 
-static int hf_turbocell_aggregate_msdu_header_text = -1;
-static int hf_turbocell_aggregate_msdu_len = -1;
-static int hf_turbocell_aggregate_unknown1 = -1;
-static int hf_turbocell_aggregate_unknown2 = -1;
-static int hf_turbocell_aggregate_len = -1;
+static int hf_turbocell_aggregate_msdu_header_text;
+static int hf_turbocell_aggregate_msdu_len;
+static int hf_turbocell_aggregate_unknown1;
+static int hf_turbocell_aggregate_unknown2;
+static int hf_turbocell_aggregate_len;
 
-static gint ett_turbocell = -1;
-static gint ett_network = -1;
-static gint ett_msdu_aggregation_parent_tree = -1;
-static gint ett_msdu_aggregation_subframe_tree = -1;
+static int ett_turbocell;
+static int ett_network;
+static int ett_msdu_aggregation_parent_tree;
+static int ett_msdu_aggregation_subframe_tree;
 
 /* The ethernet dissector we hand off to */
 static dissector_handle_t eth_handle;
@@ -105,12 +93,12 @@ dissect_turbocell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     proto_tree *turbocell_tree = NULL, *network_tree;
     tvbuff_t   *next_tvb;
     int i=0;
-    guint8 packet_type;
-    guint8 * str_name;
-    guint str_len;
-    gint remaining_length;
+    uint8_t packet_type;
+    uint8_t * str_name;
+    unsigned str_len;
+    int remaining_length;
 
-    packet_type = tvb_get_guint8(tvb, 0);
+    packet_type = tvb_get_uint8(tvb, 0);
 
     if (!(packet_type & 0x0F)){
         col_set_str(pinfo->cinfo, COL_INFO, "Turbocell Packet (Beacon)");
@@ -137,7 +125,7 @@ dissect_turbocell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 
         /* it seem when we have this magic number,that means an alternate header version */
 
-        if (tvb_get_bits64(tvb, 64,48,ENC_BIG_ENDIAN) != G_GINT64_CONSTANT(0x000001fe23dc45ba)){
+        if (tvb_get_bits64(tvb, 64,48,ENC_BIG_ENDIAN) != INT64_C(0x000001fe23dc45ba)){
         proto_tree_add_item(turbocell_tree, hf_turbocell_counter, tvb, 0x02, 2, ENC_BIG_ENDIAN);
         proto_tree_add_item(turbocell_tree, hf_turbocell_dst, tvb, 0x04, 6, ENC_NA);
         proto_tree_add_item(turbocell_tree, hf_turbocell_timestamp, tvb, 0x0A, 3, ENC_BIG_ENDIAN);
@@ -161,15 +149,15 @@ dissect_turbocell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
         /* I couldn't find anything in the header that would definitively indicate if payload is either data or network info */
         /* Since the frame size is limited this should work ok */
 
-        if (tvb_get_guint8(tvb, 0x14)>=0x20){
-            name_item = proto_tree_add_item(turbocell_tree, hf_turbocell_name, tvb, 0x14, 30, ENC_ASCII|ENC_NA);
+        if (tvb_get_uint8(tvb, 0x14)>=0x20){
+            name_item = proto_tree_add_item(turbocell_tree, hf_turbocell_name, tvb, 0x14, 30, ENC_ASCII);
             network_tree = proto_item_add_subtree(name_item, ett_network);
 
-            str_name=tvb_get_stringz_enc(wmem_packet_scope(), tvb, 0x14, &str_len, ENC_ASCII);
-            col_append_fstr(pinfo->cinfo, COL_INFO, ", Network=\"%s\"",format_text(str_name, str_len-1));
+            str_name=tvb_get_stringz_enc(pinfo->pool, tvb, 0x14, &str_len, ENC_ASCII);
+            col_append_fstr(pinfo->cinfo, COL_INFO, ", Network=\"%s\"", format_text(pinfo->pool, str_name, str_len-1));
 
-            while(tvb_get_guint8(tvb, 0x34 + 8*i)==0x00 && (tvb_reported_length_remaining(tvb,0x34 + 8*i) > 6) && (i<32)) {
-                proto_tree_add_item(network_tree, hf_turbocell_station, tvb, 0x34+8*i, 6, ENC_NA);
+            while(tvb_get_uint8(tvb, 0x34 + 8*i)==0x00 && (tvb_reported_length_remaining(tvb,0x34 + 8*i) > 6) && (i<32)) {
+                proto_tree_add_item(network_tree, hf_turbocell_station, tvb, 0x34 + 8*i, 6, ENC_NA);
                 i++;
             }
 
@@ -181,15 +169,15 @@ dissect_turbocell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
         } else {
 
             tvbuff_t *msdu_tvb = NULL;
-            guint32 msdu_offset = 0x04;
-            guint16 j = 1;
-            guint16 msdu_length;
+            uint32_t msdu_offset = 0x04;
+            uint16_t j = 1;
+            uint16_t msdu_length;
 
             proto_item *parent_item;
             proto_tree *mpdu_tree;
             proto_tree *subframe_tree;
 
-            next_tvb = tvb_new_subset(tvb, 0x14, -1, tvb_get_ntohs(tvb, 0x14));
+            next_tvb = tvb_new_subset_length(tvb, 0x14, tvb_get_ntohs(tvb, 0x14));
             parent_item = proto_tree_add_protocol_format(tree, proto_aggregate, next_tvb, 0,
                                                          tvb_reported_length_remaining(next_tvb, 0), "Turbocell Aggregate Frames");
             mpdu_tree = proto_item_add_subtree(parent_item, ett_msdu_aggregation_parent_tree);
@@ -212,7 +200,7 @@ dissect_turbocell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 
                 msdu_offset += 0x02;
                 remaining_length -= 0x02;
-                msdu_tvb = tvb_new_subset(next_tvb, msdu_offset, (msdu_length>remaining_length)?remaining_length:msdu_length, msdu_length);
+                msdu_tvb = tvb_new_subset_length_caplen(next_tvb, msdu_offset, (msdu_length>remaining_length)?remaining_length:msdu_length, msdu_length);
                 call_dissector(eth_handle, msdu_tvb, pinfo, subframe_tree);
                 msdu_offset += msdu_length;
                 remaining_length -= msdu_length;
@@ -291,7 +279,7 @@ void proto_register_turbocell(void)
     static hf_register_info aggregate_fields[] = {
         { &hf_turbocell_aggregate_msdu_header_text,
           {"MAC Service Data Unit (MSDU)", "turbocell_aggregate.msduheader",
-           FT_UINT16, BASE_DEC, 0, 0x0000, NULL, HFILL }
+           FT_UINT16, BASE_DEC, 0, 0x0, NULL, HFILL }
         },
         { &hf_turbocell_aggregate_msdu_len,
           {"MSDU length", "turbocell_aggregate.msdulen",
@@ -314,7 +302,7 @@ void proto_register_turbocell(void)
         },
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_turbocell,
         &ett_network,
         &ett_msdu_aggregation_parent_tree,
@@ -341,7 +329,7 @@ void proto_reg_handoff_turbocell(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

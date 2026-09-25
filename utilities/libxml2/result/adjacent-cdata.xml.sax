@@ -1,0 +1,8 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.startElement(doc)
+SAX.pcdata(abc, 3)
+SAX.pcdata(def, 3)
+SAX.pcdata(ghi, 3)
+SAX.endElement(doc)
+SAX.endDocument()

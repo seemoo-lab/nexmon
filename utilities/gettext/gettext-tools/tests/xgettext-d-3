@@ -1,0 +1,115 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test D support: String literals.
+
+cat <<\EOF > xg-d-3.d
+import std.stdio;
+import std.conv : text;
+
+string a = r"a: abc\tdef";
+string b = `b: abc\tdef`;
+string c1 = "c1: abc\tdef\u20acghi\U0001f603jklmno\&euro;pqr";
+// Unicode surrogate codepoints are invalid. xgettext eliminates them.
+string c2 = "c2: abc\tdef\u20acghi\U0001f603jkl\ud83d\ude03mno\&euro;pqr"c;
+string d1 = q"foo
+d1: abc
+def
+foo";
+string d2 = q"(d2: abc)";
+string d3 = q"[d3: abc]";
+string d4 = q"{d4: abc}";
+string d5 = q"<d5: abc>";
+string e = q{e: g >= 0 };
+string f = x"66 E282AC"; // Note: Hex strings are broken in gdc version 12 and 13.
+// Not string literals.
+string g = i`abc\tdef`.text;
+string h = i"abc\tdef".text;
+string i = iq{g >= 0 }.text;
+
+void main ()
+{
+  writeln ("abc" ~ "Böse" ~ "20€");
+  writeln (a);
+  writeln (b);
+  writeln (c1);
+  writeln (c2);
+  writeln (d1);
+  writeln (d2);
+  writeln (d3);
+  writeln (d4);
+  writeln (d5);
+  writeln (e);
+  writeln (f);
+  writeln (g);
+  writeln (h);
+  writeln (i);
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --no-location -a -d xg-d-3.tmp xg-d-3.d || Exit 1
+func_filter_POT_Creation_Date xg-d-3.tmp.po xg-d-3.pot
+
+cat <<\EOF > xg-d-3.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "a: abc\\tdef"
+msgstr ""
+
+msgid "b: abc\\tdef"
+msgstr ""
+
+msgid "c1: abc\tdef€ghi😃jklmno€pqr"
+msgstr ""
+
+msgid "c2: abc\tdef€ghi😃jklmno€pqr"
+msgstr ""
+
+msgid ""
+"d1: abc\n"
+"def\n"
+msgstr ""
+
+msgid "d2: abc"
+msgstr ""
+
+msgid "d3: abc"
+msgstr ""
+
+msgid "d4: abc"
+msgstr ""
+
+msgid "d5: abc"
+msgstr ""
+
+msgid "e: g >= 0 "
+msgstr ""
+
+msgid "f€"
+msgstr ""
+
+msgid "abcBöse20€"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-d-3.ok xg-d-3.pot || Exit 1
+
+exit 0

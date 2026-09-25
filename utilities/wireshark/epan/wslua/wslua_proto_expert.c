@@ -12,19 +12,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -36,34 +24,40 @@
 
 
 WSLUA_CLASS_DEFINE(ProtoExpert,FAIL_ON_NULL("null ProtoExpert"));
-    /* A Protocol expert info field, to be used when adding items to the dissection tree.
-
-       @since 1.11.3
-     */
+    /* A Protocol expert info field, to be used when adding items to the dissection tree. */
 
 WSLUA_CONSTRUCTOR ProtoExpert_new(lua_State* L) {
-    /* Creates a new `ProtoExpert` object to be used for a protocol's expert information notices.
-
-       @since 1.11.3
-     */
+    /* Creates a new `ProtoExpert` object to be used for a protocol's expert information notices. */
 #define WSLUA_ARG_ProtoExpert_new_ABBR 1 /* Filter name of the expert info field (the string that
                                             is used in filters). */
 #define WSLUA_ARG_ProtoExpert_new_TEXT 2 /* The default text of the expert field. */
-#define WSLUA_ARG_ProtoExpert_new_GROUP 3 /* Expert group type: one of: `expert.group.CHECKSUM`,
-                                             `expert.group.SEQUENCE`, `expert.group.RESPONSE_CODE`,
-                                             `expert.group.REQUEST_CODE`, `expert.group.UNDECODED`,
-                                             `expert.group.REASSEMBLE`, `expert.group.MALFORMED`,
-                                             `expert.group.DEBUG`, `expert.group.PROTOCOL`,
-                                             `expert.group.SECURITY`, `expert.group.COMMENTS_GROUP`
-                                             or `expert.group.DECRYPTION`. */
+#define WSLUA_ARG_ProtoExpert_new_GROUP 3 /* Expert group type: one of:
+                                             `expert.group.CHECKSUM`,
+                                             `expert.group.SEQUENCE`,
+                                             `expert.group.RESPONSE_CODE`,
+                                             `expert.group.REQUEST_CODE`,
+                                             `expert.group.UNDECODED`,
+                                             `expert.group.REASSEMBLE`,
+                                             `expert.group.MALFORMED`,
+                                             `expert.group.DEBUG`,
+                                             `expert.group.PROTOCOL`,
+                                             `expert.group.SECURITY`,
+                                             `expert.group.COMMENTS_GROUP`,
+                                             `expert.group.DECRYPTION`,
+                                             `expert.group.ASSUMPTION`,
+                                             `expert.group.DEPRECATED`,
+                                             `expert.group.RECEIVE`,
+                                             or `expert.group.INTERFACE`. */
 #define WSLUA_ARG_ProtoExpert_new_SEVERITY 4 /* Expert severity type: one of:
-                                                `expert.severity.COMMENT`, `expert.severity.CHAT`,
-                                                `expert.severity.NOTE`, `expert.severity.WARN`,
+                                                `expert.severity.COMMENT`,
+                                                `expert.severity.CHAT`,
+                                                `expert.severity.NOTE`,
+                                                `expert.severity.WARN`,
                                                 or `expert.severity.ERROR`. */
 
     ProtoExpert pe    = NULL;
-    const gchar* abbr = wslua_checkstring_only(L,WSLUA_ARG_ProtoExpert_new_ABBR);
-    const gchar* text = wslua_checkstring_only(L,WSLUA_ARG_ProtoExpert_new_TEXT);
+    const char* abbr = wslua_checkstring_only(L,WSLUA_ARG_ProtoExpert_new_ABBR);
+    const char* text = wslua_checkstring_only(L,WSLUA_ARG_ProtoExpert_new_TEXT);
     int group         = (int)luaL_checkinteger(L, WSLUA_ARG_ProtoExpert_new_GROUP);
     int severity      = (int)luaL_checkinteger(L, WSLUA_ARG_ProtoExpert_new_SEVERITY);
 
@@ -82,6 +76,11 @@ WSLUA_CONSTRUCTOR ProtoExpert_new(lua_State* L) {
         return 0;
     }
 
+    if (!text[0]) {
+        luaL_argerror(L, WSLUA_ARG_ProtoExpert_new_TEXT, "Empty text");
+        return 0;
+    }
+
     switch (group) {
     case PI_CHECKSUM:
     case PI_SEQUENCE:
@@ -95,6 +94,11 @@ WSLUA_CONSTRUCTOR ProtoExpert_new(lua_State* L) {
     case PI_SECURITY:
     case PI_COMMENTS_GROUP:
     case PI_DECRYPTION:
+    case PI_ASSUMPTION:
+    case PI_DEPRECATED:
+    case PI_RECEIVE:
+    case PI_INTERFACE:
+    case PI_DISSECTOR_BUG:
         break;
     default:
         luaL_argerror(L, WSLUA_ARG_ProtoExpert_new_GROUP, "Group must be one of expert.group.*");
@@ -116,7 +120,7 @@ WSLUA_CONSTRUCTOR ProtoExpert_new(lua_State* L) {
     pe = g_new(wslua_expert_field_t,1);
 
     pe->ids.ei   = EI_INIT_EI;
-    pe->ids.hf   = EI_INIT_HF;
+    pe->ids.hf   = -2;
     pe->abbrev   = g_strdup(abbr);
     pe->text     = g_strdup(text);
     pe->group    = group;
@@ -128,10 +132,7 @@ WSLUA_CONSTRUCTOR ProtoExpert_new(lua_State* L) {
 }
 
 WSLUA_METAMETHOD ProtoExpert__tostring(lua_State* L) {
-    /* Returns a string with debugging information about a `ProtoExpert` object.
-
-       @since 1.11.3
-     */
+    /* Returns a string with debugging information about a `ProtoExpert` object. */
     ProtoExpert pe = toProtoExpert(L,1);
 
     if (!pe) {
@@ -146,10 +147,20 @@ WSLUA_METAMETHOD ProtoExpert__tostring(lua_State* L) {
 static int ProtoExpert__gc(lua_State* L) {
     ProtoExpert pe = toProtoExpert(L,1);
 
-    if (pe->ids.hf == -2) {
+    /*
+     * Initialized to -2 in ProtoExpert_new,
+     * changed to -1 in Proto_commit and subsequently replaced by
+     * an allocated number in proto_register_field_array.
+     * Reset to -2 again in wslua_deregister_protocols.
+     */
+    if (pe->ids.hf != -2) {
         /* Only free unregistered and deregistered ProtoExpert */
-        g_free(pe);
+        return 0;
     }
+
+    g_free((char *)pe->abbrev);
+    g_free((char *)pe->text);
+    g_free(pe);
 
     return 0;
 }
@@ -171,7 +182,7 @@ int ProtoExpert_register(lua_State* L) {
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

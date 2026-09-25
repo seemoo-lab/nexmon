@@ -109,16 +109,38 @@ Alerting-UUIE/h245Address        H245TransportAddress
 Facility-UUIE/h245Address        H245TransportAddress
 Progress-UUIE/h245Address        H245TransportAddress
 #.FIELD_RENAME
-H245TransportAddress/ipAddress       h245IpAddress
-H245TransportAddress/ipAddress/ip    h245Ip
-H245TransportAddress/ipAddress/port  h245IpPort
+H245TransportAddress/ipAddress              h245IpAddress
+H245TransportAddress/ipAddress/ip           h245Ip
+H245TransportAddress/ipAddress/port         h245IpPort
 H245TransportAddress/ipSourceRoute          h245IpSourceRoute
 H245TransportAddress/ipSourceRoute/route    h245Route
 H245TransportAddress/ipSourceRoute/routing  h245Routing
-H245TransportAddress/ipxAddress       h245IpxAddress
-H245TransportAddress/ipxAddress/port  h245IpxPort
-H245TransportAddress/ip6Address     h245Ip6Address
-H245TransportAddress/ip6Address/ip  h245Ip6
+H245TransportAddress/ipxAddress             h245IpxAddress
+H245TransportAddress/ipxAddress/port        h245IpxPort
+H245TransportAddress/ip6Address             h245Ip6Address
+H245TransportAddress/ip6Address/ip          h245Ip6
+H245TransportAddress/ip6Address/port        h245Ip6port
+DisplayName/language                        displayName_language
+Endpoint/remoteExtensionAddress/_item       ep_remoteExtensionAddress_item
+AdmissionConfirm/remoteExtensionAddress/_item ac_remoteExtensionAddress_item
+
+#.FIELD_ATTR
+H245TransportAddress/ipAddress/ip             ABBREV=h245Ip
+H245TransportAddress/ipAddress/port           ABBREV=h245IpPort
+H245TransportAddress/ip6Address/ip            ABBREV=h245Ip6
+H245TransportAddress/ip6Address/port          ABBREV=h245Ip6port
+H245TransportAddress/ipxAddress/port          ABBREV=h245IpxPort
+TransportAddress/ipSourceRoute/ip             ABBREV=src_route_ipV4
+TransportAddress/ipSourceRoute/port           ABBREV=ipV4_src_port
+TransportAddress/ipAddress/ip                 ABBREV=ipV4
+TransportAddress/ipAddress/port               ABBREV=ipV4_port
+TransportAddress/ip6Address/ip                ABBREV=ipV6
+TransportAddress/ip6Address/port              ABBREV=ipV6_port
+TransportAddress/ipxAddress/port              ABBREV=ipx_port
+DisplayName/language                          ABBREV=displayName_language
+ExtendedAliasAddress/address                  ABBREV=extAliasAddress
+Endpoint/remoteExtensionAddress/_item         ABBREV=remoteExtensionAddress.item
+AdmissionConfirm/remoteExtensionAddress/_item ABBREV=ac_remoteExtensionAddress_item
 
 #.VIRTUAL_ASSGN
 Language           Setup-UUIE/language
@@ -238,16 +260,16 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 
 #----------------------------------------------------------------------------------------
 #.FN_BODY H323-UU-PDU/h323-message-body  VAL_PTR = &message_body_val
-  gint32 message_body_val;
+  int32_t message_body_val;
   h225_packet_info* h225_pi;
 
-  contains_faststart = FALSE;
+  contains_faststart = false;
   call_id_guid = NULL;
 %(DEFAULT_BODY)s
-  col_append_fstr(%(ACTX)s->pinfo->cinfo, COL_INFO, "CS: %%s ",
-    val_to_str(message_body_val, T_h323_message_body_vals, "<unknown>"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, "CS: %%s ",
+    val_to_str_const(message_body_val, T_h323_message_body_vals, "<unknown>"));
 
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), %(ACTX)s->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
   if (h225_pi != NULL) {
     if (h225_pi->msg_type == H225_CS) {
       /* Don't override msg_tag value from IRR */
@@ -259,12 +281,12 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
     }
   }
 
-  if (contains_faststart == TRUE )
+  if (contains_faststart == true )
   {
-    col_append_str(%(ACTX)s->pinfo->cinfo, COL_INFO, "OpenLogicalChannel " );
+    col_append_str(actx->pinfo->cinfo, COL_INFO, "OpenLogicalChannel " );
   }
 
-  col_set_fence(%(ACTX)s->pinfo->cinfo,COL_INFO);
+  col_set_fence(actx->pinfo->cinfo,COL_INFO);
 
 #.END
 #----------------------------------------------------------------------------------------
@@ -276,30 +298,28 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 
 %(DEFAULT_BODY)s
   if (value_tvb && tvb_reported_length(value_tvb)) {
-    dissect_h245_FastStart_OLC(value_tvb, %(ACTX)s->pinfo, tree, codec_str);
+    dissect_h245_FastStart_OLC(value_tvb, actx->pinfo, tree, codec_str);
   }
 
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), %(ACTX)s->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
   if (h225_pi != NULL) {
-    char temp[50];
-    g_snprintf(temp, 50, "%%s %%s", h225_pi->frame_label, codec_str);
-    g_strlcpy(h225_pi->frame_label, temp, 50);
-    h225_pi->is_faststart = TRUE;
+    h225_pi->frame_label = wmem_strdup_printf(actx->pinfo->pool, "%%s %%s", h225_pi->frame_label, codec_str);
+    h225_pi->is_faststart = true;
   }
-  contains_faststart = TRUE;
+  contains_faststart = true;
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY RasMessage  VAL_PTR = &rasmessage_value
-    gint32 rasmessage_value;
+    int32_t rasmessage_value;
     h225_packet_info* h225_pi;
 
   call_id_guid = NULL;
 %(DEFAULT_BODY)s
-  col_add_fstr(%(ACTX)s->pinfo->cinfo, COL_INFO, "RAS: %%s ",
-    val_to_str(rasmessage_value, h225_RasMessage_vals, "<unknown>"));
+  col_add_fstr(actx->pinfo->cinfo, COL_INFO, "RAS: %%s ",
+    val_to_str_const(rasmessage_value, h225_RasMessage_vals, "<unknown>"));
 
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), %(ACTX)s->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
   if (h225_pi != NULL) {
     h225_pi->msg_tag = rasmessage_value;
     if (call_id_guid) {
@@ -311,29 +331,29 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.FN_HDR DestinationInfo/_item
   h225_packet_info* h225_pi;
 
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
   if (h225_pi != NULL) {
-    h225_pi->is_destinationInfo = TRUE;
+    h225_pi->is_destinationInfo = true;
   }
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY DialedDigits  VAL_PTR = &value_tvb
   tvbuff_t *value_tvb = NULL;
-  guint len = 0;
+  unsigned len = 0;
   h225_packet_info* h225_pi;
 
 %(DEFAULT_BODY)s
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi && h225_pi->is_destinationInfo == TRUE) {
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  if (h225_pi && h225_pi->is_destinationInfo == true) {
     if (value_tvb) {
       len = tvb_reported_length(value_tvb);
       /* XXX - should this be allocated as an ephemeral string? */
       if (len > sizeof h225_pi->dialedDigits - 1)
         len = sizeof h225_pi->dialedDigits - 1;
-      tvb_memcpy(value_tvb, (guint8*)h225_pi->dialedDigits, 0, len);
+      tvb_memcpy(value_tvb, (uint8_t*)h225_pi->dialedDigits, 0, len);
     }
     h225_pi->dialedDigits[len] = '\0';
-    h225_pi->is_destinationInfo = FALSE;
+    h225_pi->is_destinationInfo = false;
   }
 #.END
 #----------------------------------------------------------------------------------------
@@ -363,14 +383,14 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
   tvbuff_t *h245_tvb = NULL;
 
 %(DEFAULT_BODY)s
-  next_tvb_add_handle(&h245_list, h245_tvb, (h225_h245_in_tree)?tree:NULL, h245dg_handle);
+  next_tvb_add_handle(h245_list, h245_tvb, (h225_h245_in_tree)?tree:NULL, h245dg_handle);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY H245Control/_item  VAL_PTR = &h245_tvb
   tvbuff_t *h245_tvb = NULL;
 
 %(DEFAULT_BODY)s
-  next_tvb_add_handle(&h245_list, h245_tvb, (h225_h245_in_tree)?tree:NULL, h245dg_handle);
+  next_tvb_add_handle(h245_list, h245_tvb, (h225_h245_in_tree)?tree:NULL, h245dg_handle);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR H323-UU-PDU/h323-message-body/empty
@@ -378,7 +398,7 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_FTR H323-UU-PDU/h323-message-body/empty
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
   if (h225_pi != NULL) {
     h225_pi->cs_type = H225_EMPTY;
   }
@@ -390,11 +410,8 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR Status-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_STATUS;
-    g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_STATUS, false);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR Information-UUIE
@@ -403,11 +420,8 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR Information-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_INFORMATION;
-    g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_INFORMATION, false);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR Progress-UUIE
@@ -416,16 +430,8 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR Progress-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_PROGRESS;
-    if (contains_faststart) {
-      char temp[50];
-      g_snprintf(temp, 50, "%s OLC (%s)", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_PROGRESS, contains_faststart);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR SetupAcknowledge-UUIE
@@ -434,11 +440,8 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR SetupAcknowledge-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_SETUP_ACK;
-    g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_SETUP_ACK, false);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR Facility-UUIE
@@ -447,16 +450,13 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR Facility-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_FACILITY;
-    g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_FACILITY, false);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR H323-UU-PDU/h245Tunnelling
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
   if (h225_pi != NULL) {
 #.END
 #----------------------------------------------------------------------------------------
@@ -468,21 +468,13 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_HDR Setup-UUIE
   h225_packet_info* h225_pi;
-  contains_faststart = FALSE;
+  contains_faststart = false;
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_FTR Setup-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_SETUP;
-    if (contains_faststart) {
-      char temp[50];
-      g_snprintf(temp, 50, "%s OLC (%s)", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_SETUP, contains_faststart);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR CallProceeding-UUIE
@@ -491,16 +483,8 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR CallProceeding-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_CALL_PROCEDING;
-    if (contains_faststart) {
-      char temp[50];
-      g_snprintf(temp, 50, "%s OLC (%s)", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_CALL_PROCEDING, contains_faststart);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR Alerting-UUIE
@@ -509,16 +493,8 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR Alerting-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_ALERTING;
-    if (contains_faststart) {
-      char temp[50];
-      g_snprintf(temp, 50, "%s OLC (%s)", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_ALERTING, contains_faststart);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR ReleaseComplete-UUIE
@@ -527,11 +503,8 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR ReleaseComplete-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_RELEASE_COMPLET;
-    g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_RELEASE_COMPLET, false);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR Connect-UUIE
@@ -540,16 +513,8 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR Connect-UUIE
   /* Add to packet info */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
-  if (h225_pi != NULL) {
-    h225_pi->cs_type = H225_CONNECT;
-    if (contains_faststart) {
-      char temp[50];
-      g_snprintf(temp, 50, "%s OLC (%s)", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"), h225_pi->frame_label);
-      g_strlcpy(h225_pi->frame_label, temp, 50);
-    } else
-      g_snprintf(h225_pi->frame_label, 50, "%s", val_to_str(h225_pi->cs_type, T_h323_message_body_vals, "<unknown>"));
-  }
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
+  h225_set_cs_type(actx->pinfo, h225_pi, H225_CONNECT, contains_faststart);
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_HDR H245TransportAddress
@@ -562,14 +527,14 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #----------------------------------------------------------------------------------------
 #.FN_FTR H245TransportAddress
   /* we need this info for TAPing */
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
   if (h225_pi) {
-    h225_pi->is_h245 = TRUE;
+    h225_pi->is_h245 = true;
     h225_pi->h245_address = ipv4_address;
     h225_pi->h245_port = ip_port;
   }
-  if ( !actx->pinfo->fd->flags.visited && h245_handle && ip_port!=0 ) {
+  if ( !actx->pinfo->fd->visited && h245_handle && ip_port!=0 ) {
     address src_addr;
     conversation_t *conv=NULL;
 
@@ -581,18 +546,18 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
       return offset;
     }
 
-    conv=find_conversation(actx->pinfo->num, &src_addr, &src_addr, PT_TCP, ip_port, ip_port, NO_ADDR_B|NO_PORT_B);
+    conv=find_conversation(actx->pinfo->num, &src_addr, &src_addr, CONVERSATION_TCP, ip_port, ip_port, NO_ADDR_B|NO_PORT_B);
     if(!conv){
-      conv=conversation_new(actx->pinfo->num, &src_addr, &src_addr, PT_TCP, ip_port, ip_port, NO_ADDR2|NO_PORT2);
+      conv=conversation_new(actx->pinfo->num, &src_addr, &src_addr, CONVERSATION_TCP, ip_port, ip_port, NO_ADDR2|NO_PORT2);
       conversation_set_dissector(conv, h245_handle);
     }
   }
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY FacilityReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -601,9 +566,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY GatekeeperRejectReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -612,9 +577,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY UnregRequestReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -623,9 +588,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY UnregRejectReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -634,9 +599,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY BandRejectReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -645,9 +610,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY DisengageReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -655,9 +620,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
   }
 #----------------------------------------------------------------------------------------
 #.FN_BODY DisengageRejectReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -666,9 +631,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY AdmissionRejectReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -677,9 +642,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY LocationRejectReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -688,9 +653,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY RegistrationRejectReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -699,9 +664,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY InfoRequestNakReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -710,9 +675,9 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.END
 #----------------------------------------------------------------------------------------
 #.FN_BODY ReleaseCompleteReason  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
 
 %(DEFAULT_BODY)s
   if (h225_pi != NULL) {
@@ -723,18 +688,18 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 #.FN_BODY CallIdentifier/guid
   tvbuff_t *guid_tvb = NULL;
 
-  %(ACTX)s->value_ptr = &guid_tvb;
+  actx->value_ptr = &guid_tvb;
 %(DEFAULT_BODY)s
   if (guid_tvb)
-    tvb_get_ntohguid(guid_tvb, 0, call_id_guid = wmem_new(wmem_packet_scope(), e_guid_t));
-  %(ACTX)s->value_ptr = NULL;
+    tvb_get_ntohguid(guid_tvb, 0, call_id_guid = wmem_new(actx->pinfo->pool, e_guid_t));
+  actx->value_ptr = NULL;
 #.END
 #----------------------------------------------------------------------------------------
-#.FN_PARS GloballyUniqueID  VAL_PTR = (tvbuff_t **)%(ACTX)s->value_ptr
+#.FN_PARS GloballyUniqueID  VAL_PTR = (tvbuff_t **)actx->value_ptr
 #----------------------------------------------------------------------------------------
 #.FN_HDR RequestSeqNum
   h225_packet_info* h225_pi;
-  h225_pi = (h225_packet_info*)p_get_proto_data(wmem_packet_scope(), actx->pinfo, proto_h225, 0);
+  h225_pi = (h225_packet_info*)p_get_proto_data(actx->pinfo->pool, actx->pinfo, proto_h225, 0);
   if (h225_pi != NULL) {
 #.END
 #----------------------------------------------------------------------------------------
@@ -749,7 +714,7 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
 
 %(DEFAULT_BODY)s
   if (h4501_tvb && tvb_reported_length(h4501_tvb)) {
-    call_dissector(h4501_handle, h4501_tvb, %(ACTX)s->pinfo, tree);
+    call_dissector(h4501_handle, h4501_tvb, actx->pinfo, tree);
   }
 #.END
 #----------------------------------------------------------------------------------------
@@ -770,7 +735,7 @@ IsupNumber/nationalStandardPartyNumber isupNationalStandardPartyNumber
   tvbuff_t *next_tvb = NULL;
 
 %(DEFAULT_BODY)s
-  next_tvb_add_handle(&tp_list, next_tvb, (h225_tp_in_tree)?tree:NULL, tp_handle);
+  next_tvb_add_handle(tp_list, next_tvb, (h225_tp_in_tree)?tree:NULL, tp_handle);
 #.END
 
 #--- NonStandardParameter ---------------------------------------------------------------
@@ -780,7 +745,7 @@ NonStandardIdentifier/object  FN_VARIANT = _str  VAL_PTR = &nsiOID
 #.END
 
 #.FN_BODY NonStandardIdentifier  VAL_PTR = &value
-  gint32 value;
+  int32_t value;
 
   nsiOID = "";
   h221NonStandard = 0;
@@ -818,7 +783,7 @@ H221NonStandard/manufacturerCode  VAL_PTR = &manufacturerCode
 
 %(DEFAULT_BODY)s
   if (next_tvb && tvb_reported_length(next_tvb)) {
-    call_dissector((nsp_handle)?nsp_handle:data_handle, next_tvb, %(ACTX)s->pinfo, tree);
+    call_dissector((nsp_handle)?nsp_handle:data_handle, next_tvb, actx->pinfo, tree);
   }
 #.END
 
@@ -831,7 +796,7 @@ H221NonStandard/manufacturerCode  VAL_PTR = &manufacturerCode
   /* check if not inherited from FeatureDescriptor */
   gefx = gef_ctx_get(actx->private_data);
   if (!gefx) {
-    gefx = gef_ctx_alloc(NULL, "GenericData");
+    gefx = gef_ctx_alloc(actx->pinfo->pool, NULL, "GenericData");
     actx->private_data = gefx;
   }
 #.FN_FTR
@@ -842,7 +807,7 @@ H221NonStandard/manufacturerCode  VAL_PTR = &manufacturerCode
   gef_ctx_t *parent_gefx;
 
   parent_gefx = gef_ctx_get(actx->private_data);
-  actx->private_data = gef_ctx_alloc(parent_gefx, NULL);
+  actx->private_data = gef_ctx_alloc(actx->pinfo->pool, parent_gefx, NULL);
 #.FN_FTR
   actx->private_data = parent_gefx;
 #.END
@@ -850,7 +815,7 @@ H221NonStandard/manufacturerCode  VAL_PTR = &manufacturerCode
 #----------------------------------------------------------------------------------------
 #.FN_HDR FeatureDescriptor
   void *priv_data = actx->private_data;
-  actx->private_data = gef_ctx_alloc(NULL, "FeatureDescriptor");
+  actx->private_data = gef_ctx_alloc(actx->pinfo->pool, NULL, "FeatureDescriptor");
 #.FN_FTR
   actx->private_data = priv_data;
 #.END
@@ -860,27 +825,27 @@ H221NonStandard/manufacturerCode  VAL_PTR = &manufacturerCode
   gef_ctx_t *gefx;
   proto_item* ti;
 #.FN_FTR
-  gef_ctx_update_key(gef_ctx_get(actx->private_data));
+  gef_ctx_update_key(actx->pinfo->pool, gef_ctx_get(actx->private_data));
   gefx = gef_ctx_get(actx->private_data);
   if (gefx) {
     ti = proto_tree_add_string(tree, hf_h225_debug_dissector_try_string, tvb, offset>>3, 0, gefx->key);
-  PROTO_ITEM_SET_HIDDEN(ti);
-    dissector_try_string(gef_name_dissector_table, gefx->key, tvb_new_subset(tvb, offset>>3, 0, 0), actx->pinfo, tree, actx);
+  proto_item_set_hidden(ti);
+    dissector_try_string_with_data(gef_name_dissector_table, gefx->key, tvb_new_subset_length_caplen(tvb, offset>>3, 0, 0), actx->pinfo, tree, false, actx);
   }
   actx->private_data = gefx;  /* subdissector could overwrite it */
 #.END
 
 #.FN_BODY GenericIdentifier/standard  VAL_PTR = &value_int
-  guint32 value_int = (guint32)-1;
+  uint32_t value_int = (uint32_t)-1;
   gef_ctx_t *gefx;
 
 %(DEFAULT_BODY)s
   gefx = gef_ctx_get(actx->private_data);
-  if (gefx) gefx->id = wmem_strdup_printf(wmem_packet_scope(), "%%u", value_int);
+  if (gefx) gefx->id = wmem_strdup_printf(actx->pinfo->pool, "%%u", value_int);
 #.END
 
 #.FN_BODY GenericIdentifier/oid  FN_VARIANT = _str  VAL_PTR = &oid_str
-  const gchar *oid_str = NULL;
+  const char *oid_str = NULL;
   gef_ctx_t *gefx;
 
 %(DEFAULT_BODY)s
@@ -898,8 +863,8 @@ H221NonStandard/manufacturerCode  VAL_PTR = &manufacturerCode
   gefx = gef_ctx_get(actx->private_data);
   if (gefx) {
     ti = proto_tree_add_string(tree, hf_h225_debug_dissector_try_string, tvb, offset>>3, 0, gefx->key);
-  PROTO_ITEM_SET_HIDDEN(ti);
-    dissector_try_string(gef_content_dissector_table, gefx->key, value_tvb, %(ACTX)s->pinfo, %(TREE)s, %(ACTX)s);
+  proto_item_set_hidden(ti);
+    dissector_try_string_with_data(gef_content_dissector_table, gefx->key, value_tvb, actx->pinfo, %(TREE)s, true, actx);
   }
 #.END
 
@@ -910,7 +875,7 @@ H221NonStandard/manufacturerCode  VAL_PTR = &manufacturerCode
 
 #.FN_HDR TBCD-STRING
   int min_len, max_len;
-  gboolean has_extension;
+  bool has_extension;
 
   get_size_constraint_from_stack(actx, "TBCD_STRING", &min_len, &max_len, &has_extension);
 #.FN_PARS TBCD-STRING

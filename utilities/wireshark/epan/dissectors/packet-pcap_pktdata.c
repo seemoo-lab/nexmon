@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,24 +16,23 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 
-#include <wiretap/wtap.h>
 #include <wiretap/pcap-encap.h>
 
-#include <epan/dissectors/packet-pcap_pktdata.h>
+#include "packet-pcap_pktdata.h"
 
 void proto_register_pcap_pktdata(void);
 void proto_reg_handoff_pcap_pktdata(void);
 
-static int proto_pcap_pktdata = -1;
+static int proto_pcap_pktdata;
 
-static int hf_pcap_pktdata_pseudoheader = -1;
-static int hf_pcap_pktdata_pseudoheader_bluetooth_direction = -1;
-static int hf_pcap_pktdata_undecoded_data = -1;
+static int hf_pcap_pktdata_pseudoheader;
+static int hf_pcap_pktdata_pseudoheader_bluetooth_direction;
+static int hf_pcap_pktdata_undecoded_data;
 
-static gint ett_pcap_pktdata_pseudoheader = -1;
+static int ett_pcap_pktdata_pseudoheader;
 
-static expert_field ei_pcap_pktdata_linktype_unknown = EI_INIT;
-static expert_field ei_pcap_pktdata_cant_generate_phdr = EI_INIT;
+static expert_field ei_pcap_pktdata_linktype_unknown;
+static expert_field ei_pcap_pktdata_cant_generate_phdr;
 
 static dissector_table_t wtap_encap_table;
 
@@ -183,7 +170,7 @@ const value_string link_type_vals[] = {
     { 205,  "C_HDLC_WITH_DIR" },
     { 206,  "FRELAY_WITH_DIR" },
     { 207,  "LAPB_WITH_DIR" },          /* LAPB with direction pseudo-header */
-    { 209,  "IPMB_LINUX" },
+    { 209,  "I2C_LINUX" },
     { 210,  "FLEXRAY" },                /* FlexRay automotive bus */
     { 211,  "MOST" },                   /* Media Oriented Systems Transport */
     { 212,  "LIN" },                    /* Local Interconnect Network */
@@ -192,7 +179,7 @@ const value_string link_type_vals[] = {
     { 215,  "IEEE802_15_4_NONASK_PHY" },
     { 216,  "LINUX_EVDEV" },            /* Linux evdev messages */
     { 217,  "GSMTAP_UM" },              /* "gsmtap" header followed by GSM Um interface packets */
-    { 218,  "GSMTAP_UM" },              /* "gsmtap" header followed by GSM Abis interface packets */
+    { 218,  "GSMTAP_Abis" },            /* "gsmtap" header followed by GSM Abis interface packets */
     { 219,  "MPLS" },                   /* MPLS label (stack?) as the link-layer header */
     { 220,  "USB_LINUX_MMAPPED" },
     { 221,  "DECT" },                   /* DECT packets, with a pseudo-header */
@@ -239,6 +226,42 @@ const value_string link_type_vals[] = {
     { 262,  "ZWAVE_R3" },
     { 263,  "WATTSTOPPER_DLM" },
     { 264,  "ISO_14443" },
+    { 265,  "RDS" },
+    { 266,  "USB_DARWIN" },
+    { 267,  "OPENFLOW" },
+    { 268,  "SDLC" },
+    { 269,  "TI_LLN_SNIFFER" },
+    { 270,  "LORATAP" },
+    { 271,  "VSOCK" },
+    { 272,  "NORDIC_BLE" },
+    { 273,  "DOCSIS31_XRA31" },
+    { 274,  "ETHERNET_MPACKET" },
+    { 275,  "DISPLAYPORT_AUX" },
+    { 276,  "LINUX_SLL2" },
+    { 277,  "SERCOS_MONITOR" },
+    { 278,  "OPENVIZSLA" },
+    { 279,  "EBHSCR" },
+    { 280,  "VPP_DISPATCH" },
+    { 281,  "DSA_TAG_BRCM" },
+    { 282,  "DSA_TAG_BRCM_PREPEND" },
+    { 283,  "IEEE802_15_4_TAP" },
+    { 284,  "DSA_TAG_DSA" },
+    { 285,  "DSA_TAG_EDSA" },
+    { 286,  "ELEE" },
+    { 288,  "USB_2_0" },
+    { 289,  "ATSC_ALP" },
+    { 290,  "ETW" },
+    { 291,  "NETANALYZER_NG" },
+    { 292,  "ZBOSS_NCP" },
+    { 293,  "USB_2_0_LOW_SPEED" },
+    { 294,  "USB_2_0_FULL_SPEED" },
+    { 295,  "USB_2_0_HIGH_SPEED" },
+    { 296,  "AUERSWALD_LOG" },
+    { 297,  "ZWAVE_TAP" },
+    { 298,  "SILABS_DEBUG_CHANNEL" },
+    { 299,  "FIRA_UCI" },
+    { 300,  "MDB" },
+    { 301,  "DECT_NR" },
     { 0, NULL }
 };
 
@@ -251,8 +274,8 @@ static const value_string pseudoheader_bluetooth_direction_vals[] = {
 static int
 dissect_pcap_pktdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    gint         offset = 0;
-    guint32     *link_type;
+    int          offset = 0;
+    uint32_t    *link_type;
     tvbuff_t    *next_tvb;
     proto_item  *pseudoheader_item;
     proto_tree  *pseudoheader_tree = NULL;
@@ -262,18 +285,18 @@ dissect_pcap_pktdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 
     DISSECTOR_ASSERT(data);
 
-    link_type = (guint32 *) data;
+    link_type = (uint32_t *) data;
 
     /*
      * We're passed a pointer to a LINKTYPE_ value.
      * Find the Wiretap encapsulation for that value.
      */
-    pinfo->phdr->pkt_encap = wtap_pcap_encap_to_wtap_encap(*link_type);
+    pinfo->rec->rec_header.packet_header.pkt_encap = wtap_pcap_encap_to_wtap_encap(*link_type);
 
     /*
      * Do we know that type?
      */
-    if (pinfo->phdr->pkt_encap == WTAP_ENCAP_UNKNOWN) {
+    if (pinfo->rec->rec_header.packet_header.pkt_encap == WTAP_ENCAP_UNKNOWN) {
         /*
          * Nothing we know.
          * Just report that and give up.
@@ -297,19 +320,19 @@ dissect_pcap_pktdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
      * pseudo-header from the bytes at the beginning of the
      * packet data.
      */
-    if (wtap_encap_requires_phdr(pinfo->phdr->pkt_encap)) {
+    if (wtap_encap_requires_phdr(pinfo->rec->rec_header.packet_header.pkt_encap)) {
         /*
          * It does.  Do we have code to do that?
          */
-        switch (pinfo->phdr->pkt_encap) {
+        switch (pinfo->rec->rec_header.packet_header.pkt_encap) {
 
         case WTAP_ENCAP_BLUETOOTH_H4_WITH_PHDR:
             pseudoheader_item = proto_tree_add_item(tree, hf_pcap_pktdata_pseudoheader, tvb, offset, 4, ENC_NA);
             pseudoheader_tree = proto_item_add_subtree(pseudoheader_item, ett_pcap_pktdata_pseudoheader);
             proto_tree_add_item(pseudoheader_tree, hf_pcap_pktdata_pseudoheader_bluetooth_direction, tvb, offset, 4, ENC_BIG_ENDIAN);
-            if (tvb_get_guint32(tvb, offset, ENC_BIG_ENDIAN) == 0)
+            if (tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN) == 0)
                 pinfo->p2p_dir = P2P_DIR_SENT;
-            else if (tvb_get_guint32(tvb, offset, ENC_BIG_ENDIAN) == 1)
+            else if (tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN) == 1)
                 pinfo->p2p_dir = P2P_DIR_RECV;
             else
                 pinfo->p2p_dir = P2P_DIR_UNKNOWN;
@@ -335,7 +358,7 @@ dissect_pcap_pktdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
             /* TODO */
         case WTAP_ENCAP_ERF:
             /* TODO no description for pseudoheader at http://www.tcpdump.org/linktypes.html */
-        case WTAP_ENCAP_I2C:
+        case WTAP_ENCAP_I2C_LINUX:
             /* TODO */
         default:
             /*
@@ -353,7 +376,7 @@ dissect_pcap_pktdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
          * These also require a pseudo-header, but it's not constructed
          * from packet data.
          */
-        switch (pinfo->phdr->pkt_encap) {
+        switch (pinfo->rec->rec_header.packet_header.pkt_encap) {
 
         case WTAP_ENCAP_ETHERNET:
             eth.fcs_len = -1;    /* Unknown whether we have an FCS */
@@ -368,7 +391,7 @@ dissect_pcap_pktdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 
     next_tvb = tvb_new_subset_remaining(tvb, offset);
 
-    offset = dissector_try_uint_new(wtap_encap_table, pinfo->phdr->pkt_encap, next_tvb, pinfo, tree, TRUE, phdr);
+    offset = dissector_try_uint_with_data(wtap_encap_table, pinfo->rec->rec_header.packet_header.pkt_encap, next_tvb, pinfo, tree, true, phdr);
 
     return offset;
 }
@@ -394,7 +417,7 @@ proto_register_pcap_pktdata(void)
         },
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_pcap_pktdata_pseudoheader,
     };
 

@@ -11,19 +11,7 @@
  *
  * The CISCOWL dissector was merged into this one.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* Version 0x00 was reverse engineered */
@@ -67,9 +55,11 @@
 void proto_register_wlccp(void);
 void proto_reg_handoff_wlccp(void);
 
+static dissector_handle_t wlccp_handle;
+
 /* The UDP port that WLCCP is expected to ride on */
 /* WLCCP also uses an LLC OUI type and an ethertype */
-#define WLCCP_UDP_PORT 2887
+#define WLCCP_UDP_PORT 2887 /* Not IANA registered */
 
 
 /* SAP is 2-bit version and 6-bit Type */
@@ -407,283 +397,283 @@ static const value_string phy_type_80211_vs[] = {
 struct subdissector_returns_t
 {
 	static int consumed
-	static gboolean mic_flag;
-	static gboolean tlv_flag;
+	static bool mic_flag;
+	static bool tlv_flag;
 }; * struct flags_t declaration *
 */
 
 
 
 /* Forward declarations we need below */
-static guint dissect_wlccp_ccm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type);
-static guint dissect_wlccp_sec_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type);
-static guint dissect_wlccp_rrm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type);
-static guint dissect_wlccp_qos_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type);
-static guint dissect_wlccp_nm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type);
-static guint dissect_wlccp_mip_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type);
+static unsigned dissect_wlccp_ccm_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type);
+static unsigned dissect_wlccp_sec_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type);
+static unsigned dissect_wlccp_rrm_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type);
+static unsigned dissect_wlccp_qos_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type);
+static unsigned dissect_wlccp_nm_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type);
+static unsigned dissect_wlccp_mip_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type);
 
-static guint dissect_wlccp_tlvs(proto_tree *_tree, tvbuff_t *tvb, guint tlv_offset, guint _depth);
+static unsigned dissect_wlccp_tlvs(proto_tree *_tree, tvbuff_t *tvb, unsigned tlv_offset, unsigned _depth);
 
-static guint dissect_wlccp_ccm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti);
-static guint dissect_wlccp_sec_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti);
-static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti);
-static guint dissect_wlccp_qos_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti);
-static guint dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti);
-static guint dissect_wlccp_mip_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti);
+static unsigned dissect_wlccp_ccm_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti);
+static unsigned dissect_wlccp_sec_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti);
+static unsigned dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti);
+static unsigned dissect_wlccp_qos_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti);
+static unsigned dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti);
+static unsigned dissect_wlccp_mip_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti);
 
-static void set_mic_flag(gboolean flag);
-static void set_tlv_flag(gboolean flag);
-static gboolean get_tlv_flag(void);
-static gboolean get_mic_flag(void);
+static void set_mic_flag(bool flag);
+static void set_tlv_flag(bool flag);
+static bool get_tlv_flag(void);
+static bool get_mic_flag(void);
 
-/* Initialize some utlity variables */
-static gboolean mic_flag=0, tlv_flag=0;
+/* Initialize some utility variables */
+static bool mic_flag=0, tlv_flag=0;
 
 /* Initialize the protocol and registered fields */
-static int proto_wlccp = -1;
+static int proto_wlccp;
 
-static int hf_llc_wlccp_pid = -1;
+static int hf_llc_wlccp_pid;
 
 
 
-static int hf_wlccp_dstmac = -1;
-static int hf_wlccp_srcmac = -1;
-static int hf_wlccp_hostname = -1;
+static int hf_wlccp_dstmac;
+static int hf_wlccp_srcmac;
+static int hf_wlccp_hostname;
 
 /* WLCCP Fixed header fields */
-static int hf_wlccp_version = -1;
+static int hf_wlccp_version;
 
-static int hf_wlccp_sap = -1; /* SAP Tree */
-static int hf_wlccp_sap_version = -1;
-static int hf_wlccp_sap_id = -1;
+static int hf_wlccp_sap; /* SAP Tree */
+static int hf_wlccp_sap_version;
+static int hf_wlccp_sap_id;
 
-static int hf_wlccp_destination_node_type = -1;
-static int hf_wlccp_length = -1;
+static int hf_wlccp_destination_node_type;
+static int hf_wlccp_length;
 
-static int hf_wlccp_type = -1; /* Message Type Tree */
-static int hf_wlccp_subtype = -1;
-static int hf_wlccp_base_message_type_0 = -1;
-static int hf_wlccp_base_message_type_1 = -1;
-static int hf_wlccp_base_message_type_2 = -1;
-static int hf_wlccp_base_message_type_3 = -1;
-static int hf_wlccp_base_message_type_4 = -1;
-static int hf_wlccp_base_message_type_5 = -1;
-static int hf_wlccp_base_message_type_unknown = -1;
+static int hf_wlccp_type; /* Message Type Tree */
+static int hf_wlccp_subtype;
+static int hf_wlccp_base_message_type_0;
+static int hf_wlccp_base_message_type_1;
+static int hf_wlccp_base_message_type_2;
+static int hf_wlccp_base_message_type_3;
+static int hf_wlccp_base_message_type_4;
+static int hf_wlccp_base_message_type_5;
+static int hf_wlccp_base_message_type_unknown;
 
-static int hf_wlccp_hops = -1;
-static int hf_wlccp_nm_version = -1;
+static int hf_wlccp_hops;
+static int hf_wlccp_nm_version;
 
-static int hf_wlccp_msg_id = -1;
+static int hf_wlccp_msg_id;
 
-static int hf_wlccp_flags = -1; /* Flags Tree */
-static int hf_wlccp_rm_flags = -1;
-static int hf_wlccp_retry_flag = -1;
-static int hf_wlccp_response_request_flag = -1;
-static int hf_wlccp_ack_required_flag = -1;
-static int hf_wlccp_tlv_flag = -1;
-static int hf_wlccp_inbound_flag = -1;
-static int hf_wlccp_outbound_flag = -1;
-static int hf_wlccp_hopwise_routing_flag = -1;
-static int hf_wlccp_root_cm_flag = -1;
-static int hf_wlccp_relay_flag = -1;
-static int hf_wlccp_mic_flag = -1;
-static int hf_wlccp_rm_request_reply_flag = -1;
-static int hf_wlccp_rm_mic_flag = -1;
+static int hf_wlccp_flags; /* Flags Tree */
+static int hf_wlccp_rm_flags;
+static int hf_wlccp_retry_flag;
+static int hf_wlccp_response_request_flag;
+static int hf_wlccp_ack_required_flag;
+static int hf_wlccp_tlv_flag;
+static int hf_wlccp_inbound_flag;
+static int hf_wlccp_outbound_flag;
+static int hf_wlccp_hopwise_routing_flag;
+static int hf_wlccp_root_cm_flag;
+static int hf_wlccp_relay_flag;
+static int hf_wlccp_mic_flag;
+static int hf_wlccp_rm_request_reply_flag;
+static int hf_wlccp_rm_mic_flag;
 
-static int hf_wlccp_originator = -1; /* Originator Tree */
-static int hf_wlccp_originator_node_type = -1;
-/* static int hf_wlccp_originator_id = -1; */
+static int hf_wlccp_originator; /* Originator Tree */
+static int hf_wlccp_originator_node_type;
+/* static int hf_wlccp_originator_id; */
 
-static int hf_wlccp_responder = -1; /* Responder Tree */
-static int hf_wlccp_responder_node_type = -1;
-/*static int hf_wlccp_responder_id = -1; */
+static int hf_wlccp_responder; /* Responder Tree */
+static int hf_wlccp_responder_node_type;
+/*static int hf_wlccp_responder_id; */
 
 
-/* static int hf_wlccp_relay_node = -1;*/ /* Relay Node Tree */
-static int hf_wlccp_relay_node_type = -1;
-static int hf_wlccp_relay_node_id = -1;
+/* static int hf_wlccp_relay_node;*/ /* Relay Node Tree */
+static int hf_wlccp_relay_node_type;
+static int hf_wlccp_relay_node_id;
 
-/* static int hf_wlccp_priority = -1; */
-/* static int hf_wlccp_age = -1; */
-/* static int hf_wlccp_period = -1; */
-static int hf_wlccp_ipv4_address = -1;
+/* static int hf_wlccp_priority; */
+/* static int hf_wlccp_age; */
+/* static int hf_wlccp_period; */
+static int hf_wlccp_ipv4_address;
 
 /* SCM Advertisement */
-static int hf_wlccp_scm_hop_address = -1;
+static int hf_wlccp_scm_hop_address;
 
-static int hf_wlccp_scm_flags = -1; /* SCM Flags Tree */
-static int hf_wlccp_scm_active_flag = -1;
-static int hf_wlccp_scm_unscheduled_flag = -1;
-static int hf_wlccp_scm_unattached_flag = -1;
-static int hf_wlccp_scm_layer2update_flag = -1;
+static int hf_wlccp_scm_flags; /* SCM Flags Tree */
+static int hf_wlccp_scm_active_flag;
+static int hf_wlccp_scm_unscheduled_flag;
+static int hf_wlccp_scm_unattached_flag;
+static int hf_wlccp_scm_layer2update_flag;
 
-static int hf_wlccp_scm_election_group = -1;
-static int hf_wlccp_scm_attach_count = -1;
+static int hf_wlccp_scm_election_group;
+static int hf_wlccp_scm_attach_count;
 
-static int hf_wlccp_scm_priority_flags = -1; /* SCM Priority Flags */
-static int hf_wlccp_scm_priority = -1;
-static int hf_wlccp_scm_preferred_flag = -1;
+static int hf_wlccp_scm_priority_flags; /* SCM Priority Flags */
+static int hf_wlccp_scm_priority;
+static int hf_wlccp_scm_preferred_flag;
 
-static int hf_wlccp_scm_bridge_priority_flags = -1; /* SCM Bridge Priority Flags */
-static int hf_wlccp_scm_bridge_priority = -1;
-static int hf_wlccp_scm_bridge_disable_flag = -1;
+static int hf_wlccp_scm_bridge_priority_flags; /* SCM Bridge Priority Flags */
+static int hf_wlccp_scm_bridge_priority;
+static int hf_wlccp_scm_bridge_disable_flag;
 
-static int hf_wlccp_scm_node_id = -1;
-static int hf_wlccp_scm_unknown_short = -1;
-static int hf_wlccp_scm_instance_age = -1;
-static int hf_wlccp_scm_path_cost = -1;
-static int hf_wlccp_scm_hop_count = -1;
-static int hf_wlccp_scm_advperiod = -1;
+static int hf_wlccp_scm_node_id;
+static int hf_wlccp_scm_unknown_short;
+static int hf_wlccp_scm_instance_age;
+static int hf_wlccp_scm_path_cost;
+static int hf_wlccp_scm_hop_count;
+static int hf_wlccp_scm_advperiod;
 
 /*kan for apRegistration messages*/
-static int hf_wlccp_timestamp = -1;
-static int hf_wlccp_apregstatus = -1;
-static int hf_wlccp_ap_node_id = -1;
-static int hf_wlccp_ap_node_type = -1;
-static int hf_wlccp_ap_node_id_address = -1;
+static int hf_wlccp_timestamp;
+static int hf_wlccp_apregstatus;
+static int hf_wlccp_ap_node_id;
+static int hf_wlccp_ap_node_type;
+static int hf_wlccp_ap_node_id_address;
 /*kan for nmPathInit messages */
-static int hf_wlccp_requ_node_type = -1;
-static int hf_wlccp_requ_node_id = -1;
-static int hf_wlccp_status = -1;
-static int hf_wlccp_path_init_rsvd = -1;
+static int hf_wlccp_requ_node_type;
+static int hf_wlccp_requ_node_id;
+static int hf_wlccp_status;
+static int hf_wlccp_path_init_rsvd;
 /*kan - for cmAAA messages */
-static int hf_wlccp_aaa_msg_type = -1;
-static int hf_wlccp_aaa_auth_type = -1;
-static int hf_wlccp_keymgmt_type = -1;
+static int hf_wlccp_aaa_msg_type;
+static int hf_wlccp_aaa_auth_type;
+static int hf_wlccp_keymgmt_type;
 /*kan - for cmAAA EAPOL messages */
-static int hf_wlccp_eapol_msg = -1;
-static int hf_wlccp_eapol_version = -1;
-static int hf_wlccp_eapol_type = -1;
-static int hf_wlccp_eap_msg_length = -1;
-static int hf_wlccp_eap_msg = -1;
+static int hf_wlccp_eapol_msg;
+static int hf_wlccp_eapol_version;
+static int hf_wlccp_eapol_type;
+static int hf_wlccp_eap_msg_length;
+static int hf_wlccp_eap_msg;
 /*kan - for cmAAA Proprietary message */
-static int hf_wlccp_cisco_acctg_msg = -1;
+static int hf_wlccp_cisco_acctg_msg;
 /*kan - for cmWIDS */
-static int hf_wlccp_wids_msg_type = -1;
+static int hf_wlccp_wids_msg_type;
 /*kan - for nmConfigRequest and nmConfigReply */
-static int hf_wlccp_nmconfig = -1;
+static int hf_wlccp_nmconfig;
 
-static int hf_wlccp_scmstate_change = -1;
-static int hf_wlccp_scmstate_change_reason = -1;
+static int hf_wlccp_scmstate_change;
+static int hf_wlccp_scmstate_change_reason;
 
-static int hf_wlccp_scmattach_state = -1;
-static int hf_wlccp_nmcapability = -1;
-static int hf_wlccp_refresh_req_id = -1;
+static int hf_wlccp_scmattach_state;
+static int hf_wlccp_nmcapability;
+static int hf_wlccp_refresh_req_id;
 
-static int hf_wlccp_tlv = -1;
-static int hf_tlv_flags = -1;
+static int hf_wlccp_tlv;
+static int hf_tlv_flags;
 
-static int hf_wlccp_null_tlv = -1;
+static int hf_wlccp_null_tlv;
 
-static int hf_wlccp_tlv_type = -1;
-static int hf_wlccp_tlv_type0 = -1;
-static int hf_wlccp_tlv_type1 = -1;
-static int hf_wlccp_tlv_type2 = -1;
-static int hf_wlccp_tlv_type3 = -1;
-static int hf_wlccp_tlv_type4 = -1;
-static int hf_wlccp_tlv_type5 = -1;
-static int hf_wlccp_tlv_group = -1;
-static int hf_wlccp_tlv_container_flag = -1;
-static int hf_wlccp_tlv_encrypted_flag = -1;
-static int hf_wlccp_tlv_request_flag = -1;
-static int hf_wlccp_tlv_reserved_bit = -1;
-static int hf_wlccp_tlv_length = -1;
+static int hf_wlccp_tlv_type;
+static int hf_wlccp_tlv_type0;
+static int hf_wlccp_tlv_type1;
+static int hf_wlccp_tlv_type2;
+static int hf_wlccp_tlv_type3;
+static int hf_wlccp_tlv_type4;
+static int hf_wlccp_tlv_type5;
+static int hf_wlccp_tlv_group;
+static int hf_wlccp_tlv_container_flag;
+static int hf_wlccp_tlv_encrypted_flag;
+static int hf_wlccp_tlv_request_flag;
+static int hf_wlccp_tlv_reserved_bit;
+static int hf_wlccp_tlv_length;
 
-/* static int hf_wlccp_tlv_value = -1; */
+/* static int hf_wlccp_tlv_value; */
 
-static int hf_wlccp_path_length = -1;
-static int hf_wlccp_mic_msg_seq_count = -1;
-static int hf_wlccp_mic_length = -1;
-static int hf_wlccp_mic_value = -1;
+static int hf_wlccp_path_length;
+static int hf_wlccp_mic_msg_seq_count;
+static int hf_wlccp_mic_length;
+static int hf_wlccp_mic_value;
 
-static int hf_wlccp_key_seq_count = -1;
-static int hf_wlccp_dest_node_type = -1;
-static int hf_wlccp_dest_node_id = -1;
-static int hf_wlccp_supp_node_type = -1;
-static int hf_wlccp_supp_node_id = -1;
-static int hf_wlccp_key_mgmt_type = -1;
-static int hf_wlccp_nonce = -1;
-static int hf_wlccp_session_timeout = -1;
-static int hf_wlccp_src_node_type = -1;
-static int hf_wlccp_src_node_id = -1;
-static int hf_wlccp_token = -1;
-static int hf_wlccp_mode = -1;
-static int hf_wlccp_scan_mode = -1;
-static int hf_wlccp_rss = -1;
-static int hf_wlccp_srcidx = -1;
-static int hf_wlccp_parent_tsf = -1;
-static int hf_wlccp_target_tsf = -1;
+static int hf_wlccp_key_seq_count;
+static int hf_wlccp_dest_node_type;
+static int hf_wlccp_dest_node_id;
+static int hf_wlccp_supp_node_type;
+static int hf_wlccp_supp_node_id;
+static int hf_wlccp_key_mgmt_type;
+static int hf_wlccp_nonce;
+static int hf_wlccp_session_timeout;
+static int hf_wlccp_src_node_type;
+static int hf_wlccp_src_node_id;
+static int hf_wlccp_token;
+static int hf_wlccp_mode;
+static int hf_wlccp_scan_mode;
+static int hf_wlccp_rss;
+static int hf_wlccp_srcidx;
+static int hf_wlccp_parent_tsf;
+static int hf_wlccp_target_tsf;
 
-static int hf_wlccp_channel = -1;
-static int hf_wlccp_phy_type = -1;
-static int hf_wlccp_bssid = -1;
-static int hf_wlccp_beacon_interval = -1;
-/* static int hf_wlccp_capabilities = -1; */
-static int hf_wlccp_tlv80211 = -1;
-static int hf_wlccp_duration = -1;
-static int hf_wlccp_rpidensity = -1;
-static int hf_wlccp_ccabusy = -1;
-static int hf_wlccp_sta_type = -1;
-static int hf_wlccp_stamac = -1;
-static int hf_wlccp_token2 = -1;
-static int hf_wlccp_interval = -1;
-static int hf_wlccp_count = -1;
-static int hf_framereport_elements = -1;
-static int hf_wlccp_numframes = -1;
-static int hf_wlccp_mfpcapability = -1;
-static int hf_wlccp_mfpflags = -1;
-static int hf_wlccp_mfpconfig = -1;
-static int hf_wlccp_clientmac = -1;
-static int hf_time_elapsed = -1;
-static int hf_wlccp_parent_ap_mac = -1;
-static int hf_wlccp_auth_type =-1;
-static int hf_reg_lifetime = -1;
-static int hf_wlccp_radius_user_name = -1;
-static int hf_wds_reason = -1;
-
-
-static int hf_wlccp_80211_capabilities = -1;
-static int hf_80211_cap_ess = -1;
-static int hf_80211_cap_ibss = -1;
-static int hf_80211_cap_cf_pollable = -1;
-static int hf_80211_cap_cf_poll_req = -1;
-static int hf_80211_cap_privacy = -1;
-static int hf_80211_short_preamble = -1;
-static int hf_80211_pbcc = -1;
-static int hf_80211_chan_agility = -1;
-static int hf_80211_spectrum_mgmt = -1;
-static int hf_80211_qos = -1;
-static int hf_80211_short_time_slot = -1;
-static int hf_80211_apsd = -1;
-static int hf_80211_reserved = -1;
-static int hf_80211_dsss_ofdm = -1;
-static int hf_80211_dlyd_block_ack = -1;
-static int hf_80211_imm_block_ack = -1;
+static int hf_wlccp_channel;
+static int hf_wlccp_phy_type;
+static int hf_wlccp_bssid;
+static int hf_wlccp_beacon_interval;
+/* static int hf_wlccp_capabilities; */
+static int hf_wlccp_tlv80211;
+static int hf_wlccp_duration;
+static int hf_wlccp_rpidensity;
+static int hf_wlccp_ccabusy;
+static int hf_wlccp_sta_type;
+static int hf_wlccp_stamac;
+static int hf_wlccp_token2;
+static int hf_wlccp_interval;
+static int hf_wlccp_count;
+static int hf_framereport_elements;
+static int hf_wlccp_numframes;
+static int hf_wlccp_mfpcapability;
+static int hf_wlccp_mfpflags;
+static int hf_wlccp_mfpconfig;
+static int hf_wlccp_clientmac;
+static int hf_time_elapsed;
+static int hf_wlccp_parent_ap_mac;
+static int hf_wlccp_auth_type;
+static int hf_reg_lifetime;
+static int hf_wlccp_radius_user_name;
+static int hf_wds_reason;
 
 
-static int hf_wlccp_tlv_unknown_value = -1;
+static int hf_wlccp_80211_capabilities;
+static int hf_80211_cap_ess;
+static int hf_80211_cap_ibss;
+static int hf_80211_cap_cf_pollable;
+static int hf_80211_cap_cf_poll_req;
+static int hf_80211_cap_privacy;
+static int hf_80211_short_preamble;
+static int hf_80211_pbcc;
+static int hf_80211_chan_agility;
+static int hf_80211_spectrum_mgmt;
+static int hf_80211_qos;
+static int hf_80211_short_time_slot;
+static int hf_80211_apsd;
+static int hf_80211_reserved;
+static int hf_80211_dsss_ofdm;
+static int hf_80211_dlyd_block_ack;
+static int hf_80211_imm_block_ack;
+
+
+static int hf_wlccp_tlv_unknown_value;
 
 /* Initialize the subtree pointers */
-static gint ett_wlccp = -1;
-static gint ett_wlccp_sap_tree = -1;
-static gint ett_wlccp_type = -1;
-static gint ett_wlccp_cm_flags = -1;
-static gint ett_wlccp_scm_flags = -1;
-static gint ett_wlccp_scm_priority_flags = -1;
-static gint ett_wlccp_scm_bridge_priority_flags = -1;
-static gint ett_wlccp_rm_flags = -1;
-static gint ett_wlccp_nm_flags = -1;
+static int ett_wlccp;
+static int ett_wlccp_sap_tree;
+static int ett_wlccp_type;
+static int ett_wlccp_cm_flags;
+static int ett_wlccp_scm_flags;
+static int ett_wlccp_scm_priority_flags;
+static int ett_wlccp_scm_bridge_priority_flags;
+static int ett_wlccp_rm_flags;
+static int ett_wlccp_nm_flags;
 
 
-static gint ett_wlccp_flags = -1;
-static gint ett_wlccp_ap_node_id = -1;
-static gint ett_wlccp_eapol_msg_tree = -1;
-static gint ett_wlccp_eap_tree = -1;
-static gint ett_wlccp_tlv_tree = -1;
-static gint ett_tlv_flags_tree = -1;
-static gint ett_tlv_sub_tree = -1;
-static gint ett_80211_capability_flags_tree = -1;
-static gint ett_framereport_elements_tree = -1;
+static int ett_wlccp_flags;
+static int ett_wlccp_ap_node_id;
+static int ett_wlccp_eapol_msg_tree;
+static int ett_wlccp_eap_tree;
+static int ett_wlccp_tlv_tree;
+static int ett_tlv_flags_tree;
+static int ett_tlv_sub_tree;
+static int ett_80211_capability_flags_tree;
+static int ett_framereport_elements_tree;
 
 
 
@@ -695,21 +685,21 @@ dissect_wlccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	proto_item *ti;
 	proto_tree *wlccp_tree, *wlccp_sap_tree, *wlccp_type_tree;
 
-	guint offset = 0, old_offset;
+	unsigned offset = 0, old_offset;
 
-	guint8 version=0, sap_id=0;
+	uint8_t version=0, sap_id=0;
 
-	guint16 type;
-	guint8 base_message_type=0, message_sub_type=0;
+	uint16_t type;
+	uint8_t base_message_type=0, message_sub_type=0;
 
 	/* Make entries in Protocol column and Info column on summary display */
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "WLCCP");
 
-	if(tvb_get_guint8(tvb, 0) == 0xC1)  /* Get the version number */
+	if(tvb_get_uint8(tvb, 0) == 0xC1)  /* Get the version number */
 	{
-		sap_id = tvb_get_guint8(tvb,1) & SAP_VALUE_MASK;
-		base_message_type=(tvb_get_guint8(tvb,6)) & MT_BASE_MSG_TYPE;
-		message_sub_type=(tvb_get_guint8(tvb, 6) &  MT_SUBTYPE ) >> 6;
+		sap_id = tvb_get_uint8(tvb,1) & SAP_VALUE_MASK;
+		base_message_type=(tvb_get_uint8(tvb,6)) & MT_BASE_MSG_TYPE;
+		message_sub_type=(tvb_get_uint8(tvb, 6) &  MT_SUBTYPE ) >> 6;
 
 		switch (sap_id)
 		{
@@ -777,7 +767,7 @@ dissect_wlccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 
 		} /* switch sap */
 
-	} /* if version=0xC1 (tvb_get_guint8(tvb, 0) == 0xC1)*/
+	} /* if version=0xC1 (tvb_get_uint8(tvb, 0) == 0xC1)*/
 
 	if (tree) {
 		/* create display subtree for the protocol */
@@ -788,7 +778,7 @@ dissect_wlccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 				    tvb, offset, 1, ENC_BIG_ENDIAN);
 
 		/* interpretation of the packet is determined by WLCCP version */
-		version = tvb_get_guint8(tvb, 0);
+		version = tvb_get_uint8(tvb, 0);
 		offset += 1;
 
 		if(version == 0x0) {
@@ -810,7 +800,7 @@ dissect_wlccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 						    tvb, 38, 4, ENC_BIG_ENDIAN);
 
 				proto_tree_add_item(wlccp_tree, hf_wlccp_hostname,
-						    tvb, 44, 28, ENC_ASCII|ENC_NA);
+						    tvb, 44, 28, ENC_ASCII);
 			} /* if type = 0x4081 */
 		} /* if version == 0x00 */
 
@@ -828,7 +818,7 @@ dissect_wlccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 			proto_tree_add_item(wlccp_sap_tree, hf_wlccp_sap_id,
 					    tvb, offset, 1, ENC_BIG_ENDIAN);
 
- 			sap_id = tvb_get_guint8(tvb,offset) & SAP_VALUE_MASK;
+			sap_id = tvb_get_uint8(tvb,offset) & SAP_VALUE_MASK;
 
 			offset += 1;
 
@@ -922,15 +912,15 @@ dissect_wlccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 
 			} /* switch sap */
 
- 			base_message_type=(tvb_get_guint8(tvb,offset) & MT_BASE_MSG_TYPE );
+			base_message_type=(tvb_get_uint8(tvb,offset) & MT_BASE_MSG_TYPE );
 
 			offset += 1;
 			} /* Message Type Field */
 
 			/* after the Message Type Field things change based on SAP and Message Type */
 
-			set_mic_flag(FALSE);
-			set_tlv_flag(FALSE);
+			set_mic_flag(false);
+			set_tlv_flag(false);
 
 			switch (sap_id)
 			{
@@ -1040,36 +1030,36 @@ dissect_wlccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 
 /* these could be implemented with a struct */
 
-static void set_mic_flag(gboolean flag)
+static void set_mic_flag(bool flag)
 {
 	mic_flag=flag;
 } /*set_mic_flag */
 
-static void set_tlv_flag(gboolean flag)
+static void set_tlv_flag(bool flag)
 {
 	tlv_flag=flag;
 } /* set_tlv_flag */
 
-static gboolean get_tlv_flag(void)
+static bool get_tlv_flag(void)
 {
-	return(tlv_flag);
+	return tlv_flag;
 } /* get_tlv_flag */
 
-static gboolean get_mic_flag(void)
+static bool get_mic_flag(void)
 {
-	return(mic_flag);
+	return mic_flag;
 } /* get_mic_flag */
 
 /*******************************************************************************************/
 
-static guint dissect_wlccp_ccm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type)
+static unsigned dissect_wlccp_ccm_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type)
 {
 	proto_item *_ti;
 	proto_tree *_wlccp_eapol_msg_tree, *_wlccp_cm_flags_tree, *_wlccp_scm_flags_tree, *_wlccp_scm_priority_flags_tree, *_wlccp_scm_bridge_priority_flags_tree;
 
-	gboolean _relay_flag=0, _mic_flag=0, _tlv_flag=0;
-	guint8 _aaa_msg_type=0, _eapol_type=0;
-	guint16 _eap_msg_length=0;
+	bool _relay_flag=0, _mic_flag=0, _tlv_flag=0;
+	uint8_t _aaa_msg_type=0, _eapol_type=0;
+	uint16_t _eap_msg_length=0;
 
 	proto_tree_add_item(_tree, hf_wlccp_hops,
 			    _tvb, _offset, 1, ENC_BIG_ENDIAN);
@@ -1315,14 +1305,14 @@ static guint dissect_wlccp_ccm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 					    _tvb, _offset, 6, ENC_NA);
 			_offset += 6;
 
-			/*kan - according to the patent applicatoin these fields vary based
+			/*kan - according to the patent application these fields vary based
 			on one another.
 			For now we decode what we know about and then we'll come back and add
 			the rest */
 
 			proto_tree_add_item(_tree, hf_wlccp_aaa_msg_type,
 					    _tvb, _offset, 1, ENC_BIG_ENDIAN);
-			_aaa_msg_type=tvb_get_guint8(_tvb,_offset);
+			_aaa_msg_type=tvb_get_uint8(_tvb,_offset);
 			_offset += 1;
 
 			proto_tree_add_item(_tree, hf_wlccp_aaa_auth_type,
@@ -1362,7 +1352,7 @@ handle things. To be investigated further */
 
 				proto_tree_add_item(_wlccp_eapol_msg_tree, hf_wlccp_eapol_type,
 			        	            _tvb, _offset, 1, ENC_BIG_ENDIAN);
-				_eapol_type=tvb_get_guint8(_tvb, _offset);
+				_eapol_type=tvb_get_uint8(_tvb, _offset);
 				_offset += 1;
 
 				if (_eapol_type == 0)
@@ -1433,13 +1423,13 @@ handle things. To be investigated further */
 	} /* switch _base_message_type */
 
 
-	return(_offset);
+	return _offset;
 } /* dissect_wlccp_ccm_msg */
 
-static guint dissect_wlccp_sec_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, guint _offset, guint8 _base_message_type)
+static unsigned dissect_wlccp_sec_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, unsigned _offset, uint8_t _base_message_type)
 {
 
-/* at the momemt we have no more data to use to write this dissector code */
+/* at the moment we have no more data to use to write this dissector code */
 /* it's just a place holder for now                                       */
 
 	switch (_base_message_type)
@@ -1461,17 +1451,17 @@ static guint dissect_wlccp_sec_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, gu
 
 
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_sec_msg */
 
-static guint dissect_wlccp_rrm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type)
+static unsigned dissect_wlccp_rrm_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type)
 {
 
 	proto_tree *_wlccp_rm_flags_tree;
 	proto_item *_ti;
 
-	gboolean _mic_flag=0;
+	bool _mic_flag=0;
 
 
 
@@ -1485,11 +1475,11 @@ static guint dissect_wlccp_rrm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 	proto_tree_add_item(_wlccp_rm_flags_tree, hf_wlccp_rm_mic_flag,
 			    _tvb, _offset, 1, ENC_BIG_ENDIAN);
 
-	_mic_flag = (tvb_get_guint8(_tvb, _offset) & RM_F_MIC) >> 1;
+	_mic_flag = (tvb_get_uint8(_tvb, _offset) & RM_F_MIC) >> 1;
 
 	set_mic_flag(_mic_flag);
 
-	set_tlv_flag(TRUE);
+	set_tlv_flag(true);
 
 	proto_tree_add_item(_wlccp_rm_flags_tree, hf_wlccp_rm_request_reply_flag,
 			    _tvb, _offset, 1, ENC_BIG_ENDIAN);
@@ -1546,15 +1536,15 @@ static guint dissect_wlccp_rrm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 	} /* switch _base_message_type */
 
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_rrm_msg */
 
 
 
-static guint dissect_wlccp_qos_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, guint _offset, guint8 _base_message_type)
+static unsigned dissect_wlccp_qos_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, unsigned _offset, uint8_t _base_message_type)
 {
-/* at the momemt we have no more data to use to write this dissector code */
+/* at the moment we have no more data to use to write this dissector code */
 /* it's just a place holder for now                                       */
 
 
@@ -1576,17 +1566,17 @@ static guint dissect_wlccp_qos_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, gu
 	} /* switch _base_message_type */
 
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_qos_msg */
 
 
-static guint dissect_wlccp_nm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint8 _base_message_type)
+static unsigned dissect_wlccp_nm_msg(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, uint8_t _base_message_type)
 {
 	proto_item *_ti;
 	proto_tree *_wlccp_ap_node_id_tree, *_wlccp_nm_flags_tree;
 
-	gboolean _mic_flag=0, _tlv_flag=0;
+	bool _mic_flag=0, _tlv_flag=0;
 
 
 	proto_tree_add_item(_tree, hf_wlccp_nm_version,
@@ -1772,13 +1762,13 @@ static guint dissect_wlccp_nm_msg(proto_tree *_tree, tvbuff_t *_tvb, guint _offs
 
 
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_nm_msg */
 
-static guint dissect_wlccp_mip_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, guint _offset, guint8 _base_message_type)
+static unsigned dissect_wlccp_mip_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, unsigned _offset, uint8_t _base_message_type)
 {
-/* at the momemt we have no more data to use to write this dissector code */
+/* at the moment we have no more data to use to write this dissector code */
 /* it's just a place holder for now                                       */
 
 	switch (_base_message_type)
@@ -1798,25 +1788,26 @@ static guint dissect_wlccp_mip_msg(proto_tree *_tree _U_, tvbuff_t *_tvb _U_, gu
 
 	} /* switch _base_message_type */
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_mip_msg */
 
 
 /***************************************************************************************************/
 
-static guint dissect_wlccp_tlvs( proto_tree *_tree, tvbuff_t *_tvb, guint _offset, guint _depth)
+// NOLINTNEXTLINE(misc-no-recursion)
+static unsigned dissect_wlccp_tlvs( proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, unsigned _depth)
 {
 
 	proto_item *_ti, *_temp_ti;
 	proto_tree *_tlv_tree;
 	proto_tree *_tlv_flags_tree;
 
-	gboolean _container_flag=0;
-	gint  _group_id=0, _type_id=0;
-	guint _length=0;
-	guint _tlv_end=0;
-	guint _old_offset;
+	bool _container_flag=0;
+	int   _group_id=0, _type_id=0;
+	unsigned _length=0;
+	unsigned _tlv_end=0;
+	unsigned _old_offset;
 
 
 
@@ -1976,7 +1967,8 @@ static guint dissect_wlccp_tlvs( proto_tree *_tree, tvbuff_t *_tvb, guint _offse
 
 		default:
 		{
-			_offset = _tlv_end;
+			if (_offset < _tlv_end)
+				_offset = _tlv_end;
 			break;
 		} /* case default for switch _group_id */
 
@@ -2002,6 +1994,7 @@ static guint dissect_wlccp_tlvs( proto_tree *_tree, tvbuff_t *_tvb, guint _offse
 			while (_offset < _tlv_end)
 			{
 				_old_offset = _offset;
+				// We recurse here, but we'll run out of packet before we run out of stack.
 				_offset = dissect_wlccp_tlvs(_tlv_tree, _tvb, _offset, _depth++);
 				DISSECTOR_ASSERT(_offset > _old_offset);
 			} /* while bytes_left >= 4*/
@@ -2013,7 +2006,7 @@ static guint dissect_wlccp_tlvs( proto_tree *_tree, tvbuff_t *_tvb, guint _offse
 
 	/* done with decoding the contained TLVs */
 
-	return(_tlv_end);
+	return (_tlv_end > _offset) ? _tlv_end : _offset;
 
 } /* dissect_wlccp_tlvs */
 
@@ -2024,7 +2017,7 @@ static guint dissect_wlccp_tlvs( proto_tree *_tree, tvbuff_t *_tvb, guint _offse
 /* THE CALLING FUNCTION dissect_wlccp_tlvs.  BESIDES, IT'S JUST GOOD FORM :-)                                    */
 
 
-static guint dissect_wlccp_ccm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti)
+static unsigned dissect_wlccp_ccm_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti)
 {
 
 	switch (_type_id)
@@ -2065,13 +2058,13 @@ static guint dissect_wlccp_ccm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 
 	} /* switch _type_id */
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_ccm_tlv */
 
 
 
-static guint dissect_wlccp_sec_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti)
+static unsigned dissect_wlccp_sec_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti)
 {
 
 	switch (_type_id)
@@ -2163,7 +2156,7 @@ static guint dissect_wlccp_sec_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 		case 0x08: /* MIC */
 		{
 
-			guint16 _mic_length=0;
+			uint16_t _mic_length=0;
 
 			proto_item_append_text(_ti, "     mic");
 
@@ -2224,12 +2217,12 @@ static guint dissect_wlccp_sec_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 
 	} /* switch _type_id */
 
-	return(_offset);
+	return _offset;
 } /* dissect_wlccp_sec_tlv */
 
 
 
-static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti)
+static unsigned dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti)
 {
 
 	switch (_type_id)
@@ -2299,7 +2292,7 @@ static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 		case 0x14: /* frameRequest */
 		{
 
-			guint _count=0, _counter=0;
+			unsigned _count=0, _counter=0;
 
 			proto_item_append_text(_ti, "     frameRequest");
 
@@ -2313,7 +2306,7 @@ static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 			_offset += 1;
 
 			proto_tree_add_item(_tree, hf_wlccp_count, _tvb, _offset, 1, ENC_BIG_ENDIAN);
-			_count = tvb_get_guint8(_tvb,_offset);
+			_count = tvb_get_uint8(_tvb,_offset);
 			_offset += 1;
 
 			proto_tree_add_item(_tree, hf_wlccp_duration, _tvb, _offset, 2, ENC_BIG_ENDIAN);
@@ -2338,7 +2331,7 @@ static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 			proto_item *_fr_ti;
 			proto_tree *_fr_elems_tree;
 
-			guint _counter=0, _arraylen=0;
+			unsigned _counter=0, _arraylen=0;
 
 			proto_item_append_text(_ti, "     frameReport");
 
@@ -2463,7 +2456,7 @@ static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 		case 0x19: /* rpiHistReport */
 		{
 
-			guint _rpi_density_length=0;
+			unsigned _rpi_density_length=0;
 
 			proto_item_append_text(_ti, "     rpiHistReport");
 
@@ -2520,7 +2513,7 @@ static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 			proto_tree *_80211_capabilities_tree;
 			proto_item *_new_ti;
 
-			guint _tlv80211length=0;
+			unsigned _tlv80211length=0;
 
 			proto_item_append_text(_ti, "     commonBeaconReport");
 
@@ -2642,7 +2635,7 @@ static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 		case 0x20: /* rmReqRoutingList */
 		{
 
-			guint _counter=0, _arraylen=0;
+			unsigned _counter=0, _arraylen=0;
 
 			proto_item_append_text(_ti, "     rmReqRoutingList");
 
@@ -2672,7 +2665,7 @@ static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 		case 0x21: /* rmReqRoutingResp */
 		{
 
-			guint _counter=0, _arraylen=0;
+			unsigned _counter=0, _arraylen=0;
 
 			proto_item_append_text(_ti, "     rmReqRoutingResp");
 
@@ -2764,11 +2757,11 @@ static guint dissect_wlccp_rrm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 
 	} /* switch type_id */
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_rrm_tlv */
 
-static guint dissect_wlccp_qos_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti)
+static unsigned dissect_wlccp_qos_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti)
 {
 
 	switch (_type_id)
@@ -2788,11 +2781,11 @@ static guint dissect_wlccp_qos_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 	} /* switch _type_id */
 
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_qos_tlv */
 
-static guint dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti)
+static unsigned dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti)
 {
 
 	switch (_type_id)
@@ -2801,7 +2794,7 @@ static guint dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offs
 		case 0x20: /* nmClientEventIntoWDS */
 		{
 
-			guint _radius_user_name_length = 0;
+			unsigned _radius_user_name_length = 0;
 
 			proto_item_append_text(_ti, "     nmClientEventIntoWDS");
 
@@ -2834,7 +2827,7 @@ static guint dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offs
 
 			_radius_user_name_length = _length - 23 - 4;
 
-			proto_tree_add_item(_tree, hf_wlccp_radius_user_name, _tvb, _offset, _radius_user_name_length, ENC_ASCII|ENC_NA);
+			proto_tree_add_item(_tree, hf_wlccp_radius_user_name, _tvb, _offset, _radius_user_name_length, ENC_ASCII);
 			_offset += _radius_user_name_length;
 
 
@@ -2918,7 +2911,7 @@ static guint dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offs
 		case 0x26: /* nmClientEventRefresh */
 		{
 
-			guint _radius_user_name_length = 0;
+			unsigned _radius_user_name_length = 0;
 
 			proto_item_append_text(_ti, "     nmClientEventRefresh");
 
@@ -2951,7 +2944,7 @@ static guint dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offs
 
 			_radius_user_name_length = _length - 23 - 4;
 
-			proto_tree_add_item(_tree, hf_wlccp_radius_user_name, _tvb, _offset, _radius_user_name_length, ENC_ASCII|ENC_NA);
+			proto_tree_add_item(_tree, hf_wlccp_radius_user_name, _tvb, _offset, _radius_user_name_length, ENC_ASCII);
 			_offset += _radius_user_name_length;
 
 			break;
@@ -2989,11 +2982,11 @@ static guint dissect_wlccp_nm_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offs
 	} /* switch _type_id */
 
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_nm_tlv */
 
-static guint dissect_wlccp_mip_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _offset, gint _type_id, guint _length, proto_item *_ti)
+static unsigned dissect_wlccp_mip_tlv(proto_tree *_tree, tvbuff_t *_tvb, unsigned _offset, int _type_id, unsigned _length, proto_item *_ti)
 {
 
 	switch (_type_id)
@@ -3014,7 +3007,7 @@ static guint dissect_wlccp_mip_tlv(proto_tree *_tree, tvbuff_t *_tvb, guint _off
 	} /* switch _type_id */
 
 
-	return(_offset);
+	return _offset;
 
 } /* dissect_wlccp_mip_tlv */
 
@@ -3082,7 +3075,7 @@ proto_register_wlccp(void)
 
 		{ &hf_wlccp_type,
 		  { "Message Type", "wlccp.type",
-		    FT_UINT8, BASE_HEX, NULL,
+		    FT_UINT16, BASE_HEX, NULL,
 		    0x0, NULL, HFILL }
 		},
 
@@ -3406,7 +3399,7 @@ proto_register_wlccp(void)
 		{ &hf_wlccp_scm_bridge_disable_flag,
 		  { "Bridge disable flag", "wlccp.scm_bridge_disable_flag",
 		    FT_UINT8, BASE_DEC, NULL,
-		    F_SCM_BRIDGE_DISABLE, "Set to on to indicate that secondary briding is disabled", HFILL }
+		    F_SCM_BRIDGE_DISABLE, "Set to on to indicate that secondary bridging is disabled", HFILL }
 		},
 
 		{ &hf_wlccp_scm_node_id,
@@ -3653,7 +3646,7 @@ proto_register_wlccp(void)
 		{ &hf_wlccp_tlv_reserved_bit,
 		  { "Reserved bits", "wlccp.tlv_reserved_bit",
 		    FT_UINT16, BASE_DEC, NULL,
-		    TLV_F_RESVD, "Reserved", HFILL }
+		    TLV_F_RESVD, NULL, HFILL }
 		},
 
 		{ &hf_wlccp_tlv_request_flag,
@@ -3858,7 +3851,7 @@ proto_register_wlccp(void)
 		},
 
 		{ &hf_80211_cap_privacy,
-		  { "Privacy flag", "wlccp.80211_cf_poll_req_flag",
+		  { "Privacy flag", "wlccp.80211_privacy",
 		    FT_UINT16, BASE_DEC, NULL,
 		    F_80211_PRIVACY, "Set on indicate confidentiality is required in the BSS", HFILL }
 		},
@@ -3943,7 +3936,7 @@ proto_register_wlccp(void)
 		},
 
 		{ &hf_wlccp_rpidensity,
-		  { "RPI Density", "wlccp.rpi_denisty",
+		  { "RPI Density", "wlccp.rpi_density",
 		    FT_BYTES, BASE_NONE, NULL, 0,
 		    NULL, HFILL }
 		},
@@ -4074,7 +4067,7 @@ proto_register_wlccp(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_wlccp,
 		&ett_wlccp_sap_tree,
 		&ett_wlccp_type,
@@ -4093,7 +4086,7 @@ proto_register_wlccp(void)
 		&ett_tlv_sub_tree,
 		&ett_80211_capability_flags_tree,
 		&ett_framereport_elements_tree
-	}; /* static gint *ett[] */
+	}; /* static int *ett[] */
 
 	/* Register the protocol name and description */
 	proto_wlccp = proto_register_protocol("Cisco Wireless LAN Context Control Protocol", "WLCCP", "wlccp");
@@ -4102,6 +4095,9 @@ proto_register_wlccp(void)
 	proto_register_field_array(proto_wlccp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
+	/* Register the subdissector */
+	wlccp_handle = register_dissector("wlccp", dissect_wlccp, proto_wlccp);
+
 	llc_add_oui(OUI_CISCOWL, "llc.wlccp_pid", "LLC Cisco WLCCP OUI PID", oui_hf, proto_wlccp);
 }
 
@@ -4109,19 +4105,15 @@ proto_register_wlccp(void)
 void
 proto_reg_handoff_wlccp(void)
 {
-	dissector_handle_t wlccp_handle;
-
-	wlccp_handle = create_dissector_handle(dissect_wlccp, proto_wlccp);
-
 	dissector_add_uint("ethertype", ETHERTYPE_WLCCP, wlccp_handle);
-	dissector_add_uint("udp.port", WLCCP_UDP_PORT, wlccp_handle);
+	dissector_add_uint_with_preference("udp.port", WLCCP_UDP_PORT, wlccp_handle);
 	dissector_add_uint("llc.wlccp_pid", 0x0000, wlccp_handle);
 
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

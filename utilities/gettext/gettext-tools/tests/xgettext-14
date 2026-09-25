@@ -20,7 +20,7 @@ EOF
 : ${XGETTEXT=xgettext}
 LANGUAGE= LC_ALL=C ${XGETTEXT} --omit-header --add-comments --check=ellipsis-unicode -d xg-ellipsis-u.tmp xg-ellipsis-u.c 2>xg-ellipsis-u.err
 
-test `grep -c 'ASCII ellipsis' xg-ellipsis-u.err` = 4 || Exit 1
+test `grep -c 'ASCII ellipsis' xg-ellipsis-u.err` = 3 || Exit 1
 
 LANGUAGE= LC_ALL=C ${XGETTEXT} --omit-header --add-comments --check=ellipsis-unicode --sentence-end=double-space -d xg-ellipsis-ud.tmp xg-ellipsis-u.c 2>xg-ellipsis-ud.err
 
@@ -40,7 +40,7 @@ EOF
 
 LANGUAGE= LC_ALL=C ${XGETTEXT} --omit-header --add-comments --check=space-ellipsis -d xg-space-e.tmp xg-space-e.c 2>xg-space-e.err
 
-test `grep -c 'space before ellipsis' xg-space-e.err` = 3 || Exit 1
+test `grep -c 'space before ellipsis' xg-space-e.err` = 2 || Exit 1
 
 # --check=quote-unicode
 cat <<\EOF > xg-quote-u.c

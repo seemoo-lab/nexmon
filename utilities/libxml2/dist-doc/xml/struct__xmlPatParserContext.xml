@@ -1,0 +1,298 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlPatParserContext" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlPatParserContext</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlPatParserContext_1a31f01a37499663df3797227bda0636c3" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* cur</definition>
+        <argsstring></argsstring>
+        <name>cur</name>
+        <qualifiedname>_xmlPatParserContext::cur</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="179" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="179" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPatParserContext_1a6d129c555de9187158cc02420b457cf0" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* base</definition>
+        <argsstring></argsstring>
+        <name>base</name>
+        <qualifiedname>_xmlPatParserContext::base</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="180" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="180" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPatParserContext_1a11614f44ef4d939bdd984953346a7572" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int error</definition>
+        <argsstring></argsstring>
+        <name>error</name>
+        <qualifiedname>_xmlPatParserContext::error</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="181" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="181" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPatParserContext_1a2f89a426c195c2ad019b65e822791a21" prot="public" static="no" mutable="no">
+        <type>xmlDictPtr</type>
+        <definition>xmlDictPtr dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>_xmlPatParserContext::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="182" column="20" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="182" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPatParserContext_1a5d2fcd3e8f8841856ccddfd1c97f7b5d" prot="public" static="no" mutable="no">
+        <type>xmlPatternPtr</type>
+        <definition>xmlPatternPtr comp</definition>
+        <argsstring></argsstring>
+        <name>comp</name>
+        <qualifiedname>_xmlPatParserContext::comp</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="183" column="20" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="183" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPatParserContext_1a0fb5ed61a5a122a5564aeda053482c08" prot="public" static="no" mutable="no">
+        <type>xmlNodePtr</type>
+        <definition>xmlNodePtr elem</definition>
+        <argsstring></argsstring>
+        <name>elem</name>
+        <qualifiedname>_xmlPatParserContext::elem</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="184" column="20" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="184" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPatParserContext_1a3ce9a154b52c3b295915ff0308d417eb" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+        <definition>const xmlChar** namespaces</definition>
+        <argsstring></argsstring>
+        <name>namespaces</name>
+        <qualifiedname>_xmlPatParserContext::namespaces</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="185" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="185" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlPatParserContext_1ae73b4e9cebee0e656b0ef8d0df0e5cd3" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nb_namespaces</definition>
+        <argsstring></argsstring>
+        <name>nb_namespaces</name>
+        <qualifiedname>_xmlPatParserContext::nb_namespaces</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="186" column="11" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="186" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="12">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlDict</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDictStrings</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="13">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="13" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="11" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlPatParserContext</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>elem</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlPattern</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>stream</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlStepOp</label>
+      </node>
+      <node id="6">
+        <label>_xmlStreamComp</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlStreamStep</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/pattern.c" line="178" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="178" bodyend="187"/>
+    <listofallmembers>
+      <member refid="struct__xmlPatParserContext_1a6d129c555de9187158cc02420b457cf0" prot="public" virt="non-virtual"><scope>_xmlPatParserContext</scope><name>base</name></member>
+      <member refid="struct__xmlPatParserContext_1a5d2fcd3e8f8841856ccddfd1c97f7b5d" prot="public" virt="non-virtual"><scope>_xmlPatParserContext</scope><name>comp</name></member>
+      <member refid="struct__xmlPatParserContext_1a31f01a37499663df3797227bda0636c3" prot="public" virt="non-virtual"><scope>_xmlPatParserContext</scope><name>cur</name></member>
+      <member refid="struct__xmlPatParserContext_1a2f89a426c195c2ad019b65e822791a21" prot="public" virt="non-virtual"><scope>_xmlPatParserContext</scope><name>dict</name></member>
+      <member refid="struct__xmlPatParserContext_1a0fb5ed61a5a122a5564aeda053482c08" prot="public" virt="non-virtual"><scope>_xmlPatParserContext</scope><name>elem</name></member>
+      <member refid="struct__xmlPatParserContext_1a11614f44ef4d939bdd984953346a7572" prot="public" virt="non-virtual"><scope>_xmlPatParserContext</scope><name>error</name></member>
+      <member refid="struct__xmlPatParserContext_1a3ce9a154b52c3b295915ff0308d417eb" prot="public" virt="non-virtual"><scope>_xmlPatParserContext</scope><name>namespaces</name></member>
+      <member refid="struct__xmlPatParserContext_1ae73b4e9cebee0e656b0ef8d0df0e5cd3" prot="public" virt="non-virtual"><scope>_xmlPatParserContext</scope><name>nb_namespaces</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

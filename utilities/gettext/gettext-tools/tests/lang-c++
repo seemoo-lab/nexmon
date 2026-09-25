@@ -5,6 +5,10 @@
 # Assumes an fr_FR locale is installed.
 # Assumes the following packages are installed: gcc g++.
 
+# This test fails if the gettext package was configured with --disable-nls,
+# because in this case the gettext-runtime/intl/ directory does not produce
+# a <libintl.h> header file.
+
 # Test whether a C++ compiler is found and libasprintf is built.
 test "${CXX}" != "no" || {
   echo "Skipping test: no C++ compiler found"
@@ -19,7 +23,7 @@ cat <<\EOF > prog.cc
 #include "config.h"
 
 /* Avoid deprecation warnings from g++ 3.1 or newer.  */
-#if defined __GNUG__ && defined __DEPRECATED
+#if (defined __GNUG__ && defined __DEPRECATED) || defined _MSC_VER
 # include <iostream>
 using namespace std;
 #else
@@ -28,7 +32,6 @@ using namespace std;
 
 #include <libintl.h>
 #include <locale.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "xsetenv.h"
 #include "autosprintf.h"
@@ -61,23 +64,23 @@ EOF
 # Put the -I flags before ${CXXFLAGS} ${CPPFLAGS}, to make sure that libintl.h
 # is found in the build directory, regardless of -I options present in
 # ${CXXFLAGS} or ${CPPFLAGS}.
-${CXX} -I../.. -I../../../gettext-runtime/libasprintf -I"$abs_top_srcdir"/gnulib-lib -I../../intl ${CXXFLAGS} ${CPPFLAGS} -c prog.cc \
+${CXX} -I../.. -I../../../gettext-runtime/libasprintf -I"$abs_top_srcdir"/gnulib-lib -I../../../gettext-runtime/intl ${CXXFLAGS} ${CPPFLAGS} -c prog.cc \
   || Exit 1
 # Remove the -Wl,--disable-auto-import option here that is added by
 # woe32-dll.m4. Cygwin 1.7.2 does not support it in C++ mode: It gives
 # a link error about 'std::cout'.
 : ${CONFIG_SHELL=${SHELL-/bin/sh}}
 ${CONFIG_SHELL} "$top_builddir"/libtool --quiet --tag=CXX --mode=link \
-                ${CXX} ${CXXFLAGS} `echo "X ${LDFLAGS} " | sed -e 's/^X//' -e 's/ -Wl,--disable-auto-import / /'` -o prog prog.${OBJEXT} \
-                ../../../gettext-runtime/libasprintf/libasprintf.la \
-                ../../gnulib-lib/libgettextlib.la ${LTLIBINTL} \
-		|| Exit 1
+  ${CXX} ${CXXFLAGS} `echo "X ${LDFLAGS} " | sed -e 's/^X//' -e 's/ -Wl,--disable-auto-import / /'` -o prog prog.${OBJEXT} \
+         ../../../gettext-runtime/libasprintf/libasprintf.la \
+         ../../gnulib-lib/libgettextlib.la ${LTLIBINTL} \
+  || Exit 1
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} -o prog.tmp --omit-header --no-location -k_ prog.cc || Exit 1
 LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
 
-cat <<EOF > prog.ok
+cat <<\EOF > prog.ok
 msgid "'Your command, please?', asked the waiter."
 msgstr ""
 
@@ -128,7 +131,7 @@ test -d fr || mkdir fr
 test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} -o fr/LC_MESSAGES/prog.mo fr.po
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
 
 : ${DIFF=diff}
 cat <<\EOF > prog.ok
@@ -145,19 +148,27 @@ EOF
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
 if test $LOCALE_FR != none; then
-  prepare_locale_ fr $LOCALE_FR
-  LANGUAGE= ./prog $LOCALE_FR 2 > prog.out
+  LANGUAGE= ./prog $LOCALE_FR 2 > prog.tmp
   case $? in
-    0) ${DIFF} prog.ok prog.out || Exit 1;;
+    0) case "$host_os" in
+         mingw* | windows*)
+           LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1 ;;
+         *) cp prog.tmp prog.out || Exit 1 ;;
+       esac
+       ${DIFF} prog.ok prog.out || Exit 1;;
     77) LOCALE_FR=none;;
     *) Exit 1;;
   esac
 fi
 if test $LOCALE_FR_UTF8 != none; then
-  prepare_locale_ fr $LOCALE_FR_UTF8
-  LANGUAGE= ./prog $LOCALE_FR_UTF8 2 > prog.out
+  LANGUAGE= ./prog $LOCALE_FR_UTF8 2 > prog.tmp
   case $? in
-    0) ${DIFF} prog.oku prog.out || Exit 1;;
+    0) case "$host_os" in
+         mingw* | windows*)
+           LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1 ;;
+         *) cp prog.tmp prog.out || Exit 1 ;;
+       esac
+       ${DIFF} prog.oku prog.out || Exit 1;;
     77) LOCALE_FR_UTF8=none;;
     *) Exit 1;;
   esac

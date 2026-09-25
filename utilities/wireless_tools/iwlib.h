@@ -106,7 +106,7 @@ extern "C" {
 /* Maximum forward compatibility built in this version of WT */
 #define WE_MAX_VERSION	22
 /* Version of Wireless Tools */
-#define WT_VERSION	29
+#define WT_VERSION	30
 
 /* Paths */
 #define PROC_NET_WIRELESS	"/proc/net/wireless"

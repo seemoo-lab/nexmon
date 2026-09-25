@@ -1,9 +1,9 @@
 /* Test of create_pipe_bidi/wait_subprocess.
-   Copyright (C) 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,15 +12,13 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
 #include "spawn-pipe.h"
 #include "wait-process.h"
-#include "progname.h"
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,15 +43,15 @@ static void
 test_pipe (const char *prog, bool stderr_closed)
 {
   int fd[2];
-  char *argv[3];
+  const char *argv[3];
   pid_t pid;
   char buffer[2] = { 'a', 't' };
 
   /* Set up child.  */
-  argv[0] = (char *) prog;
-  argv[1] = (char *) (stderr_closed ? "1" : "0");
+  argv[0] = prog;
+  argv[1] = (stderr_closed ? "1" : "0");
   argv[2] = NULL;
-  pid = create_pipe_bidi (prog, prog, argv, false, true, true, fd);
+  pid = create_pipe_bidi (prog, prog, argv, NULL, NULL, false, true, true, fd);
   ASSERT (0 <= pid);
   ASSERT (STDERR_FILENO < fd[0]);
   ASSERT (STDERR_FILENO < fd[1]);
@@ -78,9 +76,6 @@ int
 main (int argc, char *argv[])
 {
   int test;
-  int fd;
-
-  set_program_name (argv[0]);
 
   if (argc != 3)
     {
@@ -132,10 +127,10 @@ main (int argc, char *argv[])
   /* Plug any file descriptor leaks inherited from outside world before
      starting, so that child has a clean slate (at least for the fds that we
      might be manipulating).  */
-  for (fd = 3; fd < 7; fd++)
+  for (int fd = 3; fd < 7; fd++)
     close (fd);
 
   test_pipe (argv[1], test >= 4);
 
-  return 0;
+  return test_exit_status;
 }

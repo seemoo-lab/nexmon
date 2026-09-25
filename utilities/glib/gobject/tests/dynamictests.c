@@ -2,6 +2,8 @@
  * Copyright (C) 2008 Imendio AB
  * Authors: Tim Janik
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -93,7 +95,8 @@ static GType test_module_get_type (void)
 	NULL,
 	sizeof (TestModule),
 	0,
-	(GInstanceInitFunc)NULL
+        (GInstanceInitFunc)NULL,
+        NULL,
       };
     object_type = g_type_register_static (G_TYPE_TYPE_MODULE, "TestModule", &object_info, 0);
   }
@@ -130,7 +133,7 @@ struct _DynamicObjectClass
 };
 
 static GType dynamic_object_get_type (void);
-G_DEFINE_DYNAMIC_TYPE(DynamicObject, dynamic_object, G_TYPE_OBJECT);
+G_DEFINE_DYNAMIC_TYPE(DynamicObject, dynamic_object, G_TYPE_OBJECT)
 
 static void
 dynamic_object_class_init (DynamicObjectClass *class)
@@ -166,7 +169,7 @@ static gpointer
 ref_unref_thread (gpointer data)
 {
   gint i;
-  /* first, syncronize with other threads,
+  /* first, synchronize with other threads,
    */
   if (g_test_verbose())
     g_printerr ("WAITING!\n");

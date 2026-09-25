@@ -1,6 +1,5 @@
 /* Common reasons that make a format string invalid.
-   Copyright (C) 2003, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 /* These macros return freshly allocated error message strings, intended
    to be stored in *invalid_reason.  */
@@ -24,17 +25,23 @@
 #define INVALID_MIXES_NUMBERED_UNNUMBERED() \
   xstrdup (_("The string refers to arguments both through absolute argument numbers and through unnumbered argument specifications."))
 
+#define INVALID_PRECISION_MISSING(directive_number) \
+  xasprintf (_("In the directive number %zu, the precision is missing."), directive_number)
+
 #define INVALID_ARGNO_0(directive_number) \
-  xasprintf (_("In the directive number %u, the argument number 0 is not a positive integer."), directive_number)
+  xasprintf (_("In the directive number %zu, the argument number 0 is not a positive integer."), directive_number)
 #define INVALID_WIDTH_ARGNO_0(directive_number) \
-  xasprintf (_("In the directive number %u, the width's argument number 0 is not a positive integer."), directive_number)
+  xasprintf (_("In the directive number %zu, the width's argument number 0 is not a positive integer."), directive_number)
 #define INVALID_PRECISION_ARGNO_0(directive_number) \
-  xasprintf (_("In the directive number %u, the precision's argument number 0 is not a positive integer."), directive_number)
+  xasprintf (_("In the directive number %zu, the precision's argument number 0 is not a positive integer."), directive_number)
 
 #define INVALID_CONVERSION_SPECIFIER(directive_number,conv_char) \
   (c_isprint (conv_char) \
-   ? xasprintf (_("In the directive number %u, the character '%c' is not a valid conversion specifier."), directive_number, conv_char) \
-   : xasprintf (_("The character that terminates the directive number %u is not a valid conversion specifier."), directive_number))
+   ? xasprintf (_("In the directive number %zu, the character '%c' is not a valid conversion specifier."), directive_number, conv_char) \
+   : xasprintf (_("The character that terminates the directive number %zu is not a valid conversion specifier."), directive_number))
+
+#define INVALID_FLAG_FOR(directive_number,flag_char,conv_char) \
+  xasprintf (_("In the directive number %zu, the flag '%c' is invalid for the conversion '%c'."), directive_number, flag_char, conv_char)
 
 #define INVALID_INCOMPATIBLE_ARG_TYPES(arg_number) \
-  xasprintf (_("The string refers to argument number %u in incompatible ways."), arg_number)
+  xasprintf (_("The string refers to argument number %zu in incompatible ways."), arg_number)

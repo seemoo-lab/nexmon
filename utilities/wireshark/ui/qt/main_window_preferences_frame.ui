@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>405</width>
-    <height>416</height>
+    <height>445</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -78,6 +78,16 @@
       <widget class="QRadioButton" name="foStyleLastOpenedRadioButton">
        <property name="text">
         <string>The most recently used folder</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">openInButtonGroup</string>
+       </attribute>
+      </widget>
+     </item>
+     <item row="2" column="0" colspan="3">
+      <widget class="QRadioButton" name="foStyleCWDRadioButton">
+       <property name="text">
+        <string>The current working directory</string>
        </property>
        <attribute name="buttonGroup">
         <string notr="true">openInButtonGroup</string>
@@ -155,48 +165,11 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="autoScrollCheckBox">
-     <property name="toolTip">
-      <string>If checked the packet detail items will be automatically scrolled when they are expanded.</string>
-     </property>
+    <widget class="QCheckBox" name="displayAutoCompleteCheckBox">
      <property name="text">
-      <string>Automatically scroll packet details</string>
+      <string>Display autocompletion for filter text</string>
      </property>
     </widget>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,0,1">
-     <item>
-      <widget class="QLabel" name="autoScrollPercentageLabel">
-       <property name="toolTip">
-        <string>Percentage distance from the top to scroll packet details.</string>
-       </property>
-       <property name="text">
-        <string>Packet detail scroll percentage:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="autoScrollPercentageLineEdit">
-       <property name="toolTip">
-        <string>Percentage distance from the top to scroll packet details.</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -242,6 +215,43 @@
     </layout>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Window title</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="windowTitle">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Custom window title to be appended to the existing title&lt;br/&gt;%F = file path of the capture file&lt;br/&gt;%P = profile name&lt;br/&gt;%S = a conditional separator (&amp;quot; - &amp;quot;) that only shows when surrounded by variables with values or static text&lt;br/&gt;%V = version info&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_5">
+     <item>
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>Prepend window title</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="prependWindowTitle">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Custom window title to be prepended to the existing title&lt;br/&gt;%F = file path of the capture file&lt;br/&gt;%P = profile name&lt;br/&gt;%S = a conditional separator (&amp;quot; - &amp;quot;) that only shows when surrounded by variables with values or static text&lt;br/&gt;%V = version info&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <!-- Language should be the last item. -->
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_6">
      <item>
       <widget class="QLabel" name="label_7">
@@ -283,6 +293,7 @@
      </item>
     </layout>
    </item>
+   <!-- Language should be the last item. -->
    <item>
     <spacer name="verticalSpacer">
      <property name="orientation">

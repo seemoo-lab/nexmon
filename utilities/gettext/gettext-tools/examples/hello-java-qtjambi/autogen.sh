@@ -26,9 +26,9 @@ fi
 cp -p ${ACLOCALDIR-$GETTEXT_TOPSRCDIR/gettext-runtime/m4}/nls.m4 m4/nls.m4
 cp -p ${ACLOCALDIR-$GETTEXT_TOPSRCDIR/gettext-runtime/m4}/po.m4 m4/po.m4
 cp -p ${ACLOCALDIR-$GETTEXT_TOPSRCDIR/gettext-runtime/m4}/progtest.m4 m4/progtest.m4
-cp -p ${GETTEXTSRCPODIR-$GETTEXT_TOPSRCDIR/gettext-runtime/po}/remove-potcdate.sin po/remove-potcdate.sin
+cp -p ${GETTEXTSRCPODIR-$GETTEXT_TOPSRCDIR/gettext-tools/wizard/po-templates/traditional}/fetch-po po/fetch-po
+cp -p ${GETTEXTSRCPODIR-$GETTEXT_TOPSRCDIR/gettext-tools/wizard/po-templates/traditional}/remove-potcdate.sed po/remove-potcdate.sed
 
-cp -p ${EXAMPLESCONFIGDIR-$GETTEXT_TOPSRCDIR/gettext-tools/gnulib-m4}/gcj.m4 m4/gcj.m4
 cp -p ${EXAMPLESCONFIGDIR-$GETTEXT_TOPSRCDIR/gettext-tools/gnulib-m4}/javacomp.m4 m4/javacomp.m4
 cp -p ${EXAMPLESCONFIGDIR-$GETTEXT_TOPSRCDIR/gettext-tools/gnulib-m4}/javaexec.m4 m4/javaexec.m4
 cp -p ${EXAMPLESCONFIGDIR-$GETTEXT_TOPSRCDIR/build-aux}/javacomp.sh.in javacomp.sh.in

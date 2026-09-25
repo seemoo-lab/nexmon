@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2009 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,17 +33,14 @@
 
 
 /**
- * SECTION:gconverteroutputstream
- * @short_description: Converter Output Stream
- * @include: gio/gio.h
- * @see_also: #GOutputStream, #GConverter
+ * GConverterOutputStream:
  *
- * Converter output stream implements #GOutputStream and allows
+ * Converter output stream implements [class@Gio.OutputStream] and allows
  * conversion of data of various types during reading.
  *
- * As of GLib 2.34, #GConverterOutputStream implements
- * #GPollableOutputStream.
- **/
+ * As of GLib 2.34, `GConverterOutputStream` implements
+ * [iface@Gio.PollableOutputStream].
+ */
 
 #define INITIAL_BUFFER_SIZE 4096
 
@@ -130,11 +129,14 @@ g_converter_output_stream_class_init (GConverterOutputStreamClass *klass)
   istream_class->write_fn = g_converter_output_stream_write;
   istream_class->flush = g_converter_output_stream_flush;
 
+  /**
+   * GConverterOutputStream:converter:
+   *
+   * The converter object.
+   */
   g_object_class_install_property (object_class,
 				   PROP_CONVERTER,
-				   g_param_spec_object ("converter",
-							P_("Converter"),
-							P_("The converter object"),
+				   g_param_spec_object ("converter", NULL, NULL,
 							G_TYPE_CONVERTER,
 							G_PARAM_READWRITE|
 							G_PARAM_CONSTRUCT_ONLY|
@@ -261,6 +263,11 @@ buffer_tailspace (Buffer *buffer)
 static char *
 buffer_data (Buffer *buffer)
 {
+  /* The buffer is grown on demand, so @data is NULL until something has been
+   * put in it. Offsetting it would be undefined behavior, so callers must
+   * check buffer_data_size() first. */
+  g_assert (buffer->data != NULL);
+
   return buffer->data + buffer->start;
 }
 
@@ -300,9 +307,11 @@ grow_buffer (Buffer *buffer)
   data = g_malloc (size);
   in_buffer = buffer_data_size (buffer);
 
-  memcpy (data,
-	  buffer->data + buffer->start,
-	  in_buffer);
+  if (in_buffer != 0)
+    memcpy (data,
+            buffer->data + buffer->start,
+            in_buffer);
+
   g_free (buffer->data);
   buffer->data = data;
   buffer->end -= buffer->start;
@@ -418,7 +427,11 @@ write_internal (GOutputStream  *stream,
     return -1;
 
   if (priv->finished)
-    return 0;
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_MESSAGE_TOO_LARGE,
+                           _("Unexpected data after end of conversion"));
+      return -1;
+    }
 
   /* Convert as much as possible */
   if (buffer_data_size (&priv->output_buffer) > 0)
@@ -483,7 +496,7 @@ write_internal (GOutputStream  *stream,
 
 	  if (converted_bytes > 0)
 	    {
-	      /* We got an conversion error, but we did convert some bytes before
+	      /* We got a conversion error, but we did convert some bytes before
 		 that, so handle those before reporting the error */
 	      g_error_free (my_error);
 	      break;
@@ -503,7 +516,7 @@ write_internal (GOutputStream  *stream,
 	      return count; /* consume everything */
 	    }
 
-	  /* Converted no data and got an normal error, return it */
+	  /* Converted no data and got a normal error, return it */
 	  g_propagate_error (error, my_error);
 	  return -1;
 	}
@@ -549,6 +562,7 @@ g_converter_output_stream_flush (GOutputStream  *stream,
   gboolean flushed;
   gsize bytes_read;
   gsize bytes_written;
+  gsize to_convert_size;
 
   cstream = G_CONVERTER_OUTPUT_STREAM (stream);
   priv = cstream->priv;
@@ -572,10 +586,11 @@ g_converter_output_stream_flush (GOutputStream  *stream,
 	grow_buffer (&priv->converted_buffer);
 
       /* Try to convert to our buffer */
+      to_convert_size = buffer_data_size (&priv->output_buffer);
       my_error = NULL;
       res = g_converter_convert (priv->converter,
-				 buffer_data (&priv->output_buffer),
-				 buffer_data_size (&priv->output_buffer),
+				 to_convert_size > 0 ? buffer_data (&priv->output_buffer) : NULL,
+				 to_convert_size,
 				 buffer_data (&priv->converted_buffer) + buffer_data_size (&priv->converted_buffer),
 				 buffer_tailspace (&priv->converted_buffer),
 				 is_closing ? G_CONVERTER_INPUT_AT_END : G_CONVERTER_FLUSH,
@@ -593,7 +608,7 @@ g_converter_output_stream_flush (GOutputStream  *stream,
 	  if (!is_closing &&
 	      res == G_CONVERTER_FLUSHED)
 	    {
-	      /* Should not have retured FLUSHED with input left */
+	      /* Should not have returned FLUSHED with input left */
 	      g_assert (buffer_data_size (&priv->output_buffer) == 0);
 	      flushed = TRUE;
 	    }

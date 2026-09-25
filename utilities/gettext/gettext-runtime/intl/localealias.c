@@ -1,5 +1,5 @@
 /* Handle aliases for locale names.
-   Copyright (C) 1995-2016 Free Software Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -12,7 +12,34 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Ulrich Drepper and Bruno Haible.  */
+
+/* Locale aliases can be specified in the file $(localedir)/locale.alias.
+   It consists of lines of the form
+     <alias> <real-locale-name>
+   Lines that start with '#' are comment lines.
+
+   The main purpose of locale aliases is allow a seamless transition when
+   a locale is replaced by another one, and the users still want to use
+   the old locale name in their .profile scripts and elsewhere.
+   This typically happens when
+   (a) The ISO 639 language code of a language changes.  For example,
+       around 2003, the no_NO locale was withdrawn in favour of two
+       separate locales nb_NO and nn_NO.  Users in Norway could have
+       used the alias
+         no_NO.UTF-8 nb_NO.UTF-8
+       or
+         no_NO.UTF-8 nn_NO.UTF-8
+       depending on the language they speak.
+   (b) The ISO 3166 country code of a territory changes.  For example,
+       users in South Sudan saw their ISO 3166 country code change from
+       SD to SS in 2011, and their locale name changed from ar_SD.UTF-8
+       to ar_SS.UTF-8 in 2013 accordingly.  During the transition, they
+       may have used the alias
+         ar_SD.UTF-8 ar_SS.UTF-8
+ */
 
 /* Tell glibc's <string.h> to provide a prototype for mempcpy().
    This must come before <config.h> because <config.h> may include
@@ -60,12 +87,6 @@ char *alloca ();
 
 #include "gettextP.h"
 
-#ifdef ENABLE_RELOCATABLE
-# include "relocatable.h"
-#else
-# define relocate(pathname) (pathname)
-#endif
-
 /* @@ end of prolog @@ */
 
 #ifdef _LIBC
@@ -83,18 +104,14 @@ char *alloca ();
 
 /* Handle multi-threaded applications.  */
 #ifdef _LIBC
-# include <bits/libc-lock.h>
+# include <libc-lock.h>
 #else
-# include "lock.h"
-#endif
-
-#ifndef internal_function
-# define internal_function
+# include "glthread/lock.h"
 #endif
 
 /* Some optimizations for glibc.  */
 #ifdef _LIBC
-# define FEOF(fp)		feof_unlocked (fp)
+# define FEOF(fp)		__feof_unlocked (fp)
 # define FGETS(buf, n, fp)	__fgets_unlocked (buf, n, fp)
 #else
 # define FEOF(fp)		feof (fp)
@@ -122,6 +139,22 @@ char *alloca ();
 #endif
 
 
+/* We do the alias processing only on systems with glibc, because
+     - Its purpose (described above) is to let the user use locale names
+       that are not directly supported by libc, during transition periods.
+     - On systems without glibc, the use of these locale names would be
+       limited to the LC_MESSAGES and LANGUAGE environment variables,
+       because these systems don't use any alias file during setlocale().
+       This makes no sense: It would make the locale handling inconsistent
+       and users would still need to adjust their scripts when a locale
+       name supported by the system has changed.  */
+
+#if defined _LIBC || __GLIBC__ >= 2
+
+# ifndef LOCALE_ALIAS_PATH
+#  define LOCALE_ALIAS_PATH "/usr/share/locale"
+# endif
+
 __libc_lock_define_initialized (static, lock)
 
 
@@ -132,32 +165,31 @@ struct alias_map
 };
 
 
-#ifndef _LIBC
-# define libc_freeres_ptr(decl) decl
-#endif
-
-libc_freeres_ptr (static char *string_space);
+static char *string_space;
 static size_t string_space_act;
 static size_t string_space_max;
-libc_freeres_ptr (static struct alias_map *map);
+static struct alias_map *map;
 static size_t nmap;
 static size_t maxmap;
 
 
 /* Prototypes for local functions.  */
-static size_t read_alias_file (const char *fname, int fname_len)
-     internal_function;
+static size_t read_alias_file (const char *fname, int fname_len);
 static int extend_alias_table (void);
 static int alias_compare (const struct alias_map *map1,
 			  const struct alias_map *map2);
+
+#endif
 
 
 const char *
 _nl_expand_alias (const char *name)
 {
+  const char *result = NULL;
+
+#if defined _LIBC || __GLIBC__ >= 2
   static const char *locale_alias_path;
   struct alias_map *retval;
-  const char *result = NULL;
   size_t added;
 
   __libc_lock_lock (lock);
@@ -208,13 +240,21 @@ _nl_expand_alias (const char *name)
   while (added != 0);
 
   __libc_lock_unlock (lock);
+#endif
 
   return result;
 }
 
 
+#if defined _LIBC || __GLIBC__ >= 2
+
+/* Silence a bogus GCC warning.
+   <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=109990>  */
+# if __GNUC__ >= 12
+#  pragma GCC diagnostic ignored "-Wuse-after-free"
+# endif
+
 static size_t
-internal_function
 read_alias_file (const char *fname, int fname_len)
 {
   FILE *fp;
@@ -223,29 +263,24 @@ read_alias_file (const char *fname, int fname_len)
   static const char aliasfile[] = "/locale.alias";
 
   full_fname = (char *) alloca (fname_len + sizeof aliasfile);
-#ifdef HAVE_MEMPCPY
   mempcpy (mempcpy (full_fname, fname, fname_len),
 	   aliasfile, sizeof aliasfile);
-#else
-  memcpy (full_fname, fname, fname_len);
-  memcpy (&full_fname[fname_len], aliasfile, sizeof aliasfile);
-#endif
 
-#ifdef _LIBC
+# ifdef _LIBC
   /* Note the file is opened with cancellation in the I/O functions
      disabled.  */
-  fp = fopen (relocate (full_fname), "rce");
-#else
-  fp = fopen (relocate (full_fname), "r");
-#endif
+  fp = fopen (full_fname, "rce");
+# else
+  fp = fopen (full_fname, "r");
+# endif
   freea (full_fname);
   if (fp == NULL)
     return 0;
 
-#ifdef HAVE___FSETLOCKING
+# ifdef HAVE___FSETLOCKING
   /* No threads present.  */
   __fsetlocking (fp, FSETLOCKING_BYCALLER);
-#endif
+# endif
 
   added = 0;
   while (!FEOF (fp))
@@ -306,62 +341,66 @@ read_alias_file (const char *fname, int fname_len)
 	      else if (cp[0] != '\0')
 		*cp++ = '\0';
 
-#ifdef IN_LIBGLOCALE
-	      /* glibc's locale.alias contains entries for ja_JP and ko_KR
-		 that make it impossible to use a Japanese or Korean UTF-8
-		 locale under the name "ja_JP" or "ko_KR".  Ignore these
-		 entries.  */
-	      if (strchr (alias, '_') == NULL)
-#endif
-		{
-		  size_t alias_len;
-		  size_t value_len;
+	      {
+		size_t alias_len;
+		size_t value_len;
 
-		  if (nmap >= maxmap)
-		    if (__builtin_expect (extend_alias_table (), 0))
+		if (nmap >= maxmap)
+		  if (__builtin_expect (extend_alias_table (), 0))
+		    goto out;
+
+		alias_len = strlen (alias) + 1;
+		value_len = strlen (value) + 1;
+
+		if (string_space_act + alias_len + value_len > string_space_max)
+		  {
+# if defined __GNUC__ && __GNUC__ >= 12
+#  pragma GCC diagnostic push
+  /* Suppress the valid GCC 12 warning until the code below is changed
+     to avoid using pointers to the reallocated block.  */
+#  pragma GCC diagnostic ignored "-Wuse-after-free"
+# endif
+
+		  /* Increase size of memory pool.  */
+		    size_t new_size = (string_space_max
+				       + (alias_len + value_len > 1024
+					  ? alias_len + value_len : 1024));
+		    char *new_pool = (char *) realloc (string_space, new_size);
+		    if (new_pool == NULL)
 		      goto out;
 
-		  alias_len = strlen (alias) + 1;
-		  value_len = strlen (value) + 1;
+		    if (__builtin_expect (string_space != new_pool, 0))
+		      {
+			size_t i;
 
-		  if (string_space_act + alias_len + value_len > string_space_max)
-		    {
-		      /* Increase size of memory pool.  */
-		      size_t new_size = (string_space_max
-					 + (alias_len + value_len > 1024
-					    ? alias_len + value_len : 1024));
-		      char *new_pool = (char *) realloc (string_space, new_size);
-		      if (new_pool == NULL)
-			goto out;
+			for (i = 0; i < nmap; i++)
+			  {
+			    map[i].alias += new_pool - string_space;
+			    map[i].value += new_pool - string_space;
+			  }
+		      }
 
-		      if (__builtin_expect (string_space != new_pool, 0))
-			{
-			  size_t i;
+		    string_space = new_pool;
+		    string_space_max = new_size;
+		  }
 
-			  for (i = 0; i < nmap; i++)
-			    {
-			      map[i].alias += new_pool - string_space;
-			      map[i].value += new_pool - string_space;
-			    }
-			}
+		map[nmap].alias =
+		  (const char *) memcpy (&string_space[string_space_act],
+					 alias, alias_len);
+		string_space_act += alias_len;
 
-		      string_space = new_pool;
-		      string_space_max = new_size;
-		    }
+		map[nmap].value =
+		  (const char *) memcpy (&string_space[string_space_act],
+					 value, value_len);
+		string_space_act += value_len;
 
-		  map[nmap].alias =
-		    (const char *) memcpy (&string_space[string_space_act],
-					   alias, alias_len);
-		  string_space_act += alias_len;
+# if defined __GNUC__ && __GNUC__ >= 12
+#  pragma GCC diagnostic pop
+# endif
 
-		  map[nmap].value =
-		    (const char *) memcpy (&string_space[string_space_act],
-					   value, value_len);
-		  string_space_act += value_len;
-
-		  ++nmap;
-		  ++added;
-		}
+		++nmap;
+		++added;
+	      }
 	    }
 	}
 
@@ -411,29 +450,16 @@ extend_alias_table (void)
 static int
 alias_compare (const struct alias_map *map1, const struct alias_map *map2)
 {
-#if defined _LIBC || defined HAVE_STRCASECMP
   return strcasecmp (map1->alias, map2->alias);
-#else
-  const unsigned char *p1 = (const unsigned char *) map1->alias;
-  const unsigned char *p2 = (const unsigned char *) map2->alias;
-  unsigned char c1, c2;
-
-  if (p1 == p2)
-    return 0;
-
-  do
-    {
-      /* I know this seems to be odd but the tolower() function in
-	 some systems libc cannot handle nonalpha characters.  */
-      c1 = isupper (*p1) ? tolower (*p1) : *p1;
-      c2 = isupper (*p2) ? tolower (*p2) : *p2;
-      if (c1 == '\0')
-	break;
-      ++p1;
-      ++p2;
-    }
-  while (c1 == c2);
-
-  return c1 - c2;
-#endif
 }
+
+# ifdef _LIBC
+void
+__libc_localealias_freemem (void)
+{
+  free (string_space);
+  free (map);
+}
+# endif
+
+#endif

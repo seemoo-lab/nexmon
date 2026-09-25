@@ -10,32 +10,19 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <string.h>
-
 #include <glib.h>
 
 #include <epan/media_params.h>
 
 static const char *
-ws_get_next_media_type_parameter(const char *pos, gsize *retnamelen,
-                                 const char **retvalue, gsize *retvaluelen,
+ws_get_next_media_type_parameter(const char *pos, size_t *retnamelen,
+                                 const char **retvalue, size_t *retvaluelen,
                                  const char **nextp)
 {
     const char *p, *namep, *valuep;
@@ -56,7 +43,7 @@ ws_get_next_media_type_parameter(const char *pos, gsize *retnamelen,
        beginning of parameter value), or ';' (end of parameter). */
     while ((c = *p) != '\0' && c != '=' && c != ';')
         p++;
-    *retnamelen = (gsize) (p - namep);
+    *retnamelen = (size_t) (p - namep);
     if (c == '\0') {
         /* End of string, so end of parameter, no parameter value */
         if (retvalue != NULL)
@@ -91,7 +78,7 @@ ws_get_next_media_type_parameter(const char *pos, gsize *retnamelen,
                 /* End-of-string.  We're done.
                    (XXX - this is an error.) */
                 if (retvaluelen != NULL) {
-                    *retvaluelen = (gsize) (p - valuep);
+                    *retvaluelen = (size_t) (p - valuep);
                 }
                 *nextp = p;
                 return namep;
@@ -130,34 +117,34 @@ ws_get_next_media_type_parameter(const char *pos, gsize *retnamelen,
     if (c == '\0') {
         /* End of string, so end of parameter */
         if (retvaluelen != NULL) {
-            *retvaluelen = (gsize) (p - valuep);
+            *retvaluelen = (size_t) (p - valuep);
         }
         *nextp = p;
         return namep;
     }
     /* End of parameter; point past the terminating ';' */
     if (retvaluelen != NULL) {
-        *retvaluelen = (gsize) (p - valuep);
+        *retvaluelen = (size_t) (p - valuep);
     }
     *nextp = p + 1;
     return namep;
 }
 
 char *
-ws_find_media_type_parameter(const char *parameters, const char *key)
+ws_find_media_type_parameter(wmem_allocator_t *scope, const char *parameters, const char *key)
 {
     const char *p, *name, *value;
     char c;
-    gsize keylen, namelen, valuelen;
+    size_t keylen, namelen, valuelen;
     char *valuestr, *vp;
 
     if (parameters == NULL || key == NULL)
         /* we won't be able to find anything */
         return NULL;
 
-    keylen = (gsize) strlen(key);
+    keylen = (size_t) strlen(key);
     if (keylen == 0) {
-        /* There's no parameter name to searh for */
+        /* There's no parameter name to search for */
         return NULL;
     }
     p = parameters;
@@ -188,7 +175,7 @@ ws_find_media_type_parameter(const char *parameters, const char *key)
     }
 
     /* We found the parameter with that name; now extract the value. */
-    valuestr = (char *)g_malloc(valuelen + 1);
+    valuestr = (char *)wmem_alloc(scope, valuelen + 1);
     vp = valuestr;
     p = value;
     /* Is the value a quoted string? */

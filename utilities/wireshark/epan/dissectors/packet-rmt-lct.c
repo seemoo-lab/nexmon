@@ -2,6 +2,7 @@
  * Reliable Multicast Transport (RMT)
  * LCT Building Block dissector
  * Copyright 2005, Stefano Pettini <spettini@users.sourceforge.net>
+ * Copyright 2023, Sergey V. Lobanov <sergey@lobanov.in>
  *
  * Layered Coding Transport (LCT):
  * -------------------------------
@@ -16,24 +17,20 @@
  *
  * References:
  *     RFC 3451, Layered Coding Transport (LCT) Building Block
+ *     RFC 5651, Layered Coding Transport (LCT) Building Block
+ *     RFC 5775, Asynchronous Layered Coding (ALC) Protocol Instantiation
+ *
+ *     ATSC3 Signaling, Delivery, Synchronization, and Error Protection (A/331)
+ *     https://www.atsc.org/atsc-documents/3312017-signaling-delivery-synchronization-error-protection/
+ *
+ *     IANA Layered Coding Transport (LCT) Header Extension Types
+ *     https://www.iana.org/assignments/lct-header-extensions/lct-header-extensions.txt
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -41,61 +38,70 @@
 #include <math.h>
 
 #include <epan/packet.h>
-
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-rmt-common.h"
 
 #define LCT_SCT_FLAG           0x0008
 #define LCT_ERT_FLAG           0x0004
 #define LCT_CLOSE_SESSION_FLAG 0x0002
 #define LCT_CLOSE_OBJECT_FLAG  0x0001
+#define LCT_PSI                0x0300
+#define LCT_PSI_MSB            0x0200
 
 void proto_register_rmt_lct(void);
 
-static int proto_rmt_lct = -1;
+static int proto_rmt_lct;
 
-static int hf_version = -1;
-static int hf_fsize_header = -1;
-static int hf_fsize_cci = -1;
-static int hf_fsize_tsi = -1;
-static int hf_fsize_toi = -1;
-static int hf_flags_header = -1;
-static int hf_flags_sct_present = -1;
-static int hf_flags_ert_present = -1;
-static int hf_flags_close_session = -1;
-static int hf_flags_close_object = -1;
-static int hf_hlen = -1;
-static int hf_codepoint = -1;
-static int hf_cci = -1;
-static int hf_tsi16 = -1;
-static int hf_tsi32 = -1;
-static int hf_tsi48 = -1;
-static int hf_toi16 = -1;
-static int hf_toi32 = -1;
-static int hf_toi48 = -1;
-static int hf_toi64 = -1;
-static int hf_toi_extended = -1;
-static int hf_sct = -1;
-static int hf_ert = -1;
-static int hf_ext = -1;
-static int hf_hec_type = -1;
-static int hf_hec_len = -1;
-static int hf_hec_data = -1;
-static int hf_send_rate = -1;
-static int hf_cenc = -1;
-static int hf_flute_version = -1;
-static int hf_fdt_instance_id = -1;
+static int hf_version;
+static int hf_psi;
+static int hf_spi;
+static int hf_fsize_header;
+static int hf_fsize_cci;
+static int hf_fsize_tsi;
+static int hf_fsize_toi;
+static int hf_flags_header;
+static int hf_flags_sct_present;
+static int hf_flags_ert_present;
+static int hf_flags_close_session;
+static int hf_flags_close_object;
+static int hf_hlen;
+static int hf_codepoint;
+static int hf_codepoint_atsc3;
+static int hf_cci;
+static int hf_tsi16;
+static int hf_tsi32;
+static int hf_tsi48;
+static int hf_toi16;
+static int hf_toi32;
+static int hf_toi48;
+static int hf_toi64;
+static int hf_toi_extended;
+static int hf_sct;
+static int hf_ert;
+static int hf_ext;
+static int hf_hec_type;
+static int hf_hec_len;
+static int hf_hec_data;
+static int hf_send_rate;
+static int hf_cenc;
+static int hf_flute_version;
+static int hf_fdt_instance_id;
+static int hf_ext_tol_48_transfer_len;
+static int hf_ext_tol_24_transfer_len;
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_cc_rate = -1;
-static int hf_cc_rtt = -1;
-static int hf_cc_flags = -1;
-static int hf_cc_loss = -1;
-static int hf_cc_sequence = -1;
+static int hf_cc_rate;
+static int hf_cc_rtt;
+static int hf_cc_flags;
+static int hf_cc_loss;
+static int hf_cc_sequence;
 
-static int ett_main = -1;
-static int ett_fsize = -1;
-static int ett_flags = -1;
-static int ett_ext = -1;
-static int ett_ext_ext = -1;
+static int ett_main;
+static int ett_fsize;
+static int ett_flags;
+static int ett_ext;
+static int ett_ext_ext;
+static int ett_psi;
 
 /* Enumerated data types for LCT preferences */
 const enum_val_t enum_lct_ext_192[] =
@@ -112,14 +118,40 @@ const enum_val_t enum_lct_ext_193[] =
     { NULL, NULL, 0 }
 };
 
+const enum_val_t enum_lct_atsc3_mode[] =
+{
+    { "disabled", "Do not decode as ATSC3 data", LCT_ATSC3_MODE_DISABLED },
+    { "auto", "Auto Detect (if encap is ALP)", LCT_ATSC3_MODE_AUTO },
+    { "force", "Force to decode as ATSC3 data", LCT_ATSC3_MODE_FORCE },
+    { NULL, NULL, 0 }
+};
+
 static const value_string hec_type_vals[] = {
     {   0,  "EXT_NOP, No-Operation" },
     {   1,  "EXT_AUTH, Packet authentication" },
-    {   2,  "EXT_CC, Congestion Control Feedback" },
+    {   2,  "EXT_TIME" },
     {  64,  "EXT_FTI, FEC Object Transmission Information" },
+    {  65,  "DVB-IPTV CDS Completion Poll Request LCT" },
+    {  66,  "EXT_ROUTE_PRESENTATION_TIME" },
+    {  67,  "EXT_TOL, Transport Object Length (48-bit version)" },
     { 128,  "EXT_RATE, Send Rate" },
     { 192,  "EXT_FDT, FDT Instance Header" },
     { 193,  "EXT_CENC, FDT Instance Content Encoding" },
+    { 194,  "EXT_TOL, Transport Object Length (24-bit version)" },
+
+    { 0,  NULL }
+};
+
+static const value_string cp_type_vals[] = {
+    { 1,  "NRT, File Mode" },
+    { 2,  "NRT, Entity Mode" },
+    { 3,  "NRT, Unsigned Package Mode" },
+    { 4,  "NRT, Signed Package Mode" },
+    { 5,  "New IS, timeline changed" },
+    { 6,  "New IS, timeline continued" },
+    { 7,  "Redundant IS" },
+    { 8,  "Media Segment, File Mode" },
+    { 9,  "Media Segment, Entity Mode" },
 
     { 0,  NULL }
 };
@@ -127,13 +159,13 @@ static const value_string hec_type_vals[] = {
 /* LCT helper functions */
 /* ==================== */
 
-static void lct_timestamp_parse(guint32 t, nstime_t* s)
+static void lct_timestamp_parse(uint32_t t, nstime_t* s)
 {
     s->secs  = t / 1000;
     s->nsecs = (t % 1000) * 1000000;
 }
 
-double rmt_decode_send_rate(guint16 send_rate )
+double rmt_decode_send_rate(uint16_t send_rate )
 {
     double value;
 
@@ -142,24 +174,25 @@ double rmt_decode_send_rate(guint16 send_rate )
 }
 
 
-int lct_ext_decode(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, guint offset, guint offset_max, lct_data_exchange_t *data_exchange,
+int lct_ext_decode(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset, unsigned offset_max, lct_data_exchange_t *data_exchange,
                    int hfext, int ettext)
 {
-    guint8      het;
-    guint       i, count = 0;
-    guint       length,
+    uint8_t     het;
+    unsigned    i, count = 0;
+    unsigned    length,
                 tmp_offset   = offset,
                 start_offset = offset;
     proto_item *ti;
     proto_tree *hec_tree, *ext_tree;
+    double      cc_loss;
 
-    /* Figure out the extention count */
+    /* Figure out the extension count */
     while (tmp_offset < offset_max)
     {
-        het = tvb_get_guint8(tvb, tmp_offset);
+        het = tvb_get_uint8(tvb, tmp_offset);
         if (het <= 127)
         {
-            length = tvb_get_guint8(tvb, tmp_offset+1)*4;
+            length = tvb_get_uint8(tvb, tmp_offset+1)*4;
         }
         else
         {
@@ -182,10 +215,10 @@ int lct_ext_decode(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, guint of
 
     for (i = 0; i < count; i++)
     {
-        het = tvb_get_guint8(tvb, offset);
+        het = tvb_get_uint8(tvb, offset);
         if (het <= 127)
         {
-            length = tvb_get_guint8(tvb, offset+1)*4;
+            length = tvb_get_uint8(tvb, offset+1)*4;
         }
         else
         {
@@ -213,13 +246,19 @@ int lct_ext_decode(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, guint of
                 proto_tree_add_item(ext_tree, hf_cc_sequence, tvb, offset+2, 2, ENC_BIG_ENDIAN);
                 proto_tree_add_item(ext_tree, hf_cc_flags, tvb, offset+4, 1, ENC_BIG_ENDIAN);
                 proto_tree_add_item(ext_tree, hf_cc_rtt, tvb, offset+5, 1, ENC_BIG_ENDIAN);
-                proto_tree_add_double(ext_tree, hf_cc_loss, tvb, offset+6, 2, tvb_get_ntohs(tvb, offset+6)/65535.0);
+                cc_loss = tvb_get_ntohs(tvb, offset+6)/65535.0;
+                proto_tree_add_double(ext_tree, hf_cc_loss, tvb, offset+6, 2, cc_loss);
                 proto_tree_add_item(ext_tree, hf_cc_rate, tvb, offset+8, 2, ENC_BIG_ENDIAN);
                 break;
 
             case 64: /* EXT_FTI */
                 fec_decode_ext_fti(tvb, pinfo, ext_tree, offset,
-                                   (data_exchange == NULL) ? 0 : data_exchange->codepoint);
+                                   (data_exchange == NULL) ? 0 :
+                                   data_exchange->is_sp ? 0 :data_exchange->codepoint);
+                break;
+
+            case 67: /* EXT_TOL_48 */
+                proto_tree_add_item(ext_tree, hf_ext_tol_48_transfer_len, tvb, offset+1, 6, ENC_BIG_ENDIAN);
                 break;
 
             case 128: /* EXT_RATE */
@@ -232,7 +271,7 @@ int lct_ext_decode(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, guint of
                 {
                     proto_tree_add_item(ext_tree, hf_flute_version, tvb, offset, 4, ENC_BIG_ENDIAN);
                     proto_tree_add_item(ext_tree, hf_fdt_instance_id, tvb, offset, 4, ENC_BIG_ENDIAN);
-                    data_exchange->is_flute = TRUE;
+                    data_exchange->is_flute = true;
                 }
                 break;
 
@@ -241,6 +280,10 @@ int lct_ext_decode(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, guint of
                 {
                     proto_tree_add_item(ext_tree, hf_cenc, tvb, offset+3, 1, ENC_BIG_ENDIAN);
                 }
+                break;
+
+            case 194: /* EXT_TOL_24 */
+                proto_tree_add_item(ext_tree, hf_ext_tol_24_transfer_len, tvb, offset+1, 3, ENC_BIG_ENDIAN);
                 break;
         }
 
@@ -295,14 +338,14 @@ static int
 dissect_lct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     int      offset = 0;
-    guint16  buffer16;
+    uint16_t buffer16;
 
-    guint8   cci_size;
-    guint8   tsi_size;
-    guint8   toi_size;
-    guint64  tsi;
-    guint64  toi    = 0;
-    guint16  hlen;
+    uint8_t  cci_size;
+    uint8_t  tsi_size;
+    uint8_t  toi_size;
+    uint64_t tsi;
+    uint64_t toi    = 0;
+    uint16_t hlen;
     nstime_t tmp_time;
 
     /* Set up structures needed to add the protocol subtree and manage it */
@@ -319,12 +362,12 @@ dissect_lct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     tsi_size = ((buffer16 & 0x0080) >> 7) * 4 + ((buffer16 & 0x0010) >> 4) * 2;
     toi_size = ((buffer16 & 0x0060) >> 5) * 4 + ((buffer16 & 0x0010) >> 4) * 2;
 
-    hlen = tvb_get_guint8(tvb, offset+2) * 4;
+    hlen = tvb_get_uint8(tvb, offset+2) * 4;
 
     if (data_exchange != NULL)
     {
-        data_exchange->codepoint = tvb_get_guint8(tvb, offset+3);
-        data_exchange->is_flute = FALSE;
+        data_exchange->codepoint = tvb_get_uint8(tvb, offset+3);
+        data_exchange->is_flute = false;
     }
 
     if (tree)
@@ -334,15 +377,31 @@ dissect_lct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         lct_tree = proto_item_add_subtree(ti, ett_main);
 
         /* Fill the LCT subtree */
+
+        /* LCT version number (4 bits) */
         proto_tree_add_item(lct_tree, hf_version, tvb, offset, 2, ENC_BIG_ENDIAN);
+        ti = proto_tree_add_item(lct_tree, hf_psi, tvb, offset, 2, ENC_BIG_ENDIAN);
+
+        if ((data_exchange != NULL) && data_exchange->is_atsc3) {
+            uint16_t psi_msb = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN) & LCT_PSI_MSB;
+            data_exchange->is_sp = !!psi_msb;
+            proto_tree *lct_psi_tree = proto_item_add_subtree(ti, ett_psi);
+            proto_tree_add_item(lct_psi_tree, hf_spi, tvb, offset, 2, ENC_BIG_ENDIAN);
+        }
 
         ti = proto_tree_add_item(lct_tree, hf_fsize_header, tvb, offset, 2, ENC_BIG_ENDIAN);
         lct_fsize_tree = proto_item_add_subtree(ti, ett_fsize);
 
         /* Fill the LCT fsize subtree */
-        proto_tree_add_uint(lct_fsize_tree, hf_fsize_cci, tvb, offset, 2, cci_size);
-        proto_tree_add_uint(lct_fsize_tree, hf_fsize_tsi, tvb, offset, 2, tsi_size);
-        proto_tree_add_uint(lct_fsize_tree, hf_fsize_toi, tvb, offset, 2, toi_size);
+        PROTO_ITEM_SET_GENERATED(
+            proto_tree_add_uint(lct_fsize_tree, hf_fsize_cci, tvb, offset, 1, cci_size)
+        );
+        PROTO_ITEM_SET_GENERATED(
+            proto_tree_add_uint(lct_fsize_tree, hf_fsize_tsi, tvb, offset, 2, tsi_size)
+        );
+        PROTO_ITEM_SET_GENERATED(
+            proto_tree_add_uint(lct_fsize_tree, hf_fsize_toi, tvb, offset, 2, toi_size)
+        );
 
         ti = proto_tree_add_item(lct_tree, hf_flags_header, tvb, offset, 2, ENC_BIG_ENDIAN);
         lct_flags_tree = proto_item_add_subtree(ti, ett_flags);
@@ -354,7 +413,16 @@ dissect_lct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         proto_tree_add_item(lct_flags_tree, hf_flags_close_object, tvb, offset, 2, ENC_BIG_ENDIAN);
 
         proto_tree_add_uint(lct_tree, hf_hlen, tvb, offset+2, 1, hlen);
-        proto_tree_add_item(lct_tree, hf_codepoint, tvb, offset+3, 1, ENC_BIG_ENDIAN);
+        if ((data_exchange != NULL) && data_exchange->is_atsc3) {
+            if(data_exchange->codepoint < 128) {
+                proto_tree_add_item(lct_tree, hf_codepoint_atsc3, tvb, offset+3, 1, ENC_BIG_ENDIAN);
+            } else {
+                proto_tree_add_uint_format_value(lct_tree, hf_codepoint_atsc3, tvb, offset+3, 1,
+                    data_exchange->codepoint, "Defined by SLS (%u)", data_exchange->codepoint);
+            }
+        } else {
+            proto_tree_add_item(lct_tree, hf_codepoint, tvb, offset+3, 1, ENC_BIG_ENDIAN);
+        }
 
     }
 
@@ -393,7 +461,7 @@ dissect_lct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                 break;
         }
 
-        col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "TSI: %" G_GINT64_MODIFIER "u", tsi);
+        col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "TSI: %" PRIu64, tsi);
         offset += tsi_size;
     }
 
@@ -441,9 +509,9 @@ dissect_lct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         }
 
         if (toi_size <= 8)
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "TOI: %" G_GINT64_MODIFIER "u", toi);
+            col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "TOI: %" PRIu64, toi);
         else
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "TOI: 0x%s", tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, toi_size));
+            col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "TOI: 0x%s", tvb_bytes_to_str(pinfo->pool, tvb, offset, toi_size));
         offset += toi_size;
     }
 
@@ -452,6 +520,16 @@ dissect_lct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
     if (buffer16 & LCT_CLOSE_OBJECT_FLAG)
         col_append_sep_str(pinfo->cinfo, COL_INFO, " ", "Close object");
+
+    if ((data_exchange != NULL) && data_exchange->is_atsc3) {
+        if (data_exchange->is_sp) {
+            /* According to A/331:2022-11 A.3.4 Usage of ALC and LCT */
+            col_append_sep_str(pinfo->cinfo, COL_INFO, " ", "(Source)");
+        } else {
+            /* According to A/331:2022-11 A.4.2.4 Repair Packet Structure */
+            col_append_sep_str(pinfo->cinfo, COL_INFO, " ", " (Repair)");
+        }
+    }
 
     /* Sender Current Time (SCT) */
     if (buffer16 & LCT_SCT_FLAG) {
@@ -483,9 +561,19 @@ proto_register_rmt_lct(void)
             FT_UINT16, BASE_DEC, NULL, 0xF000,
             NULL, HFILL }
         },
+        { &hf_psi,
+          { "Protocol-Specific Indication", "rmt-lct.psi",
+            FT_UINT16, BASE_HEX, NULL, LCT_PSI,
+            NULL, HFILL }
+        },
+        { &hf_spi,
+          { "Source Packet Indicator", "rmt-lct.spi",
+            FT_BOOLEAN, 16, NULL, LCT_PSI_MSB,
+            NULL, HFILL }
+        },
         { &hf_fsize_header,
           { "Field size flags", "rmt-lct.fsize",
-            FT_UINT16, BASE_HEX, NULL, 0x0FD0,
+            FT_UINT16, BASE_HEX, NULL, 0x0FC0,
             NULL, HFILL }
         },
         { &hf_fsize_cci,
@@ -536,6 +624,11 @@ proto_register_rmt_lct(void)
         { &hf_codepoint,
           { "Codepoint", "rmt-lct.codepoint",
             FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_codepoint_atsc3,
+          { "Codepoint", "rmt-lct.codepoint",
+            FT_UINT8, BASE_DEC, VALS(cp_type_vals), 0x0,
             NULL, HFILL }
         },
         { &hf_cci,
@@ -633,6 +726,16 @@ proto_register_rmt_lct(void)
             FT_UINT32, BASE_DEC, NULL, 0x000FFFFF,
             NULL, HFILL }
         },
+        { &hf_ext_tol_48_transfer_len,
+          { "EXT_TOL_48 Transfer Length", "rmt-lct.ext_tol_transfer_len",
+            FT_UINT48, BASE_DEC, NULL, 0,
+            NULL, HFILL }
+        },
+        { &hf_ext_tol_24_transfer_len,
+          { "EXT_TOL_24 Transfer Length", "rmt-lct.ext_tol_transfer_len",
+            FT_UINT24, BASE_DEC, NULL, 0,
+            NULL, HFILL }
+        },
         { &hf_cc_sequence,
           { "CC Sequence", "rmt-lct.cc_sequence",
             FT_UINT16, BASE_DEC, NULL, 0x0,
@@ -661,12 +764,13 @@ proto_register_rmt_lct(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_main,
         &ett_fsize,
         &ett_flags,
         &ett_ext,
-        &ett_ext_ext
+        &ett_ext_ext,
+        &ett_psi,
     };
 
     /* Register the protocol name and description */
@@ -679,7 +783,7 @@ proto_register_rmt_lct(void)
 }
 
 /*
- * Editor modelines - http://www.wireshark.org/tools/modelines.html
+ * Editor modelines - https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

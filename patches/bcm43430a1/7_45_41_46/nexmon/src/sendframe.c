@@ -52,7 +52,7 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
 
     if(wlc->band->hwrs_scb) {
         if (wlc->hw->up) {
-            wlc_d11hdrs(wlc, p, wlc->band->hwrs_scb, short_preamble, 0, 1, 1, 0, 0, rate);
+            wlc_d11hdrs(wlc, p, wlc->band->hwrs_scb, short_preamble, 0, 1, 1, 0, 0, rate, 0);
             p->scb = wlc->band->hwrs_scb;
             wlc_get_txh_info(wlc, p, &txh);
             wlc_txfifo(wlc, 1, p, &txh, 1, 1);

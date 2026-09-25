@@ -1,47 +1,87 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # cppcheck.sh
 # Script to run CppCheck Static Analyzer.
 # http://cppcheck.sourceforge.net/
 #
+# Usage: tools/cppcheck/cppcheck.sh [options] [file]
+# Where options can be:
+#       -a      disable suppression list (see $CPPCHECK_DIR/suppressions)
+#       -c      colorize html output
+#       -h      html output (default is gcc)
+#       -x      xml output (default is gcc)
+#       -j n    threads (default: 4)
+#       -l n    check files from the last [n] commits
+#       -o      check modified files
+#       -v      quiet mode
+# If argument file is omitted then checking all files in the current directory.
+#
 # Wireshark - Network traffic analyzer
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 2012 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
-CPPCHECK=`which cppcheck`
-CPPCHECK_DIR=`dirname $0`
+CPPCHECK=$(type -p cppcheck)
+CPPCHECK_DIR=$(dirname "$0")
+
+if [ -z "$CPPCHECK" ] ; then
+    echo "cppcheck not found"
+    exit 1
+fi
 
 THREADS=4
+LAST_COMMITS=0
+TARGET=""
 QUIET="--quiet"
 SUPPRESSIONS="--suppressions-list=$CPPCHECK_DIR/suppressions"
 INCLUDES="--includes-file=$CPPCHECK_DIR/includes"
+LIBRARIES="--library=gtk --library=qt --library=$CPPCHECK_DIR/glib-patches.cfg --library=$CPPCHECK_DIR/ws-includes.cfg"
 MODE="gcc"
+COLORIZE_HTML_MODE="no"
+OPEN_FILES="no"
+XML_ARG=""
 
-while getopts "ahj:v" OPTCHAR ; do
+colorize_worker()
+{
+    # always uses stdin/stdout
+    [ "$COLORIZE_HTML_MODE" = "yes" ] && \
+        sed -e '/<td>warning<\/td>/s/^<tr>/<tr bgcolor="#ff3">/' \
+            -e '/<td>error<\/td>/s/^<tr>/<tr bgcolor="#faa">/' \
+        || sed ''
+}
+
+# switcher
+colorize()
+{
+    [ -z "$1" ] && colorize_worker || colorize_worker <<< "$1"
+}
+
+exit_cleanup() {
+    if [ "$MODE" = "html" ]; then
+        echo "</table></body></html>"
+    fi
+    if [ -n "$1" ] ; then
+        exit "$1"
+    fi
+}
+
+while getopts "achxj:l:ov" OPTCHAR ; do
     case $OPTCHAR in
         a) SUPPRESSIONS=" " ;;
+        c) COLORIZE_HTML_MODE="yes" ;;
         h) MODE="html" ;;
+        x) MODE="xml" ;;
         j) THREADS="$OPTARG" ;;
+        l) LAST_COMMITS="$OPTARG" ;;
+        o) OPEN_FILES="yes" ;;
         v) QUIET=" " ;;
+        *) printf "Unknown option %s" "$OPTCHAR"
     esac
 done
-shift $(($OPTIND-1))
+shift $(( OPTIND - 1 ))
 
 if [ "$MODE" = "gcc" ]; then
     TEMPLATE="gcc"
@@ -52,10 +92,36 @@ elif [ "$MODE" = "html" ]; then
     TEMPLATE="<tr><td>{file}</td><td>{line}</td><td>{severity}</td><td>{message}</td><td>{id}</td></tr>"
 fi
 
-if [ $# -eq 0 ]; then
-    TARGET="."
-else
-    TARGET=$@
+# Ensure that the COLORIZE_HTML_MODE option is used only with HTML-mode and not with GCC-mode.
+[ "$MODE" = "html" ] && [ "$COLORIZE_HTML_MODE" = "yes" ] || COLORIZE_HTML_MODE="no"
+
+if [ "$LAST_COMMITS" -gt 0 ] ; then
+    TARGET=$( git diff --name-only --diff-filter=d HEAD~"$LAST_COMMITS".. | grep -E '\.(c|cpp)$' )
+    if [ -z "${TARGET//[[:space:]]/}" ] ; then
+        >&2 echo "No C or C++ files found in the last $LAST_COMMITS commit(s)."
+        exit_cleanup 0
+    fi
+fi
+
+if [ "$OPEN_FILES" = "yes" ] ; then
+    TARGET=$(git diff --name-only  | grep -E '\.(c|cpp)$' )
+    TARGET="$TARGET $(git diff --staged --name-only  | grep -E '\.(c|cpp)$' )"
+    if [ -z "${TARGET//[[:space:]]/}" ] ; then
+        >&2 echo "No C or C++ files are currently opened (modified or added for next commit)."
+        exit_cleanup 0
+    fi
+fi
+
+if [ $# -gt 0 ]; then
+    TARGET="$TARGET $*"
+fi
+
+if [ -z "$TARGET" ] ; then
+    TARGET=.
+fi
+
+if [ "$MODE" = "xml" ]; then
+    XML_ARG="--xml"
 fi
 
 # Use a little-documented feature of the shell to pass SIGINTs only to the
@@ -63,17 +129,24 @@ fi
 # runs and we aren't left with broken HTML.
 trap : INT
 
-$CPPCHECK --force --enable=style $QUIET  \
-          $SUPPRESSIONS $INCLUDES        \
-          --std=c89 --template=$TEMPLATE \
-          -j $THREADS $TARGET 2>&1
-
-if [ "$MODE" = "html" ]; then
-    echo "</table></body></html>"
+if [ "$QUIET" = " " ]; then
+    echo "Examining:"
+    echo $TARGET
+    echo
 fi
 
+# shellcheck disable=SC2086
+$CPPCHECK --force --enable=style $QUIET    \
+    $SUPPRESSIONS $INCLUDES $LIBRARIES \
+    -i doc/ \
+    -i epan/dissectors/asn1/ \
+    --std=c11 --template=$TEMPLATE   \
+    -j $THREADS $TARGET $XML_ARG 2>&1 | colorize
+
+exit_cleanup
+
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 4

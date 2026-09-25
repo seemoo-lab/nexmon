@@ -1,10 +1,10 @@
 /* Auxiliary code for filtering of data through a subprocess.
-   Copyright (C) 2001-2003, 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2008-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2009.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,18 +13,40 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifndef _GL_INLINE_HEADER_BEGIN
+/* This file uses _GL_INLINE_HEADER_BEGIN, _GL_INLINE.  */
+#if !_GL_CONFIG_H_INCLUDED
  #error "Please include config.h first."
 #endif
+
 _GL_INLINE_HEADER_BEGIN
 #ifndef PIPE_FILTER_AUX_INLINE
 # define PIPE_FILTER_AUX_INLINE _GL_INLINE
 #endif
 
+#if defined _WIN32 && ! defined __CYGWIN__
+/* In the pipe-filter-* modules we want to use the write() function that is
+   not overridden to emulate SIGPIPE behaviour, because we don't want force
+   the caller to do
+     signal (SIGPIPE, SIG_DFL);
+   To reproduce the problem, use a gnulib testdir for the modules
+   'pipe-filter-gi', 'write', 'sigpipe'.  */
+# undef write
+# define write _write
+#endif
+
 #ifndef SSIZE_MAX
 # define SSIZE_MAX ((ssize_t) (SIZE_MAX / 2))
+#endif
+#ifdef _AIX
+/* On AIX, despite having select() and despite having put the file descriptor
+   in non-blocking mode, it can happen that select() reports that fd[1] is
+   writable but writing a large amount of data to fd[1] then fails with errno
+   EAGAIN.  Seen with test-pipe-filter-gi1 on AIX 7.2, with data sizes of
+   29 KB.  So, limit the size of data passed to the write() call to 4 KB.  */
+# undef SSIZE_MAX
+# define SSIZE_MAX 4096
 #endif
 
 /* We use a child process, and communicate through a bidirectional pipe.
@@ -72,6 +94,7 @@ nonintr_read (int fd, void *buf, size_t count)
 
   return retval;
 }
+#undef read /* avoid warning related to gnulib module unistd */
 #define read nonintr_read
 
 PIPE_FILTER_AUX_INLINE ssize_t

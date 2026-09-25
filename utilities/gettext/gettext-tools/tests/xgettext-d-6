@@ -1,0 +1,139 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test D support: propagation of 'd-format'.
+
+cat <<\EOF > xg-d-6.d
+void main ()
+{
+  gettext ("Hello10");
+  (gettext ("Hello11"));
+  ((gettext ("Hello12")));
+  gettext (gettext ("Hello13"));
+  (gettext (gettext ("Hello14")));
+  ((gettext (gettext ("Hello15"))));
+  gettext ((gettext ("Hello16")));
+  gettext (((gettext ("Hello17"))));
+  gettext (foo(), gettext ("Hello18"));
+
+  format (gettext ("Hello20"));
+  format ((gettext ("Hello21")));
+  format (((gettext ("Hello22"))));
+  format (gettext (gettext ("Hello23")));
+  format ((gettext (gettext ("Hello24"))));
+  format (((gettext (gettext ("Hello25")))));
+  format (gettext ((gettext ("Hello26"))));
+  format (gettext (((gettext ("Hello27")))));
+  format (gettext (foo(), gettext ("Hello28")));
+
+  printf ("%s", gettext ("Hello30"));
+  printf ("%s", (gettext ("Hello31")));
+  printf ("%s", ((gettext ("Hello32"))));
+  printf ("%s", gettext (gettext ("Hello33")));
+  printf ("%s", (gettext (gettext ("Hello34"))));
+  printf ("%s", ((gettext (gettext ("Hello35")))));
+  printf ("%s", gettext ((gettext ("Hello36"))));
+  printf ("%s", gettext (((gettext ("Hello37")))));
+  printf ("%s", gettext (foo(), gettext ("Hello38")));
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -c -d xg-d-6.tmp xg-d-6.d || Exit 1
+LC_ALL=C tr -d '\r' < xg-d-6.tmp.po > xg-d-6.po || Exit 1
+
+cat <<\EOF > xg-d-6.ok
+msgid "Hello10"
+msgstr ""
+
+msgid "Hello11"
+msgstr ""
+
+msgid "Hello12"
+msgstr ""
+
+msgid "Hello13"
+msgstr ""
+
+msgid "Hello14"
+msgstr ""
+
+msgid "Hello15"
+msgstr ""
+
+msgid "Hello16"
+msgstr ""
+
+msgid "Hello17"
+msgstr ""
+
+msgid "Hello18"
+msgstr ""
+
+#, d-format
+msgid "Hello20"
+msgstr ""
+
+#, d-format
+msgid "Hello21"
+msgstr ""
+
+#, d-format
+msgid "Hello22"
+msgstr ""
+
+#, d-format
+msgid "Hello23"
+msgstr ""
+
+#, d-format
+msgid "Hello24"
+msgstr ""
+
+#, d-format
+msgid "Hello25"
+msgstr ""
+
+#, d-format
+msgid "Hello26"
+msgstr ""
+
+#, d-format
+msgid "Hello27"
+msgstr ""
+
+msgid "Hello28"
+msgstr ""
+
+msgid "Hello30"
+msgstr ""
+
+msgid "Hello31"
+msgstr ""
+
+msgid "Hello32"
+msgstr ""
+
+msgid "Hello33"
+msgstr ""
+
+msgid "Hello34"
+msgstr ""
+
+msgid "Hello35"
+msgstr ""
+
+msgid "Hello36"
+msgstr ""
+
+msgid "Hello37"
+msgstr ""
+
+msgid "Hello38"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-d-6.ok xg-d-6.po || Exit 1
+
+exit 0

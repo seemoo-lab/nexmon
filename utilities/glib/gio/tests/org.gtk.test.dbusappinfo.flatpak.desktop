@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Test
+DBusActivatable=true
+X-Flatpak=org.gtk.test.dbusappinfo.flatpak
+StartupNotify=true

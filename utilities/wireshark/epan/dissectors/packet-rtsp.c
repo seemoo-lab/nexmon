@@ -8,29 +8,21 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * References:
- * RTSP is defined in RFC 2326, http://www.ietf.org/rfc/rfc2326.txt?number=2326
- * http://www.iana.org/assignments/rsvp-parameters
+ * RTSP is defined in RFC 2326, https://tools.ietf.org/html/rfc2326
+ * https://www.iana.org/assignments/rsvp-parameters
+ * RFC 7826 describes RTSP 2.0, and technically obsoletes RFC 2326.
+ * However, in practice due to lack of backwards compatibility, it has
+ * has seen limited adoption and this dissector does not attempt to
+ * dissect it. RFC 7826 does, however, have some useful comments about
+ * ambiguities and pitfalls in RFC 2326.
  */
 
 #include "config.h"
 
 #include <stdio.h>	/* for sscanf() */
-#include <stdlib.h>	/* for atoi() and strtoul() */
 
 #include <epan/packet.h>
 #include <epan/req_resp_hdrs.h>
@@ -40,18 +32,21 @@
 #include <epan/strutil.h>
 #include <epan/tap-voip.h>
 #include <epan/stats_tree.h>
+#include <epan/addr_resolv.h>
 #include <wsutil/str_util.h>
+#include <wsutil/strtoi.h>
+#include <wsutil/array.h>
 
 #include "packet-rdt.h"
 #include "packet-rtp.h"
 #include "packet-rtcp.h"
 #include "packet-e164.h"
 #include "packet-rtsp.h"
+#include "packet-media-type.h"
 
 void proto_register_rtsp(void);
 
-static int rtsp_tap = -1;
-static rtsp_info_value_t *rtsp_stat_info;
+static int rtsp_tap;
 
 /* http://www.iana.org/assignments/rtsp-parameters/rtsp-parameters.xml */
 
@@ -87,7 +82,7 @@ const value_string rtsp_status_code_vals[] = {
     { 414, "Request-URI Too Long"},
     { 415, "Unsupported Media Type"},
     { 451, "Invalid Parameter"},
-    { 452, "Illegal Conferenec Identifier"},
+    { 452, "Illegal Conference Identifier"},
     { 453, "Not Enough Bandwidth"},
     { 454, "Session Not Found"},
     { 455, "Method Not Valid In This State"},
@@ -112,51 +107,63 @@ const value_string rtsp_status_code_vals[] = {
     { 0,    NULL}
 };
 
-static int proto_rtsp       = -1;
+static int proto_rtsp;
 
-static gint ett_rtsp        = -1;
-static gint ett_rtspframe   = -1;
-static gint ett_rtsp_method     = -1;
+static int ett_rtsp;
+static int ett_rtspframe;
+static int ett_rtsp_method;
 
-static int hf_rtsp_request  = -1;
-static int hf_rtsp_response = -1;
-static int hf_rtsp_content_type = -1;
-static int hf_rtsp_content_length   = -1;
-static int hf_rtsp_method   = -1;
-static int hf_rtsp_url      = -1;
-static int hf_rtsp_status   = -1;
-static int hf_rtsp_session  = -1;
-static int hf_rtsp_transport    = -1;
-static int hf_rtsp_rdtfeaturelevel  = -1;
-static int hf_rtsp_X_Vig_Msisdn = -1;
-static int hf_rtsp_magic = -1;
-static int hf_rtsp_channel = -1;
-static int hf_rtsp_length = -1;
-static int hf_rtsp_data = -1;
+static int hf_rtsp_request;
+static int hf_rtsp_response;
+static int hf_rtsp_response_in;
+static int hf_rtsp_response_to;
+static int hf_rtsp_content_type;
+static int hf_rtsp_content_length;
+static int hf_rtsp_method;
+static int hf_rtsp_url;
+static int hf_rtsp_status;
+static int hf_rtsp_session;
+static int hf_rtsp_transport;
+static int hf_rtsp_rdtfeaturelevel;
+static int hf_rtsp_cseq;
+static int hf_rtsp_content_base;
+static int hf_rtsp_content_location;
+static int hf_rtsp_X_Vig_Msisdn;
+static int hf_rtsp_magic;
+static int hf_rtsp_channel;
+static int hf_rtsp_length;
+static int hf_rtsp_data;
 
-static int voip_tap = -1;
+static int voip_tap;
 
-static expert_field ei_rtsp_unknown_transport_type = EI_INIT;
-static expert_field ei_rtsp_bad_server_port = EI_INIT;
-static expert_field ei_rtsp_bad_client_port = EI_INIT;
-static expert_field ei_rtsp_bad_interleaved_channel = EI_INIT;
+static expert_field ei_rtsp_unknown_transport_type;
+static expert_field ei_rtsp_bad_server_port;
+static expert_field ei_rtsp_bad_client_port;
+static expert_field ei_rtsp_bad_interleaved_channel;
+static expert_field ei_rtsp_content_length_invalid;
+static expert_field ei_rtsp_rdtfeaturelevel_invalid;
+static expert_field ei_rtsp_cseq_invalid;
+static expert_field ei_rtsp_bad_server_ip_address;
+static expert_field ei_rtsp_bad_client_ip_address;
 
+static dissector_handle_t rtsp_handle;
 static dissector_handle_t rtp_handle;
+static dissector_handle_t rtp_rfc4571_handle;
 static dissector_handle_t rtcp_handle;
 static dissector_handle_t rdt_handle;
 static dissector_table_t media_type_dissector_table;
 static heur_dissector_list_t heur_subdissector_list;
 
-static const gchar *st_str_packets = "Total RTSP Packets";
-static const gchar *st_str_requests = "RTSP Request Packets";
-static const gchar *st_str_responses = "RTSP Response Packets";
-static const gchar *st_str_resp_broken = "???: broken";
-static const gchar *st_str_resp_100 = "1xx: Informational";
-static const gchar *st_str_resp_200 = "2xx: Success";
-static const gchar *st_str_resp_300 = "3xx: Redirection";
-static const gchar *st_str_resp_400 = "4xx: Client Error";
-static const gchar *st_str_resp_500 = "5xx: Server Error";
-static const gchar *st_str_other = "Other RTSP Packets";
+static const char *st_str_packets = "Total RTSP Packets";
+static const char *st_str_requests = "RTSP Request Packets";
+static const char *st_str_responses = "RTSP Response Packets";
+static const char *st_str_resp_broken = "???: broken";
+static const char *st_str_resp_100 = "1xx: Informational";
+static const char *st_str_resp_200 = "2xx: Success";
+static const char *st_str_resp_300 = "3xx: Redirection";
+static const char *st_str_resp_400 = "4xx: Client Error";
+static const char *st_str_resp_500 = "5xx: Server Error";
+static const char *st_str_other = "Other RTSP Packets";
 
 static int st_node_packets = -1;
 static int st_node_requests = -1;
@@ -172,32 +179,32 @@ static int st_node_other = -1;
 static void
 rtsp_stats_tree_init(stats_tree* st)
 {
-    st_node_packets     = stats_tree_create_node(st, st_str_packets, 0, TRUE);
+    st_node_packets     = stats_tree_create_node(st, st_str_packets, 0, STAT_DT_INT, true);
     st_node_requests    = stats_tree_create_pivot(st, st_str_requests, st_node_packets);
-    st_node_responses   = stats_tree_create_node(st, st_str_responses, st_node_packets, TRUE);
-    st_node_resp_broken = stats_tree_create_node(st, st_str_resp_broken, st_node_responses, TRUE);
-    st_node_resp_100    = stats_tree_create_node(st, st_str_resp_100,    st_node_responses, TRUE);
-    st_node_resp_200    = stats_tree_create_node(st, st_str_resp_200,    st_node_responses, TRUE);
-    st_node_resp_300    = stats_tree_create_node(st, st_str_resp_300,    st_node_responses, TRUE);
-    st_node_resp_400    = stats_tree_create_node(st, st_str_resp_400,    st_node_responses, TRUE);
-    st_node_resp_500    = stats_tree_create_node(st, st_str_resp_500,    st_node_responses, TRUE);
-    st_node_other       = stats_tree_create_node(st, st_str_other, st_node_packets, FALSE);
+    st_node_responses   = stats_tree_create_node(st, st_str_responses, st_node_packets, STAT_DT_INT, true);
+    st_node_resp_broken = stats_tree_create_node(st, st_str_resp_broken, st_node_responses, STAT_DT_INT, true);
+    st_node_resp_100    = stats_tree_create_node(st, st_str_resp_100,    st_node_responses, STAT_DT_INT, true);
+    st_node_resp_200    = stats_tree_create_node(st, st_str_resp_200,    st_node_responses, STAT_DT_INT, true);
+    st_node_resp_300    = stats_tree_create_node(st, st_str_resp_300,    st_node_responses, STAT_DT_INT, true);
+    st_node_resp_400    = stats_tree_create_node(st, st_str_resp_400,    st_node_responses, STAT_DT_INT, true);
+    st_node_resp_500    = stats_tree_create_node(st, st_str_resp_500,    st_node_responses, STAT_DT_INT, true);
+    st_node_other       = stats_tree_create_node(st, st_str_other, st_node_packets, STAT_DT_INT, false);
 }
 
 /* RTSP/Packet Counter stats packet function */
-static int
-rtsp_stats_tree_packet(stats_tree* st, packet_info* pinfo _U_, epan_dissect_t* edt _U_, const void* p)
+static tap_packet_status
+rtsp_stats_tree_packet(stats_tree* st, packet_info* pinfo _U_, epan_dissect_t* edt _U_, const void* p, tap_flags_t flags _U_)
 {
     const rtsp_info_value_t *v = (const rtsp_info_value_t *)p;
-    guint         i = v->response_code;
+    unsigned      i = v->response_code;
     int           resp_grp;
-    const gchar  *resp_str;
-    static gchar  str[64];
+    const char   *resp_str;
+    char         *str;
 
-    tick_stat_node(st, st_str_packets, 0, FALSE);
+    tick_stat_node(st, st_str_packets, 0, false);
 
     if (i) {
-        tick_stat_node(st, st_str_responses, st_node_packets, FALSE);
+        tick_stat_node(st, st_str_responses, st_node_packets, false);
 
         if ( (i<100)||(i>=600) ) {
             resp_grp = st_node_resp_broken;
@@ -219,17 +226,17 @@ rtsp_stats_tree_packet(stats_tree* st, packet_info* pinfo _U_, epan_dissect_t* e
             resp_str = st_str_resp_500;
         }
 
-        tick_stat_node(st, resp_str, st_node_responses, FALSE);
+        tick_stat_node(st, resp_str, st_node_responses, false);
 
-        g_snprintf(str, sizeof(str),"%u %s",i,val_to_str(i,rtsp_status_code_vals, "Unknown (%d)"));
-        tick_stat_node(st, str, resp_grp, FALSE);
+        str = wmem_strdup_printf(pinfo->pool, "%u %s", i, val_to_str(pinfo->pool, i, rtsp_status_code_vals, "Unknown (%d)"));
+        tick_stat_node(st, str, resp_grp, false);
     } else if (v->request_method) {
         stats_tree_tick_pivot(st,st_node_requests,v->request_method);
     } else {
-        tick_stat_node(st, st_str_other, st_node_packets, FALSE);
+        tick_stat_node(st, st_str_other, st_node_packets, false);
     }
 
-    return 1;
+    return TAP_PACKET_REDRAW;
 }
 void proto_reg_handoff_rtsp(void);
 
@@ -237,21 +244,19 @@ void proto_reg_handoff_rtsp(void);
  * desegmentation of RTSP headers
  * (when we are over TCP or another protocol providing the desegmentation API)
  */
-static gboolean rtsp_desegment_headers = TRUE;
+static bool rtsp_desegment_headers = true;
 
 /*
  * desegmentation of RTSP bodies
  * (when we are over TCP or another protocol providing the desegmentation API)
  * TODO let the user filter on content-type the bodies he wants desegmented
  */
-static gboolean rtsp_desegment_body = TRUE;
+static bool rtsp_desegment_body = true;
 
 /* http://www.iana.org/assignments/port-numbers lists two rtsp ports.
  * In Addition RTSP uses display port over Wi-Fi Display: 7236.
  */
 #define RTSP_TCP_PORT_RANGE           "554,8554,7236"
-
-static range_t *global_rtsp_tcp_port_range = NULL;
 
 /*
  * Takes an array of bytes, assumed to contain a null-terminated
@@ -261,6 +266,13 @@ static range_t *global_rtsp_tcp_port_range = NULL;
 #define STRLEN_CONST(str)   (sizeof (str) - 1)
 
 #define RTSP_FRAMEHDR   ('$')
+
+typedef struct {
+    char    *request_uri;
+    uint32_t req_frame;
+    uint32_t resp_frame;
+
+} rtsp_req_resp_t;
 
 typedef struct {
     dissector_handle_t      dissector;
@@ -273,21 +285,47 @@ typedef struct {
  * for dynamically increasing the size of the 'interleaved' array) -
  * the containing structure is garbage collected and contained
  * pointers will not be freed.
+ *
+ * XXX - This is wmem allocated now. Rather than a array of fixed size,
+ * the array could be, e.g., a tree or map indexed by the channel.
  */
 typedef struct {
     rtsp_interleaved_t      interleaved[RTSP_MAX_INTERLEAVED];
+    wmem_map_t  *req_resp_map;
 } rtsp_conversation_data_t;
+
+static rtsp_conversation_data_t*
+get_rtsp_conversation_data(conversation_t *conv, packet_info *pinfo)
+{
+    rtsp_conversation_data_t *data;
+    if (conv == NULL) {
+        conv = find_or_create_conversation_strat(pinfo);
+    }
+
+    /* Look for previous data */
+    data = (rtsp_conversation_data_t *)conversation_get_proto_data(conv, proto_rtsp);
+
+    /* Create new data if necessary */
+    if (!data)
+    {
+        data = wmem_new0(wmem_file_scope(), rtsp_conversation_data_t);
+        data->req_resp_map = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
+        conversation_add_proto_data(conv, proto_rtsp, data);
+    }
+
+    return data;
+}
 
 static int
 dissect_rtspinterleaved(tvbuff_t *tvb, int offset, packet_info *pinfo,
     proto_tree *tree)
 {
-    guint           length_remaining;
+    unsigned        length_remaining;
     proto_item     *ti;
     proto_tree     *rtspframe_tree = NULL;
     int             orig_offset;
-    guint8          rf_chan;    /* interleaved channel id */
-    guint16         rf_len;     /* packet length */
+    uint8_t         rf_chan;    /* interleaved channel id */
+    uint16_t        rf_len;     /* packet length */
     tvbuff_t       *next_tvb;
     conversation_t *conv;
     rtsp_conversation_data_t *data;
@@ -327,7 +365,7 @@ dissect_rtspinterleaved(tvbuff_t *tvb, int offset, packet_info *pinfo,
      * Get the "$", channel, and length from the header.
      */
     orig_offset = offset;
-    rf_chan = tvb_get_guint8(tvb, offset+1);
+    rf_chan = tvb_get_uint8(tvb, offset+1);
     rf_len = tvb_get_ntohs(tvb, offset+2);
 
     /*
@@ -382,10 +420,9 @@ dissect_rtspinterleaved(tvbuff_t *tvb, int offset, packet_info *pinfo,
      */
     if (length_remaining > rf_len)
         length_remaining = rf_len;
-    next_tvb = tvb_new_subset(tvb, offset, length_remaining, rf_len);
+    next_tvb = tvb_new_subset_length_caplen(tvb, offset, length_remaining, rf_len);
 
-    conv = find_conversation(pinfo->num, &pinfo->src, &pinfo->dst, pinfo->ptype,
-        pinfo->srcport, pinfo->destport, 0);
+    conv = find_conversation_pinfo_strat(pinfo, 0);
 
     if (conv &&
         (data = (rtsp_conversation_data_t *)conversation_get_proto_data(conv, proto_rtsp)) &&
@@ -395,7 +432,7 @@ dissect_rtspinterleaved(tvbuff_t *tvb, int offset, packet_info *pinfo,
         (dissector = data->interleaved[rf_chan].dissector)) {
         call_dissector(dissector, next_tvb, pinfo, tree);
     } else {
-        gboolean dissected = FALSE;
+        bool dissected = false;
         heur_dtbl_entry_t *hdtbl_entry = NULL;
 
         dissected = dissector_try_heuristic(heur_subdissector_list,
@@ -411,13 +448,11 @@ dissect_rtspinterleaved(tvbuff_t *tvb, int offset, packet_info *pinfo,
     return offset - orig_offset;
 }
 
-static void process_rtsp_request(tvbuff_t *tvb, int offset, const guchar *data,
-                                 size_t linelen, size_t next_line_offset,
-                                 proto_tree *tree);
+static char* process_rtsp_request(tvbuff_t *tvb, int offset, const unsigned char *data,
+                                 size_t linelen, packet_info *pinfo, proto_tree *tree);
 
-static void process_rtsp_reply(tvbuff_t *tvb, int offset, const guchar *data,
-                               size_t linelen, size_t next_line_offset,
-                               proto_tree *tree);
+static void process_rtsp_reply(tvbuff_t *tvb, int offset, const unsigned char *data,
+                               size_t linelen, packet_info *pinfo, proto_tree *tree);
 
 typedef enum {
     RTSP_REQUEST,
@@ -441,13 +476,14 @@ static const char *rtsp_methods[] = {
 
 #define RTSP_NMETHODS   array_length(rtsp_methods)
 
-static gboolean
-is_rtsp_request_or_reply(const guchar *line, size_t linelen, rtsp_type_t *type)
+static bool
+is_rtsp_request_or_reply(const unsigned char *line, size_t linelen, rtsp_type_t *type,
+                         rtsp_info_value_t *rtsp_stat_info, wmem_allocator_t *pool)
 {
-    guint         ii;
-    const guchar *token, *next_token;
+    unsigned      ii;
+    const unsigned char *token, *next_token;
     int           tokenlen;
-    gchar         response_chars[4];
+    char          response_chars[4];
 
     /* Is this an RTSP reply? */
     if (linelen >= 5 && g_ascii_strncasecmp("RTSP/", line, 5) == 0) {
@@ -456,17 +492,17 @@ is_rtsp_request_or_reply(const guchar *line, size_t linelen, rtsp_type_t *type)
          */
         *type = RTSP_REPLY;
         /* The first token is the version. */
-        tokenlen = get_token_len(line, line+5, &token);
+        tokenlen = get_token_len(line, line+linelen, &token);
         if (tokenlen != 0) {
             /* The next token is the status code. */
             tokenlen = get_token_len(token, line+linelen, &next_token);
             if (tokenlen >= 3) {
                 memcpy(response_chars, token, 3);
                 response_chars[3] = '\0';
-                rtsp_stat_info->response_code = (guint)strtoul(response_chars, NULL, 10);
+                ws_strtou32(response_chars, NULL, &rtsp_stat_info->response_code);
             }
         }
-        return TRUE;
+        return true;
     }
 
     /*
@@ -482,39 +518,89 @@ is_rtsp_request_or_reply(const guchar *line, size_t linelen, rtsp_type_t *type)
         {
             *type = RTSP_REQUEST;
             rtsp_stat_info->request_method =
-               wmem_strndup(wmem_packet_scope(), rtsp_methods[ii], len+1);
-            return TRUE;
+               wmem_strndup(pool, rtsp_methods[ii], len+1);
+            return true;
         }
     }
 
     /* Wasn't a request or a response */
     *type = RTSP_NOT_FIRST_LINE;
-    return FALSE;
+    return false;
 }
 
 static const char rtsp_content_type[]      = "Content-Type:";
 static const char rtsp_transport[]         = "Transport:";
-static const char rtsp_sps[]               = "server_port=";
-static const char rtsp_cps[]               = "client_port=";
-static const char rtsp_rtp[]               = "rtp/";
+static const char rtsp_sps_server_port[]   = "server_port=";
+static const char rtsp_cps_server_port[]   = "client_port=";
+static const char rtsp_sps_dest_addr[]     = "dest_addr=";
+static const char rtsp_cps_src_addr[]      = "src_addr=";
+static const char rtsp_rtp_udp_default[]   = "rtp/avp";
+static const char rtsp_rtp_udp[]           = "rtp/avp/udp";
+static const char rtsp_rtp_tcp[]           = "rtp/avp/tcp";
 static const char rtsp_rdt_feature_level[] = "RDTFeatureLevel";
 static const char rtsp_real_rdt[]          = "x-real-rdt/";
 static const char rtsp_real_tng[]          = "x-pn-tng/"; /* synonym for x-real-rdt */
 static const char rtsp_inter[]             = "interleaved=";
+static const char rtsp_cseq[]              = "CSeq:";
+static const char rtsp_content_base[]      = "Content-Base:";
+static const char rtsp_content_location[]  = "Content-Location:";
+
+static sdp_setup_info_t*
+rtsp_create_setup_info(packet_info *pinfo, const char* session_id, const char *base_uri)
+{
+    sdp_setup_info_t *setup_info = NULL;
+    if (!PINFO_FD_VISITED(pinfo)) {
+        // setup_info is only used on the first pass (by SDP or RTP)
+        setup_info = wmem_new0(pinfo->pool, sdp_setup_info_t);
+        setup_info->hf_id = hf_rtsp_session;
+        setup_info->hf_type = SDP_TRACE_ID_HF_TYPE_STR;
+        /* The session is a mandatory, opaque string for the session - but
+         * not necessarily available at the time of media initialization via SDP,
+         * whether DESCRIBE or via HTTP or some other protocol. It is known at
+         * the time of actual RTP setup by RTSP, though.
+         *
+         * wmem_strdup will return "<NULL>" when it is not available, which
+         * shouldn't ever be used by SDP (due to the "control" media attribute)
+         * but prevents a possible null dereference with, e.g., fuzzed captures.
+         *
+         * It's in file scope (unlike the setup_info struct itself) because the
+         * SDP and RTP dissectors don't copy the string but use it directly.
+         * We probably could store the session id copy in conversation data.
+         */
+        setup_info->trace_id.str = wmem_strdup(wmem_file_scope(), session_id);
+        setup_info->base_uri = base_uri;
+    }
+
+    return setup_info;
+}
 
 static void
 rtsp_create_conversation(packet_info *pinfo, proto_item *ti,
-                         const guchar *line_begin, size_t line_len,
-                         gint rdt_feature_level)
+                         const unsigned char *line_begin, size_t line_len,
+                         int rdt_feature_level,
+                         rtsp_type_t rtsp_type_packet,
+                         sdp_setup_info_t *setup_info)
 {
-    conversation_t  *conv;
-    guchar    buf[256];
-    guchar   *tmp;
-    gboolean  rtp_transport = FALSE;
-    gboolean  rdt_transport = FALSE;
-    guint     c_data_port, c_mon_port;
-    guint     s_data_port, s_mon_port;
-    gboolean  is_video      = FALSE; /* FIX ME - need to indicate video or not */
+    char     buf[256];
+    char    *tmp;
+    bool      rtp_udp_transport = false;
+    bool      rtp_tcp_transport = false;
+    bool      rdt_transport = false;
+    unsigned  c_data_port, c_mon_port;
+    unsigned  s_data_port, s_mon_port;
+    unsigned  ipv4_1, ipv4_2, ipv4_3, ipv4_4;
+    bool      is_video      = false; /* FIX ME - need to indicate video or not */
+    address   src_addr;
+    address   dst_addr;
+    uint32_t  ip4_addr;
+    rtp_dyn_payload_t *rtp_dyn_payload = NULL;
+
+    if (rtsp_type_packet != RTSP_REPLY) {
+        return;
+    }
+
+    src_addr=pinfo->src;
+    dst_addr=pinfo->dst;
 
     /* Copy line into buf */
     if (line_len > sizeof(buf) - 1)
@@ -531,12 +617,23 @@ rtsp_create_conversation(packet_info *pinfo, proto_item *ti,
         tmp++;
 
     /* Work out which transport type is here */
-    if (g_ascii_strncasecmp(tmp, rtsp_rtp, strlen(rtsp_rtp)) == 0)
-        rtp_transport = TRUE;
-    else
-    if (g_ascii_strncasecmp(tmp, rtsp_real_rdt, strlen(rtsp_real_rdt)) == 0 ||
-        g_ascii_strncasecmp(tmp, rtsp_real_tng, strlen(rtsp_real_tng)) == 0)
-        rdt_transport = TRUE;
+    if (g_ascii_strncasecmp(tmp, rtsp_rtp_udp, strlen(rtsp_rtp_udp)) == 0)
+    {
+        rtp_udp_transport = true;
+    }
+    else if (g_ascii_strncasecmp(tmp, rtsp_rtp_tcp, strlen(rtsp_rtp_tcp)) == 0)
+    {
+        rtp_tcp_transport = true;
+    }
+    else if (g_ascii_strncasecmp(tmp, rtsp_rtp_udp_default, strlen(rtsp_rtp_udp_default)) == 0)
+    {
+        rtp_udp_transport = true;
+    }
+    else if (g_ascii_strncasecmp(tmp, rtsp_real_rdt, strlen(rtsp_real_rdt)) == 0 ||
+                 g_ascii_strncasecmp(tmp, rtsp_real_tng, strlen(rtsp_real_tng)) == 0)
+    {
+        rdt_transport = true;
+    }
     else
     {
         /* Give up on unknown transport types */
@@ -548,39 +645,101 @@ rtsp_create_conversation(packet_info *pinfo, proto_item *ti,
     s_data_port = s_mon_port = 0;
 
     /* Look for server port */
-    if ((tmp = strstr(buf, rtsp_sps))) {
-        tmp += strlen(rtsp_sps);
+    if ((tmp = strstr(buf, rtsp_sps_server_port))) {
+        tmp += strlen(rtsp_sps_server_port);
         if (sscanf(tmp, "%u-%u", &s_data_port, &s_mon_port) < 1) {
             expert_add_info(pinfo, ti, &ei_rtsp_bad_server_port);
             return;
         }
     }
-    /* Look for client port */
-    if ((tmp = strstr(buf, rtsp_cps))) {
-        tmp += strlen(rtsp_cps);
-        if (sscanf(tmp, "%u-%u", &c_data_port, &c_mon_port) < 1) {
-            expert_add_info(pinfo, ti, &ei_rtsp_bad_client_port);
+    else if ((tmp = strstr(buf, rtsp_sps_dest_addr))) {
+        tmp += strlen(rtsp_sps_dest_addr);
+        if (sscanf(tmp, "\":%u\"", &s_data_port) == 1) {
+            /* :9 mean ignore */
+            if (s_data_port == 9) {
+                s_data_port = 0;
+            }
+        }
+        else if (sscanf(tmp, "\"%u.%u.%u.%u:%u\"", &ipv4_1, &ipv4_2, &ipv4_3, &ipv4_4, &s_data_port) == 5) {
+            char *tmp2;
+            char *tmp3;
+
+            /* Skip leading " */
+            tmp++;
+            tmp2=strstr(tmp,":");
+            tmp3=g_strndup(tmp,tmp2-tmp);
+            if (!str_to_ip(tmp3, &ip4_addr)) {
+                g_free(tmp3);
+                expert_add_info(pinfo, ti, &ei_rtsp_bad_server_ip_address);
+                return;
+            }
+            set_address(&dst_addr, AT_IPv4, 4, &ip4_addr);
+            g_free(tmp3);
+        }
+        else if (sscanf(tmp, "\"%u.%u.%u.%u\"", &ipv4_1, &ipv4_2, &ipv4_3, &ipv4_4) == 4) {
+            char *tmp2;
+            char *tmp3;
+
+            /* Skip leading " */
+            tmp++;
+            tmp2=strstr(tmp,"\"");
+            tmp3=g_strndup(tmp,tmp2-tmp);
+            if (!str_to_ip(tmp3, &ip4_addr)) {
+                g_free(tmp3);
+                expert_add_info(pinfo, ti, &ei_rtsp_bad_server_ip_address);
+                return;
+            }
+            set_address(&dst_addr, AT_IPv4, 4, &ip4_addr);
+            g_free(tmp3);
+        }
+        else
+        {
+            expert_add_info(pinfo, ti, &ei_rtsp_bad_server_port);
             return;
         }
     }
 
 
-    /* Deal with RTSP TCP-interleaved conversations. */
-    if (!c_data_port) {
-        rtsp_conversation_data_t    *data;
-        guint               s_data_chan, s_mon_chan;
-        int             i;
-
-        /* Search tranport line for interleaved string */
-        if ((tmp = strstr(buf, rtsp_inter)) == NULL) {
-            /*
-             * No interleaved or server_port - probably a
-             * SETUP request, rather than reply.
-             */
+    /* Look for client port */
+    if ((tmp = strstr(buf, rtsp_cps_server_port))) {
+        tmp += strlen(rtsp_cps_server_port);
+        if (sscanf(tmp, "%u-%u", &c_data_port, &c_mon_port) < 1) {
+            expert_add_info(pinfo, ti, &ei_rtsp_bad_client_port);
             return;
         }
+    }
+    else if ((tmp = strstr(buf, rtsp_cps_src_addr))) {
+        tmp += strlen(rtsp_cps_src_addr);
+        if (sscanf(tmp, "\"%u.%u.%u.%u:%u\"", &ipv4_1, &ipv4_2, &ipv4_3, &ipv4_4, &c_data_port) == 5) {
+            char *tmp2;
+            char *tmp3;
 
-        /* Move tmp to beyone interleaved string */
+            /* Skip leading " */
+            tmp++;
+            tmp2=strstr(tmp,":");
+            tmp3=g_strndup(tmp,tmp2-tmp);
+            if (!str_to_ip(tmp3, &ip4_addr)) {
+                g_free(tmp3);
+                expert_add_info(pinfo, ti, &ei_rtsp_bad_client_ip_address);
+                return;
+            }
+            set_address(&src_addr, AT_IPv4, 4, &ip4_addr);
+            g_free(tmp3);
+        }
+    }
+
+    if (setup_info && setup_info->base_uri) {
+        rtp_dyn_payload = sdp_get_rtsp_media_desc(setup_info->base_uri);
+    }
+
+    /* Deal with RTSP TCP-interleaved conversations. */
+    tmp = strstr(buf, rtsp_inter);
+    if (tmp != NULL) {
+        rtsp_conversation_data_t    *data;
+        unsigned            s_data_chan, s_mon_chan;
+        int             i;
+
+        /* Move tmp to beyond interleaved string */
         tmp += strlen(rtsp_inter);
         /* Look for channel number(s) */
         i = sscanf(tmp, "%u-%u", &s_data_chan, &s_mon_chan);
@@ -591,21 +750,30 @@ rtsp_create_conversation(packet_info *pinfo, proto_item *ti,
         }
 
         /* At least data channel present, look for conversation (presumably TCP) */
-        conv = find_or_create_conversation(pinfo);
+        data = get_rtsp_conversation_data(NULL, pinfo);
 
-        /* Look for previous data */
-        data = (rtsp_conversation_data_t *)conversation_get_proto_data(conv, proto_rtsp);
-
-        /* Create new data if necessary */
-        if (!data)
-        {
-            data = wmem_new0(wmem_file_scope(), rtsp_conversation_data_t);
-            conversation_add_proto_data(conv, proto_rtsp, data);
-        }
+        /* XXX - This doesn't set up the rtp conversation data, including RTP
+         * dynamic payload types and setup info. Two possible approaches:
+         * 1) The RTP dissector have a function that attaches dynamic payload
+         *    type and setup info to the TCP conversation but does *not* set
+         *    the conversation dissector (TCP needs to call the RTSP dissector
+         *    first for interleaved data).
+         * 2) Define a CONVERSATION_RTSP type and change the RTP dissector to
+         *    do something other than only look for conversations that match
+         *    conversation_pt_to_conversation_type(pinfo->ptype).
+         *
+         * The former needs to attach a "bundled" rtp_dyn_payload_t that
+         * includes mapping for the payload types of all possible channels;
+         * this usually happens when RTSP is used because the media descriptor
+         * port is usually 0, but we'd want to ensure it. (It also would not
+         * work if multiple sessions were SETUP simultaneously and media
+         * descriptors with different meanings for the same RTP dynamic payload
+         * type were PLAYed on different interleaved channels simulateously.)
+         */
 
         /* Now set the dissector handle of the interleaved channel
            according to the transport protocol used */
-        if (rtp_transport)
+        if (rtp_tcp_transport)
         {
             if (s_data_chan < RTSP_MAX_INTERLEAVED) {
                 data->interleaved[s_data_chan].dissector =
@@ -626,6 +794,7 @@ rtsp_create_conversation(packet_info *pinfo, proto_item *ti,
         return;
     }
 
+    /* Noninterleaved options follow */
     /*
      * We only want to match on the destination address, not the
      * source address, because the server might send back a packet
@@ -633,11 +802,19 @@ rtsp_create_conversation(packet_info *pinfo, proto_item *ti,
      * sent the packet, so we construct a conversation with no
      * second address.
      */
-    if (rtp_transport)
+    else if (rtp_udp_transport)
     {
-        /* There is always data for RTP */
-        rtp_add_address(pinfo, &pinfo->dst, c_data_port, s_data_port,
-                        "RTSP", pinfo->num, is_video, NULL);
+        /* RTP only if indicated */
+        if (c_data_port)
+        {
+            srtp_add_address(pinfo, PT_UDP, &dst_addr, c_data_port, s_data_port,
+                            "RTSP", pinfo->num, is_video, rtp_dyn_payload, NULL, setup_info);
+        }
+        else if (s_data_port)
+        {
+            srtp_add_address(pinfo, PT_UDP, &src_addr, s_data_port, 0,
+                            "RTSP", pinfo->num, is_video, rtp_dyn_payload, NULL, setup_info);
+        }
 
         /* RTCP only if indicated */
         if (c_mon_port)
@@ -646,8 +823,13 @@ rtsp_create_conversation(packet_info *pinfo, proto_item *ti,
                              "RTSP", pinfo->num);
         }
     }
-    else
-    if (rdt_transport)
+    else if (rtp_tcp_transport)
+    {
+        /* RTP only if indicated */
+        srtp_add_address(pinfo, PT_TCP, &src_addr, c_data_port, s_data_port,
+                        "RTSP", pinfo->num, is_video, rtp_dyn_payload, NULL, setup_info);
+    }
+    else if (rdt_transport)
     {
         /* Real Data Transport */
         rdt_add_address(pinfo, &pinfo->dst, c_data_port, s_data_port,
@@ -659,13 +841,13 @@ rtsp_create_conversation(packet_info *pinfo, proto_item *ti,
 static const char rtsp_content_length[] = "Content-Length:";
 
 static int
-rtsp_get_content_length(const guchar *line_begin, size_t line_len)
+rtsp_get_content_length(const unsigned char *line_begin, size_t line_len)
 {
-    guchar  buf[256];
-    guchar *tmp;
-    long    content_length;
-    char   *p;
-    guchar *up;
+    char  buf[256];
+    char *tmp;
+    int32_t content_length;
+    const char *p;
+    const char *up;
 
     if (line_len > sizeof(buf) - 1) {
         /*
@@ -679,11 +861,11 @@ rtsp_get_content_length(const guchar *line_begin, size_t line_len)
     tmp = buf + STRLEN_CONST(rtsp_content_length);
     while (*tmp && g_ascii_isspace(*tmp))
         tmp++;
-    content_length = strtol(tmp, &p, 10);
+    ws_strtoi32(tmp, &p, &content_length);
     up = p;
     if (up == tmp || (*up != '\0' && !g_ascii_isspace(*up)))
         return -1;  /* not a valid number */
-    return (int)content_length;
+    return content_length;
 }
 
 static const char rtsp_Session[] = "Session:";
@@ -694,36 +876,49 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
     proto_tree *tree)
 {
     proto_tree   *rtsp_tree = NULL;
+    proto_tree   *req_tree  = NULL;
     proto_tree   *sub_tree  = NULL;
     proto_item   *ti_top    = NULL;
-    const guchar *line;
-    gint          next_offset;
-    const guchar *linep, *lineend;
+    proto_item   *ti        = NULL;
+    const unsigned char *line;
+    int           next_offset;
+    const unsigned char *linep, *lineend;
     int           orig_offset;
     int           first_linelen, linelen;
     int           line_end_offset;
     int           colon_offset;
-    gboolean      is_request_or_reply;
-    gboolean      body_requires_content_len;
-    gboolean      saw_req_resp_or_header;
-    guchar        c;
-    rtsp_type_t   rtsp_type;
-    gboolean      is_header;
+    bool          is_request_or_reply;
+    bool          body_requires_content_len;
+    bool          saw_req_resp_or_header;
+    unsigned char c;
+    rtsp_type_t   rtsp_type_packet;
+    rtsp_type_t   rtsp_type_line;
+    bool          is_header;
     int           datalen;
     int           content_length;
     int           reported_datalen;
     int           value_offset;
     int           value_len;
     e164_info_t   e164_info;
-    gint          rdt_feature_level = 0;
-    gchar        *media_type_str_lower_case = NULL;
+    int           rdt_feature_level = 0;
+    char         *media_type_str_lower_case = NULL;
     int           semi_colon_offset;
     int           par_end_offset;
-    gchar        *frame_label = NULL;
-    gchar        *session_id  = NULL;
+    char         *frame_label = NULL;
+    char         *session_id  = NULL;
     voip_packet_info_t *stat_info = NULL;
+    bool          cseq_valid = false;
+    uint32_t      cseq = 0;
+    char         *content_base = NULL;
+    char         *content_location = NULL;
+    char         *request_uri = NULL;
+    char         *base_uri = NULL;
+    const char   *transport_line = NULL;
+    int           transport_linelen;
+    sdp_setup_info_t *setup_info = NULL;
+    rtsp_info_value_t *rtsp_stat_info;
 
-    rtsp_stat_info = wmem_new(wmem_packet_scope(), rtsp_info_value_t);
+    rtsp_stat_info = wmem_new(pinfo->pool, rtsp_info_value_t);
     rtsp_stat_info->framenum = pinfo->num;
     rtsp_stat_info->response_code = 0;
     rtsp_stat_info->request_method = NULL;
@@ -737,23 +932,27 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
      * is not longer than what's in the buffer, so the
      * "tvb_get_ptr()" call won't throw an exception.
      */
-    first_linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
+    first_linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
 
     /*
      * Is the first line a request or response?
      */
     line = tvb_get_ptr(tvb, offset, first_linelen);
     is_request_or_reply = is_rtsp_request_or_reply(line, first_linelen,
-        &rtsp_type);
+        &rtsp_type_packet, rtsp_stat_info, pinfo->pool);
     if (is_request_or_reply) {
         /*
          * Yes, it's a request or response.
          * Do header desegmentation if we've been told to,
          * and do body desegmentation if we've been told to and
          * we find a Content-Length header.
+         *
+         * RFC 7826, Section 18.17. requires Content-Length and
+         * assumes zero if missing.
          */
         if (!req_resp_hdrs_do_reassembly(tvb, offset, pinfo,
-            rtsp_desegment_headers, rtsp_desegment_body)) {
+            rtsp_desegment_headers, rtsp_desegment_body, false, NULL,
+            NULL, NULL)) {
             /*
              * More data needed for desegmentation.
              */
@@ -767,7 +966,11 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
      * of a server closing the connection indicating the end of
      * a reply body.
      *
-     * We assume that an absent content length in a request means
+     * To support pipelining, we check if line behind blank line
+     * looks like RTSP header. If so, we process rest of packet with
+     * RTSP loop.
+     *
+     * If no, we assume that an absent content length in a request means
      * that we don't have a body, and that an absent content length
      * in a reply means that the reply body runs to the end of
      * the connection.  If the first line is neither, we assume
@@ -782,20 +985,19 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
      * which would require subdissectors to deal intelligently
      * with empty segments.
      */
-    if (rtsp_type == RTSP_REQUEST)
-        body_requires_content_len = TRUE;
+    if (rtsp_type_packet == RTSP_REQUEST)
+        body_requires_content_len = true;
     else
-        body_requires_content_len = FALSE;
+        body_requires_content_len = false;
 
     line = tvb_get_ptr(tvb, offset, first_linelen);
     if (is_request_or_reply) {
-        if ( rtsp_type == RTSP_REPLY ) {
-            frame_label = wmem_strdup_printf(wmem_packet_scope(),
-                  "Reply: %s", format_text(line, first_linelen));
+        if ( rtsp_type_packet == RTSP_REPLY ) {
+            frame_label = wmem_strdup_printf(pinfo->pool,
+                  "Reply: %s", format_text(pinfo->pool, line, first_linelen));
         }
         else {
-            frame_label = wmem_strdup(wmem_packet_scope(),
-                  format_text(line, first_linelen));
+            frame_label = format_text(pinfo->pool, line, first_linelen);
         }
     }
 
@@ -811,14 +1013,14 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
         * "tvb_get_ptr()" call won't throw an exception.
         */
     if (is_request_or_reply)
-        if ( rtsp_type == RTSP_REPLY ) {
+        if ( rtsp_type_packet == RTSP_REPLY ) {
             col_set_str(pinfo->cinfo, COL_INFO, "Reply: ");
             col_append_str(pinfo->cinfo, COL_INFO,
-                format_text(line, first_linelen));
+                format_text(pinfo->pool, line, first_linelen));
         }
         else {
             col_add_str(pinfo->cinfo, COL_INFO,
-                format_text(line, first_linelen));
+                format_text(pinfo->pool, line, first_linelen));
         }
 
     else
@@ -839,24 +1041,24 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
     /*
      * Process the packet data, a line at a time.
      */
-    saw_req_resp_or_header = FALSE; /* haven't seen anything yet */
+    saw_req_resp_or_header = false; /* haven't seen anything yet */
     while (tvb_offset_exists(tvb, offset)) {
         /*
          * We haven't yet concluded that this is a header.
          */
-        is_header = FALSE;
+        is_header = false;
 
         /*
          * Find the end of the line.
          */
-        linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
+        linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
         if (linelen < 0)
             return -1;
         line_end_offset = offset + linelen;
         /*
          * colon_offset may be -1
          */
-        colon_offset = tvb_find_guint8(tvb, offset, linelen, ':');
+        colon_offset = tvb_find_uint8(tvb, offset, linelen, ':');
 
 
         /*
@@ -868,7 +1070,8 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
         /*
          * OK, does it look like an RTSP request or response?
          */
-        is_request_or_reply = is_rtsp_request_or_reply(line, linelen, &rtsp_type);
+        is_request_or_reply = is_rtsp_request_or_reply(line, linelen, &rtsp_type_line,
+            rtsp_stat_info, pinfo->pool);
         if (is_request_or_reply)
             goto is_rtsp;
 
@@ -927,7 +1130,7 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
                  * This ends the token; we consider
                  * this to be a header.
                  */
-                is_header = TRUE;
+                is_header = true;
                 goto is_rtsp;
 
             case ' ':
@@ -992,23 +1195,31 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
          * Not a blank line - either a request, a reply, or a header
          * line.
          */
-        saw_req_resp_or_header = TRUE;
-        if (rtsp_tree) {
+        saw_req_resp_or_header = true;
 
-            switch (rtsp_type)
-            {
-                case RTSP_REQUEST:
-                    process_rtsp_request(tvb, offset, line, linelen, next_offset, rtsp_tree);
-                    break;
+        switch (rtsp_type_line)
+        {
+            case RTSP_REQUEST:
+                /* Add a tree for this request */
+                ti = proto_tree_add_string(rtsp_tree, hf_rtsp_request, tvb, offset,
+                                          (int) (next_offset - offset),
+                                          tvb_format_text(pinfo->pool, tvb, offset, (int) (next_offset - offset)));
+                req_tree = proto_item_add_subtree(ti, ett_rtsp_method);
+                request_uri = process_rtsp_request(tvb, offset, line, linelen, pinfo, req_tree);
+                break;
 
-                case RTSP_REPLY:
-                    process_rtsp_reply(tvb, offset, line, linelen, next_offset, rtsp_tree);
-                    break;
+            case RTSP_REPLY:
+                /* Add a tree for this response */
+                ti = proto_tree_add_string(rtsp_tree, hf_rtsp_response, tvb, offset,
+                                           (int) (next_offset - offset),
+                                           tvb_format_text(pinfo->pool, tvb, offset, (int) (next_offset - offset)));
+                req_tree = proto_item_add_subtree(ti, ett_rtsp_method);
+                process_rtsp_reply(tvb, offset, line, linelen, pinfo, req_tree);
+                break;
 
-                case RTSP_NOT_FIRST_LINE:
-                    /* Drop through, it may well be a header line */
-                    break;
-            }
+            case RTSP_NOT_FIRST_LINE:
+                /* Drop through, it may well be a header line */
+                break;
         }
 
         if (is_header)
@@ -1018,7 +1229,7 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
             /* Skip whitespace after the colon. */
             value_offset = colon_offset + 1;
             while ((value_offset < line_end_offset) &&
-                   ((c = tvb_get_guint8(tvb, value_offset)) == ' ' || c == '\t'))
+                   ((c = tvb_get_uint8(tvb, value_offset)) == ' ' || c == '\t'))
             {
                 value_offset++;
             }
@@ -1033,30 +1244,25 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
 
             if (HDR_MATCHES(rtsp_transport))
             {
-                proto_item *ti;
                 ti = proto_tree_add_string(rtsp_tree, hf_rtsp_transport, tvb,
                                            offset, linelen,
-                                           tvb_format_text(tvb, value_offset,
+                                           tvb_format_text(pinfo->pool, tvb, value_offset,
                                                            value_len));
 
-                /*
-                 * Based on the port numbers specified
-                 * in the Transport: header, set up
-                 * a conversation that will be dissected
-                 * with the appropriate dissector.
-                 */
-                rtsp_create_conversation(pinfo, ti, line, linelen, rdt_feature_level);
+                /* Setup the conversation after parsing all the headers. */
+                transport_line = line;
+                transport_linelen = linelen;
             } else if (HDR_MATCHES(rtsp_content_type))
             {
                 proto_tree_add_string(rtsp_tree, hf_rtsp_content_type,
                                       tvb, offset, linelen,
-                                      tvb_format_text(tvb, value_offset,
+                                      tvb_format_text(pinfo->pool, tvb, value_offset,
                                                       value_len));
 
                 offset = offset + (int)STRLEN_CONST(rtsp_content_type);
                 /* Skip wsp */
                 offset = tvb_skip_wsp(tvb, offset, value_len);
-                semi_colon_offset = tvb_find_guint8(tvb, value_offset, value_len, ';');
+                semi_colon_offset = tvb_find_uint8(tvb, value_offset, value_len, ';');
                 if ( semi_colon_offset != -1) {
                     /* m-parameter present */
                     par_end_offset = tvb_skip_wsp_return(tvb, semi_colon_offset-1);
@@ -1064,14 +1270,17 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
                 }
 
                 media_type_str_lower_case = ascii_strdown_inplace(
-                    (gchar *)tvb_get_string_enc(wmem_packet_scope(), tvb, offset, value_len, ENC_ASCII));
-
+                    (char *)tvb_get_string_enc(pinfo->pool, tvb, offset, value_len, ENC_ASCII));
             } else if (HDR_MATCHES(rtsp_content_length))
             {
-                proto_tree_add_uint(rtsp_tree, hf_rtsp_content_length,
-                                    tvb, offset, linelen,
-                                    atoi(tvb_format_text(tvb, value_offset,
-                                                         value_len)));
+                uint32_t clength;
+                bool clength_valid;
+                clength_valid = ws_strtou32(tvb_format_text(pinfo->pool, tvb, value_offset, value_len),
+                    NULL, &clength);
+                ti = proto_tree_add_uint(rtsp_tree, hf_rtsp_content_length,
+                                    tvb, offset, linelen, clength);
+                if (!clength_valid)
+                    expert_add_info(pinfo, ti, &ei_rtsp_content_length_invalid);
 
                 /*
                  * Only the amount specified by the
@@ -1082,7 +1291,7 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
 
             } else if (HDR_MATCHES(rtsp_Session))
             {
-                session_id = tvb_format_text(tvb, value_offset, value_len);
+                session_id = tvb_format_text(pinfo->pool, tvb, value_offset, value_len);
                 /* Put the value into the protocol tree */
                 proto_tree_add_string(rtsp_tree, hf_rtsp_session, tvb,
                                       offset, linelen,
@@ -1094,17 +1303,16 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
                  */
                 if (colon_offset != -1)
                 {
-                    proto_item *ti;
                     /* Put the value into the protocol tree */
                     ti = proto_tree_add_string(rtsp_tree, hf_rtsp_X_Vig_Msisdn,tvb,
                                                offset, linelen ,
-                                               tvb_format_text(tvb, value_offset, value_len));
+                                               tvb_format_text(pinfo->pool, tvb, value_offset, value_len));
                     sub_tree = proto_item_add_subtree(ti, ett_rtsp_method);
 
                     e164_info.e164_number_type = CALLING_PARTY_NUMBER;
                     e164_info.nature_of_address = 0;
 
-                    e164_info.E164_number_str = tvb_get_string_enc(wmem_packet_scope(), tvb, value_offset,
+                    e164_info.E164_number_str = tvb_get_string_enc(pinfo->pool, tvb, value_offset,
                                                                   value_len, ENC_ASCII);
                     e164_info.E164_number_length = value_len;
                     dissect_e164_number(tvb, sub_tree, value_offset,
@@ -1112,12 +1320,31 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
                 }
             } else if (HDR_MATCHES(rtsp_rdt_feature_level))
             {
-                rdt_feature_level = atoi(tvb_format_text(tvb, value_offset,
-                                                         value_len));
-                proto_tree_add_uint(rtsp_tree, hf_rtsp_rdtfeaturelevel,
-                                    tvb, offset, linelen,
-                                    atoi(tvb_format_text(tvb, value_offset,
-                                                         value_len)));
+                bool rdt_feature_level_valid;
+                rdt_feature_level_valid = ws_strtou32(tvb_format_text(pinfo->pool, tvb, value_offset, value_len),
+                    NULL, &rdt_feature_level);
+                ti = proto_tree_add_uint(rtsp_tree, hf_rtsp_rdtfeaturelevel,
+                tvb, offset, linelen, rdt_feature_level);
+                if (!rdt_feature_level_valid)
+                    expert_add_info(pinfo, ti, &ei_rtsp_rdtfeaturelevel_invalid);
+            } else if (HDR_MATCHES(rtsp_cseq))
+            {
+                cseq_valid = ws_strtou32(tvb_format_text(pinfo->pool, tvb, value_offset, value_len),
+                    NULL, &cseq);
+                ti = proto_tree_add_uint(rtsp_tree, hf_rtsp_cseq, tvb, offset, linelen, cseq);
+                if (!cseq_valid) {
+                    expert_add_info(pinfo, ti, &ei_rtsp_cseq_invalid);
+                }
+            } else if (HDR_MATCHES(rtsp_content_base))
+            {
+                content_base = (char *)tvb_get_string_enc(pinfo->pool, tvb, value_offset, value_len, ENC_UTF_8);
+                proto_tree_add_string(rtsp_tree, hf_rtsp_content_base,
+                                      tvb, offset, linelen, content_base);
+            } else if (HDR_MATCHES(rtsp_content_location))
+            {
+                content_location = (char *)tvb_get_string_enc(pinfo->pool, tvb, value_offset, value_len, ENC_UTF_8);
+                proto_tree_add_string(rtsp_tree, hf_rtsp_content_location,
+                                      tvb, offset, linelen, content_location);
             }
             else
             {
@@ -1125,7 +1352,7 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
                 proto_tree_add_format_text(rtsp_tree, tvb, offset, next_offset - offset);
             }
         }
-        else if (rtsp_type == RTSP_NOT_FIRST_LINE)
+        else if (rtsp_type_line == RTSP_NOT_FIRST_LINE)
         {
             /* Catch-all for all other lines... Show line as text.
                TODO: should these be shown as errors? */
@@ -1135,15 +1362,68 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
         offset = next_offset;
     }
 
+    if (cseq_valid) {
+        rtsp_conversation_data_t *conv_data = get_rtsp_conversation_data(NULL, pinfo);
+        rtsp_req_resp_t *curr_req_resp = wmem_map_lookup(conv_data->req_resp_map, GUINT_TO_POINTER(cseq));
+        if (!curr_req_resp) {
+            curr_req_resp = wmem_new0(wmem_file_scope(), rtsp_req_resp_t);
+            wmem_map_insert(conv_data->req_resp_map, GUINT_TO_POINTER(cseq), curr_req_resp);
+        }
+        if (rtsp_type_packet == RTSP_REQUEST) {
+            if (curr_req_resp->req_frame == 0) {
+                curr_req_resp->req_frame = pinfo->num;
+            }
+            if (curr_req_resp->resp_frame) {
+                proto_tree_add_uint(req_tree, hf_rtsp_response_in, tvb, 0, 0, curr_req_resp->resp_frame);
+            }
+            if (request_uri && !curr_req_resp->request_uri) {
+                curr_req_resp->request_uri = wmem_strdup(wmem_file_scope(), request_uri);
+            }
+        } else {
+            if (curr_req_resp->resp_frame == 0) {
+                curr_req_resp->resp_frame = pinfo->num;
+            }
+            if (curr_req_resp->request_uri) {
+                ti = proto_tree_add_string(req_tree, hf_rtsp_url, tvb, 0, 0, curr_req_resp->request_uri);
+                proto_item_set_generated(ti);
+            }
+            if (curr_req_resp->req_frame) {
+                proto_tree_add_uint(req_tree, hf_rtsp_response_to, tvb, 0, 0, curr_req_resp->req_frame);
+            }
+        }
+        if (curr_req_resp->request_uri) {
+            base_uri = wmem_ascii_strdown(pinfo->pool, curr_req_resp->request_uri, -1);
+        }
+    }
+
+    if (content_base) {
+        base_uri = content_base;
+    } else if (content_location) {
+        /* XXX - Content-Location itself can be relative to the request_uri, at
+         * least according to RFC 7826. (RTSP 2.0 is not widely implemented, but
+         * it does have useful notes on gotchas and limitations of RTSP 1.0.)
+         */
+        base_uri = content_location;
+    }
+
     if (session_id) {
-        stat_info = wmem_new0(wmem_packet_scope(), voip_packet_info_t);
-        stat_info->protocol_name = wmem_strdup(wmem_packet_scope(), "RTSP");
+        stat_info = wmem_new0(pinfo->pool, voip_packet_info_t);
+        stat_info->protocol_name = wmem_strdup(pinfo->pool, "RTSP");
         stat_info->call_id = session_id;
         stat_info->frame_label = frame_label;
         stat_info->call_state = VOIP_CALL_SETUP;
         stat_info->call_active_state = VOIP_ACTIVE;
         stat_info->frame_comment = frame_label;
         tap_queue_packet(voip_tap, pinfo, stat_info);
+    }
+
+    if (transport_line) {
+        /*
+         * Based on the port numbers specified in the Transport: header, set up
+         * a conversation that will be dissected with the appropriate dissector.
+         */
+        setup_info = rtsp_create_setup_info(pinfo, session_id, base_uri);
+        rtsp_create_conversation(pinfo, ti, transport_line, transport_linelen, rdt_feature_level, rtsp_type_packet, setup_info);
     }
 
     /*
@@ -1214,44 +1494,58 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
          * which, if no content length was specified,
          * is -1, i.e. "to the end of the frame.
          */
-        new_tvb = tvb_new_subset(tvb, offset, datalen,
+        new_tvb = tvb_new_subset_length_caplen(tvb, offset, datalen,
                 reported_datalen);
 
-        if (media_type_str_lower_case &&
-            dissector_try_string(media_type_dissector_table,
-                media_type_str_lower_case,
-                new_tvb, pinfo, rtsp_tree, NULL)){
-
-        }else {
-            /*
-             * Fix up the top-level item so that it doesn't
-             * include the SDP stuff.
-             */
-            if (ti_top != NULL)
-                proto_item_set_len(ti_top, offset);
-
-            if (tvb_get_guint8(tvb, offset) == RTSP_FRAMEHDR) {
-                /*
-                 * This is interleaved stuff; don't
-                 * treat it as raw data - set "datalen"
-                 * to 0, so we won't skip the offset
-                 * past it, which will cause our
-                 * caller to process that stuff itself.
-                 */
-                datalen = 0;
-            } else {
-                proto_tree_add_bytes_format(rtsp_tree, hf_rtsp_data, tvb, offset,
-                    datalen, NULL, "Data (%d bytes)",
-                    reported_datalen);
-            }
-        }
-
         /*
-         * We've processed "datalen" bytes worth of data
-         * (which may be no data at all); advance the
-         * offset past whatever data we've processed.
+         * Check if next line is RTSP message - pipelining
+         * If yes, stop processing and start next loop
+         * If no, process rest of packet with dissectors
          */
-        offset += datalen;
+        first_linelen = tvb_find_line_end(new_tvb, 0, -1, &next_offset, false);
+        line = tvb_get_ptr(new_tvb, 0, first_linelen);
+        is_request_or_reply = is_rtsp_request_or_reply(line, first_linelen,
+            &rtsp_type_packet, rtsp_stat_info, pinfo->pool);
+
+        if (!is_request_or_reply){
+            setup_info = rtsp_create_setup_info(pinfo, session_id, base_uri);
+            media_content_info_t content_info = { MEDIA_CONTAINER_SIP_DATA, media_type_str_lower_case, NULL, setup_info };
+            if (media_type_str_lower_case &&
+                dissector_try_string_with_data(media_type_dissector_table,
+                    media_type_str_lower_case,
+                    new_tvb, pinfo, rtsp_tree, true, &content_info)) {
+
+            } else {
+                /*
+                 * Fix up the top-level item so that it doesn't
+                 * include the SDP stuff.
+                 */
+                if (ti_top != NULL)
+                    proto_item_set_len(ti_top, offset);
+
+                if (tvb_get_uint8(tvb, offset) == RTSP_FRAMEHDR) {
+                    /*
+                     * This is interleaved stuff; don't
+                     * treat it as raw data - set "datalen"
+                     * to 0, so we won't skip the offset
+                     * past it, which will cause our
+                     * caller to process that stuff itself.
+                     */
+                    datalen = 0;
+                } else {
+                    proto_tree_add_bytes_format(rtsp_tree, hf_rtsp_data, tvb, offset,
+                        datalen, NULL, "Data (%d bytes)",
+                        reported_datalen);
+                }
+            }
+
+            /*
+             * We've processed "datalen" bytes worth of data
+             * (which may be no data at all); advance the
+             * offset past whatever data we've processed.
+             */
+            offset += datalen;
+        }
     }
 
     tap_queue_packet(rtsp_tap, pinfo, rtsp_stat_info);
@@ -1259,17 +1553,15 @@ dissect_rtspmessage(tvbuff_t *tvb, int offset, packet_info *pinfo,
     return offset - orig_offset;
 }
 
-static void
-process_rtsp_request(tvbuff_t *tvb, int offset, const guchar *data,
-                     size_t linelen, size_t next_line_offset, proto_tree *tree)
+static char*
+process_rtsp_request(tvbuff_t *tvb, int offset, const unsigned char *data,
+                     size_t linelen, packet_info *pinfo, proto_tree *tree)
 {
-    proto_tree   *sub_tree;
-    proto_item   *ti;
-    const guchar *lineend  = data + linelen;
-    guint        ii;
-    const guchar *url;
-    const guchar *url_start;
-    guchar       *tmp_url;
+    const unsigned char *lineend  = data + linelen;
+    unsigned     ii;
+    const unsigned char *url;
+    const unsigned char *url_start;
+    unsigned char       *tmp_url;
 
     /* Request Methods */
     for (ii = 0; ii < RTSP_NMETHODS; ii++) {
@@ -1288,16 +1580,9 @@ process_rtsp_request(tvbuff_t *tvb, int offset, const guchar *data,
         DISSECTOR_ASSERT_NOT_REACHED();
     }
 
-    /* Add a tree for this request */
-    ti = proto_tree_add_string(tree, hf_rtsp_request, tvb, offset,
-                              (gint) (next_line_offset - offset),
-                              tvb_format_text(tvb, offset, (gint) (next_line_offset - offset)));
-    sub_tree = proto_item_add_subtree(ti, ett_rtsp_method);
-
-
     /* Add method name to tree */
-    proto_tree_add_string(sub_tree, hf_rtsp_method, tvb, offset,
-                          (gint) strlen(rtsp_methods[ii]), rtsp_methods[ii]);
+    proto_tree_add_string(tree, hf_rtsp_method, tvb, offset,
+                          (int) strlen(rtsp_methods[ii]), rtsp_methods[ii]);
 
     /* URL */
     url = data;
@@ -1313,31 +1598,23 @@ process_rtsp_request(tvbuff_t *tvb, int offset, const guchar *data,
     while (url < lineend && !g_ascii_isspace(*url))
         url++;
     /* Create a URL-sized buffer and copy contents */
-    tmp_url = wmem_strndup(wmem_packet_scope(), url_start, url - url_start);
+    tmp_url = format_text(pinfo->pool, url_start, url - url_start);
 
     /* Add URL to tree */
-    proto_tree_add_string(sub_tree, hf_rtsp_url, tvb,
-                          offset + (gint) (url_start - data), (gint) (url - url_start), tmp_url);
+    proto_tree_add_string(tree, hf_rtsp_url, tvb,
+                          offset + (int) (url_start - data), (int) (url - url_start), tmp_url);
+    return tmp_url;
 }
 
 /* Read first line of a reply message */
 static void
-process_rtsp_reply(tvbuff_t *tvb, int offset, const guchar *data,
-    size_t linelen, size_t next_line_offset, proto_tree *tree)
+process_rtsp_reply(tvbuff_t *tvb, int offset, const unsigned char *data,
+    size_t linelen, packet_info *pinfo _U_, proto_tree *tree)
 {
-    proto_tree   *sub_tree;
-    proto_item   *ti;
-    const guchar *lineend  = data + linelen;
-    const guchar *status   = data;
-    const guchar *status_start;
-    guint         status_i;
-
-    /* Add a tree for this request */
-    ti = proto_tree_add_string(tree, hf_rtsp_response, tvb, offset,
-                               (gint) (next_line_offset - offset),
-                               tvb_format_text(tvb, offset, (gint) (next_line_offset - offset)));
-    sub_tree = proto_item_add_subtree(ti, ett_rtsp_method);
-
+    const unsigned char *lineend  = data + linelen;
+    const unsigned char *status   = data;
+    const unsigned char *status_start;
+    unsigned      status_i;
 
     /* status code */
 
@@ -1355,9 +1632,9 @@ process_rtsp_reply(tvbuff_t *tvb, int offset, const guchar *data,
         status_i = status_i * 10 + *status++ - '0';
 
     /* Add field to tree */
-    proto_tree_add_uint(sub_tree, hf_rtsp_status, tvb,
-                        offset + (gint) (status_start - data),
-                        (gint) (status - status_start), status_i);
+    proto_tree_add_uint(tree, hf_rtsp_status, tvb,
+                        offset + (int) (status_start - data),
+                        (int) (status - status_start), status_i);
 }
 
 static int
@@ -1367,7 +1644,14 @@ dissect_rtsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     int len;
 
     while (tvb_reported_length_remaining(tvb, offset) != 0) {
-        len = (tvb_get_guint8(tvb, offset) == RTSP_FRAMEHDR)
+        /*
+         * Add separator between multiple messages in column info text
+         */
+        if (offset > 0) {
+                col_set_str(pinfo->cinfo, COL_INFO, ", ");
+                col_set_fence(pinfo->cinfo, COL_INFO);
+        }
+        len = (tvb_get_uint8(tvb, offset) == RTSP_FRAMEHDR)
             ? dissect_rtspinterleaved(tvb, offset, pinfo, tree)
             : dissect_rtspmessage(tvb, offset, pinfo, tree);
         if (len == -1)
@@ -1387,7 +1671,7 @@ dissect_rtsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 void
 proto_register_rtsp(void)
 {
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_rtspframe,
         &ett_rtsp,
         &ett_rtsp_method,
@@ -1399,6 +1683,12 @@ proto_register_rtsp(void)
         { &hf_rtsp_response,
             { "Response", "rtsp.response", FT_STRING, BASE_NONE, NULL, 0,
             NULL, HFILL }},
+        { &hf_rtsp_response_in,
+            { "Response in frame", "rtsp.response_in", FT_FRAMENUM, BASE_NONE,
+            FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0, NULL, HFILL }},
+        { &hf_rtsp_response_to,
+            { "Response to frame", "rtsp.response_to", FT_FRAMENUM, BASE_NONE,
+            FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0, NULL, HFILL }},
         { &hf_rtsp_method,
             { "Method", "rtsp.method", FT_STRING, BASE_NONE, NULL, 0,
             NULL, HFILL }},
@@ -1422,6 +1712,15 @@ proto_register_rtsp(void)
             NULL, HFILL }},
         { &hf_rtsp_rdtfeaturelevel,
             { "RDTFeatureLevel", "rtsp.rdt-feature-level", FT_UINT32, BASE_DEC, NULL, 0,
+            NULL, HFILL }},
+        { &hf_rtsp_cseq,
+            { "CSeq", "rtsp.cseq", FT_UINT32, BASE_DEC, NULL, 0,
+            NULL, HFILL }},
+        { &hf_rtsp_content_base,
+            { "Content-Base", "rtsp.content-base", FT_STRING, BASE_NONE, NULL, 0,
+            NULL, HFILL }},
+        { &hf_rtsp_content_location,
+            { "Content-Location", "rtsp.content-location", FT_STRING, BASE_NONE, NULL, 0,
             NULL, HFILL }},
         { &hf_rtsp_X_Vig_Msisdn,
             { "X-Vig-Msisdn", "rtsp.X_Vig_Msisdn", FT_STRING, BASE_NONE, NULL, 0,
@@ -1449,13 +1748,22 @@ proto_register_rtsp(void)
           { "rtsp.bad_client_port", PI_UNDECODED, PI_WARN, "Bad client port",  EXPFILL }},
         { &ei_rtsp_bad_interleaved_channel,
           { "rtsp.bad_interleaved_channel", PI_UNDECODED, PI_WARN, "Bad interleaved_channel",  EXPFILL }},
+        { &ei_rtsp_content_length_invalid,
+          { "rtsp.content-length.invalid", PI_MALFORMED, PI_ERROR, "Invalid content length", EXPFILL }},
+        { &ei_rtsp_rdtfeaturelevel_invalid,
+          { "rtsp.rdt-feature-level.invalid", PI_MALFORMED, PI_ERROR, "Invalid RDTFeatureLevel", EXPFILL }},
+        { &ei_rtsp_cseq_invalid,
+          { "rtsp.cseq.invalid", PI_PROTOCOL, PI_WARN, "Invalid CSeq", EXPFILL }},
+        { &ei_rtsp_bad_server_ip_address,
+          { "rtsp.bad_server_ip_address", PI_MALFORMED, PI_ERROR, "Bad server IP address", EXPFILL }},
+        { &ei_rtsp_bad_client_ip_address,
+          { "rtsp.bad_client_ip_address", PI_MALFORMED, PI_ERROR, "Bad client IP address", EXPFILL }}
     };
 
     module_t *rtsp_module;
     expert_module_t *expert_rtsp;
 
-    proto_rtsp = proto_register_protocol("Real Time Streaming Protocol",
-        "RTSP", "rtsp");
+    proto_rtsp = proto_register_protocol("Real Time Streaming Protocol", "RTSP", "rtsp");
 
     proto_register_field_array(proto_rtsp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
@@ -1464,19 +1772,14 @@ proto_register_rtsp(void)
     expert_register_field_array(expert_rtsp, ei, array_length(ei));
 
     /* Make this dissector findable by name */
-    register_dissector("rtsp", dissect_rtsp, proto_rtsp);
+    rtsp_handle = register_dissector("rtsp", dissect_rtsp, proto_rtsp);
 
     /* Register our configuration options, particularly our ports */
 
-    rtsp_module = prefs_register_protocol(proto_rtsp, proto_reg_handoff_rtsp);
+    rtsp_module = prefs_register_protocol(proto_rtsp, NULL);
 
     prefs_register_obsolete_preference(rtsp_module, "tcp.alternate_port");
-    prefs_register_obsolete_preference(rtsp_module, "tcp.port");
 
-    range_convert_str(&global_rtsp_tcp_port_range, RTSP_TCP_PORT_RANGE, 65535);
-    prefs_register_range_preference(rtsp_module, "tcp.port_range", "RTSP TCP Ports",
-                                    "RTSP TCP Ports range",
-                                    &global_rtsp_tcp_port_range, 65535);
     prefs_register_bool_preference(rtsp_module, "desegment_headers",
         "Reassemble RTSP headers spanning multiple TCP segments",
         "Whether the RTSP dissector should reassemble headers "
@@ -1484,8 +1787,7 @@ proto_register_rtsp(void)
         " To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
         &rtsp_desegment_headers);
     prefs_register_bool_preference(rtsp_module, "desegment_body",
-        "Trust the \"Content-length:\" header and\ndesegment RTSP "
-        "bodies\nspanning multiple TCP segments",
+        "Trust the \"Content-length:\" header when desegmenting",
         "Whether the RTSP dissector should use the "
         "\"Content-length:\" value to desegment the body "
         "of a request spanning multiple TCP segments",
@@ -1496,50 +1798,41 @@ proto_register_rtsp(void)
      * this table using the standard heur_dissector_add()
      * function.
      */
-    heur_subdissector_list = register_heur_dissector_list("rtsp", proto_rtsp);
+    heur_subdissector_list = register_heur_dissector_list_with_description("rtsp", "RTSP data", proto_rtsp);
 
     /*
      * Register for tapping
      */
     rtsp_tap = register_tap("rtsp"); /* RTSP statistics tap */
+
+    register_external_value_string("rtsp_status_code_vals", rtsp_status_code_vals);
 }
 
 void
 proto_reg_handoff_rtsp(void)
 {
-    static dissector_handle_t rtsp_handle;
-    static gboolean rtsp_prefs_initialized = FALSE;
-    static range_t *rtsp_tcp_port_range = NULL;
+    rtp_handle = find_dissector_add_dependency("rtp", proto_rtsp);
+    rtp_rfc4571_handle = find_dissector_add_dependency("rtp.rfc4571", proto_rtsp);
+    rtcp_handle = find_dissector_add_dependency("rtcp", proto_rtsp);
+    rdt_handle = find_dissector_add_dependency("rdt", proto_rtsp);
+    media_type_dissector_table = find_dissector_table("media_type");
+    voip_tap = find_tap_id("voip");
 
-    if (!rtsp_prefs_initialized) {
-        rtsp_handle = find_dissector("rtsp");
-        rtp_handle = find_dissector("rtp");
-        rtcp_handle = find_dissector("rtcp");
-        rdt_handle = find_dissector("rdt");
-        media_type_dissector_table = find_dissector_table("media_type");
-        voip_tap = find_tap_id("voip");
-        rtsp_prefs_initialized = TRUE;
-    }
-    else {
-        dissector_delete_uint_range("tcp.port", rtsp_tcp_port_range, rtsp_handle);
-        g_free(rtsp_tcp_port_range);
-    }
     /* Set our port number for future use */
-    rtsp_tcp_port_range = range_copy(global_rtsp_tcp_port_range);
-    dissector_add_uint_range("tcp.port", rtsp_tcp_port_range, rtsp_handle);
+    dissector_add_uint_range_with_preference("tcp.port", RTSP_TCP_PORT_RANGE, rtsp_handle);
 
     /* XXX: Do the following only once ?? */
-    stats_tree_register("rtsp","rtsp","RTSP/Packet Counter", 0, rtsp_stats_tree_packet, rtsp_stats_tree_init, NULL );
+    stats_tree_register("rtsp","rtsp","RTSP" STATS_TREE_MENU_SEPARATOR "Packet Counter", 0, rtsp_stats_tree_packet, rtsp_stats_tree_init, NULL );
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4
  * tab-width: 8
- * indent-tabs-mode: nil
+ * indent-tabs-mode: space
  * End:
  *
  * vi: set shiftwidth=4 tabstop=8 expandtab:

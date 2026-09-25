@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "funnel_string_dialog.h"
@@ -25,28 +13,31 @@
 #include <QLabel>
 #include <QLineEdit>
 
-#include "qt_ui_utils.h"
-#include "wireshark_application.h"
+#include <ui/qt/utils/qt_ui_utils.h>
+#include "main_application.h"
 
 // Helper object used for sending close signal to open dialogs from a C function
-static FunnelStringDialogHelper dialogHelper;
+static FunnelStringDialogHelper dialog_helper_;
 
 const int min_edit_width_ = 20; // em widths
-FunnelStringDialog::FunnelStringDialog(const QString title, const QStringList field_name_list, funnel_dlg_cb_t dialog_cb, void *dialog_cb_data) :
-    QDialog(NULL),
+FunnelStringDialog::FunnelStringDialog(QWidget *parent, const QString title, const QList<QPair<QString, QString>> field_list, funnel_dlg_cb_t dialog_cb, void* dialog_cb_data, funnel_dlg_cb_data_free_t dialog_data_free_cb) :
+    QDialog(parent),
     ui(new Ui::FunnelStringDialog),
     dialog_cb_(dialog_cb),
-    dialog_cb_data_(dialog_cb_data)
+    dialog_cb_data_(dialog_cb_data),
+    dialog_cb_data_free_(dialog_data_free_cb)
 {
     ui->setupUi(this);
-    setWindowTitle(wsApp->windowTitleString(title));
+    setWindowTitle(mainApp->windowTitleString(title));
     int one_em = fontMetrics().height();
 
     int row = 0;
-    foreach (QString field_name, field_name_list) {
-        QLabel *field_label = new QLabel(field_name, this);
+    QPair<QString, QString> field;
+    foreach(field, field_list) {
+        QLabel* field_label = new QLabel(field.first, this);
         ui->stringGridLayout->addWidget(field_label, row, 0);
-        QLineEdit *field_edit = new QLineEdit(this);
+        QLineEdit* field_edit = new QLineEdit(this);
+        field_edit->setText(field.second);
         field_edit->setMinimumWidth(one_em * min_edit_width_);
         field_edits_ << field_edit;
         ui->stringGridLayout->addWidget(field_edit, row, 1);
@@ -56,6 +47,10 @@ FunnelStringDialog::FunnelStringDialog(const QString title, const QStringList fi
 
 FunnelStringDialog::~FunnelStringDialog()
 {
+    if (dialog_cb_data_free_) {
+        dialog_cb_data_free_(dialog_cb_data_);
+    }
+
     delete ui;
 }
 
@@ -86,15 +81,14 @@ void FunnelStringDialog::on_buttonBox_accepted()
     }
     g_ptr_array_add(returns, NULL);
 
-    dialog_cb_((gchar**)returns->pdata, dialog_cb_data_);
-
-    g_ptr_array_free(returns, FALSE);
+    char **user_input = (char **)g_ptr_array_free(returns, false);
+    dialog_cb_(user_input, dialog_cb_data_);
 }
 
-void FunnelStringDialog::stringDialogNew(const QString title, const QStringList field_name_list, funnel_dlg_cb_t dialog_cb, void *dialog_cb_data)
+void FunnelStringDialog::stringDialogNew(QWidget *parent, const QString title, QList<QPair<QString, QString>> field_list, funnel_dlg_cb_t dialog_cb, void* dialog_cb_data, funnel_dlg_cb_data_free_t dialog_cb_data_free)
 {
-    FunnelStringDialog *fsd = new FunnelStringDialog(title, field_name_list, dialog_cb, dialog_cb_data);
-    connect(&dialogHelper, SIGNAL(closeDialogs()), fsd, SLOT(close()));
+    FunnelStringDialog* fsd = new FunnelStringDialog(parent, title, field_list, dialog_cb, dialog_cb_data, dialog_cb_data_free);
+    connect(&dialog_helper_, &FunnelStringDialogHelper::closeDialogs, fsd, &FunnelStringDialog::close);
     fsd->show();
 }
 
@@ -103,29 +97,7 @@ void FunnelStringDialogHelper::emitCloseDialogs()
     emit closeDialogs();
 }
 
-void string_dialog_new(const gchar *title, const gchar **fieldnames, funnel_dlg_cb_t dialog_cb, void *dialog_cb_data)
-{
-    QStringList field_name_list;
-    for (int i = 0; fieldnames[i]; i++) {
-        field_name_list << fieldnames[i];
-    }
-    FunnelStringDialog::stringDialogNew(title, field_name_list, dialog_cb, dialog_cb_data);
-}
-
 void string_dialogs_close(void)
 {
-    dialogHelper.emitCloseDialogs();
+    dialog_helper_.emitCloseDialogs();
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

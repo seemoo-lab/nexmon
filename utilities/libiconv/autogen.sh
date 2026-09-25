@@ -4,15 +4,11 @@
 # also regenerates all aclocal.m4, config.h.in, Makefile.in, configure files
 # with new versions of autoconf or automake.
 #
-# This script requires autoconf-2.63..2.68 and automake-1.11 in the PATH.
-# It also requires either
-#   - the GNULIB_TOOL environment variable pointing to the gnulib-tool script
-#     in a gnulib checkout, or
-#   - the git program in the PATH and an internet connection.
+# This script requires autoconf-2.63..2.72 and automake-1.11..1.18 in the PATH.
 # It also requires
 #   - the gperf program.
 
-# Copyright (C) 2003-2010 Free Software Foundation, Inc.
+# Copyright (C) 2003-2025 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,15 +21,21 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# Prerequisite (if not used from a released tarball): either
+#   - the GNULIB_SRCDIR environment variable pointing to a gnulib checkout, or
+#   - a preceding invocation of './autopull.sh'.
+#
 # Usage: ./autogen.sh [--skip-gnulib]
 #
-# Usage from a CVS checkout:                 ./autogen.sh
-# This uses an up-to-date gnulib checkout.
-#
-# Usage from a released tarball:             ./autogen.sh --skip-gnulib
-# This does not use a gnulib checkout.
+# Options:
+#   --skip-gnulib       Avoid fetching files from Gnulib.
+#                       This option is useful
+#                       - when you are working from a released tarball (possibly
+#                         with modifications), or
+#                       - as a speedup, if the set of gnulib modules did not
+#                         change since the last time you ran this script.
 
 skip_gnulib=false
 while :; do
@@ -43,38 +45,80 @@ while :; do
   esac
 done
 
-if test $skip_gnulib = false; then
-  if test -z "$GNULIB_TOOL"; then
-    # Check out gnulib in a subdirectory 'gnulib'.
-    if test -d gnulib; then
-      (cd gnulib && git pull)
+# ========== Copy files from gnulib, automake, or the internet. ==========
+
+# Find GNU Make.
+if test -n "${MAKE}" && test "`${MAKE} --version 2>/dev/null | sed -e 's/ [0-9].*//' -e 1q`" = 'GNU Make'; then
+  GMAKE="${MAKE}"
+else
+  if test "`make --version 2>/dev/null | sed -e 's/ [0-9].*//' -e 1q`" = 'GNU Make'; then
+    GMAKE=make
+  else
+    if test "`gmake --version 2>/dev/null | sed -e 's/ [0-9].*//' -e 1q`" = 'GNU Make'; then
+      GMAKE=gmake
     else
-      git clone git://git.savannah.gnu.org/gnulib.git
+      echo "*** - GNU Make not found" 1>&2
+      exit 1
     fi
-    # Now it should contain a gnulib-tool.
-    if test -f gnulib/gnulib-tool; then
-      GNULIB_TOOL=`pwd`/gnulib/gnulib-tool
-    else
-      echo "** warning: gnulib-tool not found" 1>&2
-    fi
-  fi
-  # Skip the gnulib-tool step if gnulib-tool was not found.
-  if test -n "$GNULIB_TOOL"; then
-    make -f Makefile.devel srclib/Makefile.gnulib GNULIB_TOOL="$GNULIB_TOOL"
   fi
 fi
 
-rm -f configure config.h.in include/iconv.h.build.in
-rm -f lib/aliases.h lib/aliases_sysaix.h lib/aliases_syshpux.h lib/aliases_sysosf1.h lib/aliases_syssolaris.h
-rm -f lib/aliases_aix.h lib/aliases_aix_sysaix.h
-rm -f lib/aliases_osf1.h lib/aliases_osf1_sysosf1.h
-rm -f lib/aliases_dos.h
-rm -f lib/aliases_extra.h
-rm -f lib/flags.h
-rm -f lib/translit.h
-rm -f man/iconv.1.html man/iconv.3.html man/iconv_close.3.html man/iconv_open.3.html
-make -f Makefile.devel
+if test $skip_gnulib = false; then
+  if test -n "$GNULIB_SRCDIR"; then
+    test -d "$GNULIB_SRCDIR" || {
+      echo "*** GNULIB_SRCDIR is set but does not point to an existing directory." 1>&2
+      exit 1
+    }
+  else
+    GNULIB_SRCDIR=`pwd`/gnulib
+    test -d "$GNULIB_SRCDIR" || {
+      echo "*** Subdirectory 'gnulib' does not yet exist. Use './gitsub.sh pull' to create it, or set the environment variable GNULIB_SRCDIR." 1>&2
+      exit 1
+    }
+  fi
+  # Now it should contain a gnulib-tool.
+  GNULIB_TOOL="$GNULIB_SRCDIR/gnulib-tool"
+  test -f "$GNULIB_TOOL" || {
+    echo "*** gnulib-tool not found." 1>&2
+    exit 1
+  }
+  for file in build-aux/compile build-aux/ar-lib; do
+    $GNULIB_TOOL --copy-file $file || exit $?
+    chmod a+x $file || exit $?
+  done
+  $GMAKE -f Makefile.devel \
+         gnulib-clean srclib/Makefile.gnulib gnulib-imported-files srclib/Makefile.in \
+         GNULIB_TOOL="$GNULIB_TOOL"
+fi
+
+# Copy files into the libcharset subpackage, so that libcharset/autogen.sh
+# does not need to invoke gnulib-tool nor automake.
+for file in INSTALL.generic; do
+  cp -p $file libcharset/$file || exit $?
+done
+for file in config.guess config.libpath config.sub install-sh libtool-reloc mkinstalldirs; do
+  cp -p build-aux/$file libcharset/build-aux/$file || exit $?
+done
+for file in \
+  build-to-host.m4 \
+  codeset.m4 \
+  fcntl-o.m4 \
+  host-cpu-c-abi.m4 \
+  lib-ld.m4 \
+  libdl.m4 \
+  relocatable.m4 \
+  relocatable-lib.m4 \
+  visibility.m4 \
+; do
+  cp -p srcm4/$file libcharset/m4/$file || exit $?
+done
+
+# ========== Generate files. ==========
+
+$GMAKE -f Makefile.devel totally-clean all || exit $?
 
 (cd libcharset
- ./autogen.sh
+ ./autogen.sh || exit $?
 )
+
+echo "$0: done.  Now you can run './configure'."

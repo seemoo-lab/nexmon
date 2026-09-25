@@ -1,0 +1,10 @@
+This example relies on Go (package: golang-go, if available, or gccgo).
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

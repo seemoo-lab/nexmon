@@ -5,34 +5,107 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PROTO_DATA_H__
 #define __PROTO_DATA_H__
 
+#include "ws_symbol_export.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-#include "ws_symbol_export.h"
+/** @file
+ * Dissected packet data and metadata.
+ */
 
-WS_DLL_PUBLIC void p_add_proto_data(wmem_allocator_t *scope, struct _packet_info* pinfo, int proto, guint32 key, void *proto_data);
-WS_DLL_PUBLIC void *p_get_proto_data(wmem_allocator_t *scope, struct _packet_info* pinfo, int proto, guint32 key);
-WS_DLL_PUBLIC void p_remove_proto_data(wmem_allocator_t *scope, struct _packet_info* pinfo, int proto, guint32 key);
-gchar *p_get_proto_name_and_key(wmem_allocator_t *scope, struct _packet_info* pinfo, guint pfd_index);
+/** @defgroup packetinfo Packet Data and Metadata
+ *
+ * @{
+ */
+
+/* Allocator should be either pinfo->pool or wmem_file_scope() */
+
+/**
+ * Add data associated with a protocol.
+ *
+ * This can be used to persist file-scoped data between packets or share
+ * packet-scoped data between dissectors without having to use global
+ * variables.
+ *
+ * Each call adds a new entry to the protocol data list.
+ *
+ * @param scope The memory scope, either pinfo->pool or wmem_file_scope().
+ * @param pinfo This dissection's packet info.
+ * @param proto The protocol ID.
+ * @param key A unique key for the data.
+ * @param proto_data The data to add.
+ */
+WS_DLL_PUBLIC void p_add_proto_data(wmem_allocator_t *scope, struct _packet_info* pinfo, int proto, uint32_t key, void *proto_data);
+
+/**
+ * Set data associated with a protocol.
+ *
+ * This can be used to persist file-scoped data between packets or share
+ * packet-scoped data between dissectors without having to use global
+ * variables.
+ *
+ * If the protocol data list contains a matching entry it will be updated,
+ * otherwise a new entry will be created.
+ *
+ * @param scope The memory scope, either pinfo->pool or wmem_file_scope().
+ * @param pinfo This dissection's packet info.
+ * @param proto The protocol ID.
+ * @param key A unique key for the data.
+ * @param proto_data The data to add.
+ */
+WS_DLL_PUBLIC void p_set_proto_data(wmem_allocator_t *scope, struct _packet_info* pinfo, int proto, uint32_t key, void *proto_data);
+
+/**
+ * Fetch data associated with a protocol.
+ *
+ * @param scope The memory scope, typically pinfo->pool or wmem_file_scope().
+ * @param pinfo This dissection's packet info.
+ * @param proto The protocol ID.
+ * @param key A unique key for the data.
+ * @return The data set using p_set_proto_data or most recently added
+ * using p_add_proto_data if the scope, protocol ID, and key match,
+ * otherwise NULL.
+ */
+WS_DLL_PUBLIC void *p_get_proto_data(wmem_allocator_t *scope, struct _packet_info* pinfo, int proto, uint32_t key);
+
+/**
+ * Remove data associated with a protocol.
+ *
+ * @param scope The memory scope, typically pinfo->pool or wmem_file_scope().
+ * @param pinfo This dissection's packet info.
+ * @param proto The protocol ID.
+ * @param key A unique key for the data.
+ */
+WS_DLL_PUBLIC void p_remove_proto_data(wmem_allocator_t *scope, struct _packet_info* pinfo, int proto, uint32_t key);
+
+char *p_get_proto_name_and_key(wmem_allocator_t *scope, struct _packet_info* pinfo, unsigned pfd_index);
+
+/**
+ * Initialize or update a per-protocol and per-packet check for recursion, nesting, cycling, etc.
+ *
+ * @param pinfo Packet info for this packet.
+ * @param proto The current protocol.
+ * @param depth The depth to set.
+ */
+WS_DLL_PUBLIC void p_set_proto_depth(struct _packet_info* pinfo, int proto, unsigned depth);
+
+/**
+ * Fetch the current per-protocol and per-packet recursion, nesting, or cycling depth.
+ * @param pinfo Packet info for this packet.
+ * @param proto The current protocol.
+ * @return The current depth.
+ */
+WS_DLL_PUBLIC unsigned p_get_proto_depth(struct _packet_info* pinfo, int proto);
+
+/** @} */
 
 #ifdef __cplusplus
 }
@@ -41,7 +114,7 @@ gchar *p_get_proto_name_and_key(wmem_allocator_t *scope, struct _packet_info* pi
 #endif  /* __PROTO_DATA__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

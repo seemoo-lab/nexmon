@@ -3,7 +3,7 @@
 
 # Test EmacsLisp support: --add-comments option.
 
-cat <<EOF > xg-el-1.el
+cat <<\EOF > xg-el-1.el
 ; This comment will not be extracted.
 (princ (_ "help"))
 ;;  TRANSLATORS: This is an extracted comment.
@@ -20,7 +20,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-el-1.tmp xg-el-1.el || Exit 1
 LC_ALL=C tr -d '\r' < xg-el-1.tmp.po > xg-el-1.po || Exit 1
 
-cat <<EOF > xg-el-1.ok
+cat <<\EOF > xg-el-1.ok
 msgid "help"
 msgstr ""
 

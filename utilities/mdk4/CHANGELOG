@@ -1,0 +1,20 @@
+MDK4 Changelog
+
+V1:
+*Support two wireless card, one for receiving data, another for injecting data
+
+*Amok mode(option d)
+	Handle more packet types when sniffing data frames to find targets
+	Support block the specified ESSID/BSSID/Client MAC in command option
+
+
+
+
+
+MDK3
+v8:
+* Updated OSdep
+
+v7: Initial Release of new codebase
+* Complete Rewrite
+* Tons of new features

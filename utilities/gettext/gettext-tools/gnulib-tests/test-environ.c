@@ -1,9 +1,9 @@
 /* Test of environ variable.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2008.  */
 
@@ -21,13 +21,6 @@
 #include <unistd.h>
 
 #include <string.h>
-
-/* environ is the exported symbol referencing the internal
-   __cygwin_environ variable on cygwin64:
-   <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
-#if defined __CYGWIN__ && defined __x86_64__
-extern DLL_VARIABLE char **environ;
-#endif
 
 int
 main ()
@@ -42,7 +35,7 @@ main ()
 
   for (; (string = *remaining_variables) != NULL; remaining_variables++)
     {
-      if (strncmp (string, "PATH=", 5) == 0)
+      if (str_startswith (string, "PATH="))
         /* Found the PATH environment variable.  */
         return 0;
     }

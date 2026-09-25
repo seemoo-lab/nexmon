@@ -6,19 +6,9 @@ and save it in a packet-capture file.
 
 # Copyright (C) 2013 by Gilbert Ramirez <gram@alumni.rice.edu>
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# TODO: update to python3
 
 import getopt
 import os
@@ -58,7 +48,7 @@ class BackTrace:
                 # what we expect it should be.
                 frame_num = int(m.group("num"))
                 if frame_num != frame_will_be:
-                    sys.exit("Found frame %d instead of %d" % \
+                    sys.exit("Found frame %d instead of %d" %
                             (frame_num, frame_will_be))
 
                 # Find the function name. XXX - need to handle '???'
@@ -89,6 +79,7 @@ class BackTrace:
 # Some values from wiretap; wiretap should be a shared
 # libray and a Python module should be created for it so
 # this program could just write a libpcap file directly.
+WTAP_ENCAP_NONE                       = -2
 WTAP_ENCAP_PER_PACKET                 = -1
 WTAP_ENCAP_UNKNOWN                    = 0
 WTAP_ENCAP_ETHERNET                   = 1
@@ -145,6 +136,7 @@ wtap_to_pcap_map = {
 
 
 wtap_name = {
+        WTAP_ENCAP_NONE                       : "None",
         WTAP_ENCAP_UNKNOWN                    : "Unknown",
         WTAP_ENCAP_ETHERNET                   : "Ethernet",
         WTAP_ENCAP_TOKEN_RING                 : "Token-Ring",
@@ -205,7 +197,7 @@ def run_gdb(*commands):
     except IOError, err:
         try:
             os.unlink(fname)
-        except:
+        except Exception:
             pass
         sys.exit("Cannot close %s: %s" % (fname, err))
 
@@ -219,17 +211,17 @@ def run_gdb(*commands):
     except OSError, err:
         try:
             os.unlink(fname)
-        except:
+        except Exception:
             pass
         sys.exit("Cannot run gdb: %s" % (err,))
 
     # Get gdb's output
     result = pipe.readlines()
     error = pipe.close()
-    if error != None:
+    if error is not None:
         try:
             os.unlink(fname)
-        except:
+        except Exception:
             pass
         sys.exit("gdb returned an exit value of %s" % (error,))
 
@@ -237,7 +229,7 @@ def run_gdb(*commands):
     # Remove the temp file and return the results
     try:
         os.unlink(fname)
-    except:
+    except Exception:
         pass
     return result
 
@@ -353,7 +345,7 @@ def make_cap_file(pkt_data, lnk_t):
     except IOError, err:
         try:
             os.unlink(fname)
-        except:
+        except Exception:
             pass
         sys.exit("Cannot close %s: %s" % (fname, err))
 
@@ -366,14 +358,14 @@ def make_cap_file(pkt_data, lnk_t):
     except OSError, err:
         try:
             os.unlink(fname)
-        except:
+        except Exception:
             pass
         sys.exit("Cannot run text2pcap: %s" % (err,))
 
     # Remove the temp file
     try:
         os.unlink(fname)
-    except:
+    except Exception:
         pass
 
     if retval == 0:
@@ -460,7 +452,7 @@ def main():
         else:
             assert 0
 
-    if output_file == None:
+    if output_file is None:
         usage()
 
     if len(args) != 2:
@@ -475,7 +467,7 @@ if __name__ == '__main__':
     main()
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 4

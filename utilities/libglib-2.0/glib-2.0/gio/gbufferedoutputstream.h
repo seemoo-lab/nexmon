@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,11 +38,6 @@ G_BEGIN_DECLS
 #define G_IS_BUFFERED_OUTPUT_STREAM_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_BUFFERED_OUTPUT_STREAM))
 #define G_BUFFERED_OUTPUT_STREAM_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), G_TYPE_BUFFERED_OUTPUT_STREAM, GBufferedOutputStreamClass))
 
-/**
- * GBufferedOutputStream:
- *
- * An implementation of #GFilterOutputStream with a sized buffer.
- **/
 typedef struct _GBufferedOutputStreamClass    GBufferedOutputStreamClass;
 typedef struct _GBufferedOutputStreamPrivate  GBufferedOutputStreamPrivate;
 
@@ -63,21 +60,21 @@ struct _GBufferedOutputStreamClass
 };
 
 
-GLIB_AVAILABLE_IN_ALL
-GType          g_buffered_output_stream_get_type        (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
+GType          g_buffered_output_stream_get_type        (void);
+GIO_AVAILABLE_IN_ALL
 GOutputStream* g_buffered_output_stream_new             (GOutputStream         *base_stream);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GOutputStream* g_buffered_output_stream_new_sized       (GOutputStream         *base_stream,
 							 gsize                  size);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gsize          g_buffered_output_stream_get_buffer_size (GBufferedOutputStream *stream);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void           g_buffered_output_stream_set_buffer_size (GBufferedOutputStream *stream,
 							 gsize                  size);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean       g_buffered_output_stream_get_auto_grow   (GBufferedOutputStream *stream);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void           g_buffered_output_stream_set_auto_grow   (GBufferedOutputStream *stream,
 							 gboolean               auto_grow);
 

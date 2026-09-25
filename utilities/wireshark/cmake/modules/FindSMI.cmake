@@ -20,7 +20,11 @@ FindWSWinLibs("libsmi-.*" "SMI_HINTS")
 
 FIND_PATH(SMI_INCLUDE_DIR smi.h HINTS "${SMI_HINTS}/include" )
 
-SET(SMI_NAMES smi libsmi-2)
+IF(MSVC)
+  SET(SMI_NAMES libsmi-2)
+ELSE()
+  SET(SMI_NAMES smi libsmi-2)
+ENDIF()
 FIND_LIBRARY(SMI_LIBRARY NAMES ${SMI_NAMES} HINTS "${SMI_HINTS}/lib" )
 
 # handle the QUIETLY and REQUIRED arguments and set SMI_FOUND to TRUE if
@@ -47,6 +51,16 @@ IF(SMI_FOUND)
     )
     mark_as_advanced( SMI_DLL_DIR SMI_DLL )
   endif()
+
+  include(CheckSymbolExists)
+  cmake_push_check_state()
+  set(CMAKE_REQUIRED_INCLUDES ${SMI_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_LIBRARIES ${SMI_LIBRARIES})
+  # On Windows symbol visibility for global variables defaults to hidden
+  # and libsmi doesn't use any visibility decorators.
+  check_symbol_exists("smi_version_string" "smi.h" HAVE_SMI_VERSION_STRING)
+  cmake_pop_check_state()
+
 ELSE(SMI_FOUND)
   SET( SMI_LIBRARIES )
   SET( SMI_INCLUDE_DIRS )

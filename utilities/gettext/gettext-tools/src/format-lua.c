@@ -1,6 +1,5 @@
 /* Lua format strings.
-   Copyright (C) 2012, 2015-2016 Free Software Foundation, Inc.
-   Written by Ľubomír Remák <lubomirr@lubomirr.eu>, 2012.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
+/* Written by Ľubomír Remák and Bruno Haible.  */
+
 #include <config.h>
-#endif
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -33,18 +32,19 @@
 
 /* The Lua format strings are described in the Lua manual,
    which can be found at:
-   http://www.lua.org/manual/5.2/manual.html
+   https://www.lua.org/manual/5.2/manual.html
+   They are implemented in lua-5.2.4/src/lstrlib.c.
 
    A directive
-   - starts with '%'
+   - starts with '%',
    - is optionally followed by any of the characters '0', '-', ' ', or
      each of which acts as a flag,
    - is optionally followed by a width specification: a nonempty digit
-     sequence,
-   - is optionally followed by '.' and a precision specification: a nonempty
-     digit sequence,
+     sequence with at most 2 digits,
+   - is optionally followed by '.' and a precision specification: an optional
+     nonempty digit sequence with at most 2 digits,
    - is finished by a specifier
-       - 's', 'q', that needs a string argument,
+       - 's', 'q', that need a string argument,
        - 'd', 'i', 'o', 'u', 'X', 'x', that need an integer argument,
        - 'A', 'a', 'E', 'e', 'f', 'G', 'g', that need a floating-point argument,
        - 'c', that needs a character argument.
@@ -67,19 +67,10 @@ enum format_arg_type
 
 struct spec
 {
-  unsigned int directives;
-  unsigned int format_args_count;
-  unsigned int allocated;
+  size_t directives;
+  size_t format_args_count;
   enum format_arg_type *format_args;
 };
-
-/* Locale independent test for a decimal digit.
-   Argument can be  'char' or 'unsigned char'.  (Whereas the argument of
-   <ctype.h> isdigit must be an 'unsigned char'.)  */
-#undef isdigit
-#define isdigit(c) ((unsigned int) ((c) - '0') < 10)
-
-static void format_free (void *descr);
 
 static void *
 format_parse (const char *format, bool translated, char *fdi,
@@ -88,38 +79,44 @@ format_parse (const char *format, bool translated, char *fdi,
 
   const char *format_start = format;
   const char *fatstr = format;
-  struct spec *result = NULL;
-  result = XMALLOC (struct spec);
-  result->directives = 0;
-  result->allocated = 0;
-  result->format_args_count = 0;
-  result->format_args = NULL;
 
+  struct spec spec;
+  spec.directives = 0;
+  spec.format_args_count = 0;
+  spec.format_args = NULL;
+  size_t format_args_allocated = 0;
 
   for (; *fatstr != '\0';)
     {
       if (*fatstr++ == '%')
         {
           FDI_SET (fatstr - 1, FMTDIR_START);
-          result->directives++;
+          spec.directives++;
 
           if (*fatstr != '%')
             {
-              enum format_arg_type type;
-
-              /* Remove width. */
-              while (isdigit (*fatstr))
-                fatstr++;
+              /* Parse width. */
+              if (c_isdigit (*fatstr))
+                {
+                  fatstr++;
+                  if (c_isdigit (*fatstr))
+                    fatstr++;
+                }
 
               if (*fatstr == '.')
                 {
                   fatstr++;
 
-                  /* Remove precision. */
-                  while (isdigit (*fatstr))
-                    fatstr++;
+                  /* Parse precision. */
+                  if (c_isdigit (*fatstr))
+                    {
+                      fatstr++;
+                      if (c_isdigit (*fatstr))
+                        fatstr++;
+                    }
                 }
 
+              enum format_arg_type type;
               switch (*fatstr)
                 {
                 case 'c':
@@ -157,33 +154,35 @@ format_parse (const char *format, bool translated, char *fdi,
                   else
                     {
                       *invalid_reason =
-                        INVALID_CONVERSION_SPECIFIER (result->
-                                                      format_args_count + 1,
+                        INVALID_CONVERSION_SPECIFIER (spec.format_args_count + 1,
                                                       *fatstr);
                       FDI_SET (fatstr, FMTDIR_ERROR);
                     }
-                  goto fmt_error;
+                  goto bad_format;
                 }
 
-              if (result->format_args_count == result->allocated)
+              if (spec.format_args_count == format_args_allocated)
                 {
-                  result->allocated = 2 * result->allocated + 10;
-                  result->format_args =
-                    xrealloc (result->format_args,
-                              result->allocated *
+                  format_args_allocated = 2 * format_args_allocated + 10;
+                  spec.format_args =
+                    xrealloc (spec.format_args,
+                              format_args_allocated *
                               sizeof (enum format_arg_type));
                 }
-              result->format_args[result->format_args_count++] = type;
+              spec.format_args[spec.format_args_count++] = type;
             }
           FDI_SET (fatstr, FMTDIR_END);
           fatstr++;
         }
     }
 
+  struct spec *result = XMALLOC (struct spec);
+  *result = spec;
   return result;
 
-fmt_error:
-  format_free (result);
+ bad_format:
+  if (spec.format_args != NULL)
+    free (spec.format_args);
   return NULL;
 }
 
@@ -207,46 +206,55 @@ format_get_number_of_directives (void *descr)
 
 static bool
 format_check (void *msgid_descr, void *msgstr_descr, bool equality,
-              formatstring_error_logger_t error_logger,
+              formatstring_error_logger_t error_logger, void *error_logger_data,
               const char *pretty_msgid, const char *pretty_msgstr)
 {
   struct spec *spec1 = (struct spec *) msgid_descr;
   struct spec *spec2 = (struct spec *) msgstr_descr;
+  bool err = false;
 
   if (spec1->format_args_count + spec2->format_args_count > 0)
     {
-      unsigned int i, n1, n2;
+      size_t n1 = spec1->format_args_count;
+      size_t n2 = spec2->format_args_count;
 
-      n1 = spec1->format_args_count;
-      n2 = spec2->format_args_count;
-
-      for (i = 0; i < n1 || i < n2; i++)
+      /* Check that the argument counts are the same.  */
+      if (n1 < n2)
         {
-          if (i >= n1)
-            {
-              if (error_logger)
-                error_logger (_("a format specification for argument %u, as in '%s', doesn't exist in '%s'"),
-                              i + 1, pretty_msgstr, pretty_msgid);
-              return true;
-            }
-          else if (i >= n2)
-            {
-              if (error_logger)
-                error_logger (_("a format specification for argument %u doesn't exist in '%s'"),
-                              i + 1, pretty_msgstr);
-              return true;
-            }
-          else if (spec1->format_args[i] != spec2->format_args[i])
-            {
-              if (error_logger)
-                error_logger (_("format specifications in '%s' and '%s' for argument %u are not the same"),
-                              pretty_msgid, pretty_msgstr, i + 1);
-              return true;
-            }
+          if (error_logger)
+            error_logger (error_logger_data,
+                          _("a format specification for argument %zu, as in '%s', doesn't exist in '%s'"),
+                          n1 + 1, pretty_msgstr, pretty_msgid);
+          err = true;
+        }
+      else if (n1 > n2 && equality)
+        {
+          if (error_logger)
+            error_logger (error_logger_data,
+                          _("a format specification for argument %zu doesn't exist in '%s'"),
+                          n2 + 1, pretty_msgstr);
+          err = true;
+        }
+      else
+        {
+          /* Check that the argument types are the same.  */
+          if (!err)
+            for (size_t i = 0; i < n2; i++)
+              {
+                if (spec1->format_args[i] != spec2->format_args[i])
+                  {
+                    if (error_logger)
+                      error_logger (error_logger_data,
+                                    _("format specifications in '%s' and '%s' for argument %zu are not the same"),
+                                    pretty_msgid, pretty_msgstr, i + 1);
+                    err = true;
+                    break;
+                  }
+              }
         }
     }
 
-  return false;
+  return err;
 }
 
 struct formatstring_parser formatstring_lua =
@@ -257,6 +265,7 @@ struct formatstring_parser formatstring_lua =
   NULL,
   format_check
 };
+
 
 #ifdef TEST
 
@@ -269,7 +278,6 @@ static void
 format_print (void *descr)
 {
   struct spec *spec = (struct spec *) descr;
-  unsigned int i;
 
   if (spec == NULL)
     {
@@ -278,7 +286,7 @@ format_print (void *descr)
     }
 
   printf ("(");
-  for (i = 0; i < spec->format_args_count; i++)
+  for (size_t i = 0; i < spec->format_args_count; i++)
     {
       if (i > 0)
         printf (" ");
@@ -313,18 +321,14 @@ main ()
     {
       char *line = NULL;
       size_t line_size = 0;
-      int line_len;
-      char *invalid_reason;
-      void *descr;
-
-      line_len = getline (&line, &line_size, stdin);
+      int line_len = getline (&line, &line_size, stdin);
       if (line_len < 0)
         break;
       if (line_len > 0 && line[line_len - 1] == '\n')
         line[--line_len] = '\0';
 
-      invalid_reason = NULL;
-      descr = format_parse (line, false, NULL, &invalid_reason);
+      char *invalid_reason = NULL;
+      void *descr = format_parse (line, false, NULL, &invalid_reason);
 
       format_print (descr);
       printf ("\n");
@@ -341,7 +345,7 @@ main ()
 /*
  * For Emacs M-x compile
  * Local Variables:
- * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../intl -DHAVE_CONFIG_H -DTEST format-lua.c ../gnulib-lib/libgettextlib.la"
+ * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../../gettext-runtime/intl -DTEST format-lua.c ../gnulib-lib/libgettextlib.la"
  * End:
  */
 

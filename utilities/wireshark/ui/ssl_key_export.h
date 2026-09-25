@@ -1,4 +1,4 @@
-/* export_sslkeys.h
+/** @file
  *
  * SSL session key utilities. Copied from ui/gkt/export_sslkeys.c
  * by Sake Blok <sake@euronet.nl> (20110526)
@@ -7,23 +7,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __SSL_KEY_EXPORT_H__
 #define __SSL_KEY_EXPORT_H__
+
+#include "cfile.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,26 +27,21 @@ extern int ssl_session_key_count(void);
 
 /** Dump our SSL Session Keys to a string
  *
+ * @param[out] length Length of returned string.
+ *
  * @return A string containing all the SSL Session Keys. Must be freed with
  * g_free().
  */
-extern gchar* ssl_export_sessions(void);
+extern char* ssl_export_sessions(size_t *length);
+
+/** Add a DSB with the used TLS secrets to a capture file.
+ *
+ * @param cf The capture file
+ */
+extern void tls_export_dsb(capture_file *cf);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 #endif /* __SSL_KEY_EXPORT_H__ */
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

@@ -40,7 +40,7 @@ main (int argc, char *argv[])
       { "replace", 'r', 0, G_OPTION_ARG_NONE, &opt_replace, "Replace existing name if possible", NULL },
       { "allow-replacement", 'a', 0, G_OPTION_ARG_NONE, &opt_allow_replacement, "Allow replacement", NULL },
       { "name", 'n', 0, G_OPTION_ARG_STRING, &opt_name, "Name to acquire", NULL },
-      { NULL}
+      G_OPTION_ENTRY_NULL
     };
 
   error = NULL;

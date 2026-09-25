@@ -1,3 +1,60 @@
+New in 1.19:
+* Fixed a bug in the GB18030 converter.
+* Special support for OS/2: Encoding names that are results of
+  kLIBC nl_langinfo(CODESET) are recognized as aliases.
+  (Contributed by KO Myung-Hun.)
+* Fixed --enable-relocatable on native Windows.
+
+New in 1.18:
+* Many more transliterations, in particular also of Emoji characters.
+* The iconv_open function is now POSIX:2024 compliant: it recognizes a
+  suffix //NON_IDENTICAL_DISCARD in the 'tocode' argument, with the effect
+  that characters that cannot be represented in the target character set
+  will be silently discarded. Whereas the suffix //IGNORE in the 'tocode'
+  argument has the effect of discarding not only characters that cannot be
+  represented in the target character set, but also invalid multibyte
+  sequences in the input.
+  Accordingly, the iconvctl function accepts requests
+    ICONV_GET_DISCARD_INVALID, ICONV_SET_DISCARD_INVALID,
+    ICONV_GET_DISCARD_NON_IDENTICAL, ICONV_SET_DISCARD_NON_IDENTICAL.
+* The iconv_open function and the iconv program now support multiple suffixes,
+  such as //TRANSLIT//IGNORE, not only one.
+* GB18030 is now an alias for GB18030:2005. A new converter for GB18030:2022
+  is added. Since this encoding merely cleans up a few private-use-area
+  mappings, you can continue to use the GB18030 converter, for backward
+  compatibility. Its Unicode to GB18030 conversion direction has been
+  enhanced, to help transitioning away from PUA code points.
+* When converting from/to an EBCDIC encoding, a non-standard way of
+  converting newlines can be requested
+    - at the C level, by calling iconvctl with argument ICONV_SET_FROM_SURFACE
+      or ICONV_SET_TO_SURFACE, or
+    - from the iconv program, by setting the environment variable
+      ICONV_EBCDIC_ZOS_UNIX to a non-empty value.
+* Special support for z/OS: The iconv program adds a charset metadata tag to
+  its output file. (Contributed by Mike Fulton.)
+* For conversions from UCS-2, UCS-4, UTF-16, UTF-32, invoking
+  iconv(cd,NULL,NULL,...) now preserves the byte order state.
+
+New in 1.17:
+* The libiconv library is now licensed under the LGPL version 2.1, instead of
+  the LGPL version 2.0. The iconv program continues to be licensed under GPL
+  version 3.
+* Added converters for many single-byte EBCDIC encodings:
+  IBM-{037,273,277,278,280,282,284,285,297,423,424,425,500,838,870,871,875},
+  IBM-{880,905,924,1025,1026,1047,1097,1112,1122,1123,1130,1132,1137,1140},
+  IBM-{1141,1142,1143,1144,1145,1146,1147,1148,1149,1153,1154,1155,1156,1157},
+  IBM-{1158,1160,1164,1165,1166,4971,12712,16804}.
+  They are available through the configure option '--enable-extra-encodings'.
+
+New in 1.16:
+* The preloadable library has been removed.
+
+New in 1.15:
+* The UTF-8 converter now rejects surrogates and out-of-range code points.
+* Added ISO-2022-JP-MS converter.
+* Updated the CP1255 converter to map one more character.
+* The functions now support strings longer than 2 GB.
+
 New in 1.14:
 * The 'iconv' program now produces its output as soon as it can. It no longer
   unnecessarily waits for more input.

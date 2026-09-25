@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -29,7 +17,7 @@
  * Information was drawn from:
  *   ?
  *
- * It uses Ether ID 0x08ff which is not not officially registered.
+ * It uses Ether ID 0x08ff which is not officially registered.
  *
  */
 
@@ -38,8 +26,6 @@
 #include <epan/packet.h>
 #include <epan/etypes.h>
 #include <epan/capture_dissectors.h>
-
-#include "packet-ax25.h"
 
 #define STRLEN	80
 
@@ -51,10 +37,12 @@ void proto_reg_handoff_bpq(void);
 static dissector_handle_t bpq_handle;
 static dissector_handle_t ax25_handle;
 
-static int proto_bpq            = -1;
-static int hf_bpq_len		= -1;
+static capture_dissector_handle_t ax25_cap_handle;
 
-static gint ett_bpq = -1;
+static int proto_bpq;
+static int hf_bpq_len;
+
+static int ett_bpq;
 
 static int
 dissect_bpq( tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_ )
@@ -62,7 +50,7 @@ dissect_bpq( tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	proto_item *ti;
 	proto_tree *bpq_tree;
 	int	    offset;
-	guint16	    bpq_len;
+	uint16_t	    bpq_len;
 	tvbuff_t   *next_tvb;
 
 
@@ -102,17 +90,17 @@ dissect_bpq( tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	return tvb_captured_length(tvb);
 }
 
-static gboolean
-capture_bpq( const guchar *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
+static bool
+capture_bpq( const unsigned char *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
 {
 	int l_offset;
 
 	if ( ! BYTES_ARE_IN_FRAME( offset, len, BPQ_HEADER_SIZE ) )
-		return FALSE;
+		return false;
 
 	l_offset = offset;
 	l_offset += BPQ_HEADER_SIZE; /* step over bpq header to point at the AX.25 packet*/
-	return capture_ax25( pd, l_offset, len, cpinfo, pseudo_header );
+	return call_capture_dissector( ax25_cap_handle, pd, l_offset, len, cpinfo, pseudo_header );
 }
 
 void
@@ -128,7 +116,7 @@ proto_register_bpq(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_bpq,
 	};
 
@@ -146,16 +134,20 @@ proto_register_bpq(void)
 void
 proto_reg_handoff_bpq(void)
 {
+	capture_dissector_handle_t bpq_cap_handle;
+
 	dissector_add_uint("ethertype", ETHERTYPE_BPQ, bpq_handle);
-	register_capture_dissector("ethertype", ETHERTYPE_BPQ, capture_bpq, proto_bpq);
+	bpq_cap_handle = create_capture_dissector_handle(capture_bpq, proto_bpq);
+	capture_dissector_add_uint("ethertype", ETHERTYPE_BPQ, bpq_cap_handle);
 
 	/* BPQ is only implemented for AX.25 */
 	ax25_handle     = find_dissector_add_dependency( "ax25", proto_bpq );
 
+	ax25_cap_handle = find_capture_dissector( "ax25" );
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,7 +1,5 @@
 /* xgettext Desktop Entry backend.
-   Copyright (C) 2014-2016 Free Software Foundation, Inc.
-
-   This file was written by Daiki Ueno <ueno@gnu.org>, 2014.
+   Copyright (C) 2014-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Daiki Ueno.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "x-desktop.h"
@@ -29,13 +27,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <error.h>
 #include "message.h"
 #include "xgettext.h"
-#include "error.h"
-#include "error-progname.h"
+#include "xg-message.h"
 #include "xalloc.h"
 #include "xvasprintf.h"
-#include "hash.h"
+#include "mem-hash-map.h"
 #include "gettext.h"
 #include "read-desktop.h"
 #include "po-charset.h"
@@ -43,18 +41,18 @@
 
 #define _(s) gettext(s)
 
-#define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
-
 /* ====================== Keyword set customization.  ====================== */
 
 /* The syntax of a Desktop Entry file is defined at
-   http://standards.freedesktop.org/desktop-entry-spec/latest/index.html
+   https://standards.freedesktop.org/desktop-entry-spec/latest/index.html
 
-   Basically, values with 'localestring' type can be translated.
+   Basically, values with 'localestring' type can be localized.
+   However, the values of 'Icon', while being localizable, are not supported
+   by xgettext.  See the documentation for more info.
 
    The type of a value is determined by looking at the key associated
    with it.  The list of available keys are listed on:
-   http://standards.freedesktop.org/desktop-entry-spec/latest/ar01s05.html  */
+   https://standards.freedesktop.org/desktop-entry-spec/latest/ar01s04.html  */
 
 static hash_table keywords;
 static bool default_keywords = true;
@@ -116,17 +114,17 @@ extract_desktop_handle_pair (struct desktop_reader_ty *reader,
 {
   extract_desktop_reader_ty *extract_reader =
     (extract_desktop_reader_ty *) reader;
-  void *keyword_value;
 
+  void *keyword_value;
   if (!locale                   /* Skip already translated entry.  */
       && hash_find_entry (&keywords, key, strlen (key), &keyword_value) == 0)
     {
       bool is_list = (bool) keyword_value;
 
       remember_a_message (extract_reader->mlp, NULL,
-                          desktop_unescape_string (value, is_list),
-                          null_context, key_pos,
-                          NULL, savable_comment);
+                          desktop_unescape_string (value, is_list), false,
+                          false, null_context_region (), key_pos,
+                          NULL, savable_comment, false);
     }
   savable_comment_reset ();
 }
@@ -160,7 +158,7 @@ extract_desktop_handle_blank (struct desktop_reader_ty *reader,
   savable_comment_reset ();
 }
 
-desktop_reader_class_ty extract_methods =
+static desktop_reader_class_ty extract_methods =
   {
     sizeof (extract_desktop_reader_ty),
     NULL,
@@ -188,6 +186,4 @@ extract_desktop (FILE *f,
 
   desktop_parse (reader, f, real_filename, logical_filename);
   desktop_reader_free (reader);
-
-  reader = NULL;
 }

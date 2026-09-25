@@ -13,19 +13,7 @@
  *   Stiftinger Thomas
  *   Werner Sebastian
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,6 +21,7 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/reassemble.h>
+#include <epan/conversation.h>
 #include "packet-tcp.h"
 
 void proto_register_openvpn(void);
@@ -59,40 +48,44 @@ void proto_reg_handoff_openvpn(void);
 #define P_CONTROL_HARD_RESET_CLIENT_V2  7
 #define P_CONTROL_HARD_RESET_SERVER_V2  8
 #define P_DATA_V2                       9
+#define P_CONTROL_HARD_RESET_CLIENT_V3  10
+#define P_CONTROL_WKC_V1                11
 
-static gint ett_openvpn = -1;
-static gint ett_openvpn_data = -1;
-static gint ett_openvpn_packetarray = -1;
-static gint ett_openvpn_type = -1;
-static gint hf_openvpn_data = -1;
-static gint hf_openvpn_fragment_bytes = -1;
-static gint hf_openvpn_hmac = -1;
-static gint hf_openvpn_keyid = -1;
-static gint hf_openvpn_mpid = -1;
-static gint hf_openvpn_mpid_arrayelement = -1;
-static gint hf_openvpn_mpid_arraylength = -1;
-static gint hf_openvpn_net_time = -1;
-static gint hf_openvpn_opcode = -1;
-static gint hf_openvpn_pdu_type = -1;
-static gint hf_openvpn_pid = -1;
-static gint hf_openvpn_plen = -1;
-static gint hf_openvpn_rsessionid = -1;
-static gint hf_openvpn_sessionid = -1;
-static gint hf_openvpn_peerid = -1;
-static gint proto_openvpn = -1;
+static int ett_openvpn;
+static int ett_openvpn_data;
+static int ett_openvpn_packetarray;
+static int ett_openvpn_type;
+static int ett_openvpn_wkc;
+static int hf_openvpn_data;
+static int hf_openvpn_wkc_data;
+static int hf_openvpn_wkc_length;
+static int hf_openvpn_fragment_bytes;
+static int hf_openvpn_hmac;
+static int hf_openvpn_keyid;
+static int hf_openvpn_mpid;
+static int hf_openvpn_mpid_arrayelement;
+static int hf_openvpn_mpid_arraylength;
+static int hf_openvpn_net_time;
+static int hf_openvpn_opcode;
+static int hf_openvpn_pdu_type;
+static int hf_openvpn_pid;
+static int hf_openvpn_plen;
+static int hf_openvpn_rsessionid;
+static int hf_openvpn_sessionid;
+static int hf_openvpn_peerid;
+static int proto_openvpn;
 
 static dissector_handle_t openvpn_udp_handle;
 static dissector_handle_t openvpn_tcp_handle;
 
-static dissector_handle_t ssl_handle;
+static dissector_handle_t tls_handle;
 
 /* Preferences */
-static gboolean pref_long_format       = TRUE;
-static gboolean pref_tls_auth          = FALSE;
-static gboolean pref_tls_auth_override = FALSE;
-static guint    pref_tcp_port          = OPENVPN_PORT;
-static guint    pref_udp_port          = OPENVPN_PORT;
-static guint    tls_auth_hmac_size     = 20; /* Default SHA-1 160 Bits */
+static bool     pref_long_format       = true;
+static bool     pref_tls_auth;
+static bool     pref_tls_auth_override;
+static bool     pref_tls_crypt_override;
+static unsigned tls_auth_hmac_size     = 20; /* Default SHA-1 160 Bits */
 
 static const value_string openvpn_message_types[] =
 {
@@ -105,24 +98,26 @@ static const value_string openvpn_message_types[] =
   {   P_CONTROL_HARD_RESET_CLIENT_V2,  "P_CONTROL_HARD_RESET_CLIENT_V2" },
   {   P_CONTROL_HARD_RESET_SERVER_V2,  "P_CONTROL_HARD_RESET_SERVER_V2" },
   {   P_DATA_V2,                       "P_DATA_V2" },
+  {   P_CONTROL_HARD_RESET_CLIENT_V3,  "P_CONTROL_HARD_RESET_CLIENT_V3" },
+  {   P_CONTROL_WKC_V1,                "P_CONTROL_WKC_V1" },
   {   0, NULL }
 };
 
 /* everything used during the reassembly process */
 static reassembly_table msg_reassembly_table;
 
-static gint ett_openvpn_fragment = -1;
-static gint ett_openvpn_fragments = -1;
-static gint hf_openvpn_fragment = -1;
-static gint hf_openvpn_fragment_count = -1;
-static gint hf_openvpn_fragment_error = -1;
-static gint hf_openvpn_fragment_multiple_tails = -1;
-static gint hf_openvpn_fragment_overlap = -1;
-static gint hf_openvpn_fragment_overlap_conflicts = -1;
-static gint hf_openvpn_fragment_too_long_fragment = -1;
-static gint hf_openvpn_fragments = -1;
-static gint hf_openvpn_reassembled_in = -1;
-static gint hf_openvpn_reassembled_length = -1;
+static int ett_openvpn_fragment;
+static int ett_openvpn_fragments;
+static int hf_openvpn_fragment;
+static int hf_openvpn_fragment_count;
+static int hf_openvpn_fragment_error;
+static int hf_openvpn_fragment_multiple_tails;
+static int hf_openvpn_fragment_overlap;
+static int hf_openvpn_fragment_overlap_conflicts;
+static int hf_openvpn_fragment_too_long_fragment;
+static int hf_openvpn_fragments;
+static int hf_openvpn_reassembled_in;
+static int hf_openvpn_reassembled_length;
 
 static const fragment_items openvpn_frag_items = {
   /* Fragment subtrees */
@@ -147,27 +142,14 @@ static const fragment_items openvpn_frag_items = {
   "Message fragments"
 };
 
-static void
-openvpn_reassemble_init(void)
-{
-  reassembly_table_init(&msg_reassembly_table,
-                        &addresses_reassembly_table_functions);
-}
-
-static void
-openvpn_reassemble_cleanup(void)
-{
-  reassembly_table_destroy(&msg_reassembly_table);
-}
-
 /* we check the leading 4 byte of a suspected hmac for 0x00 bytes,
    if more than 1 byte out of the 4 provided contains 0x00, the
    hmac is considered not valid, which suggests that no tls auth is used.
-   unfortunatly there is no other way to detect tls auth on the fly */
-static gboolean
-check_for_valid_hmac(guint32 hmac)
+   unfortunately there is no other way to detect tls auth on the fly */
+static bool
+check_for_valid_hmac(uint32_t hmac)
 {
-  gint c = 0;
+  int c = 0;
   if ((hmac & 0x000000FF) == 0x00000000) {
     c++;
   }
@@ -181,28 +163,26 @@ check_for_valid_hmac(guint32 hmac)
     c++;
   }
   if (c > 1) {
-    return FALSE;
+    return false;
   } else {
-    return TRUE;
+    return true;
   }
 }
 
 static int
-dissect_openvpn_msg_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *openvpn_tree, proto_tree *parent_tree, gint offset)
+dissect_openvpn_msg_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *openvpn_tree, proto_tree *parent_tree, int offset)
 {
-  gboolean       tls_auth;
-  guint          openvpn_keyid;
-  guint          openvpn_opcode;
-  guint32        msg_mpid      = -1;
-  guint32        msg_sessionid = -1;
-  guint8         openvpn_predict_tlsauth_arraylength;
+  bool           tls_auth;
+  bool           tls_crypt = false;
+  unsigned       openvpn_keyid;
+  unsigned       openvpn_opcode;
+  char          *openvpn_message_type;
+  uint32_t       msg_sessionid = -1;
+  uint8_t        openvpn_predict_tlsauth_arraylength;
   proto_item    *ti2;
   proto_tree    *packetarray_tree, *type_tree;
-  guint32        msg_length_remaining;
-  gboolean       msg_lastframe;
-  fragment_head *frag_msg;
-  tvbuff_t      *new_tvb;
-  gboolean       save_fragmented;
+  uint32_t       msg_length_remaining;
+  int            wkc_offset = -1;
 
   /* Clear out stuff in the info column */
   col_set_str(pinfo->cinfo, COL_PROTOCOL, PSNAME);
@@ -210,14 +190,12 @@ dissect_openvpn_msg_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *openvp
 
   /* read opcode and write to info column */
   openvpn_opcode = tvb_get_bits8(tvb, offset*8, 5);
-  col_append_fstr(pinfo->cinfo, COL_INFO, "MessageType: %s",
-                  val_to_str_const(openvpn_opcode, openvpn_message_types, "Unknown Messagetype"));
+  openvpn_message_type = val_to_str(pinfo->pool, openvpn_opcode, openvpn_message_types, "Unknown (0x%02x)");
 
+  col_append_fstr(pinfo->cinfo, COL_INFO, "MessageType: %s", openvpn_message_type);
 
   openvpn_keyid = tvb_get_bits8(tvb, offset*8 + 5, 3);
-  proto_item_append_text(parent_tree, ", Opcode: %s, Key ID: %d",
-                         val_to_str(openvpn_opcode, openvpn_message_types, "Unknown (0x%02x)"),
-                         openvpn_keyid);
+  proto_item_append_text(openvpn_tree, ", Opcode: %s, Key ID: %d", openvpn_message_type, openvpn_keyid);
 
   ti2 = proto_tree_add_item(openvpn_tree, hf_openvpn_pdu_type, tvb, offset, 1, ENC_BIG_ENDIAN);
   proto_item_append_text(ti2, " [opcode/key_id]");
@@ -239,40 +217,54 @@ dissect_openvpn_msg_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *openvp
     offset += 8;
 
     /* tls-auth detection (this can be overridden by preferences */
-    openvpn_predict_tlsauth_arraylength = tvb_get_guint8(tvb, offset);
+    openvpn_predict_tlsauth_arraylength = tvb_get_uint8(tvb, offset);
+
     /* if the first 4 bytes that would, if tls-auth is used, contain part of the hmac,
-       lack entropy, we asume no tls-auth is used */
-    if (pref_tls_auth_override == FALSE) {
+       lack entropy, we assume no tls-auth is used */
+    if (pref_tls_auth_override == false) {
       if ((openvpn_opcode != P_DATA_V1)
           && (openvpn_predict_tlsauth_arraylength > 0)
           && check_for_valid_hmac(tvb_get_ntohl(tvb, offset))) {
-        tls_auth = TRUE;
+        tls_auth = true;
       } else {
-        tls_auth = FALSE;
+        tls_auth = false;
       }
     } else {
       tls_auth = pref_tls_auth;
     }
 
-    if (tls_auth == TRUE) {
+    if (openvpn_opcode == P_CONTROL_HARD_RESET_CLIENT_V3 || openvpn_opcode == P_CONTROL_WKC_V1 || pref_tls_crypt_override == true) {
+      /* these opcodes are always tls-crypt*/
+      tls_crypt = true;
+      tls_auth = false;
+    }
+
+    if (tls_auth == true) {
       proto_tree_add_item(openvpn_tree, hf_openvpn_hmac, tvb, offset, tls_auth_hmac_size, ENC_NA);
       offset += tls_auth_hmac_size;
+    }
 
+    if (tls_auth == true || tls_crypt == true) {
       if (tvb_reported_length_remaining(tvb, offset) >= 8) {
         proto_tree_add_item(openvpn_tree, hf_openvpn_pid, tvb, offset, 4, ENC_BIG_ENDIAN);
         offset += 4;
 
-        if (pref_long_format) {
+        if (pref_long_format || tls_crypt == true) {
           proto_tree_add_item(openvpn_tree, hf_openvpn_net_time, tvb, offset, 4, ENC_BIG_ENDIAN);
           offset += 4;
         }
       }
+      if (tls_crypt == true) {
+        /* tls-crypt uses HMAC-SHA256 */
+        proto_tree_add_item(openvpn_tree, hf_openvpn_hmac, tvb, offset, 32, ENC_NA);
+        offset += 32;
+      }
     }
 
-    if (tvb_reported_length_remaining(tvb, offset) >= 1) {
+    if (tvb_reported_length_remaining(tvb, offset) >= 1 && tls_crypt == false) {
       /* read P_ACK packet-id array length */
-      gint pid_arraylength = tvb_get_guint8(tvb, offset);
-      gint i;
+      int pid_arraylength = tvb_get_uint8(tvb, offset);
+      int i;
       proto_tree_add_item(openvpn_tree, hf_openvpn_mpid_arraylength, tvb, offset, 1, ENC_BIG_ENDIAN);
       offset += 1;
 
@@ -292,10 +284,9 @@ dissect_openvpn_msg_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *openvp
     }
 
     /* if we have a P_CONTROL packet */
-    if (openvpn_opcode != P_ACK_V1) {
+    if (openvpn_opcode != P_ACK_V1 && tls_crypt == false) {
       /* read Message Packet-ID */
       if (tvb_reported_length_remaining(tvb, offset) >= 4) {
-        msg_mpid = tvb_get_bits32(tvb, offset*8, 32, ENC_BIG_ENDIAN);
         proto_tree_add_item(openvpn_tree, hf_openvpn_mpid, tvb, offset, 4, ENC_BIG_ENDIAN);
         offset += 4;
       }
@@ -309,90 +300,63 @@ dissect_openvpn_msg_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *openvp
     return tvb_captured_length(tvb);
   }
 
+  int data_len = msg_length_remaining;
+  int wkc_len = -1;
+  if ((openvpn_opcode == P_CONTROL_HARD_RESET_CLIENT_V3 || openvpn_opcode == P_CONTROL_WKC_V1)
+      &&  msg_length_remaining >= 2) {
+
+    wkc_len = tvb_get_ntohs(tvb, tvb_reported_length(tvb) - 2);
+    data_len = msg_length_remaining - wkc_len;
+  }
+
   if (openvpn_opcode != P_CONTROL_V1) {
     proto_tree *data_tree;
-    data_tree = proto_tree_add_subtree_format(openvpn_tree, tvb, offset, -1,
+    data_tree = proto_tree_add_subtree_format(openvpn_tree, tvb, offset, data_len,
                               ett_openvpn_data, NULL, "Data (%d bytes)",
-                              tvb_captured_length_remaining(tvb, offset));
+                              data_len);
 
-    proto_tree_add_item(data_tree, hf_openvpn_data, tvb, offset, -1, ENC_NA);
+    proto_tree_add_item(data_tree, hf_openvpn_data, tvb, offset, data_len, ENC_NA);
+
+    if (wkc_len > 0)
+    {
+      proto_tree *wkc_tree;
+      wkc_offset = tvb_reported_length(tvb) - wkc_len;
+
+      wkc_tree = proto_tree_add_subtree_format(openvpn_tree, tvb, wkc_offset, wkc_len,
+                                               ett_openvpn_wkc, NULL, "Wrapped client key (%d bytes)",
+                                               tvb_reported_length_remaining(tvb, wkc_offset));
+
+      proto_tree_add_item(wkc_tree, hf_openvpn_wkc_data, tvb, wkc_offset, wkc_len - 2, ENC_NA);
+      proto_tree_add_item(wkc_tree, hf_openvpn_wkc_length, tvb,  tvb_reported_length(tvb) - 2, 2, ENC_BIG_ENDIAN);
+    }
+
     return tvb_captured_length(tvb);
   }
 
-  /* Try to reassemble */
+  /* Control message, possibly fragmented, carrying TLS. Try to reassemble. */
 
-  /* an ordinary openvpn control packet contains 100 bytes only if it is part of a
-     fragmented message and is not the last fragment of the current transmission.
-     Note that the tvb contains exactly one openvpn PDU:
-     UDP: by definition;
-     TCP: because of the use of tcp_dissect_pdus().
-  */
-  if (msg_length_remaining == 100) {
-    msg_lastframe = FALSE;
-  } else {
-    msg_lastframe = TRUE;
+  streaming_reassembly_info_t *streaming_reassembly_info = NULL;
+
+  conversation_t *conv = find_or_create_conversation_by_id(pinfo, CONVERSATION_OPENVPN, msg_sessionid);
+  streaming_reassembly_info = conversation_get_proto_data(conv, proto_openvpn);
+  if (!streaming_reassembly_info) {
+    streaming_reassembly_info = streaming_reassembly_info_new();
+    conversation_add_proto_data(conv, proto_openvpn, streaming_reassembly_info);
   }
 
-  save_fragmented = pinfo->fragmented;
-  pinfo->fragmented = TRUE;
-
-  frag_msg = fragment_add_seq_next(
-    &msg_reassembly_table,
-    tvb,
-    offset,
-    pinfo,
-    msg_sessionid,         /* ID for fragments belonging together */
-    NULL,
-    msg_length_remaining,  /* fragment length - to the end        */
-    !(msg_lastframe));     /* More fragments ?                    */
-
-  /* show "data" fragment on tree unless "reassembled" message has just one part.       */
-  /* i.e., show if ("not reassembled") or ("reassembled" and "has multiple fragments")  */
-  if ((frag_msg == NULL) || (frag_msg->next != NULL)) {
-    proto_tree *data_tree;
-    data_tree = proto_tree_add_subtree_format(openvpn_tree, tvb, offset, -1,
-                              ett_openvpn_data, NULL, "Message fragment (%d bytes)",
-                              tvb_captured_length_remaining(tvb, offset));
-
-    proto_tree_add_item(data_tree, hf_openvpn_fragment_bytes, tvb, offset, -1, ENC_NA);
-    }
-
-  new_tvb = NULL;
-  if (frag_msg) {
-    if (msg_lastframe) { /* Reassembled */
-      new_tvb = process_reassembled_data(tvb, offset, pinfo, "Reassembled Message",
-                                         frag_msg, &openvpn_frag_items, NULL, openvpn_tree);
-      if (frag_msg->next != NULL) { /* multiple frags ? */
-        col_append_str(pinfo->cinfo, COL_INFO, " (Message Reassembled "); /* overwritten by next dissector */
-      }
-
-    } else { /* Not last packet of reassembled Short Message */
-      col_append_fstr(pinfo->cinfo, COL_INFO, " (Message fragment %d) ", msg_mpid);
-      if (pinfo->num != frag_msg->reassembled_in) {
-        /* Add a "Reassembled in" link if not reassembled in this frame */
-        proto_tree_add_uint(openvpn_tree, hf_openvpn_reassembled_in,
-                            tvb, 0, 0, frag_msg->reassembled_in);
-      }
-    }
-  } /* if (frag_msg) */
-
-  pinfo->fragmented = save_fragmented;
-
-  /* Now see if we need to call subdissector.
-     new_tvb is non-null if we "reassembled* a message (even just one fragment) */
-
-  if (new_tvb) {
-    /* call SSL/TLS dissector if we just processed the last fragment */
-    call_dissector(ssl_handle, new_tvb, pinfo, parent_tree);
-  }
+  reassemble_streaming_data_and_call_subdissector(tvb, pinfo, offset,
+    msg_length_remaining, openvpn_tree, parent_tree, msg_reassembly_table,
+    streaming_reassembly_info, get_virtual_frame_num64(tvb, pinfo, offset),
+    tls_handle, parent_tree, NULL /* should it be tcpinfo if we have it? */, "OpenVPN Message",
+    &openvpn_frag_items, hf_openvpn_fragment_bytes);
 
   return tvb_captured_length(tvb);
 }
 
-static guint
-get_msg_length(packet_info *pinfo _U_, tvbuff_t *tvb, gint offset, void *data _U_)
+static unsigned
+get_msg_length(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-  return (guint)tvb_get_ntohs(tvb, offset) + 2; /* length field is at offset 0,
+  return (unsigned)tvb_get_ntohs(tvb, offset) + 2; /* length field is at offset 0,
                                                    +2 to account for the length field itself */
 }
 
@@ -414,7 +378,7 @@ static int
 dissect_openvpn_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
     tcp_dissect_pdus( tvb, pinfo, tree,
-      TRUE,           /* should data be reassembled? */
+      true,           /* should data be reassembled? */
       2,              /* how much bytes do we need for get_msg_length to be successful,
                          since the length is the first thing in an openvpn packet we choose 2 */
       get_msg_length, /* fptr for function to get the packetlength of current frame */
@@ -481,7 +445,7 @@ proto_register_openvpn(void)
       NULL, HFILL }
     },
     { &hf_openvpn_pid,
-      { "Packet-ID", "openvpn.pid",
+      { "Replay-Packet-ID", "openvpn.pid",
       FT_UINT32, BASE_DEC,
       NULL, 0x0,
       NULL, HFILL }
@@ -518,9 +482,21 @@ proto_register_openvpn(void)
     },
     { &hf_openvpn_data,
       { "Data", "openvpn.data",
-      FT_BYTES, BASE_NONE,
-      NULL, 0x0,
-      NULL, HFILL }
+        FT_BYTES, BASE_NONE,
+        NULL, 0x0,
+        NULL, HFILL }
+    },
+    { &hf_openvpn_wkc_data,
+      { "Wrapped client key", "openvpn.wkc",
+        FT_BYTES, BASE_NONE,
+        NULL, 0x0,
+        NULL, HFILL }
+    },
+    { &hf_openvpn_wkc_length,
+      { "Wrapped client key length", "openvpn.wkc_len",
+        FT_UINT16, BASE_DEC,
+        NULL, 0x0,
+        NULL, HFILL }
     },
     { &hf_openvpn_fragment_bytes,
       { "Fragment bytes", "openvpn.fragment_bytes",
@@ -542,25 +518,25 @@ proto_register_openvpn(void)
     },
     { &hf_openvpn_fragment_overlap,
       { "Message fragment overlap", "openvpn.fragment.overlap",
-      FT_BOOLEAN, 0,
+      FT_BOOLEAN, BASE_NONE,
       NULL, 0x00,
       NULL, HFILL }
     },
     { &hf_openvpn_fragment_overlap_conflicts,
       { "Message fragment overlapping with conflicting data", "openvpn.fragment.overlap.conflicts",
-      FT_BOOLEAN, 0,
+      FT_BOOLEAN, BASE_NONE,
       NULL, 0x00,
       NULL, HFILL }
     },
     { &hf_openvpn_fragment_multiple_tails,
       { "Message has multiple tail fragments", "openvpn.fragment.multiple_tails",
-      FT_BOOLEAN, 0,
+      FT_BOOLEAN, BASE_NONE,
       NULL, 0x00,
       NULL, HFILL }
     },
     { &hf_openvpn_fragment_too_long_fragment,
       { "Message fragment too long", "openvpn.fragment.too_long_fragment",
-      FT_BOOLEAN, 0,
+      FT_BOOLEAN, BASE_NONE,
       NULL, 0x00,
       NULL, HFILL }
     },
@@ -591,10 +567,11 @@ proto_register_openvpn(void)
   };
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_openvpn,
     &ett_openvpn_type,
     &ett_openvpn_data,
+    &ett_openvpn_wkc,
     &ett_openvpn_packetarray,
     &ett_openvpn_fragment,
     &ett_openvpn_fragments
@@ -613,26 +590,22 @@ proto_register_openvpn(void)
   openvpn_udp_handle = register_dissector("openvpn.udp", dissect_openvpn_udp, proto_openvpn);
   openvpn_tcp_handle = register_dissector("openvpn.tcp", dissect_openvpn_tcp, proto_openvpn);
 
-  register_init_routine(&openvpn_reassemble_init);
-  register_cleanup_routine(&openvpn_reassemble_cleanup);
+  reassembly_table_register(&msg_reassembly_table,
+                        &addresses_reassembly_table_functions);
 
-  openvpn_module = prefs_register_protocol(proto_openvpn, proto_reg_handoff_openvpn);
+  openvpn_module = prefs_register_protocol(proto_openvpn, NULL);
 
-  prefs_register_uint_preference(openvpn_module,
-                "tcp.port",
-                "OpenVPN TCP Port",
-                "TCP Port of the OpenVPN tunnel",
-                10, &pref_tcp_port);
-  prefs_register_uint_preference(openvpn_module,
-                "udp.port",
-                "OpenVPN UDP Port",
-                "UDP Port of the OpenVPN tunnel",
-                10, &pref_udp_port);
   prefs_register_bool_preference(openvpn_module,
                 "tls_auth_detection_override",
                 "override tls-auth detection",
                 "If tls-auth detection fails, you can choose to override detection and set tls-auth yourself",
                 &pref_tls_auth_override);
+
+  prefs_register_bool_preference(openvpn_module,
+                "tls_crypt",
+                "assume tls-crypt",
+                "Assume the connection uses tls-crypt",
+                &pref_tls_crypt_override);
   prefs_register_bool_preference(openvpn_module,
                 "tls_auth",
                 "--tls-auth used?",
@@ -654,38 +627,20 @@ proto_register_openvpn(void)
                 " is inserted after the HMAC signature."
                 " This field can either be 4 bytes or 8 bytes including an optional time_t timestamp long.\n"
                 " This option is only evaluated if tls_auth_hmac_size > 0.\n"
-                " The default value is TRUE.",
+                " The default value is true.",
                 &pref_long_format);
 }
 
 void
 proto_reg_handoff_openvpn(void)
 {
-  static guint    tcp_port;
-  static guint    udp_port;
-  static gboolean initialized = FALSE;
-
-  if (! initialized) {
-    ssl_handle     = find_dissector_add_dependency("ssl", proto_openvpn);
-    initialized    = TRUE;
-  } else {
-    if (tcp_port > 0)
-      dissector_delete_uint("tcp.port", tcp_port, openvpn_tcp_handle);
-    if (udp_port > 0)
-      dissector_delete_uint("udp.port", udp_port, openvpn_udp_handle);
-  }
-
-  tcp_port = pref_tcp_port;
-  udp_port = pref_udp_port;
-
-  if (tcp_port > 0)
-    dissector_add_uint("tcp.port", tcp_port, openvpn_tcp_handle);
-  if (udp_port > 0)
-    dissector_add_uint("udp.port", udp_port, openvpn_udp_handle);
+  tls_handle     = find_dissector_add_dependency("tls", proto_openvpn);
+  dissector_add_uint_with_preference("tcp.port", OPENVPN_PORT, openvpn_tcp_handle);
+  dissector_add_uint_with_preference("udp.port", OPENVPN_PORT, openvpn_udp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

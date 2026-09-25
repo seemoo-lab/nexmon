@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -38,22 +26,26 @@ void proto_reg_handoff_isis(void);
 static dissector_table_t isis_dissector_table;
 
 /* isis base header */
-static int proto_isis               = -1;
+static int proto_isis;
 
-static int hf_isis_irpd             = -1;
-static int hf_isis_header_length    = -1;
-static int hf_isis_version          = -1;
-static int hf_isis_system_id_length = -1;
-static int hf_isis_type             = -1;
-static int hf_isis_type_reserved    = -1;
-static int hf_isis_version2         = -1;
-static int hf_isis_reserved         = -1;
-static int hf_isis_max_area_adr     = -1;
+static int hf_isis_irpd;
+static int hf_isis_header_length;
+static int hf_isis_version;
+static int hf_isis_system_id_length;
+static int hf_isis_type;
+static int hf_isis_type_reserved;
+static int hf_isis_version2;
+static int hf_isis_reserved;
+static int hf_isis_max_area_adr;
+int hf_isis_clv_key_id;
 
-static gint ett_isis                = -1;
+static int ett_isis;
 
-static expert_field ei_isis_version = EI_INIT;
-static expert_field ei_isis_type = EI_INIT;
+static expert_field ei_isis_length_indicator_too_small;
+static expert_field ei_isis_version;
+static expert_field ei_isis_version2;
+static expert_field ei_isis_reserved;
+static expert_field ei_isis_type;
 
 static dissector_handle_t isis_handle;
 
@@ -73,12 +65,11 @@ static const value_string isis_vals[] = {
 static int
 dissect_isis(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    proto_item *ti, *version_item;
+    proto_item *ti, *version_item, *version2_item, *reserved_item;
     proto_tree *isis_tree = NULL;
     int offset = 0;
-    guint8 isis_version;
-    guint8 isis_type;
-    tvbuff_t *next_tvb;
+    uint8_t isis_version, isis_version2, isis_reserved;
+    uint8_t isis_type;
     isis_data_t subdissector_data;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "ISIS");
@@ -90,39 +81,52 @@ dissect_isis(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_tree_add_item(isis_tree, hf_isis_irpd, tvb, offset, 1, ENC_BIG_ENDIAN );
     offset += 1;
 
-    subdissector_data.header_length = tvb_get_guint8(tvb, offset);
-    proto_tree_add_uint(isis_tree, hf_isis_header_length, tvb,
+    subdissector_data.header_length = tvb_get_uint8(tvb, offset);
+    subdissector_data.header_length_item =
+        proto_tree_add_uint(isis_tree, hf_isis_header_length, tvb,
             offset, 1, subdissector_data.header_length );
     offset += 1;
+    if (subdissector_data.header_length < 8) {
+        /* Not large enough to include the part of the header that
+           we dissect here. */
+        expert_add_info(pinfo, subdissector_data.header_length_item, &ei_isis_length_indicator_too_small);
+        return tvb_captured_length(tvb);
+    }
+    subdissector_data.ei_bad_header_length = &ei_isis_length_indicator_too_small;
 
-    isis_version = tvb_get_guint8(tvb, offset);
+    isis_version = tvb_get_uint8(tvb, offset);
     version_item = proto_tree_add_uint(isis_tree, hf_isis_version, tvb,
             offset, 1, isis_version );
     if (isis_version != ISIS_REQUIRED_VERSION){
-        col_add_fstr(pinfo->cinfo, COL_INFO,
-                "Unknown ISIS version (%u vs %u)",
-                isis_version, ISIS_REQUIRED_VERSION );
         expert_add_info(pinfo, version_item, &ei_isis_version);
     }
     offset += 1;
 
-    subdissector_data.system_id_len = tvb_get_guint8(tvb, offset);
+    subdissector_data.system_id_len = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(isis_tree, hf_isis_system_id_length, tvb,
             offset, 1, subdissector_data.system_id_len );
     offset += 1;
 
-    isis_type = tvb_get_guint8(tvb, offset) & ISIS_TYPE_MASK;
-    col_add_str(pinfo->cinfo, COL_INFO,
-            val_to_str ( isis_type, isis_vals, "Unknown (0x%x)" ) );
-
-    proto_tree_add_item(isis_tree, hf_isis_type, tvb, offset, 1, ENC_BIG_ENDIAN );
     proto_tree_add_item(isis_tree, hf_isis_type_reserved, tvb, offset, 1, ENC_BIG_ENDIAN );
+
+    isis_type = tvb_get_uint8(tvb, offset) & ISIS_TYPE_MASK;
+    col_add_str(pinfo->cinfo, COL_INFO,
+                val_to_str(pinfo->pool, isis_type, isis_vals, "Unknown (0x%x)" ) );
+    proto_tree_add_item(isis_tree, hf_isis_type, tvb, offset, 1, ENC_BIG_ENDIAN );
     offset += 1;
 
-    proto_tree_add_item(isis_tree, hf_isis_version2, tvb, offset, 1, ENC_BIG_ENDIAN );
+    isis_version2 = tvb_get_uint8(tvb, offset);
+    version2_item = proto_tree_add_item(isis_tree, hf_isis_version2, tvb, offset, 1, ENC_BIG_ENDIAN );
+    if (isis_version2 != 1) {
+        expert_add_info(pinfo, version2_item, &ei_isis_version2);
+    }
     offset += 1;
 
-    proto_tree_add_item(isis_tree, hf_isis_reserved, tvb, offset, 1, ENC_BIG_ENDIAN );
+    isis_reserved = tvb_get_uint8(tvb, offset);
+    reserved_item = proto_tree_add_item(isis_tree, hf_isis_reserved, tvb, offset, 1, ENC_BIG_ENDIAN );
+    if (isis_reserved != 0) {
+        expert_add_info(pinfo, reserved_item, &ei_isis_reserved);
+    }
     offset += 1;
 
     proto_tree_add_item(isis_tree, hf_isis_max_area_adr, tvb, offset, 1, ENC_BIG_ENDIAN );
@@ -139,9 +143,13 @@ dissect_isis(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     }
     /* XXX - otherwise, must be in the range 1 through 8 */
 
-    next_tvb = tvb_new_subset_remaining(tvb, offset);
-    if (!dissector_try_uint_new(isis_dissector_table, isis_type, next_tvb,
-                                pinfo, tree, TRUE, &subdissector_data))
+    /*
+     * We must pass the entire ISIS PDU to the dissector, as some
+     * dissectors are for ISIS PDU types that might contain a
+     * checksum TLV, and that checksum is over the entire PDU.
+     */
+    if (!dissector_try_uint_with_data(isis_dissector_table, isis_type, tvb,
+                                pinfo, tree, true, &subdissector_data))
     {
         proto_tree_add_expert(tree, pinfo, &ei_isis_type, tvb, offset, -1);
     }
@@ -153,18 +161,18 @@ proto_register_isis(void)
 {
   static hf_register_info hf[] = {
     { &hf_isis_irpd,
-      { "Intra Domain Routing Protocol Discriminator",    "isis.irpd",
+      { "Intradomain Routing Protocol Discriminator",    "isis.irpd",
         FT_UINT8, BASE_HEX, VALS(nlpid_vals), 0x0, NULL, HFILL }},
 
     { &hf_isis_header_length,
-      { "PDU Header Length", "isis.len", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+      { "Length Indicator", "isis.len", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 
     { &hf_isis_version,
-      { "Version", "isis.version", FT_UINT8,
+      { "Version/Protocol ID Extension", "isis.version", FT_UINT8,
          BASE_DEC, NULL, 0x0, NULL, HFILL }},
 
     { &hf_isis_system_id_length,
-      { "System ID Length", "isis.sysid_len",
+      { "ID Length", "isis.sysid_len",
         FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 
     { &hf_isis_type,
@@ -172,32 +180,38 @@ proto_register_isis(void)
         VALS(isis_vals), ISIS_TYPE_MASK, NULL, HFILL }},
 
     { &hf_isis_type_reserved,
-      { "Reserved", "isis.reserved", FT_UINT8, BASE_HEX,
+      { "Reserved", "isis.type.reserved", FT_UINT8, BASE_HEX,
         NULL, ISIS_TYPE_RESERVED_MASK, NULL, HFILL }},
 
     { &hf_isis_version2,
-      { "Version2 (==1)", "isis.version2", FT_UINT8, BASE_DEC, NULL,
+      { "Version", "isis.version2", FT_UINT8, BASE_DEC, NULL,
         0x0, NULL, HFILL }},
 
     { &hf_isis_reserved,
-      { "Reserved (==0)", "isis.reserved", FT_UINT8, BASE_DEC, NULL,
+      { "Reserved", "isis.reserved", FT_UINT8, BASE_DEC, NULL,
         0x0, NULL, HFILL }},
 
     { &hf_isis_max_area_adr,
-      { "Max.AREAs: (0==3)", "isis.max_area_adr", FT_UINT8, BASE_DEC, NULL,
-      0x0, NULL, HFILL }},
+      { "Maximum Area Addresses", "isis.max_area_adr", FT_UINT8, BASE_DEC, NULL,
+        0x0, "Maximum Area Addresses, 0 means 3", HFILL }},
 
-    };
+    { &hf_isis_clv_key_id,
+      { "Key ID", "isis.clv.key_id", FT_UINT16, BASE_DEC, NULL,
+        0x0, NULL, HFILL }},
+  };
     /*
      * Note, we pull in the unknown CLV handler here, since it
      * is used by all ISIS packet types.
      */
-    static gint *ett[] = {
+    static int *ett[] = {
       &ett_isis,
     };
 
     static ei_register_info ei[] = {
+        { &ei_isis_length_indicator_too_small, { "isis.length_indicator_too_small", PI_MALFORMED, PI_ERROR, "ISIS length indicator value smaller than the fixed length header size", EXPFILL }},
         { &ei_isis_version, { "isis.version.unknown", PI_PROTOCOL, PI_WARN, "Unknown ISIS version", EXPFILL }},
+        { &ei_isis_version2, { "isis.version2.notone", PI_PROTOCOL, PI_WARN, "Version must be 1", EXPFILL }},
+        { &ei_isis_reserved, { "isis.reserved.notzero", PI_PROTOCOL, PI_WARN, "Reserved must be 0", EXPFILL }},
         { &ei_isis_type, { "isis.type.unknown", PI_PROTOCOL, PI_WARN, "Unknown ISIS packet type", EXPFILL }},
     };
 
@@ -223,7 +237,7 @@ proto_reg_handoff_isis(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

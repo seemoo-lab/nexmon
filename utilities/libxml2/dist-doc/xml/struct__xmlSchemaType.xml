@@ -1,0 +1,810 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaType" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaType</compoundname>
+    <includes local="no">schemasInternals.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaType_1af2264bc4c40cc1d673156af962622b1c" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035b" kindref="member">xmlSchemaTypeType</ref></type>
+        <definition>xmlSchemaTypeType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlSchemaType::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="517" column="23" bodyfile="schemasInternals.h" bodystart="517" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1ae52c5ce01d74abb2906265f08eeedffd" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlSchemaType" kindref="compound">_xmlSchemaType</ref> *</type>
+        <definition>struct _xmlSchemaType* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlSchemaType::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="518" column="25" bodyfile="schemasInternals.h" bodystart="518" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlSchemaType::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="519" column="19" bodyfile="schemasInternals.h" bodystart="519" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a4990db1c20ea984528b46e4180a65d48" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* id</definition>
+        <argsstring></argsstring>
+        <name>id</name>
+        <qualifiedname>_xmlSchemaType::id</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="520" column="19" bodyfile="schemasInternals.h" bodystart="520" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a24365870fbb020a7250dd630df096609" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* ref</definition>
+        <argsstring></argsstring>
+        <name>ref</name>
+        <qualifiedname>_xmlSchemaType::ref</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="521" column="19" bodyfile="schemasInternals.h" bodystart="521" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a023003d9ee68055849d897af8c5ee6bd" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* refNs</definition>
+        <argsstring></argsstring>
+        <name>refNs</name>
+        <qualifiedname>_xmlSchemaType::refNs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="522" column="19" bodyfile="schemasInternals.h" bodystart="522" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a0f727e637a3145725c64509a1f687b17" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1afb7787502db52ed53c5449fda627a467" kindref="member">xmlSchemaAnnot</ref> *</type>
+        <definition>xmlSchemaAnnot* annot</definition>
+        <argsstring></argsstring>
+        <name>annot</name>
+        <qualifiedname>_xmlSchemaType::annot</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="523" column="20" bodyfile="schemasInternals.h" bodystart="523" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a9d32a8f051189f839a9b3c5f2b2afcb4" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+        <definition>xmlSchemaType* subtypes</definition>
+        <argsstring></argsstring>
+        <name>subtypes</name>
+        <qualifiedname>_xmlSchemaType::subtypes</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="524" column="19" bodyfile="schemasInternals.h" bodystart="524" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1aacadb2bc51e7df6f65fca85738b5ddf8" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a7880be4c4333fc23cfa93e2c212b87a5" kindref="member">xmlSchemaAttribute</ref> *</type>
+        <definition>xmlSchemaAttribute* attributes</definition>
+        <argsstring></argsstring>
+        <name>attributes</name>
+        <qualifiedname>_xmlSchemaType::attributes</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="525" column="24" bodyfile="schemasInternals.h" bodystart="525" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a8bedaa23f1809c00fd1a1dbaadd3df7c" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+        <definition>xmlNode* node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>_xmlSchemaType::node</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="526" column="13" bodyfile="schemasInternals.h" bodystart="526" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a2e10596f7e8b2afeb519b9d349dc773a" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int minOccurs</definition>
+        <argsstring></argsstring>
+        <name>minOccurs</name>
+        <qualifiedname>_xmlSchemaType::minOccurs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="527" column="9" bodyfile="schemasInternals.h" bodystart="527" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1aa98f64287911d914e01d990e1dd41e74" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxOccurs</definition>
+        <argsstring></argsstring>
+        <name>maxOccurs</name>
+        <qualifiedname>_xmlSchemaType::maxOccurs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="528" column="9" bodyfile="schemasInternals.h" bodystart="528" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlSchemaType::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="530" column="9" bodyfile="schemasInternals.h" bodystart="530" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1aa5d799820f4997d7187e964d7ab3489e" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4" kindref="member">xmlSchemaContentType</ref></type>
+        <definition>xmlSchemaContentType contentType</definition>
+        <argsstring></argsstring>
+        <name>contentType</name>
+        <qualifiedname>_xmlSchemaType::contentType</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="531" column="26" bodyfile="schemasInternals.h" bodystart="531" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a6d129c555de9187158cc02420b457cf0" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* base</definition>
+        <argsstring></argsstring>
+        <name>base</name>
+        <qualifiedname>_xmlSchemaType::base</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="532" column="19" bodyfile="schemasInternals.h" bodystart="532" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1aa09b412bcc1956a56cb37409178ccdd8" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* baseNs</definition>
+        <argsstring></argsstring>
+        <name>baseNs</name>
+        <qualifiedname>_xmlSchemaType::baseNs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="533" column="19" bodyfile="schemasInternals.h" bodystart="533" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1ad1cb4e5428e30a6f2562774c97991851" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+        <definition>xmlSchemaType* baseType</definition>
+        <argsstring></argsstring>
+        <name>baseType</name>
+        <qualifiedname>_xmlSchemaType::baseType</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="534" column="19" bodyfile="schemasInternals.h" bodystart="534" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1afa54fd289db3c1f5783a6625913f7d40" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+        <definition>xmlSchemaFacet* facets</definition>
+        <argsstring></argsstring>
+        <name>facets</name>
+        <qualifiedname>_xmlSchemaType::facets</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="535" column="20" bodyfile="schemasInternals.h" bodystart="535" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a9c70f321c25caa7fbf29d5efb8f4a281" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlSchemaType" kindref="compound">_xmlSchemaType</ref> *</type>
+        <definition>struct _xmlSchemaType* redef</definition>
+        <argsstring></argsstring>
+        <name>redef</name>
+        <qualifiedname>_xmlSchemaType::redef</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="536" column="25" bodyfile="schemasInternals.h" bodystart="536" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a1ecd54d096b20188fdcd74cfab5248cb" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int recurse</definition>
+        <argsstring></argsstring>
+        <name>recurse</name>
+        <qualifiedname>_xmlSchemaType::recurse</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="537" column="9" bodyfile="schemasInternals.h" bodystart="537" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a81c320de570f24bb470c1aaead9b8bdf" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1ae6bb599d431788990cebca660f5b20cb" kindref="member">xmlSchemaAttributeLink</ref> **</type>
+        <definition>xmlSchemaAttributeLink** attributeUses</definition>
+        <argsstring></argsstring>
+        <name>attributeUses</name>
+        <qualifiedname>_xmlSchemaType::attributeUses</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="538" column="28" bodyfile="schemasInternals.h" bodystart="538" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a4d6a5dce38e375af1406d0ffd5454286" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1addef0f64c47c44a22ea2aa71147f847f" kindref="member">xmlSchemaWildcard</ref> *</type>
+        <definition>xmlSchemaWildcard* attributeWildcard</definition>
+        <argsstring></argsstring>
+        <name>attributeWildcard</name>
+        <qualifiedname>_xmlSchemaType::attributeWildcard</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="539" column="23" bodyfile="schemasInternals.h" bodystart="539" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a8d80a3e52694bdcae4ed34f15a439e01" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int builtInType</definition>
+        <argsstring></argsstring>
+        <name>builtInType</name>
+        <qualifiedname>_xmlSchemaType::builtInType</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="540" column="9" bodyfile="schemasInternals.h" bodystart="540" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1aeb38d2d1fd689a4137023e0b43055ba3" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1adb7444499a1d799cc6fed1005cf34af6" kindref="member">xmlSchemaTypeLink</ref> *</type>
+        <definition>xmlSchemaTypeLink* memberTypes</definition>
+        <argsstring></argsstring>
+        <name>memberTypes</name>
+        <qualifiedname>_xmlSchemaType::memberTypes</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="541" column="23" bodyfile="schemasInternals.h" bodystart="541" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a9011357aeec5e700f0ca2b8463d7a6dc" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1afa6332eac11eec26f9feaac76ed076c8" kindref="member">xmlSchemaFacetLink</ref> *</type>
+        <definition>xmlSchemaFacetLink* facetSet</definition>
+        <argsstring></argsstring>
+        <name>facetSet</name>
+        <qualifiedname>_xmlSchemaType::facetSet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="542" column="24" bodyfile="schemasInternals.h" bodystart="542" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1abc2bcb1271206540b51e0faf3b365fef" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* refPrefix</definition>
+        <argsstring></argsstring>
+        <name>refPrefix</name>
+        <qualifiedname>_xmlSchemaType::refPrefix</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="543" column="19" bodyfile="schemasInternals.h" bodystart="543" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a21e862c8b8226e2aee90a78a93a07546" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+        <definition>xmlSchemaType* contentTypeDef</definition>
+        <argsstring></argsstring>
+        <name>contentTypeDef</name>
+        <qualifiedname>_xmlSchemaType::contentTypeDef</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="544" column="19" bodyfile="schemasInternals.h" bodystart="544" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1ae3b7c9a98266649814c8dafd01929f0e" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlregexp_8h_1a6f2ef8e1a2f1312bc7dce8bae30d22a5" kindref="member">xmlRegexp</ref> *</type>
+        <definition>xmlRegexp* contModel</definition>
+        <argsstring></argsstring>
+        <name>contModel</name>
+        <qualifiedname>_xmlSchemaType::contModel</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="546" column="15" bodyfile="schemasInternals.h" bodystart="546" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a3e7f65fedb1d1ed284e955f0387a02bc" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* targetNamespace</definition>
+        <argsstring></argsstring>
+        <name>targetNamespace</name>
+        <qualifiedname>_xmlSchemaType::targetNamespace</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="547" column="19" bodyfile="schemasInternals.h" bodystart="547" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaType_1a61c9b0e58378f96236b26ca94a786c2a" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* attrUses</definition>
+        <argsstring></argsstring>
+        <name>attrUses</name>
+        <qualifiedname>_xmlSchemaType::attrUses</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="548" column="10" bodyfile="schemasInternals.h" bodystart="548" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Schemas type definition. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="9">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="21">
+        <label>_xmlAutomataState</label>
+        <childnode refid="22" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDict</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDictStrings</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="10" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="23">
+        <label>_xmlRegAtom</label>
+        <childnode refid="21" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="24" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="25">
+        <label>_xmlRegCounter</label>
+      </node>
+      <node id="24">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="22">
+        <label>_xmlRegTrans</label>
+        <childnode refid="23" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+      <node id="20">
+        <label>_xmlRegexp</label>
+        <childnode refid="21" relation="usage">
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="25" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlSchemaAnnot</label>
+        <link refid="struct__xmlSchemaAnnot"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>content</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlSchemaAttribute</label>
+        <link refid="struct__xmlSchemaAttribute"/>
+        <childnode refid="11" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>refDecl</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="1" relation="usage">
+          <edgelabel>base</edgelabel>
+          <edgelabel>subtypes</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>defVal</edgelabel>
+        </childnode>
+      </node>
+      <node id="26">
+        <label>_xmlSchemaAttributeLink</label>
+        <link refid="struct__xmlSchemaAttributeLink"/>
+        <childnode refid="26" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+      </node>
+      <node id="19">
+        <label>_xmlSchemaFacet</label>
+        <link refid="struct__xmlSchemaFacet"/>
+        <childnode refid="19" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>val</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>regexp</edgelabel>
+        </childnode>
+      </node>
+      <node id="30">
+        <label>_xmlSchemaFacetLink</label>
+        <link refid="struct__xmlSchemaFacetLink"/>
+        <childnode refid="30" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>facet</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlSchemaType</label>
+        <link refid="struct__xmlSchemaType"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>baseType</edgelabel>
+          <edgelabel>contentTypeDef</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>redef</edgelabel>
+          <edgelabel>subtypes</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>attributes</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>facets</edgelabel>
+        </childnode>
+        <childnode refid="26" relation="usage">
+          <edgelabel>attributeUses</edgelabel>
+        </childnode>
+        <childnode refid="27" relation="usage">
+          <edgelabel>attributeWildcard</edgelabel>
+        </childnode>
+        <childnode refid="29" relation="usage">
+          <edgelabel>memberTypes</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>facetSet</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+      </node>
+      <node id="29">
+        <label>_xmlSchemaTypeLink</label>
+        <link refid="struct__xmlSchemaTypeLink"/>
+        <childnode refid="29" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="1" relation="usage">
+          <edgelabel>type</edgelabel>
+        </childnode>
+      </node>
+      <node id="12">
+        <label>_xmlSchemaVal</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>decimal</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>date</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>dur</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>qname</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>hex</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>base64</edgelabel>
+        </childnode>
+      </node>
+      <node id="18">
+        <label>_xmlSchemaValBase64</label>
+      </node>
+      <node id="14">
+        <label>_xmlSchemaValDate</label>
+      </node>
+      <node id="13">
+        <label>_xmlSchemaValDecimal</label>
+      </node>
+      <node id="15">
+        <label>_xmlSchemaValDuration</label>
+      </node>
+      <node id="17">
+        <label>_xmlSchemaValHex</label>
+      </node>
+      <node id="16">
+        <label>_xmlSchemaValQName</label>
+      </node>
+      <node id="27">
+        <label>_xmlSchemaWildcard</label>
+        <link refid="struct__xmlSchemaWildcard"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="28" relation="usage">
+          <edgelabel>negNsSet</edgelabel>
+          <edgelabel>nsSet</edgelabel>
+        </childnode>
+      </node>
+      <node id="28">
+        <label>_xmlSchemaWildcardNs</label>
+        <link refid="struct__xmlSchemaWildcardNs"/>
+        <childnode refid="28" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="schemasInternals.h" line="516" column="1" bodyfile="schemasInternals.h" bodystart="516" bodyend="549"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaType_1a0f727e637a3145725c64509a1f687b17" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>annot</name></member>
+      <member refid="struct__xmlSchemaType_1aacadb2bc51e7df6f65fca85738b5ddf8" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>attributes</name></member>
+      <member refid="struct__xmlSchemaType_1a81c320de570f24bb470c1aaead9b8bdf" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>attributeUses</name></member>
+      <member refid="struct__xmlSchemaType_1a4d6a5dce38e375af1406d0ffd5454286" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>attributeWildcard</name></member>
+      <member refid="struct__xmlSchemaType_1a61c9b0e58378f96236b26ca94a786c2a" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>attrUses</name></member>
+      <member refid="struct__xmlSchemaType_1a6d129c555de9187158cc02420b457cf0" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>base</name></member>
+      <member refid="struct__xmlSchemaType_1aa09b412bcc1956a56cb37409178ccdd8" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>baseNs</name></member>
+      <member refid="struct__xmlSchemaType_1ad1cb4e5428e30a6f2562774c97991851" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>baseType</name></member>
+      <member refid="struct__xmlSchemaType_1a8d80a3e52694bdcae4ed34f15a439e01" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>builtInType</name></member>
+      <member refid="struct__xmlSchemaType_1aa5d799820f4997d7187e964d7ab3489e" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>contentType</name></member>
+      <member refid="struct__xmlSchemaType_1a21e862c8b8226e2aee90a78a93a07546" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>contentTypeDef</name></member>
+      <member refid="struct__xmlSchemaType_1ae3b7c9a98266649814c8dafd01929f0e" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>contModel</name></member>
+      <member refid="struct__xmlSchemaType_1afa54fd289db3c1f5783a6625913f7d40" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>facets</name></member>
+      <member refid="struct__xmlSchemaType_1a9011357aeec5e700f0ca2b8463d7a6dc" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>facetSet</name></member>
+      <member refid="struct__xmlSchemaType_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>flags</name></member>
+      <member refid="struct__xmlSchemaType_1a4990db1c20ea984528b46e4180a65d48" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>id</name></member>
+      <member refid="struct__xmlSchemaType_1aa98f64287911d914e01d990e1dd41e74" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>maxOccurs</name></member>
+      <member refid="struct__xmlSchemaType_1aeb38d2d1fd689a4137023e0b43055ba3" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>memberTypes</name></member>
+      <member refid="struct__xmlSchemaType_1a2e10596f7e8b2afeb519b9d349dc773a" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>minOccurs</name></member>
+      <member refid="struct__xmlSchemaType_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>name</name></member>
+      <member refid="struct__xmlSchemaType_1ae52c5ce01d74abb2906265f08eeedffd" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>next</name></member>
+      <member refid="struct__xmlSchemaType_1a8bedaa23f1809c00fd1a1dbaadd3df7c" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>node</name></member>
+      <member refid="struct__xmlSchemaType_1a1ecd54d096b20188fdcd74cfab5248cb" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>recurse</name></member>
+      <member refid="struct__xmlSchemaType_1a9c70f321c25caa7fbf29d5efb8f4a281" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>redef</name></member>
+      <member refid="struct__xmlSchemaType_1a24365870fbb020a7250dd630df096609" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>ref</name></member>
+      <member refid="struct__xmlSchemaType_1a023003d9ee68055849d897af8c5ee6bd" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>refNs</name></member>
+      <member refid="struct__xmlSchemaType_1abc2bcb1271206540b51e0faf3b365fef" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>refPrefix</name></member>
+      <member refid="struct__xmlSchemaType_1a9d32a8f051189f839a9b3c5f2b2afcb4" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>subtypes</name></member>
+      <member refid="struct__xmlSchemaType_1a3e7f65fedb1d1ed284e955f0387a02bc" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>targetNamespace</name></member>
+      <member refid="struct__xmlSchemaType_1af2264bc4c40cc1d673156af962622b1c" prot="public" virt="non-virtual"><scope>_xmlSchemaType</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

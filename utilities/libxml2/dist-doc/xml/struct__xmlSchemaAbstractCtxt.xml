@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaAbstractCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaAbstractCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaAbstractCtxt_1ac765329451135abec74c45e1897abf26" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlSchemaAbstractCtxt::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="373" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="373" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaAbstractCtxt_1a99dc3b67257851cb91efea473083cd0f" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* dummy</definition>
+        <argsstring></argsstring>
+        <name>dummy</name>
+        <qualifiedname>_xmlSchemaAbstractCtxt::dummy</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="374" column="10" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="374" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlschemas.c" line="372" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="372" bodyend="375"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaAbstractCtxt_1a99dc3b67257851cb91efea473083cd0f" prot="public" virt="non-virtual"><scope>_xmlSchemaAbstractCtxt</scope><name>dummy</name></member>
+      <member refid="struct__xmlSchemaAbstractCtxt_1ac765329451135abec74c45e1897abf26" prot="public" virt="non-virtual"><scope>_xmlSchemaAbstractCtxt</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

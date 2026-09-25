@@ -1,0 +1,431 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRegExecCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRegExecCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a6e27f49150e9a14580fb313cc2777e00" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int status</definition>
+        <argsstring></argsstring>
+        <name>status</name>
+        <qualifiedname>_xmlRegExecCtxt::status</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="362" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="362" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a9f125e1f0926df6d7b41fa62948c0439" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int determinist</definition>
+        <argsstring></argsstring>
+        <name>determinist</name>
+        <qualifiedname>_xmlRegExecCtxt::determinist</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="363" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="363" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a37a58585ce0ae0d310b2235a0326274a" prot="public" static="no" mutable="no">
+        <type>xmlRegexpPtr</type>
+        <definition>xmlRegexpPtr comp</definition>
+        <argsstring></argsstring>
+        <name>comp</name>
+        <qualifiedname>_xmlRegExecCtxt::comp</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="364" column="18" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="364" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a040aa11c93646dd972a3036af6bfac48" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlregexp_8h_1a8a452ec511955cd54394c30a2188ac24" kindref="member">xmlRegExecCallbacks</ref></type>
+        <definition>xmlRegExecCallbacks callback</definition>
+        <argsstring></argsstring>
+        <name>callback</name>
+        <qualifiedname>_xmlRegExecCtxt::callback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="365" column="25" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="365" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a735984d41155bc1032e09bece8f8d66d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* data</definition>
+        <argsstring></argsstring>
+        <name>data</name>
+        <qualifiedname>_xmlRegExecCtxt::data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="366" column="10" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="366" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a7461d5545d620887243c714effee005d" prot="public" static="no" mutable="no">
+        <type>xmlRegStatePtr</type>
+        <definition>xmlRegStatePtr state</definition>
+        <argsstring></argsstring>
+        <name>state</name>
+        <qualifiedname>_xmlRegExecCtxt::state</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="368" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="368" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1ac0b8c547ac38a38e71a81fd5bd8d3072" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int transno</definition>
+        <argsstring></argsstring>
+        <name>transno</name>
+        <qualifiedname>_xmlRegExecCtxt::transno</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="369" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="369" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1af262a30127becc6c32d92545a4169cc3" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int transcount</definition>
+        <argsstring></argsstring>
+        <name>transcount</name>
+        <qualifiedname>_xmlRegExecCtxt::transcount</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="370" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="370" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a6050bd78880d847c2ecfe1c4f536283a" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxRollbacks</definition>
+        <argsstring></argsstring>
+        <name>maxRollbacks</name>
+        <qualifiedname>_xmlRegExecCtxt::maxRollbacks</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="375" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="375" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1aae671727a4a5896921cb7e8e83e718a0" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbRollbacks</definition>
+        <argsstring></argsstring>
+        <name>nbRollbacks</name>
+        <qualifiedname>_xmlRegExecCtxt::nbRollbacks</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="376" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="376" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1aa957f4dce0cb69b27f0afe0dc233ec8e" prot="public" static="no" mutable="no">
+        <type>xmlRegExecRollback *</type>
+        <definition>xmlRegExecRollback* rollbacks</definition>
+        <argsstring></argsstring>
+        <name>rollbacks</name>
+        <qualifiedname>_xmlRegExecCtxt::rollbacks</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="377" column="24" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="377" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a33ac739d9dc43a77366eb4e0d26d2fe8" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* counts</definition>
+        <argsstring></argsstring>
+        <name>counts</name>
+        <qualifiedname>_xmlRegExecCtxt::counts</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="382" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="382" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a06ba5c8981b04d79fb21c6dc36479f35" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int inputStackMax</definition>
+        <argsstring></argsstring>
+        <name>inputStackMax</name>
+        <qualifiedname>_xmlRegExecCtxt::inputStackMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="387" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="387" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a8faf6a8345cc82b81cde90177e9ed2be" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int inputStackNr</definition>
+        <argsstring></argsstring>
+        <name>inputStackNr</name>
+        <qualifiedname>_xmlRegExecCtxt::inputStackNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="388" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="388" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a750b5d744c39a06bfb13e6eb010e35d0" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int index</definition>
+        <argsstring></argsstring>
+        <name>index</name>
+        <qualifiedname>_xmlRegExecCtxt::index</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="389" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="389" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1ae25a6a8d47cce7c272f2a855f6c0e606" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* charStack</definition>
+        <argsstring></argsstring>
+        <name>charStack</name>
+        <qualifiedname>_xmlRegExecCtxt::charStack</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="390" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="390" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a4d529e3dc054294e5541afe5ca68e0db" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* inputString</definition>
+        <argsstring></argsstring>
+        <name>inputString</name>
+        <qualifiedname>_xmlRegExecCtxt::inputString</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="391" column="19" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="391" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a93623345ad19627d740bb9428de35559" prot="public" static="no" mutable="no">
+        <type>xmlRegInputTokenPtr</type>
+        <definition>xmlRegInputTokenPtr inputStack</definition>
+        <argsstring></argsstring>
+        <name>inputStack</name>
+        <qualifiedname>_xmlRegExecCtxt::inputStack</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="392" column="25" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="392" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a8af6f5037ac787acb0194b791d08830e" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int errStateNo</definition>
+        <argsstring></argsstring>
+        <name>errStateNo</name>
+        <qualifiedname>_xmlRegExecCtxt::errStateNo</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="397" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="397" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a72f405a89c849cc1e4de7868f6aa4271" prot="public" static="no" mutable="no">
+        <type>xmlRegStatePtr</type>
+        <definition>xmlRegStatePtr errState</definition>
+        <argsstring></argsstring>
+        <name>errState</name>
+        <qualifiedname>_xmlRegExecCtxt::errState</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="398" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="398" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1ac2bd21ac3956c055780bf2bcf266d80c" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* errString</definition>
+        <argsstring></argsstring>
+        <name>errString</name>
+        <qualifiedname>_xmlRegExecCtxt::errString</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="399" column="13" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="399" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1a47fa55059b0bb907e33e26ca61c40934" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* errCounts</definition>
+        <argsstring></argsstring>
+        <name>errCounts</name>
+        <qualifiedname>_xmlRegExecCtxt::errCounts</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="400" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="400" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegExecCtxt_1afe59ea7dcc76ebc8c231d81227f58483" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbPush</definition>
+        <argsstring></argsstring>
+        <name>nbPush</name>
+        <qualifiedname>_xmlRegExecCtxt::nbPush</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="401" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="401" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="3">
+        <label>_xmlAutomataState</label>
+        <childnode refid="4" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlRegAtom</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlRegCounter</label>
+      </node>
+      <node id="1">
+        <label>_xmlRegExecCtxt</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+        <childnode refid="1" relation="usage">
+          <edgelabel>callback</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>errState</edgelabel>
+          <edgelabel>state</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>rollbacks</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>inputStack</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlRegExecRollback</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>state</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlRegInputToken</label>
+      </node>
+      <node id="6">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="4">
+        <label>_xmlRegTrans</label>
+        <childnode refid="5" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlRegexp</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="361" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="361" bodyend="402"/>
+    <listofallmembers>
+      <member refid="struct__xmlRegExecCtxt_1a040aa11c93646dd972a3036af6bfac48" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>callback</name></member>
+      <member refid="struct__xmlRegExecCtxt_1ae25a6a8d47cce7c272f2a855f6c0e606" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>charStack</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a37a58585ce0ae0d310b2235a0326274a" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>comp</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a33ac739d9dc43a77366eb4e0d26d2fe8" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>counts</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a735984d41155bc1032e09bece8f8d66d" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>data</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a9f125e1f0926df6d7b41fa62948c0439" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>determinist</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a47fa55059b0bb907e33e26ca61c40934" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>errCounts</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a72f405a89c849cc1e4de7868f6aa4271" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>errState</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a8af6f5037ac787acb0194b791d08830e" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>errStateNo</name></member>
+      <member refid="struct__xmlRegExecCtxt_1ac2bd21ac3956c055780bf2bcf266d80c" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>errString</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a750b5d744c39a06bfb13e6eb010e35d0" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>index</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a93623345ad19627d740bb9428de35559" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>inputStack</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a06ba5c8981b04d79fb21c6dc36479f35" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>inputStackMax</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a8faf6a8345cc82b81cde90177e9ed2be" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>inputStackNr</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a4d529e3dc054294e5541afe5ca68e0db" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>inputString</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a6050bd78880d847c2ecfe1c4f536283a" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>maxRollbacks</name></member>
+      <member refid="struct__xmlRegExecCtxt_1afe59ea7dcc76ebc8c231d81227f58483" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>nbPush</name></member>
+      <member refid="struct__xmlRegExecCtxt_1aae671727a4a5896921cb7e8e83e718a0" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>nbRollbacks</name></member>
+      <member refid="struct__xmlRegExecCtxt_1aa957f4dce0cb69b27f0afe0dc233ec8e" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>rollbacks</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a7461d5545d620887243c714effee005d" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>state</name></member>
+      <member refid="struct__xmlRegExecCtxt_1a6e27f49150e9a14580fb313cc2777e00" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>status</name></member>
+      <member refid="struct__xmlRegExecCtxt_1af262a30127becc6c32d92545a4169cc3" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>transcount</name></member>
+      <member refid="struct__xmlRegExecCtxt_1ac0b8c547ac38a38e71a81fd5bd8d3072" prot="public" virt="non-virtual"><scope>_xmlRegExecCtxt</scope><name>transno</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

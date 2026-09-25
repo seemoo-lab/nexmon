@@ -60,6 +60,9 @@ MidambleShiftAndBurstType768/type3/midambleAllocationMode  MidambleAllocationMod
 #.FIELD_RENAME
 UEMeasurementTimeslotInfoLCR-IEs/timeSlot timeSlotLCR
 
+GANSS-GenericDataInfoReqItem/ganss-Navigation-Model-And-Time-Recovery ganss_Navigation_Model_And_Time_Recovery_bool
+GANSS-GenericDataInfoReqItem/ganss-Almanac ganss_Almanac_bool
+GANSS-GenericDataInfoReqItem/ganss-Real-Time-Integrity ganss_Real_Time_Integrity_bool
 
 #.OMIT_ASSIGNMENT
 Presence
@@ -69,7 +72,7 @@ ProtocolIE-ContainerPair
 ProtocolIE-ContainerPairList
 #.END
 
-#.FN_PARS ProtocolIE-ID  VAL_PTR = &ProtocolIE_ID
+#.FN_PARS ProtocolIE-ID  VAL_PTR = &rnsap_get_private_data(actx->pinfo)->ProtocolIE_ID
 
 #.FN_PARS ProtocolIE-Field/value  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_ProtocolIEFieldValue
 
@@ -77,24 +80,25 @@ ProtocolIE-ContainerPairList
 
 #.FN_PARS PrivateIE-Field/value  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_PrivateIEFieldValue
 
-#.FN_PARS  ProcedureCode  VAL_PTR = &ProcedureCode
+#.FN_HDR ProcedureCode
+  rnsap_private_data_t *pdata = rnsap_get_private_data(actx->pinfo);
+#.END
+#.FN_PARS  ProcedureCode  VAL_PTR = &pdata->ProcedureCode
 #.FN_FTR ProcedureCode
    col_add_fstr(actx->pinfo->cinfo, COL_INFO, "%s ",
-                val_to_str_ext_const(ProcedureCode, &rnsap_ProcedureCode_vals_ext,
+                val_to_str_ext_const(pdata->ProcedureCode, &rnsap_ProcedureCode_vals_ext,
                            "unknown message"));
 #.END
-#.FN_PARS ProcedureID/ddMode VAL_PTR = &ddMode
+#.FN_PARS ProcedureID/ddMode VAL_PTR = &rnsap_get_private_data(actx->pinfo)->ddMode
 
 #.FN_HDR ProcedureID
-  ProcedureCode = 0xFFFF;
-  ddMode = 0xFFFF;
-  ProcedureID = NULL;
+  rnsap_private_data_t *pdata = rnsap_get_private_data(actx->pinfo);
 #.END
 
 #.FN_FTR ProcedureID
-  ProcedureID = wmem_strdup_printf(wmem_packet_scope(), "%s/%s",
-                                 val_to_str_ext(ProcedureCode, &rnsap_ProcedureCode_vals_ext, "unknown(%u)"),
-                                 val_to_str(ddMode, rnsap_DdMode_vals, "unknown(%u)"));
+  pdata->ProcedureID = wmem_strdup_printf(actx->pinfo->pool, "%s/%s",
+                                 val_to_str_ext(actx->pinfo->pool, pdata->ProcedureCode, &rnsap_ProcedureCode_vals_ext, "unknown(%u)"),
+                                 val_to_str(actx->pinfo->pool, pdata->ddMode, rnsap_DdMode_vals, "unknown(%u)"));
 #.END
 
 #.FN_PARS InitiatingMessage/value  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_InitiatingMessageValue
@@ -107,18 +111,24 @@ ProtocolIE-ContainerPairList
 #.FN_BODY L3-Information  VAL_PTR = &parameter_tvb
 	tvbuff_t *parameter_tvb;
 	dissector_handle_t parameter_handle = NULL;
+	rnsap_private_data_t *pdata = rnsap_get_private_data(actx->pinfo);
 
 %(DEFAULT_BODY)s
 
 	if (!parameter_tvb)
 		return offset;
 
-	switch (ProcedureCode) {
+	switch (pdata->ProcedureCode) {
 
 	case RNSAP_ID_DOWNLINKSIGNALLINGTRANSFER:
-		parameter_handle = rrc_dl_dcch_handle;
+		/* TODO: separate into Iur and Iur-g cases: */
+		/* For the Iur-g interface, L3 message is a GERAN-RRC message for which a dissector does not currently exist */
+		/* For the Iur interface, L3 message is a UMTS RRC DL-CCCH message */
+		parameter_handle = rrc_dl_ccch_handle;
 		break;
 	case RNSAP_ID_UPLINKSIGNALLINGTRANSFER:
+		parameter_handle = rrc_ul_ccch_handle;
+		break;
 	default:
 		break;
 	}
@@ -128,13 +138,125 @@ ProtocolIE-ContainerPairList
 
 #.END
 
-#.FN_PARS PrivateIE-ID/global FN_VARIANT = _str  VAL_PTR = &obj_id
+#.FN_PARS PrivateIE-ID/global FN_VARIANT = _str  VAL_PTR = &rnsap_get_private_data(actx->pinfo)->obj_id
 
+#.FN_BODY RANAP-RelocationInformation VAL_PTR = &parameter_tvb
+  tvbuff_t *parameter_tvb=NULL;
+
+%(DEFAULT_BODY)s
+
+  if (!parameter_tvb)
+    return offset;
+
+  /* Calling RANAP dissector but preventing changes to the protocol column */
+  col_set_writable(actx->pinfo->cinfo, COL_PROTOCOL, false);
+  call_dissector_only(ranap_handle, parameter_tvb, actx->pinfo, tree, NULL);
+  col_set_writable(actx->pinfo->cinfo, COL_PROTOCOL, true);
 
 #.TYPE_ATTR
 BLER TYPE = FT_INT32  DISPLAY = BASE_DEC  STRINGS = NULL
 #.END
 
+#.FN_BODY BindingID VAL_PTR = &parameter_tvb
+  tvbuff_t *parameter_tvb=NULL;
+  uint16_t binding_id_port;
+
+%(DEFAULT_BODY)s
+
+  if (!parameter_tvb)
+    return offset;
+
+# BindingID				::= OCTET STRING (SIZE (1..4,...))
+# -- If the Binding ID includes an UDP port, the UDP port is included in octet 1 and 2.
+  if(tvb_reported_length(parameter_tvb)>=2){
+    binding_id_port = tvb_get_ntohs(parameter_tvb,0);
+    proto_item_append_text(actx->created_item, " (%%u)",binding_id_port);
+  }
+
+#.FN_BODY TransportLayerAddress VAL_PTR = &parameter_tvb
+  tvbuff_t *parameter_tvb = NULL;
+  proto_item *item;
+  proto_tree *subtree, *nsap_tree;
+  uint8_t *padded_nsap_bytes;
+  tvbuff_t *nsap_tvb;
+  int tvb_len;
+
+%(DEFAULT_BODY)s
+  if (!parameter_tvb)
+    return offset;
+
+  /* Get the length */
+  tvb_len = tvb_reported_length(parameter_tvb);
+  subtree = proto_item_add_subtree(actx->created_item, ett_rnsap_transportLayerAddress);
+  if (tvb_len == 4){
+    /* IPv4 */
+    proto_tree_add_item(subtree, hf_rnsap_transportLayerAddress_ipv4, parameter_tvb, 0, tvb_len, ENC_BIG_ENDIAN);
+  }
+  if (tvb_len == 16){
+    /* IPv6 */
+    proto_tree_add_item(subtree, hf_rnsap_transportLayerAddress_ipv6, parameter_tvb, 0, tvb_len, ENC_NA);
+  }
+  if (tvb_len == 20 || tvb_len == 7){
+    /* NSAP */
+    if (tvb_len == 7){
+      /* Unpadded IPv4 NSAP */
+      /* Creating a new TVB with padding */
+      padded_nsap_bytes = (uint8_t*) wmem_alloc0(actx->pinfo->pool, 20);
+      tvb_memcpy(parameter_tvb, padded_nsap_bytes, 0, tvb_len);
+      nsap_tvb = tvb_new_child_real_data(tvb, padded_nsap_bytes, 20, 20);
+      add_new_data_source(actx->pinfo, nsap_tvb, "Padded NSAP Data");
+    }else{
+      /* Padded NSAP*/
+      nsap_tvb = parameter_tvb;
+    }
+    item = proto_tree_add_item(subtree, hf_rnsap_transportLayerAddress_nsap, parameter_tvb, 0, tvb_len, ENC_NA);
+    nsap_tree = proto_item_add_subtree(item, ett_rnsap_transportLayerAddress_nsap);
+    dissect_nsap(nsap_tvb, actx->pinfo, 0, 20, nsap_tree);
+  }
+
+#.TYPE_ATTR
+LAC TYPE = FT_UINT16 DISPLAY = BASE_DEC_HEX
+#.FN_BODY LAC VAL_PTR = &parameter_tvb HF_INDEX = -1
+  tvbuff_t *parameter_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 2, ENC_BIG_ENDIAN);
+  }
+
+#.TYPE_ATTR
+RAC TYPE = FT_UINT8 DISPLAY = BASE_DEC_HEX
+#.FN_BODY RAC VAL_PTR = &parameter_tvb HF_INDEX = -1
+  tvbuff_t *parameter_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 1, ENC_BIG_ENDIAN);
+  }
+
+#.TYPE_ATTR
+SAC TYPE = FT_UINT16 DISPLAY = BASE_DEC_HEX
+#.FN_BODY SAC VAL_PTR = &parameter_tvb HF_INDEX = -1
+  tvbuff_t *parameter_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 2, ENC_BIG_ENDIAN);
+  }
+
+#.TYPE_ATTR
+TAC TYPE = FT_UINT16 DISPLAY = BASE_DEC_HEX
+#.FN_BODY TAC VAL_PTR = &parameter_tvb HF_INDEX = -1
+  tvbuff_t *parameter_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 2, ENC_BIG_ENDIAN);
+  }
+
+#.FN_BODY IMSI VAL_PTR = &parameter_tvb
+  tvbuff_t *parameter_tvb;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_rnsap_IMSI);
+    dissect_e212_imsi(parameter_tvb, actx->pinfo, subtree, 0, tvb_reported_length(parameter_tvb), false);
+  }
 
 #.REGISTER
 

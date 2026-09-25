@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-int yywrap(){return(1);}
+int yywrap(void){return(1);}
 
 static void interpret_cppinfo(const char *);
 static void update_lineinfo(void);

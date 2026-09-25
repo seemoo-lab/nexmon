@@ -1,0 +1,2523 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="c14n_8c" kind="file" language="C++">
+    <compoundname>c14n.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes local="no">string.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="uri_8h" local="no">libxml/uri.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes refid="xpathInternals_8h" local="no">libxml/xpathInternals.h</includes>
+    <includes refid="c14n_8h" local="no">libxml/c14n.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/io.h</includes>
+    <includes local="yes">private/memory.h</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/c14n.c</label>
+        <link refid="c14n_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="30">
+        <label>libxml/c14n.h</label>
+        <link refid="c14n_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/uri.h</label>
+        <link refid="uri_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="29">
+        <label>libxml/xpath.h</label>
+        <link refid="xpath_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/xpathInternals.h</label>
+        <link refid="xpathInternals_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="9">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="7">
+        <label>limits.h</label>
+      </node>
+      <node id="31">
+        <label>private/error.h</label>
+      </node>
+      <node id="32">
+        <label>private/io.h</label>
+      </node>
+      <node id="33">
+        <label>private/memory.h</label>
+      </node>
+      <node id="11">
+        <label>stdarg.h</label>
+      </node>
+      <node id="16">
+        <label>stddef.h</label>
+      </node>
+      <node id="6">
+        <label>stdio.h</label>
+      </node>
+      <node id="3">
+        <label>stdlib.h</label>
+      </node>
+      <node id="4">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlC14NVisibleNsStack" prot="public">_xmlC14NVisibleNsStack</innerclass>
+    <innerclass refid="struct__xmlC14NCtx" prot="public">_xmlC14NCtx</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="c14n_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="12" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="12" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="c14n_8c_1aeb1738d3b6fbccd5fafd4579d4b7d444" prot="public" static="no">
+        <name>xmlC11NNormalizeAttr</name>
+        <param><defname>a</defname></param>
+        <initializer>    xmlC11NNormalizeString((a), XMLC14N_NORMALIZE_ATTR)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="108" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="108" bodyend="109"/>
+      </memberdef>
+      <memberdef kind="define" id="c14n_8c_1ab957b9849164b941001558560cb6df9f" prot="public" static="no">
+        <name>xmlC11NNormalizeComment</name>
+        <param><defname>a</defname></param>
+        <initializer>    xmlC11NNormalizeString((a), XMLC14N_NORMALIZE_COMMENT)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="110" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="110" bodyend="111"/>
+      </memberdef>
+      <memberdef kind="define" id="c14n_8c_1ae3459ca7b4aed9341e51342467c28457" prot="public" static="no">
+        <name>xmlC11NNormalizePI</name>
+        <param><defname>a</defname></param>
+        <initializer>    xmlC11NNormalizeString((a), XMLC14N_NORMALIZE_PI)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="112" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="112" bodyend="113"/>
+      </memberdef>
+      <memberdef kind="define" id="c14n_8c_1aaecfc63d871a02de32bb4b9d1929aa80" prot="public" static="no">
+        <name>xmlC11NNormalizeText</name>
+        <param><defname>a</defname></param>
+        <initializer>    xmlC11NNormalizeString((a), XMLC14N_NORMALIZE_TEXT)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="114" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="114" bodyend="115"/>
+      </memberdef>
+      <memberdef kind="define" id="c14n_8c_1a50c972430148eec26e7a887ffc1ce3cb" prot="public" static="no">
+        <name>xmlC14NIsVisible</name>
+        <param><defname>ctx</defname></param>
+        <param><defname>node</defname></param>
+        <param><defname>parent</defname></param>
+        <initializer>     (((ctx)-&gt;is_visible_callback != NULL) ? \
+    (ctx)-&gt;is_visible_callback((ctx)-&gt;user_data, \
+        (xmlNodePtr)(node), (xmlNodePtr)(parent)) : 1)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="117" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="117" bodyend="120"/>
+      </memberdef>
+      <memberdef kind="define" id="c14n_8c_1a5e049a001fd0c1f3182834f529a290e0" prot="public" static="no">
+        <name>xmlC14NIsExclusive</name>
+        <param><defname>ctx</defname></param>
+        <initializer>    ( (ctx)-&gt;mode == <ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871a0acc052398a4ce2016e0c132180b8c50" kindref="member">XML_C14N_EXCLUSIVE_1_0</ref> )</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="122" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="122" bodyend="123"/>
+      </memberdef>
+      <memberdef kind="define" id="c14n_8c_1a094d8617bcb549ca0ece8c77e6d63130" prot="public" static="no">
+        <name>XML_NAMESPACES_DEFAULT</name>
+        <initializer>16</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="241" column="9" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="241" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="c14n_8c_1afe33c937e43ea9ad75994d9f811f46a5" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlC14NPosition</name>
+        <enumvalue id="c14n_8c_1afe33c937e43ea9ad75994d9f811f46a5a7f64716844666f55a807ff807189e3bf" prot="public">
+          <name>XMLC14N_BEFORE_DOCUMENT_ELEMENT</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="c14n_8c_1afe33c937e43ea9ad75994d9f811f46a5a7c28fba772cff88e52932fc28540615c" prot="public">
+          <name>XMLC14N_INSIDE_DOCUMENT_ELEMENT</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="c14n_8c_1afe33c937e43ea9ad75994d9f811f46a5a30de538d16391de213f025d955ae050f" prot="public">
+          <name>XMLC14N_AFTER_DOCUMENT_ELEMENT</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="36" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="36" bodyend="40"/>
+      </memberdef>
+      <memberdef kind="enum" id="c14n_8c_1adadf0fe87f04a75df96be55bee054350" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlC14NNormalizationMode</name>
+        <enumvalue id="c14n_8c_1adadf0fe87f04a75df96be55bee054350a022597db33a453310c73361f34a5fe0b" prot="public">
+          <name>XMLC14N_NORMALIZE_ATTR</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="c14n_8c_1adadf0fe87f04a75df96be55bee054350ab961e8bc21378889880b1c70a102ad43" prot="public">
+          <name>XMLC14N_NORMALIZE_COMMENT</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="c14n_8c_1adadf0fe87f04a75df96be55bee054350a454f5cab59e093dbb3b1b75cb2472678" prot="public">
+          <name>XMLC14N_NORMALIZE_PI</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="c14n_8c_1adadf0fe87f04a75df96be55bee054350a5698e31f49ce1674c277ef9d27632f1c" prot="public">
+          <name>XMLC14N_NORMALIZE_TEXT</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="98" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="98" bodyend="103"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="c14n_8c_1a094854fda0a06084445850d79fa14b56" prot="public" static="no">
+        <type>struct _xmlC14NVisibleNsStack</type>
+        <definition>typedef struct _xmlC14NVisibleNsStack xmlC14NVisibleNsStack</definition>
+        <argsstring></argsstring>
+        <name>xmlC14NVisibleNsStack</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="49" column="23"/>
+      </memberdef>
+      <memberdef kind="typedef" id="c14n_8c_1a9c264264960f9f8efcf04a585edb692d" prot="public" static="no">
+        <type>struct _xmlC14NVisibleNsStack *</type>
+        <definition>typedef struct _xmlC14NVisibleNsStack * xmlC14NVisibleNsStackPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlC14NVisibleNsStackPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="49" column="49"/>
+      </memberdef>
+      <memberdef kind="typedef" id="c14n_8c_1a35d46d900b339298adca6a32fb484ab4" prot="public" static="no">
+        <type>struct _xmlC14NCtx</type>
+        <definition>typedef struct _xmlC14NCtx xmlC14NCtx</definition>
+        <argsstring></argsstring>
+        <name>xmlC14NCtx</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="72" column="12"/>
+      </memberdef>
+      <memberdef kind="typedef" id="c14n_8c_1a564fb6e2175b090d803ecce7d54a5935" prot="public" static="no">
+        <type>struct _xmlC14NCtx *</type>
+        <definition>typedef struct _xmlC14NCtx * xmlC14NCtxPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlC14NCtxPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="72" column="27"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="c14n_8c_1a4c3a358572dcbbc235d824868164272a" prot="public" static="no" mutable="no">
+        <type></type>
+        <definition>ctx</definition>
+        <argsstring></argsstring>
+        <name>ctx</name>
+        <initializer>= (xmlC14NCtxPtr) <ref refid="xmlmemory_8h_1a8eb58ce50121b43ad8a451a9228c55ae" kindref="member">xmlMalloc</ref>(sizeof(xmlC14NCtx))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1758" column="5" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1758" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1ab73c0ed3cd583f9ae640974700a48a37" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx doc</definition>
+        <argsstring></argsstring>
+        <name>doc</name>
+        <initializer>= doc</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1768" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1768" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1a23ffa502406f0ee0a284726350f813a8" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx with_comments</definition>
+        <argsstring></argsstring>
+        <name>with_comments</name>
+        <initializer>= with_comments</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1769" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1769" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1a12165b6e784b280d8c36ebf5d0077492" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx is_visible_callback</definition>
+        <argsstring></argsstring>
+        <name>is_visible_callback</name>
+        <initializer>= is_visible_callback</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1770" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1770" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1a60854ccb0cc4307697d29f6084b3633b" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx user_data</definition>
+        <argsstring></argsstring>
+        <name>user_data</name>
+        <initializer>= user_data</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1771" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1771" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1aeed0611ba9d287d15c0b841c62b867c8" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx buf</definition>
+        <argsstring></argsstring>
+        <name>buf</name>
+        <initializer>= buf</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1772" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1772" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1a4e08755f07fedf74cf3977830b74664e" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx parent_is_doc</definition>
+        <argsstring></argsstring>
+        <name>parent_is_doc</name>
+        <initializer>= 1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1773" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1773" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1a5feb78939d847f18c5fda19b81a0fa30" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx pos</definition>
+        <argsstring></argsstring>
+        <name>pos</name>
+        <initializer>= XMLC14N_BEFORE_DOCUMENT_ELEMENT</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1774" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1774" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1a6a18e97a485873ac1d2b964772c6e6a9" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx ns_rendered</definition>
+        <argsstring></argsstring>
+        <name>ns_rendered</name>
+        <initializer>= xmlC14NVisibleNsStackCreate()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1775" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1775" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="c14n_8c_1a91bd32f44d14fd54fd6d785b76a6be2d" prot="public" static="no" mutable="no">
+        <type>ctx</type>
+        <definition>ctx mode</definition>
+        <argsstring></argsstring>
+        <name>mode</name>
+        <initializer>= mode</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1787" column="8" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1787" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="c14n_8c_1a91c57b665398d9737f9a71fda0cfe3cf" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlC14NVisibleNsStackPtr</type>
+        <definition>static xmlC14NVisibleNsStackPtr xmlC14NVisibleNsStackCreate</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlC14NVisibleNsStackCreate</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="272" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="272" bodyend="280" declfile="/builds/GNOME/libxml2/c14n.c" declline="74" declcolumn="32"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a3c3c62fb542f44b83868319a34528d06" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NVisibleNsStackDestroy</definition>
+        <argsstring>(xmlC14NVisibleNsStackPtr cur)</argsstring>
+        <name>xmlC14NVisibleNsStackDestroy</name>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="283" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="283" bodyend="299" declfile="/builds/GNOME/libxml2/c14n.c" declline="75" declcolumn="17"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a459fba152c0aea290a2ba394397d6de6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NVisibleNsStackAdd</definition>
+        <argsstring>(xmlC14NVisibleNsStackPtr cur, xmlNsPtr ns, xmlNodePtr node)</argsstring>
+        <name>xmlC14NVisibleNsStackAdd</name>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>xmlNsPtr</type>
+          <declname>ns</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="302" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="302" bodyend="337" declfile="/builds/GNOME/libxml2/c14n.c" declline="76" declcolumn="17"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a52f30e1624bc18b4046d09fa39cfaece" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NVisibleNsStackSave</definition>
+        <argsstring>(xmlC14NVisibleNsStackPtr cur, xmlC14NVisibleNsStackPtr state)</argsstring>
+        <name>xmlC14NVisibleNsStackSave</name>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>state</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="340" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="340" bodyend="349" declfile="/builds/GNOME/libxml2/c14n.c" declline="79" declcolumn="12"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a4e35375c1a6b78199e338ee4fa51646e" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NVisibleNsStackRestore</definition>
+        <argsstring>(xmlC14NVisibleNsStackPtr cur, xmlC14NVisibleNsStackPtr state)</argsstring>
+        <name>xmlC14NVisibleNsStackRestore</name>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>state</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="352" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="352" bodyend="360" declfile="/builds/GNOME/libxml2/c14n.c" declline="81" declcolumn="12"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a52130a866f0830c42bd7cbbba98dce52" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NVisibleNsStackShift</definition>
+        <argsstring>(xmlC14NVisibleNsStackPtr cur)</argsstring>
+        <name>xmlC14NVisibleNsStackShift</name>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="363" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="363" bodyend="370" declfile="/builds/GNOME/libxml2/c14n.c" declline="83" declcolumn="12"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a3d94b0c248cd39fae0ed7d8940445d4e" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NVisibleNsStackFind</definition>
+        <argsstring>(xmlC14NVisibleNsStackPtr cur, xmlNsPtr ns)</argsstring>
+        <name>xmlC14NVisibleNsStackFind</name>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>xmlNsPtr</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Checks whether the given namespace was already rendered or not. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the visible stack </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace to check </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if we already wrote this namespace or 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="391" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="391" bodyend="422" declfile="/builds/GNOME/libxml2/c14n.c" declline="84" declcolumn="11"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a4a5b4fe3ee7296dae2b9a4bba77f139f" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlExcC14NVisibleNsStackFind</definition>
+        <argsstring>(xmlC14NVisibleNsStackPtr cur, xmlNsPtr ns, xmlC14NCtxPtr ctx)</argsstring>
+        <name>xmlExcC14NVisibleNsStackFind</name>
+        <param>
+          <type>xmlC14NVisibleNsStackPtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>xmlNsPtr</type>
+          <declname>ns</declname>
+        </param>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="425" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="425" bodyend="459" declfile="/builds/GNOME/libxml2/c14n.c" declline="86" declcolumn="11"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1acc40feb9c9d78d9542d18cce396271f9" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NIsNodeInNodeset</definition>
+        <argsstring>(void *user_data, xmlNodePtr node, xmlNodePtr parent)</argsstring>
+        <name>xmlC14NIsNodeInNodeset</name>
+        <param>
+          <type>void *</type>
+          <declname>user_data</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>parent</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="244" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="244" bodyend="269" declfile="/builds/GNOME/libxml2/c14n.c" declline="90" declcolumn="11"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a68ac38ec4a5c3b9cc1652e7d15704a11" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NProcessNode</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlNodePtr cur)</argsstring>
+        <name>xmlC14NProcessNode</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Processes the given node. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to C14N context object </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node to process </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>non-negative value on success or negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1492" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1492" bodyend="1668" declfile="/builds/GNOME/libxml2/c14n.c" declline="96" declcolumn="12"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a43775d83d296919fa9d34ea2777f4f9d" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NProcessNodeList</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlNodePtr cur)</argsstring>
+        <name>xmlC14NProcessNodeList</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Processes all nodes in the row starting from cur. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to C14N context object </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node to start from </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>non-negative value on success or negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1678" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1678" bodyend="1691" declfile="/builds/GNOME/libxml2/c14n.c" declline="97" declcolumn="12"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a1aa1c5249be0790513e739f9c633cc28" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>static xmlChar * xmlC11NNormalizeString</definition>
+        <argsstring>(const xmlChar *input, xmlC14NNormalizationMode mode)</argsstring>
+        <name>xmlC11NNormalizeString</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <param>
+          <type>xmlC14NNormalizationMode</type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+<para>Converts a string to a canonical (normalized) format. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The code is stolen from xmlEscapeText. Added normalization of <computeroutput>\x09</computeroutput>, <computeroutput>\x0a</computeroutput>, <computeroutput>\x0A</computeroutput> and the <computeroutput>mode</computeroutput> parameter.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the input string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the normalization mode (attribute, comment, PI or text) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a normalized string (caller is responsible for calling <ref refid="xmlmemory_8h_1a30231cbab46e8d659a5262c3b781164b" kindref="member">xmlFree</ref>) or NULL if an error occurs </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="2070" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="2070" bodyend="2168" declfile="/builds/GNOME/libxml2/c14n.c" declline="105" declcolumn="16"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1ad15790e2b2692531a177537adca1057a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NErrMemory</definition>
+        <argsstring>(xmlC14NCtxPtr ctxt)</argsstring>
+        <name>xmlC14NErrMemory</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Handle a redefinition of memory error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a C14N evaluation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="137" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="137" bodyend="143"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a64287ea6c9780109850e04a36e4a770c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NErrFull</definition>
+        <argsstring>(xmlC14NCtxPtr ctxt, xmlNodePtr node, int code, const char *str1, const char *msg,...)</argsstring>
+        <name>xmlC14NErrFull</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>code</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str1</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>...</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="146" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="146" bodyend="163"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1ac29de44945d5135165a155e73e345774" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NErrParam</definition>
+        <argsstring>(xmlC14NCtxPtr ctxt)</argsstring>
+        <name>xmlC14NErrParam</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Handle a param error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a C14N evaluation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="171" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="171" bodyend="175"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a3d567f2a6c86821170fe2c205295962d" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NErrInvalidNode</definition>
+        <argsstring>(xmlC14NCtxPtr ctxt, const char *node_type, const char *extra)</argsstring>
+        <name>xmlC14NErrInvalidNode</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>node_type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>extra</declname>
+        </param>
+        <briefdescription>
+<para>Handle an invalid node error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a C14N evaluation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node_type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>node type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>extra</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra information </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="185" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="185" bodyend="190"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a748fa9aecdf624994bd99c4980b38990" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NErrUnknownNode</definition>
+        <argsstring>(xmlC14NCtxPtr ctxt, int node_type, const char *extra)</argsstring>
+        <name>xmlC14NErrUnknownNode</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>node_type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>extra</declname>
+        </param>
+        <briefdescription>
+<para>Handle an unknown node error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a C14N evaluation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node_type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>node type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>extra</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra information </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="200" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="200" bodyend="204"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a5f5ad953165cbe7a16864aa5810b052a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NErrRelativeNamespace</definition>
+        <argsstring>(xmlC14NCtxPtr ctxt, const char *ns_uri)</argsstring>
+        <name>xmlC14NErrRelativeNamespace</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>ns_uri</declname>
+        </param>
+        <briefdescription>
+<para>Handle a relative namespace error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a C14N evaluation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns_uri</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>namespace URI </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="213" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="213" bodyend="217"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a968fddfb9c60737dfcf5777bfb198315" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NErr</definition>
+        <argsstring>(xmlC14NCtxPtr ctxt, xmlNodePtr node, int error, const char *msg)</argsstring>
+        <name>xmlC14NErr</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>error</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <briefdescription>
+<para>Handle an error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a C14N evaluation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the context node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error code </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="230" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="230" bodyend="234"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1ad963d6c58b656a0aaa31c3d5f73fdaeb" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NStrEqual</definition>
+        <argsstring>(const xmlChar *str1, const xmlChar *str2)</argsstring>
+        <name>xmlC14NStrEqual</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str1</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str2</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="373" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="373" bodyend="381"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1ab5251b1c586451240f8335cbaf71237f" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NIsXmlNs</definition>
+        <argsstring>(xmlNsPtr ns)</argsstring>
+        <name>xmlC14NIsXmlNs</name>
+        <param>
+          <type>xmlNsPtr</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Checks whether the given namespace is a default &quot;xml:&quot; namespace with href=&quot;http://www.w3.org/XML/1998/namespace&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace to check </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if the node is default or 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="474" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="474" bodyend="479"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1adcef75d2bd6a9e3df94d069afa960e7a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NNsCompare</definition>
+        <argsstring>(const void *data1, const void *data2)</argsstring>
+        <name>xmlC14NNsCompare</name>
+        <param>
+          <type>const void *</type>
+          <declname>data1</declname>
+        </param>
+        <param>
+          <type>const void *</type>
+          <declname>data2</declname>
+        </param>
+        <briefdescription>
+<para>Compares the namespaces by names (prefixes). </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>data1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to first namespace </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to second namespace </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 if ns1 &lt; ns2, 0 if ns1 == ns2 or 1 if ns1 &gt; ns2. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="490" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="490" bodyend="502"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1aa30702fdcb9241ed6948e8b1cf87e3e4" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NPrintNamespaces</definition>
+        <argsstring>(const xmlNs *ns, xmlC14NCtxPtr ctx)</argsstring>
+        <name>xmlC14NPrintNamespaces</name>
+        <param>
+          <type>const <ref refid="tree_8h_1a79683a004465ef75a960604fada53ab3" kindref="member">xmlNs</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Prints the given namespace to the output buffer from C14N context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to namespace </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the C14N context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 on success or 0 on fail. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="513" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="513" bodyend="534"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1ac1b633e2214dcbcac69d8fc89f8f132e" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NPrintNamespacesWalker</definition>
+        <argsstring>(const void *ns, void *ctx)</argsstring>
+        <name>xmlC14NPrintNamespacesWalker</name>
+        <param>
+          <type>const void *</type>
+          <declname>ns</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="537" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="537" bodyend="539"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1aad4e0ee2e48aeea249d26a7342c676e2" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NProcessNamespacesAxis</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)</argsstring>
+        <name>xmlC14NProcessNamespacesAxis</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>visible</declname>
+        </param>
+        <briefdescription>
+<para>Prints out canonical namespace axis of the current node to the buffer from C14N context as follows. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Canonical XML v 1.0 (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>)</para>
+<para>Namespace Axis Consider a list L containing only namespace nodes in the axis and in the node-set in lexicographic order (ascending). To begin processing L, if the first node is not the default namespace node (a node with no namespace URI and no local name), then generate a space followed by xmlns=&quot;&quot; if and only if the following conditions are met:<itemizedlist>
+<listitem><para>the element E that owns the axis is in the node-set</para>
+</listitem><listitem><para>The nearest ancestor element of E in the node-set has a default namespace node in the node-set (default namespace nodes always have non-empty values in XPath) The latter condition eliminates unnecessary occurrences of xmlns=&quot;&quot; in the canonical form since an element only receives an xmlns=&quot;&quot; if its default namespace is empty and if it has an immediate parent in the canonical form that has a non-empty default namespace. To finish processing L, simply process every namespace node in L, except omit namespace node with local name xml, which defines the xml prefix, if its string value is <ulink url="http://www.w3.org/XML/1998/namespace">http://www.w3.org/XML/1998/namespace</ulink>.</para>
+</listitem></itemizedlist>
+</para>
+<para>Exclusive XML Canonicalization v 1.0 (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>) Canonical XML applied to a document subset requires the search of the ancestor nodes of each orphan element node for attributes in the xml namespace, such as xml:lang and xml:space. These are copied into the element node except if a declaration of the same attribute is already in the attribute axis of the element (whether or not it is included in the document subset). This search and copying are omitted from the Exclusive XML Canonicalization method.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the C14N context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>visible</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the visibility of node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success or -1 on fail. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+<para>if the first node is not the default namespace node (a node with no namespace URI and no local name), then generate a space followed by xmlns=&quot;&quot; if and only if the following conditions are met:<itemizedlist>
+<listitem><para>the element E that owns the axis is in the node-set</para>
+</listitem><listitem><para>the nearest ancestor element of E in the node-set has a default namespace node in the node-set (default namespace nodes always have non-empty values in XPath)</para>
+</listitem></itemizedlist>
+</para>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="580" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="580" bodyend="655"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a493b8d38f223385bd19e987c12c3641b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlExcC14NProcessNamespacesAxis</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)</argsstring>
+        <name>xmlExcC14NProcessNamespacesAxis</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>visible</declname>
+        </param>
+        <briefdescription>
+<para>Prints out exclusive canonical namespace axis of the current node to the buffer from C14N context as follows. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Exclusive XML Canonicalization <ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink></para>
+<para>If the element node is in the XPath subset then output the node in accordance with Canonical XML except for namespace nodes which are rendered as follows:</para>
+<para><orderedlist>
+<listitem><para>Render each namespace node iff:<itemizedlist>
+<listitem><para>it is visibly utilized by the immediate parent element or one of its attributes, or is present in InclusiveNamespaces PrefixList, and</para>
+</listitem><listitem><para>its prefix and value do not appear in ns_rendered. ns_rendered is obtained by popping the state stack in order to obtain a list of prefixes and their values which have already been rendered by an output ancestor of the namespace node&apos;s parent element.</para>
+</listitem></itemizedlist>
+</para>
+</listitem><listitem><para>Append the rendered namespace node to the list ns_rendered of namespace nodes rendered by output ancestors. Push ns_rendered on state stack and recurse.</para>
+</listitem><listitem><para>After the recursion returns, pop thestate stack.</para>
+</listitem></orderedlist>
+</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the C14N context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>visible</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the visibility of node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success or -1 on fail. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="688" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="688" bodyend="841"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1abaa764c3d1a827deefe081bcdd0dbe10" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NIsXmlAttr</definition>
+        <argsstring>(xmlAttrPtr attr)</argsstring>
+        <name>xmlC14NIsXmlAttr</name>
+        <param>
+          <type>xmlAttrPtr</type>
+          <declname>attr</declname>
+        </param>
+        <briefdescription>
+<para>Checks whether the given attribute is a default &quot;xml:&quot; namespace with href=&quot;http://www.w3.org/XML/1998/namespace&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>attr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attr to check </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if the node is default or 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="854" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="854" bodyend="858"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a64ee8f0e23bd786243b545cb55fceb28" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NAttrsCompare</definition>
+        <argsstring>(const void *data1, const void *data2)</argsstring>
+        <name>xmlC14NAttrsCompare</name>
+        <param>
+          <type>const void *</type>
+          <declname>data1</declname>
+        </param>
+        <param>
+          <type>const void *</type>
+          <declname>data2</declname>
+        </param>
+        <briefdescription>
+<para>Prints the given attribute to the output buffer from C14N context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>data1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer tls o first attr </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to second attr </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 if attr1 &lt; attr2, 0 if attr1 == attr2 or 1 if attr1 &gt; attr2. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="869" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="869" bodyend="907"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a73fe46e3e8e322ab09e34936ff533a28" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NPrintAttrs</definition>
+        <argsstring>(const void *data, void *user)</argsstring>
+        <name>xmlC14NPrintAttrs</name>
+        <param>
+          <type>const void *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>user</declname>
+        </param>
+        <briefdescription>
+<para>Prints out canonical attribute urrent node to the buffer from C14N context as follows. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Canonical XML v 1.0 (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to attr </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>user</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the C14N context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 on success or 0 on fail. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="921" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="921" bodyend="957"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1aec211761352e0a972a71eddf41b47f8b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlAttrPtr</type>
+        <definition>static xmlAttrPtr xmlC14NFindHiddenParentAttr</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlNodePtr cur, const xmlChar *name, const xmlChar *ns)</argsstring>
+        <name>xmlC14NFindHiddenParentAttr</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Finds an attribute in a hidden parent node. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>a pointer to the attribute node (if found) or NULL otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="965" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="965" bodyend="978"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a7f3c5e1965fa5635813bc13c3358a729" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlAttrPtr</type>
+        <definition>static xmlAttrPtr xmlC14NFixupBaseAttr</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlAttrPtr xml_base_attr)</argsstring>
+        <name>xmlC14NFixupBaseAttr</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlAttrPtr</type>
+          <declname>xml_base_attr</declname>
+        </param>
+        <briefdescription>
+<para>Fixes up the xml:base attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>the newly created attribute or NULL </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="986" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="986" bodyend="1079"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a994b152964ac7f97c6095af4fbe6ecc5" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NProcessAttrsAxis</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlNodePtr cur, int parent_visible)</argsstring>
+        <name>xmlC14NProcessAttrsAxis</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>parent_visible</declname>
+        </param>
+        <briefdescription>
+<para>Prints out canonical attribute axis of the current node to the buffer from C14N context as follows. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Canonical XML v 1.0 (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>)</para>
+<para>Attribute Axis In lexicographic order (ascending), process each node that is in the element&apos;s attribute axis and in the node-set.</para>
+<para>The processing of an element node E MUST be modified slightly when an XPath node-set is given as input and the element&apos;s parent is omitted from the node-set.</para>
+<para>Exclusive XML Canonicalization v 1.0 (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para>Canonical XML applied to a document subset requires the search of the ancestor nodes of each orphan element node for attributes in the xml namespace, such as xml:lang and xml:space. These are copied into the element node except if a declaration of the same attribute is already in the attribute axis of the element (whether or not it is included in the document subset). This search and copying are omitted from the Exclusive XML Canonicalization method.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the C14N context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>parent_visible</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the visibility of the parent node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success or -1 on fail. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1112" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1112" bodyend="1328"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1ab4214cd564c6468e00f4bcd090ce4073" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NCheckForRelativeNamespaces</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlNodePtr cur)</argsstring>
+        <name>xmlC14NCheckForRelativeNamespaces</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Checks that current element node has no relative namespaces defined. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the C14N context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the current element node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the node has no relative namespaces or -1 otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1338" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1338" bodyend="1372"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a5e2702219f6d370adb46b4861d44de95" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlC14NProcessElementNode</definition>
+        <argsstring>(xmlC14NCtxPtr ctx, xmlNodePtr cur, int visible)</argsstring>
+        <name>xmlC14NProcessElementNode</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>visible</declname>
+        </param>
+        <briefdescription>
+<para>Canonical XML v 1.0 (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>). </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Element Nodes If the element is not in the node-set, then the result is obtained by processing the namespace axis, then the attribute axis, then processing the child nodes of the element that are in the node-set (in document order). If the element is in the node-set, then the result is an open angle bracket (&lt;), the element QName, the result of processing the namespace axis, the result of processing the attribute axis, a close angle bracket (&gt;), the result of processing the child nodes of the element that are in the node-set (in document order), an open angle bracket, a forward slash (/), the element QName, and a close angle bracket.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to C14N context object </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node to process </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>visible</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>this node is visible </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>non-negative value on success or negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1395" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1395" bodyend="1482"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1af89e0ac8b19d232ac7dd5ed301d74c21" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlC14NFreeCtx</definition>
+        <argsstring>(xmlC14NCtxPtr ctx)</argsstring>
+        <name>xmlC14NFreeCtx</name>
+        <param>
+          <type>xmlC14NCtxPtr</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Cleanups the C14N context object. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the pointer to C14N context object </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1701" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1701" bodyend="1712"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a80524584e03541b86ff7145cb9502c36" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>if</definition>
+        <argsstring>(buf-&gt;encoder !=NULL)</argsstring>
+        <name>if</name>
+        <param>
+          <type>buf-&gt;encoder !</type>
+          <defval>NULL</defval>
+        </param>
+        <briefdescription>
+<para>Creates new C14N context object to store C14N parameters. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>is_visible_callback</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the function to use to determine is node visible or not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>user_data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the first parameter for <computeroutput>is_visible_callback</computeroutput> function (in most cases, it is nodes set) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for ` canonicalization) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the output buffer to store canonical XML; this buffer MUST have encoder==NULL because C14N requires UTF-8 output </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>pointer to newly created object (success) or NULL (fail) */ static xmlC14NCtxPtr xmlC14NNewCtx(xmlDocPtr doc,
+          xmlC14NIsVisibleCallback is_visible_callback, void* user_data,
+              xmlC14NMode mode, xmlChar ** inclusive_ns_prefixes,
+              int with_comments, xmlOutputBufferPtr buf) { xmlC14NCtxPtr ctx = NULL;</para>
+</simplesect>
+if ((doc == NULL) || (buf == NULL)) { xmlC14NErrParam(ctx); return (NULL); }</para>
+<para>/* Validate the encoding output buffer encoding </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1749" column="5" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1749" bodyend="1753"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a13507154075c5c224303599bb73177d3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>if</definition>
+        <argsstring>(ctx==NULL)</argsstring>
+        <name>if</name>
+        <param>
+          <type>ctx</type>
+          <defval>=NULL</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1759" column="5" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1759" bodyend="1762"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a30b3cf7e3b888b1a1d877c01d2b79f7e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>memset</definition>
+        <argsstring>(ctx, 0, sizeof(xmlC14NCtx))</argsstring>
+        <name>memset</name>
+        <param>
+          <type>ctx</type>
+        </param>
+        <param>
+          <type>0</type>
+        </param>
+        <param>
+          <type>sizeof(xmlC14NCtx)</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1763" column="5" declfile="/builds/GNOME/libxml2/c14n.c" declline="1763" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a51e4644d640aeb877692f9e1c70f8e41" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>if</definition>
+        <argsstring>(ctx-&gt;ns_rendered==NULL)</argsstring>
+        <name>if</name>
+        <param>
+          <type>ctx-&gt;</type>
+          <declname>ns_rendered</declname>
+          <defval>=NULL</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1777" column="5" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1777" bodyend="1781"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a0e1f3bf1ba0789ea0be2d6a55eca124a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>if</definition>
+        <argsstring>(((ctx) -&gt;mode==XML_C14N_EXCLUSIVE_1_0))</argsstring>
+        <name>if</name>
+        <param>
+          <type>((ctx) -&gt;mode==<ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871a0acc052398a4ce2016e0c132180b8c50" kindref="member">XML_C14N_EXCLUSIVE_1_0</ref>)</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1788" column="5" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1788" bodyend="1790"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a035c94851331670a000057ca7fd59295" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>return</definition>
+        <argsstring>(ctx)</argsstring>
+        <name>return</name>
+        <param>
+          <type>ctx</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1792" column="5" declfile="/builds/GNOME/libxml2/c14n.c" declline="1792" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a86550661d85e370e6da9a94491f4cfc0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlC14NExecute</definition>
+        <argsstring>(xmlDoc *doc, xmlC14NIsVisibleCallback is_visible_callback, void *user_data, int mode, xmlChar **inclusive_ns_prefixes, int with_comments, xmlOutputBuffer *buf)</argsstring>
+        <name>xmlC14NExecute</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="c14n_8h_1a5d6fb1eca4c13443bf69da2a5fab3c63" kindref="member">xmlC14NIsVisibleCallback</ref></type>
+          <declname>is_visible_callback</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>user_data</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>inclusive_ns_prefixes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>with_comments</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Dumps the canonized image of given XML document into the provided buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For details see &quot;Canonical XML&quot; (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>) or &quot;Exclusive XML Canonicalization&quot; (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>is_visible_callback</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the function to use to determine is node visible or not </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>user_data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the first parameter for <computeroutput>is_visible_callback</computeroutput> function (in most cases, it is nodes set) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for exclusive canonicalization, ignored otherwise) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the output buffer to store canonical XML; this buffer MUST have encoder==NULL because C14N requires UTF-8 output </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>non-negative value on success or a negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1817" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1817" bodyend="1894"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1ae5e77b937212f74e64819fc29b8144b2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlC14NDocSaveTo</definition>
+        <argsstring>(xmlDoc *doc, xmlNodeSet *nodes, int mode, xmlChar **inclusive_ns_prefixes, int with_comments, xmlOutputBuffer *buf)</argsstring>
+        <name>xmlC14NDocSaveTo</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="xpath_8h_1a97cc375e3d58372cb9d9db078d25e6e1" kindref="member">xmlNodeSet</ref> *</type>
+          <declname>nodes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>inclusive_ns_prefixes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>with_comments</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a5a833f0c7502e1b15b6571271fa4c541" kindref="member">xmlOutputBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Dumps the canonized image of given XML document into the provided buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For details see &quot;Canonical XML&quot; (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>) or &quot;Exclusive XML Canonicalization&quot; (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the nodes set to be included in the canonized image or NULL if all document nodes should be included </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for exclusive canonicalization, ignored otherwise) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the output buffer to store canonical XML; this buffer MUST have encoder==NULL because C14N requires UTF-8 output </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>non-negative value on success or a negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1916" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1916" bodyend="1926"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1a0b03db0d24c59380144912ffe50a5474" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlC14NDocDumpMemory</definition>
+        <argsstring>(xmlDoc *doc, xmlNodeSet *nodes, int mode, xmlChar **inclusive_ns_prefixes, int with_comments, xmlChar **doc_txt_ptr)</argsstring>
+        <name>xmlC14NDocDumpMemory</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="xpath_8h_1a97cc375e3d58372cb9d9db078d25e6e1" kindref="member">xmlNodeSet</ref> *</type>
+          <declname>nodes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>inclusive_ns_prefixes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>with_comments</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>doc_txt_ptr</declname>
+        </param>
+        <briefdescription>
+<para>Dumps the canonized image of given XML document into memory. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For details see &quot;Canonical XML&quot; (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>) or &quot;Exclusive XML Canonicalization&quot; (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the nodes set to be included in the canonized image or NULL if all document nodes should be included </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for exclusive canonicalization, ignored otherwise) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc_txt_ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the memory pointer for allocated canonical XML text; the caller of this functions is responsible for calling <ref refid="xmlmemory_8h_1a30231cbab46e8d659a5262c3b781164b" kindref="member">xmlFree()</ref> to free allocated memory </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written on success or a negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="1949" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="1949" bodyend="1993"/>
+      </memberdef>
+      <memberdef kind="function" id="c14n_8c_1af73d08aab2819d554e7492fb49ec3745" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlC14NDocSave</definition>
+        <argsstring>(xmlDoc *doc, xmlNodeSet *nodes, int mode, xmlChar **inclusive_ns_prefixes, int with_comments, const char *filename, int compression)</argsstring>
+        <name>xmlC14NDocSave</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="xpath_8h_1a97cc375e3d58372cb9d9db078d25e6e1" kindref="member">xmlNodeSet</ref> *</type>
+          <declname>nodes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>inclusive_ns_prefixes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>with_comments</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>compression</declname>
+        </param>
+        <briefdescription>
+<para>Dumps the canonized image of given XML document into the file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For details see &quot;Canonical XML&quot; (<ulink url="http://www.w3.org/TR/xml-c14n">http://www.w3.org/TR/xml-c14n</ulink>) or &quot;Exclusive XML Canonicalization&quot; (<ulink url="http://www.w3.org/TR/xml-exc-c14n">http://www.w3.org/TR/xml-exc-c14n</ulink>)</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML document for canonization </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nodes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the nodes set to be included in the canonized image or NULL if all document nodes should be included </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the c14n mode (see <computeroutput><ref refid="c14n_8h_1adb7a2fe23fa1f38a90a1658a07ba9871" kindref="member">xmlC14NMode</ref></computeroutput>) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inclusive_ns_prefixes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the list of inclusive namespace prefixes ended with a NULL or NULL if there is no inclusive namespaces (only for exclusive canonicalization, ignored otherwise) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>with_comments</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>include comments in the result (!=0) or not (==0) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename to store canonical XML image </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>compression</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the compression level (zlib required): -1 - libxml default, 0 - uncompressed, &gt;0 - compression level </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written success or a negative value on fail </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/c14n.c" line="2017" column="1" bodyfile="/builds/GNOME/libxml2/c14n.c" bodystart="2017" bodyend="2057"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/c14n.c"/>
+  </compounddef>
+</doxygen>

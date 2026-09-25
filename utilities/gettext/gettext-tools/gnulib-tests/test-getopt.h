@@ -1,9 +1,9 @@
 /* Test of command line argument processing.
-   Copyright (C) 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,11 +12,10 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2009.  */
 
-#include <stdbool.h>
 
 /* The glibc/gnulib implementation of getopt supports setting optind =
    0, but not all other implementations do.  This matters for getopt.
@@ -66,7 +65,7 @@ getopt_loop (int argc, const char **argv,
           ASSERT (options[0] == ':'
                   || ((options[0] == '-' || options[0] == '+')
                       && options[1] == ':'));
-          /* fall through */
+          FALLTHROUGH;
         case '?':
           *unrecognized = optopt;
           break;
@@ -82,18 +81,19 @@ getopt_loop (int argc, const char **argv,
 static void
 test_getopt (void)
 {
-  int start;
   bool posixly = !!getenv ("POSIXLY_CORRECT");
   /* See comment in getopt.c:
      glibc gets a LSB-compliant getopt.
-     Standalone applications get a POSIX-compliant getopt.  */
-#if defined __GETOPT_PREFIX || !(__GLIBC__ >= 2 || defined __MINGW32__)
+     Standalone applications get a POSIX-compliant getopt.
+     Note: The 'defined __GETOPT_PREFIX' condition is equivalent to
+     $REPLACE_GETOPT = 1 at configure time.  */
+#if defined __GETOPT_PREFIX || !(__GLIBC__ >= 2)
   /* Using getopt from gnulib or from a non-glibc system.  */
   posixly = true;
 #endif
 
   /* Test processing of boolean options.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -125,7 +125,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -158,7 +158,7 @@ test_getopt (void)
       ASSERT (optind == 3);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -190,7 +190,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -225,7 +225,7 @@ test_getopt (void)
     }
 
   /* Test processing of options with arguments.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -256,7 +256,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -288,7 +288,7 @@ test_getopt (void)
       ASSERT (optind == 3);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -325,7 +325,7 @@ test_getopt (void)
 
 #if GNULIB_TEST_GETOPT_GNU
   /* Test processing of options with optional arguments.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -356,7 +356,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -388,7 +388,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -424,7 +424,7 @@ test_getopt (void)
 
   /* Check that invalid options are recognized; and that both opterr
      and leading ':' can silence output.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -458,7 +458,7 @@ test_getopt (void)
       ASSERT (optind == 5);
       ASSERT (output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -492,7 +492,7 @@ test_getopt (void)
       ASSERT (optind == 5);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -526,7 +526,7 @@ test_getopt (void)
       ASSERT (optind == 5);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -560,7 +560,7 @@ test_getopt (void)
       ASSERT (optind == 5);
       ASSERT (output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -594,7 +594,7 @@ test_getopt (void)
       ASSERT (optind == 5);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -630,7 +630,7 @@ test_getopt (void)
     }
 
   /* Check for missing argument behavior.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -660,7 +660,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -690,7 +690,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -722,7 +722,7 @@ test_getopt (void)
     }
 
   /* Check that by default, non-options arguments are moved to the end.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -789,7 +789,7 @@ test_getopt (void)
     }
 
   /* Check that '--' ends the argument processing.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -872,7 +872,7 @@ test_getopt (void)
 
 #if GNULIB_TEST_GETOPT_GNU
   /* Check that the '-' flag causes non-options to be returned in order.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -920,7 +920,7 @@ test_getopt (void)
     }
 
   /* Check that '--' ends the argument processing.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -995,7 +995,7 @@ test_getopt (void)
     }
 
   /* Check that the '-' flag has to come first.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1063,7 +1063,7 @@ test_getopt (void)
 
   /* Check that the '+' flag causes the first non-option to terminate the
      loop.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1106,7 +1106,7 @@ test_getopt (void)
       ASSERT (optind == 1);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1137,7 +1137,7 @@ test_getopt (void)
     }
 
   /* Check that '--' ends the argument processing.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1193,7 +1193,7 @@ test_getopt (void)
 #endif /* GNULIB_TEST_GETOPT_GNU */
 
   /* Check that the '+' flag has to come first.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1262,8 +1262,8 @@ test_getopt (void)
 #if GNULIB_TEST_GETOPT_GNU
   /* If GNU extensions are supported, require compliance with POSIX
      interpretation on leading '+' behavior.
-     http://austingroupbugs.net/view.php?id=191  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+     https://austingroupbugs.net/view.php?id=191  */
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1306,7 +1306,7 @@ test_getopt (void)
       ASSERT (optind == 1);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1335,7 +1335,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1367,11 +1367,11 @@ test_getopt (void)
     }
 
   /* Check that 'W' does not dump core:
-     http://sourceware.org/bugzilla/show_bug.cgi?id=12922
+     https://sourceware.org/PR12922
      Technically, POSIX says the presence of ';' in the opt-string
      gives unspecified behavior, so we only test this when GNU compliance
      is desired.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int argc = 0;
       const char *argv[10];

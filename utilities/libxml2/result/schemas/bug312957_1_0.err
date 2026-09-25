@@ -1,0 +1,2 @@
+./test/schemas/bug312957_0.xml:10: Schemas validity error : Element 'sister': No match found for key-sequence ['annie'] of keyref 'sibling_key_ref'.
+./test/schemas/bug312957_0.xml fails to validate

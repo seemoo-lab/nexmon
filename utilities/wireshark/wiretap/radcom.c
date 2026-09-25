@@ -3,35 +3,32 @@
  * Wiretap Library
  * Copyright (c) 1998 by Gilbert Ramirez <gram@alumni.rice.edu>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-
-#include <errno.h>
-#include <string.h>
-#include "wtap-int.h"
-#include "file_wrappers.h"
 #include "radcom.h"
 
+#include <string.h>
+
+#include <wsutil/pint.h>
+
+#include "wtap_module.h"
+#include "file_wrappers.h"
+
+/*
+ * RADCOM WAN/LAN Analyzers
+ *
+ * Olivier Abad has added code to read Ethernet and LAPB captures from
+ * RADCOM WAN/LAN Analyzers (see https://web.archive.org/web/20031231213434/http://www.radcom-inc.com/).
+*/
+
 struct frame_date {
-	guint16	year;
-	guint8	month;
-	guint8	day;
-	guint32	sec;		/* seconds since midnight */
-	guint32	usec;
+	uint16_t	year;
+	uint8_t	month;
+	uint8_t	day;
+	uint32_t	sec;		/* seconds since midnight */
+	uint32_t	usec;
 };
 
 struct unaligned_frame_date {
@@ -44,15 +41,15 @@ struct unaligned_frame_date {
 
 /* Found at the beginning of the file. Bytes 2 and 3 (D2:00) seem to be
  * different in some captures */
-static const guint8 radcom_magic[8] = {
+static const uint8_t radcom_magic[8] = {
 	0x42, 0xD2, 0x00, 0x34, 0x12, 0x66, 0x22, 0x88
 };
 
-static const guint8 encap_magic[4] = {
+static const uint8_t encap_magic[4] = {
 	0x00, 0x42, 0x43, 0x09
 };
 
-static const guint8 active_time_magic[11] = {
+static const uint8_t active_time_magic[11] = {
 	'A', 'c', 't', 'i', 'v', 'e', ' ', 'T', 'i', 'm', 'e'
 };
 
@@ -83,19 +80,23 @@ struct radcomrec_hdr {
 	char	xxw[9];		/* unknown */
 };
 
-static gboolean radcom_read(wtap *wth, int *err, gchar **err_info,
-	gint64 *data_offset);
-static gboolean radcom_seek_read(wtap *wth, gint64 seek_off,
-	struct wtap_pkthdr *phdr, Buffer *buf, int *err, gchar **err_info);
-static gboolean radcom_read_rec(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
-	Buffer *buf, int *err, gchar **err_info);
+static bool radcom_read(wtap *wth, wtap_rec *rec,
+	int *err, char **err_info, int64_t *data_offset);
+static bool radcom_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+	int *err, char **err_info);
+static bool radcom_read_rec(wtap *wth, FILE_T fh, wtap_rec *rec,
+	int *err, char **err_info);
 
-wtap_open_return_val radcom_open(wtap *wth, int *err, gchar **err_info)
+static int radcom_file_type_subtype = -1;
+
+void register_radcom(void);
+
+wtap_open_return_val radcom_open(wtap *wth, int *err, char **err_info)
 {
-	guint8 r_magic[8], t_magic[11], search_encap[7];
+	uint8_t r_magic[8], t_magic[11], search_encap[7];
 	struct frame_date start_date;
 #if 0
-	guint32 sec;
+	uint32_t sec;
 	struct tm tm;
 #endif
 
@@ -144,8 +145,13 @@ wtap_open_return_val radcom_open(wtap *wth, int *err, gchar **err_info)
 		return WTAP_OPEN_NOT_MINE;
 	}
 
-	if (file_seek(wth->fh, sizeof(struct frame_date), SEEK_CUR, err) == -1)
-		return WTAP_OPEN_ERROR;
+	/* So what time is this? */
+	if (!wtap_read_bytes(wth->fh, NULL, sizeof(struct frame_date),
+	    err, err_info)) {
+		if (*err != WTAP_ERR_SHORT_READ)
+			return WTAP_OPEN_ERROR;
+		return WTAP_OPEN_NOT_MINE;
+	}
 
 	for (;;) {
 		if (!wtap_read_bytes(wth->fh, search_encap, 4,
@@ -167,8 +173,11 @@ wtap_open_return_val radcom_open(wtap *wth, int *err, gchar **err_info)
 		if (file_seek(wth->fh, -3, SEEK_CUR, err) == -1)
 			return WTAP_OPEN_ERROR;
 	}
-	if (file_seek(wth->fh, 12, SEEK_CUR, err) == -1)
-		return WTAP_OPEN_ERROR;
+	if (!wtap_read_bytes(wth->fh, NULL, 12, err, err_info)) {
+		if (*err != WTAP_ERR_SHORT_READ)
+			return WTAP_OPEN_ERROR;
+		return WTAP_OPEN_NOT_MINE;
+	}
 	if (!wtap_read_bytes(wth->fh, search_encap, 4, err, err_info)) {
 		if (*err != WTAP_ERR_SHORT_READ)
 			return WTAP_OPEN_ERROR;
@@ -176,17 +185,17 @@ wtap_open_return_val radcom_open(wtap *wth, int *err, gchar **err_info)
 	}
 
 	/* This is a radcom file */
-	wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_RADCOM;
+	wth->file_type_subtype = radcom_file_type_subtype;
 	wth->subtype_read = radcom_read;
 	wth->subtype_seek_read = radcom_seek_read;
 	wth->snapshot_length = 0; /* not available in header, only in frame */
 	wth->file_tsprec = WTAP_TSPREC_USEC;
 
 #if 0
-	tm.tm_year = pletoh16(&start_date.year)-1900;
+	tm.tm_year = pletohu16(&start_date.year)-1900;
 	tm.tm_mon = start_date.month-1;
 	tm.tm_mday = start_date.day;
-	sec = pletoh32(&start_date.sec);
+	sec = pletohu32(&start_date.sec);
 	tm.tm_hour = sec/3600;
 	tm.tm_min = (sec%3600)/60;
 	tm.tm_sec = sec%60;
@@ -201,7 +210,7 @@ wtap_open_return_val radcom_open(wtap *wth, int *err, gchar **err_info)
 		wth->file_encap = WTAP_ENCAP_ATM_RFC1483;
 	else {
 		*err = WTAP_ERR_UNSUPPORTED;
-		*err_info = g_strdup_printf("radcom: network type \"%.4s\" unknown", search_encap);
+		*err_info = ws_strdup_printf("radcom: network type \"%.4s\" unknown", search_encap);
 		return WTAP_OPEN_ERROR;
 	}
 
@@ -220,32 +229,39 @@ wtap_open_return_val radcom_open(wtap *wth, int *err, gchar **err_info)
 #endif
 
 	if (wth->file_encap == WTAP_ENCAP_ETHERNET) {
-		if (file_seek(wth->fh, 294, SEEK_CUR, err) == -1)
+		if (!wtap_read_bytes(wth->fh, NULL, 294, err, err_info))
 			return WTAP_OPEN_ERROR;
 	} else if (wth->file_encap == WTAP_ENCAP_LAPB) {
-		if (file_seek(wth->fh, 297, SEEK_CUR, err) == -1)
+		if (!wtap_read_bytes(wth->fh, NULL, 297, err, err_info))
 			return WTAP_OPEN_ERROR;
 	} else if (wth->file_encap == WTAP_ENCAP_ATM_RFC1483) {
-		if (file_seek(wth->fh, 504, SEEK_CUR, err) == -1)
+		if (!wtap_read_bytes(wth->fh, NULL, 504, err, err_info))
 			return WTAP_OPEN_ERROR;
 	}
+
+	/*
+	 * Add an IDB; we don't know how many interfaces were involved,
+	 * so we just say one interface, about which we only know
+	 * the link-layer type, snapshot length, and time stamp
+	 * resolution.
+	 */
+	wtap_add_generated_idb(wth);
 
 	return WTAP_OPEN_MINE;
 }
 
 /* Read the next packet */
-static gboolean radcom_read(wtap *wth, int *err, gchar **err_info,
-			    gint64 *data_offset)
+static bool radcom_read(wtap *wth, wtap_rec *rec, int *err, char **err_info,
+			int64_t *data_offset)
 {
 	char	fcs[2];
 
 	*data_offset = file_tell(wth->fh);
 
 	/* Read record. */
-	if (!radcom_read_rec(wth, wth->fh, &wth->phdr, wth->frame_buffer,
-	    err, err_info)) {
+	if (!radcom_read_rec(wth, wth->fh, rec, err, err_info)) {
 		/* Read error or EOF */
-		return FALSE;
+		return false;
 	}
 
 	if (wth->file_encap == WTAP_ENCAP_LAPB) {
@@ -254,47 +270,44 @@ static gboolean radcom_read(wtap *wth, int *err, gchar **err_info,
 		   presence and size of an FCS to our caller?
 		   That'd let us handle other file types as well. */
 		if (!wtap_read_bytes(wth->fh, &fcs, sizeof fcs, err, err_info))
-			return FALSE;
+			return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
-static gboolean
-radcom_seek_read(wtap *wth, gint64 seek_off,
-		 struct wtap_pkthdr *phdr, Buffer *buf,
-		 int *err, gchar **err_info)
+static bool
+radcom_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+		 int *err, char **err_info)
 {
 	if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
-		return FALSE;
+		return false;
 
 	/* Read record. */
-	if (!radcom_read_rec(wth, wth->random_fh, phdr, buf, err,
-	    err_info)) {
+	if (!radcom_read_rec(wth, wth->random_fh, rec, err, err_info)) {
 		/* Read error or EOF */
 		if (*err == 0) {
 			/* EOF means "short read" in random-access mode */
 			*err = WTAP_ERR_SHORT_READ;
 		}
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
-static gboolean
-radcom_read_rec(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr, Buffer *buf,
-		int *err, gchar **err_info)
+static bool
+radcom_read_rec(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)
 {
 	struct radcomrec_hdr hdr;
-	guint16 data_length, real_length, length;
-	guint32 sec;
+	uint16_t data_length, real_length, length;
+	uint32_t sec;
 	struct tm tm;
-	guint8	atmhdr[8];
+	uint8_t	atmhdr[8];
 
 	if (!wtap_read_bytes_or_eof(fh, &hdr, sizeof hdr, err, err_info))
-		return FALSE;
+		return false;
 
-	data_length = pletoh16(&hdr.data_length);
+	data_length = pletohu16(&hdr.data_length);
 	if (data_length == 0) {
 		/*
 		 * The last record appears to have 0 in its "data_length"
@@ -302,39 +315,40 @@ radcom_read_rec(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr, Buffer *buf,
 		 * check for that and treat it as an EOF indication.
 		 */
 		*err = 0;
-		return FALSE;
+		return false;
 	}
-	length = pletoh16(&hdr.length);
-	real_length = pletoh16(&hdr.real_length);
+	length = pletohu16(&hdr.length);
+	real_length = pletohu16(&hdr.real_length);
 	/*
 	 * The maximum value of length is 65535, which is less than
-	 * WTAP_MAX_PACKET_SIZE will ever be, so we don't need to check
+	 * WTAP_MAX_PACKET_SIZE_STANDARD will ever be, so we don't need to check
 	 * it.
 	 */
 
-	phdr->rec_type = REC_TYPE_PACKET;
-	phdr->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
+	wtap_setup_packet_rec(rec, wth->file_encap);
+	rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
+	rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
 
-	tm.tm_year = pletoh16(&hdr.date.year)-1900;
+	tm.tm_year = pletohu16(&hdr.date.year)-1900;
 	tm.tm_mon = (hdr.date.month&0x0f)-1;
 	tm.tm_mday = hdr.date.day;
-	sec = pletoh32(&hdr.date.sec);
+	sec = pletohu32(&hdr.date.sec);
 	tm.tm_hour = sec/3600;
 	tm.tm_min = (sec%3600)/60;
 	tm.tm_sec = sec%60;
 	tm.tm_isdst = -1;
-	phdr->ts.secs = mktime(&tm);
-	phdr->ts.nsecs = pletoh32(&hdr.date.usec) * 1000;
+	rec->ts.secs = mktime(&tm);
+	rec->ts.nsecs = pletohu32(&hdr.date.usec) * 1000;
 
 	switch (wth->file_encap) {
 
 	case WTAP_ENCAP_ETHERNET:
 		/* XXX - is there an FCS? */
-		phdr->pseudo_header.eth.fcs_len = -1;
+		rec->rec_header.packet_header.pseudo_header.eth.fcs_len = -1;
 		break;
 
 	case WTAP_ENCAP_LAPB:
-		phdr->pseudo_header.x25.flags = (hdr.dce & 0x1) ?
+		rec->rec_header.packet_header.pseudo_header.dte_dce.flags = (hdr.dce & 0x1) ?
 		    0x00 : FROM_DCE;
 		length -= 2; /* FCS */
 		real_length -= 2;
@@ -347,26 +361,51 @@ radcom_read_rec(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr, Buffer *buf,
 		 */
 		if (!wtap_read_bytes(fh, atmhdr, sizeof atmhdr, err,
 		    err_info))
-			return FALSE;	/* Read error */
+			return false;	/* Read error */
 		length -= 8;
 		real_length -= 8;
 		break;
 	}
 
-	phdr->len = real_length;
-	phdr->caplen = length;
+	rec->rec_header.packet_header.len = real_length;
+	rec->rec_header.packet_header.caplen = length;
 
 	/*
 	 * Read the packet data.
 	 */
-	if (!wtap_read_packet_bytes(fh, buf, length, err, err_info))
-		return FALSE;	/* Read error */
+	if (!wtap_read_bytes_buffer(fh, &rec->data, length, err, err_info))
+		return false;	/* Read error */
 
-	return TRUE;
+	return true;
+}
+
+static const struct supported_block_type radcom_blocks_supported[] = {
+	/*
+	 * We support packet blocks, with no comments or other options.
+	 */
+	{ WTAP_BLOCK_PACKET, MULTIPLE_BLOCKS_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info radcom_info = {
+	"RADCOM WAN/LAN analyzer", "radcom", NULL, NULL,
+	false, BLOCKS_SUPPORTED(radcom_blocks_supported),
+	NULL, NULL, NULL
+};
+
+void register_radcom(void)
+{
+	radcom_file_type_subtype = wtap_register_file_type_subtype(&radcom_info);
+
+	/*
+	 * Register name for backwards compatibility with the
+	 * wtap_filetypes table in Lua.
+	 */
+	wtap_register_backwards_compatibility_lua_name("RADCOM",
+	    radcom_file_type_subtype);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

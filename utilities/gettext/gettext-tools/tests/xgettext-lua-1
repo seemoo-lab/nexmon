@@ -14,13 +14,26 @@ print(_([[I like brackets.]]))
 print(_([===[Brackets are awesome!]===]))
 print(_([===[==[Even nested brackets]==]===]))
 print(_([===[Or even unmached number of '=' signs]==]===]))
+print(_([=[
+First newline in long bracket is ignored.]=]))
+print(_([=[
+
+Second newline in long bracket is extracted.]=]))
+print(_([=[
+Newlines inside a long bracket string
+and at the end are not special.
+]=]))
 print(_(hmm["nope"]))
 print({_"yep"})
 print(_["nope"])
 print(_("\097"))
 print(_("\x3F\z  	
 \x2a"))
+-- String concatenation in regular contexts.
 print(_("abc" .. "def"))
+-- String concatenation *not* happening when the parentheses are omitted.
+print(_"hello" " world")
+
 print(speed / 1000 .. 'Mbps')
 EOF
 
@@ -29,7 +42,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-lu-1.tmp xg-lu-1.lua || Exit 1
 LC_ALL=C tr -d '\r' < xg-lu-1.tmp.po > xg-lu-1.po || Exit 1
 
-cat <<EOF > xg-lu-1.ok
+cat <<\EOF > xg-lu-1.ok
 msgid "This is a test string."
 msgstr ""
 
@@ -60,6 +73,19 @@ msgstr ""
 msgid "Or even unmached number of '=' signs]=="
 msgstr ""
 
+msgid "First newline in long bracket is ignored."
+msgstr ""
+
+msgid ""
+"\n"
+"Second newline in long bracket is extracted."
+msgstr ""
+
+msgid ""
+"Newlines inside a long bracket string\n"
+"and at the end are not special.\n"
+msgstr ""
+
 msgid "yep"
 msgstr ""
 
@@ -70,6 +96,9 @@ msgid "?*"
 msgstr ""
 
 msgid "abcdef"
+msgstr ""
+
+msgid "hello"
 msgstr ""
 EOF
 

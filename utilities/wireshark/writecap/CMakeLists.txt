@@ -4,36 +4,25 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 set(WRITECAP_SRC
+	${CMAKE_SOURCE_DIR}/wiretap/file_wrappers.c
 	pcapio.c
 )
 
-set(CLEAN_FILES
-	${WRITECAP_SRC}
-)
-
-if (WERROR_COMMON_FLAGS)
-	set_source_files_properties(
-		${CLEAN_FILES}
-		PROPERTIES
-		COMPILE_FLAGS ${WERROR_COMMON_FLAGS}
+if(WIN32)
+	list(APPEND WRITECAP_SRC
+		${CMAKE_SOURCE_DIR}/wsutil/file_util.c
 	)
 endif()
+
+set_source_files_properties(
+	${WRITECAP_SRC}
+	PROPERTIES
+	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
+)
 
 
 add_library(writecap STATIC
@@ -42,4 +31,29 @@ add_library(writecap STATIC
 
 set_target_properties(writecap PROPERTIES
 	LINK_FLAGS "${WS_LINK_FLAGS}"
-	FOLDER "Libs")
+	FOLDER "Libs"
+)
+
+target_compile_definitions(writecap
+	PRIVATE
+		# Necessary to avoid C4273 inconsistent DLL linkage on MSVC
+		ENABLE_STATIC
+)
+
+target_link_libraries(writecap
+	PRIVATE
+		${GMODULE2_LIBRARIES}
+		${LZ4_LIBRARIES}
+		${ZLIB_LIBRARIES}
+		${ZLIBNG_LIBRARIES}
+		${ZSTD_LIBRARIES}
+		${WIN_WS2_32_LIBRARY}
+)
+
+target_include_directories(writecap SYSTEM
+	PRIVATE
+		${LZ4_INCLUDE_DIRS}
+		${ZLIB_INCLUDE_DIRS}
+		${ZLIBNG_INCLUDE_DIRS}
+		${ZSTD_INCLUDE_DIRS}
+)

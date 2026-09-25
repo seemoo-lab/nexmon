@@ -35,7 +35,7 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">msgcat &minus;
+<p style="margin-left:11%; margin-top: 1em">msgcat -
 combines several message catalogs</p>
 
 <h2>SYNOPSIS
@@ -54,15 +54,15 @@ combines several message catalogs</p>
 <p style="margin-left:11%; margin-top: 1em">Concatenates
 and merges the specified PO files. Find messages which are
 common to two or more of the specified PO files. By using
-the <b>&minus;&minus;more&minus;than</b> option, greater
+the <b>--more-than</b> option, greater
 commonality may be requested before messages are printed.
-Conversely, the <b>&minus;&minus;less&minus;than</b> option
+Conversely, the <b>--less-than</b> option
 may be used to specify less commonality before messages are
-printed (i.e. <b>&minus;&minus;less&minus;than</b>=<i>2</i>
+printed (i.e. <b>--less-than</b>=<i>2</i>
 will only print the unique messages). Translations,
 comments, extracted comments, and file positions will be
 cumulated, except that if
-<b>&minus;&minus;use&minus;first</b> is specified, they will
+<b>--use-first</b> is specified, they will
 be taken from the first PO file to define them.</p>
 
 <p style="margin-left:11%; margin-top: 1em">Mandatory
@@ -75,14 +75,14 @@ INPUTFILE ...</p>
 
 <p style="margin-left:22%;">input files</p>
 
-<p style="margin-left:11%;"><b>&minus;f</b>,
-<b>&minus;&minus;files&minus;from</b>=<i>FILE</i></p>
+<p style="margin-left:11%;"><b>-f</b>,
+<b>--files-from</b>=<i>FILE</i></p>
 
 <p style="margin-left:22%;">get list of input files from
 FILE</p>
 
-<p style="margin-left:11%;"><b>&minus;D</b>,
-<b>&minus;&minus;directory</b>=<i>DIRECTORY</i></p>
+<p style="margin-left:11%;"><b>-D</b>,
+<b>--directory</b>=<i>DIRECTORY</i></p>
 
 <p style="margin-left:22%;">add DIRECTORY to list for input
 files search</p>
@@ -92,8 +92,8 @@ is -, standard input is read.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Output file
 location: <br>
-&minus;o</b>,
-<b>&minus;&minus;output&minus;file</b>=<i>FILE</i></p>
+-o</b>,
+<b>--output-file</b>=<i>FILE</i></p>
 
 <p style="margin-left:22%;">write output to specified
 file</p>
@@ -105,64 +105,64 @@ if it is -.</p>
 <p style="margin-left:11%; margin-top: 1em"><b>Message
 selection:</b> <br>
 -&lt;,
-<b>&minus;&minus;less&minus;than</b>=<i>NUMBER</i></p>
+<b>--less-than</b>=<i>NUMBER</i></p>
 
 <p style="margin-left:22%;">print messages with less than
 this many definitions, defaults to infinite if not set</p>
 
 <p style="margin-left:11%;">-&gt;,
-<b>&minus;&minus;more&minus;than</b>=<i>NUMBER</i></p>
+<b>--more-than</b>=<i>NUMBER</i></p>
 
 <p style="margin-left:22%;">print messages with more than
 this many definitions, defaults to 0 if not set</p>
 
-<p style="margin-left:11%;"><b>&minus;u</b>,
-<b>&minus;&minus;unique</b></p>
+<p style="margin-left:11%;"><b>-u</b>,
+<b>--unique</b></p>
 
 <p style="margin-left:22%;">shorthand for
-<b>&minus;&minus;less&minus;than</b>=<i>2</i>, requests that
+<b>--less-than</b>=<i>2</i>, requests that
 only unique messages be printed</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Input file
 syntax: <br>
-&minus;P</b>,
-<b>&minus;&minus;properties&minus;input</b></p>
+-P</b>,
+<b>--properties-input</b></p>
 
 <p style="margin-left:22%;">input files are in Java
 .properties syntax</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;stringtable&minus;input</b></p>
+<p style="margin-left:11%;"><b>--stringtable-input</b></p>
 
 <p style="margin-left:22%;">input files are in
 NeXTstep/GNUstep .strings syntax</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Output
 details: <br>
-&minus;t</b>,
-<b>&minus;&minus;to&minus;code</b>=<i>NAME</i></p>
+-t</b>,
+<b>--to-code</b>=<i>NAME</i></p>
 
 <p style="margin-left:22%;">encoding for output</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;use&minus;first</b></p>
+<p style="margin-left:11%;"><b>--use-first</b></p>
 
 <p style="margin-left:22%;">use first available translation
 for each message, don&rsquo;t merge several translations</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;lang</b>=<i>CATALOGNAME</i></p>
+<p style="margin-left:11%;"><b>--lang</b>=<i>CATALOGNAME</i></p>
 
 <p style="margin-left:22%;">set &rsquo;Language&rsquo;
 field in the header entry</p>
 
-<p style="margin-left:11%;"><b>&minus;&minus;color</b></p>
+<p style="margin-left:11%;"><b>--color</b></p>
 
 <p style="margin-left:22%;">use colors and other text
 attributes always</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;color</b>=<i>WHEN</i></p>
+<p style="margin-left:11%;"><b>--color</b>=<i>WHEN</i></p>
 
 <p style="margin-left:22%;">use colors and other text
 attributes if WHEN. WHEN may be &rsquo;always&rsquo;,
@@ -170,95 +170,95 @@ attributes if WHEN. WHEN may be &rsquo;always&rsquo;,
 &rsquo;html&rsquo;.</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;style</b>=<i>STYLEFILE</i></p>
+<p style="margin-left:11%;"><b>--style</b>=<i>STYLEFILE</i></p>
 
 <p style="margin-left:22%;">specify CSS style rule file for
-<b>&minus;&minus;color</b></p>
+<b>--color</b></p>
 
-<p style="margin-left:11%;"><b>&minus;e</b>,
-<b>&minus;&minus;no&minus;escape</b></p>
+<p style="margin-left:11%;"><b>-e</b>,
+<b>--no-escape</b></p>
 
 <p style="margin-left:22%;">do not use C escapes in output
 (default)</p>
 
-<p style="margin-left:11%;"><b>&minus;E</b>,
-<b>&minus;&minus;escape</b></p>
+<p style="margin-left:11%;"><b>-E</b>,
+<b>--escape</b></p>
 
 <p style="margin-left:22%;">use C escapes in output, no
 extended chars</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;force&minus;po</b></p>
+<p style="margin-left:11%;"><b>--force-po</b></p>
 
 <p style="margin-left:22%;">write PO file even if empty</p>
 
-<p style="margin-left:11%;"><b>&minus;i</b>,
-<b>&minus;&minus;indent</b></p>
+<p style="margin-left:11%;"><b>-i</b>,
+<b>--indent</b></p>
 
 <p style="margin-left:22%;">write the .po file using
 indented style</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;no&minus;location</b></p>
+<p style="margin-left:11%;"><b>--no-location</b></p>
 
 <p style="margin-left:22%;">do not write &rsquo;#:
 filename:line&rsquo; lines</p>
 
-<p style="margin-left:11%;"><b>&minus;n</b>,
-<b>&minus;&minus;add&minus;location</b></p>
+<p style="margin-left:11%;"><b>-n</b>,
+<b>--add-location</b></p>
 
 <p style="margin-left:22%;">generate &rsquo;#:
 filename:line&rsquo; lines (default)</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;strict</b></p>
+<p style="margin-left:11%;"><b>--strict</b></p>
 
 <p style="margin-left:22%;">write out strict Uniforum
 conforming .po file</p>
 
-<p style="margin-left:11%;"><b>&minus;p</b>,
-<b>&minus;&minus;properties&minus;output</b></p>
+<p style="margin-left:11%;"><b>-p</b>,
+<b>--properties-output</b></p>
 
 <p style="margin-left:22%;">write out a Java .properties
 file</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;stringtable&minus;output</b></p>
+<p style="margin-left:11%;"><b>--stringtable-output</b></p>
 
 <p style="margin-left:22%;">write out a NeXTstep/GNUstep
 .strings file</p>
 
-<p style="margin-left:11%;"><b>&minus;w</b>,
-<b>&minus;&minus;width</b>=<i>NUMBER</i></p>
+<p style="margin-left:11%;"><b>-w</b>,
+<b>--width</b>=<i>NUMBER</i></p>
 
 <p style="margin-left:22%;">set output page width</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;no&minus;wrap</b></p>
+<p style="margin-left:11%;"><b>--no-wrap</b></p>
 
 <p style="margin-left:22%;">do not break long message
 lines, longer than the output page width, into several
 lines</p>
 
-<p style="margin-left:11%;"><b>&minus;s</b>,
-<b>&minus;&minus;sort&minus;output</b></p>
+<p style="margin-left:11%;"><b>-s</b>,
+<b>--sort-output</b></p>
 
 <p style="margin-left:22%;">generate sorted output</p>
 
-<p style="margin-left:11%;"><b>&minus;F</b>,
-<b>&minus;&minus;sort&minus;by&minus;file</b></p>
+<p style="margin-left:11%;"><b>-F</b>,
+<b>--sort-by-file</b></p>
 
 <p style="margin-left:22%;">sort output by file
 location</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Informative
 output: <br>
-&minus;h</b>, <b>&minus;&minus;help</b></p>
+-h</b>, <b>--help</b></p>
 
 <p style="margin-left:22%;">display this help and exit</p>
 
-<p style="margin-left:11%;"><b>&minus;V</b>,
-<b>&minus;&minus;version</b></p>
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
 
 <p style="margin-left:22%;">output version information and
 exit</p>
@@ -276,8 +276,10 @@ Bruno Haible.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Report bugs to
-&lt;bug-gnu-gettext@gnu.org&gt;.</p>
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
 
 <h2>COPYRIGHT
 <a name="COPYRIGHT"></a>
@@ -285,9 +287,9 @@ Bruno Haible.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Copyright
-&copy; 2001-2016 Free Software Foundation, Inc. License
-GPLv3+: GNU GPL version 3 or later
-&lt;http://gnu.org/licenses/gpl.html&gt; <br>
+&copy; 2001-2026 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
 This is free software: you are free to change and
 redistribute it. There is NO WARRANTY, to the extent
 permitted by law.</p>

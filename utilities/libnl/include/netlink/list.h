@@ -1,16 +1,19 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/list.h	Netlink List Utilities
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2006 Thomas Graf <tgraf@suug.ch>
  */
 
 #ifndef NETLINK_LIST_H_
 #define NETLINK_LIST_H_
+
+/* For internal uses consider using "third_party/c-list/src/c-list.h" instead.
+ */
+
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct nl_list_head
 {
@@ -58,8 +61,8 @@ static inline int nl_list_empty(struct nl_list_head *head)
 }
 
 #define nl_container_of(ptr, type, member) ({			\
-        const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
-        (type *)( (char *)__mptr - ((size_t) &((type *)0)->member));})
+        const __typeof__( ((type *)0)->member ) *__mptr = (ptr);\
+        (type *)( (char *)__mptr - (offsetof(type, member)));})
 
 #define nl_list_entry(ptr, type, member) \
 	nl_container_of(ptr, type, member)
@@ -77,17 +80,21 @@ static inline int nl_list_empty(struct nl_list_head *head)
 	nl_list_entry((head)->next, type, member)
 
 #define nl_list_for_each_entry(pos, head, member)				\
-	for (pos = nl_list_entry((head)->next, typeof(*pos), member);	\
+	for (pos = nl_list_entry((head)->next, __typeof__(*pos), member);	\
 	     &(pos)->member != (head); 	\
-	     (pos) = nl_list_entry((pos)->member.next, typeof(*(pos)), member))
+	     (pos) = nl_list_entry((pos)->member.next, __typeof__(*(pos)), member))
 
 #define nl_list_for_each_entry_safe(pos, n, head, member)			\
-	for (pos = nl_list_entry((head)->next, typeof(*pos), member),	\
-		n = nl_list_entry(pos->member.next, typeof(*pos), member);	\
+	for (pos = nl_list_entry((head)->next, __typeof__(*pos), member),	\
+		n = nl_list_entry(pos->member.next, __typeof__(*pos), member);	\
 	     &(pos)->member != (head); 					\
-	     pos = n, n = nl_list_entry(n->member.next, typeof(*n), member))
+	     pos = n, n = nl_list_entry(n->member.next, __typeof__(*n), member))
 
 #define nl_init_list_head(head) \
 	do { (head)->next = (head); (head)->prev = (head); } while (0)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

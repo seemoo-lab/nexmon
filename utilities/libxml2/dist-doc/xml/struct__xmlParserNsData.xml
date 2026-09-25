@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlParserNsData" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlParserNsData</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlParserNsData_1a4ea2c0f383b10b7f5d165c6e319b225e" prot="public" static="no" mutable="no">
+        <type>xmlParserNsExtra *</type>
+        <definition>xmlParserNsExtra* extra</definition>
+        <argsstring></argsstring>
+        <name>extra</name>
+        <qualifiedname>_xmlParserNsData::extra</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="122" column="22" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="122" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserNsData_1a8f631b6c29b0fce463c4b5e0c43f8197" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned hashSize</definition>
+        <argsstring></argsstring>
+        <name>hashSize</name>
+        <qualifiedname>_xmlParserNsData::hashSize</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="124" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="124" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserNsData_1a64390f960b575f70979efffe9064e0c6" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned hashElems</definition>
+        <argsstring></argsstring>
+        <name>hashElems</name>
+        <qualifiedname>_xmlParserNsData::hashElems</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="125" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="125" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserNsData_1acea7ee33ed2d2b50e317948269646b9d" prot="public" static="no" mutable="no">
+        <type>xmlParserNsBucket *</type>
+        <definition>xmlParserNsBucket* hash</definition>
+        <argsstring></argsstring>
+        <name>hash</name>
+        <qualifiedname>_xmlParserNsData::hash</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="126" column="23" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="126" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserNsData_1a6721f732675b22692819cdf9e850c1db" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned elementId</definition>
+        <argsstring></argsstring>
+        <name>elementId</name>
+        <qualifiedname>_xmlParserNsData::elementId</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="128" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="128" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserNsData_1a5c90da243eff342a198f52b4e4a9ae49" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int defaultNsIndex</definition>
+        <argsstring></argsstring>
+        <name>defaultNsIndex</name>
+        <qualifiedname>_xmlParserNsData::defaultNsIndex</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="129" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="129" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserNsData_1a59014b6722553aac6e811cd336047561" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int minNsIndex</definition>
+        <argsstring></argsstring>
+        <name>minNsIndex</name>
+        <qualifiedname>_xmlParserNsData::minNsIndex</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="130" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="130" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlParserNsData</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>extra</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>hash</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>xmlParserNsBucket</label>
+      </node>
+      <node id="2">
+        <label>xmlParserNsExtra</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/parser.c" line="121" column="1" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="121" bodyend="131"/>
+    <listofallmembers>
+      <member refid="struct__xmlParserNsData_1a5c90da243eff342a198f52b4e4a9ae49" prot="public" virt="non-virtual"><scope>_xmlParserNsData</scope><name>defaultNsIndex</name></member>
+      <member refid="struct__xmlParserNsData_1a6721f732675b22692819cdf9e850c1db" prot="public" virt="non-virtual"><scope>_xmlParserNsData</scope><name>elementId</name></member>
+      <member refid="struct__xmlParserNsData_1a4ea2c0f383b10b7f5d165c6e319b225e" prot="public" virt="non-virtual"><scope>_xmlParserNsData</scope><name>extra</name></member>
+      <member refid="struct__xmlParserNsData_1acea7ee33ed2d2b50e317948269646b9d" prot="public" virt="non-virtual"><scope>_xmlParserNsData</scope><name>hash</name></member>
+      <member refid="struct__xmlParserNsData_1a64390f960b575f70979efffe9064e0c6" prot="public" virt="non-virtual"><scope>_xmlParserNsData</scope><name>hashElems</name></member>
+      <member refid="struct__xmlParserNsData_1a8f631b6c29b0fce463c4b5e0c43f8197" prot="public" virt="non-virtual"><scope>_xmlParserNsData</scope><name>hashSize</name></member>
+      <member refid="struct__xmlParserNsData_1a59014b6722553aac6e811cd336047561" prot="public" virt="non-virtual"><scope>_xmlParserNsData</scope><name>minNsIndex</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

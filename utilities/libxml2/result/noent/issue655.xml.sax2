@@ -1,0 +1,11 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.internalSubset(test, , )
+SAX.entityDecl(newline, 1, (null), (null), &#xA;)
+SAX.getEntity(newline)
+SAX.externalSubset(test, , )
+SAX.getEntity(newline)
+SAX.startElementNs(test, NULL, NULL, 0, 1, 0, newline='
+...', 1)
+SAX.endElementNs(test, NULL, NULL)
+SAX.endDocument()

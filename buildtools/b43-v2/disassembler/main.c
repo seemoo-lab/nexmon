@@ -101,8 +101,8 @@ static const char * disasm_mem_operand(unsigned int operand)
 {
 	char *ret;
 
-	ret = xmalloc(9);
-	snprintf(ret, 9, "[0x%X]", operand);
+	ret = xmalloc(13);
+	snprintf(ret, 13, "[0x%X]", operand);
 
 	return ret;
 }

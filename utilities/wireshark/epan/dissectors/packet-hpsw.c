@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,34 +19,36 @@
 void proto_register_hpsw(void);
 void proto_reg_handoff_hpsw(void);
 
-static int proto_hpsw = -1;
+static int proto_hpsw;
 
-static int hf_hpsw_version = -1;
-static int hf_hpsw_type = -1;
-static int hf_hpsw_tlvtype = -1;
-static int hf_hpsw_tlvlength = -1;
-static int hf_hpsw_field_10 = -1;
-static int hf_hpsw_own_mac_addr = -1;
-static int hf_hpsw_neighbor_mac_addr = -1;
-static int hf_hpsw_field_6 = -1;
-static int hf_hpsw_field_9 = -1;
-static int hf_hpsw_device_version = -1;
-static int hf_hpsw_device_name = -1;
-static int hf_hpsw_ip_addr = -1;
-static int hf_hpsw_field_8 = -1;
-static int hf_hpsw_domain = -1;
-static int hf_hpsw_field_12 = -1;
-static int hf_hpsw_config_name = -1;
-static int hf_hpsw_root_mac_addr = -1;
-static int hf_hpsw_device_id = -1;
-static int hf_hpsw_device_id_data = -1;
-static int hf_hpsw_data = -1;
+static int hf_hpsw_version;
+static int hf_hpsw_type;
+static int hf_hpsw_tlvtype;
+static int hf_hpsw_tlvlength;
+static int hf_hpsw_field_10;
+static int hf_hpsw_own_mac_addr;
+static int hf_hpsw_neighbor_mac_addr;
+static int hf_hpsw_field_6;
+static int hf_hpsw_field_9;
+static int hf_hpsw_device_version;
+static int hf_hpsw_device_name;
+static int hf_hpsw_ip_addr;
+static int hf_hpsw_field_8;
+static int hf_hpsw_domain;
+static int hf_hpsw_field_12;
+static int hf_hpsw_config_name;
+static int hf_hpsw_root_mac_addr;
+static int hf_hpsw_device_id;
+static int hf_hpsw_device_id_data;
+static int hf_hpsw_data;
 
 
-static gint ett_hpsw = -1;
-static gint ett_hpsw_tlv = -1;
+static int ett_hpsw;
+static int ett_hpsw_tlv;
 
-static expert_field ei_hpsw_tlvlength_bad = EI_INIT;
+static expert_field ei_hpsw_tlvlength_bad;
+
+static dissector_handle_t hpsw_handle;
 
 #define HPFOO_DEVICE_NAME     0x1
 #define HPFOO_DEVICE_VERSION  0x2
@@ -95,13 +85,13 @@ static const value_string hpsw_tlv_type_vals[] = {
 
 static void
 dissect_hpsw_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length,
-                 proto_tree *tree, proto_item *ti, guint8 type)
+                 proto_tree *tree, proto_item *ti, uint8_t type)
 {
     switch (type) {
 
     case HPFOO_DEVICE_NAME:
         if (length > 0) {
-            proto_tree_add_item(tree, hf_hpsw_device_name, tvb, offset, length, ENC_NA|ENC_ASCII);
+            proto_tree_add_item(tree, hf_hpsw_device_name, tvb, offset, length, ENC_ASCII);
         } else {
             expert_add_info_format(pinfo, ti, &ei_hpsw_tlvlength_bad, "Device Name: Bad length %u", length);
         }
@@ -109,7 +99,7 @@ dissect_hpsw_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length,
 
     case HPFOO_DEVICE_VERSION:
         if (length > 0) {
-            proto_tree_add_item(tree, hf_hpsw_device_version, tvb, offset, length, ENC_NA|ENC_ASCII);
+            proto_tree_add_item(tree, hf_hpsw_device_version, tvb, offset, length, ENC_ASCII);
         } else {
             expert_add_info_format(pinfo, ti, &ei_hpsw_tlvlength_bad, "Version: Bad length %u", length);
         }
@@ -117,7 +107,7 @@ dissect_hpsw_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length,
 
     case HPFOO_CONFIG_NAME:
         if (length > 0) {
-            proto_tree_add_item(tree, hf_hpsw_config_name, tvb, offset, length, ENC_NA|ENC_ASCII);
+            proto_tree_add_item(tree, hf_hpsw_config_name, tvb, offset, length, ENC_ASCII);
         } else {
             expert_add_info_format(pinfo, ti, &ei_hpsw_tlvlength_bad, "Config Name: Bad length %u", length);
         }
@@ -149,7 +139,7 @@ dissect_hpsw_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length,
 
     case HPFOO_DOMAIN:
         if (length > 0) {
-            proto_tree_add_item(tree, hf_hpsw_domain, tvb, offset, length, ENC_NA|ENC_ASCII);
+            proto_tree_add_item(tree, hf_hpsw_domain, tvb, offset, length, ENC_ASCII);
         } else {
             expert_add_info_format(pinfo, ti, &ei_hpsw_tlvlength_bad, "Domain: Bad length %u", length);
         }
@@ -230,13 +220,13 @@ dissect_hpsw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_tree *hp_tree;
     proto_tree *tlv_tree;
     proto_item *ti;
-    guint8      version;
-    gint        offset = 0;
+    uint8_t     version;
+    int         offset = 0;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "HP");
     col_set_str(pinfo->cinfo, COL_INFO, "HP Switch Protocol");
 
-    version = tvb_get_guint8(tvb, 0);
+    version = tvb_get_uint8(tvb, 0);
 
     ti = proto_tree_add_item(tree, proto_hpsw, tvb, 0, -1, ENC_NA);
     hp_tree = proto_item_add_subtree(ti, ett_hpsw);
@@ -248,17 +238,17 @@ dissect_hpsw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     while ( tvb_reported_length_remaining(tvb, offset) > 0 )
     {
-        guint8 type, length;
+        uint8_t type, length;
 
-        type   = tvb_get_guint8(tvb, offset);
-        length = tvb_get_guint8(tvb, offset+1);
+        type   = tvb_get_uint8(tvb, offset);
+        length = tvb_get_uint8(tvb, offset+1);
 
         /* make sure still in valid tlv */
         if (( length < 1 ) || ( length > tvb_reported_length_remaining(tvb, offset+2)))
             break;
 
         tlv_tree = proto_tree_add_subtree(hp_tree, tvb, offset, length+2, ett_hpsw_tlv, NULL,
-                                 val_to_str(type, hpsw_tlv_type_vals, "Unknown TLV type: 0x%02x"));
+                                 val_to_str(pinfo->pool, type, hpsw_tlv_type_vals, "Unknown TLV type: 0x%02x"));
 
         /* type */
         proto_tree_add_uint(tlv_tree, hf_hpsw_tlvtype, tvb, offset, 1, type);
@@ -342,7 +332,7 @@ proto_register_hpsw(void)
             NULL, 0x0, NULL, HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_hpsw,
         &ett_hpsw_tlv
     };
@@ -359,16 +349,12 @@ proto_register_hpsw(void)
     expert_hpsw = expert_register_protocol(proto_hpsw);
     expert_register_field_array(expert_hpsw, ei, array_length(ei));
 
-    register_dissector("hpsw", dissect_hpsw, proto_hpsw);
+    hpsw_handle = register_dissector("hpsw", dissect_hpsw, proto_hpsw);
 }
 
 void
 proto_reg_handoff_hpsw(void)
 {
-    dissector_handle_t hpsw_handle;
-
-    hpsw_handle = find_dissector("hpsw");
-
     dissector_add_uint("hpext.dxsap", HPEXT_HPSW, hpsw_handle);
 }
 

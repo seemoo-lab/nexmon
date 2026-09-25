@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/route.c	Routes
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,7 +10,8 @@
  * @{
  */
 
-#include <netlink-local.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/cache.h>
 #include <netlink/utils.h>
@@ -24,6 +19,11 @@
 #include <netlink/route/rtnl.h>
 #include <netlink/route/route.h>
 #include <netlink/route/link.h>
+
+#include "nl-route.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-aux-route/nl-route.h"
 
 static struct nl_cache_ops rtnl_route_ops;
 
@@ -64,13 +64,18 @@ static int route_request_update(struct nl_cache *c, struct nl_sock *h)
  * @arg sk		Netlink socket.
  * @arg family		Address family of routes to cover or AF_UNSPEC
  * @arg flags		Flags
+ * @arg result		Result pointer
  *
  * Allocates a new cache, initializes it properly and updates it to
  * contain all routes currently configured in the kernel.
  *
+ * Valid flags:
+ *   * ROUTE_CACHE_CONTENT - Cache will contain contents of routing cache
+ *                           instead of actual routes.
+ *
  * @note The caller is responsible for destroying and freeing the
  *       cache after using it.
- * @return The cache or NULL if an error has occured.
+ * @return 0 on success or a negative error code.
  */
 int rtnl_route_alloc_cache(struct nl_sock *sk, int family, int flags,
 			   struct nl_cache **result)
@@ -125,6 +130,32 @@ int rtnl_route_build_add_request(struct rtnl_route *tmpl, int flags,
 			       result);
 }
 
+int rtnl_route_lookup(struct nl_sock *sk, struct nl_addr *dst,
+                      struct rtnl_route **result)
+{
+	_nl_auto_nl_msg struct nl_msg *msg = NULL;
+	_nl_auto_rtnl_route struct rtnl_route *tmpl = NULL;
+	struct nl_object *obj;
+	int err;
+
+	tmpl = rtnl_route_alloc();
+	rtnl_route_set_dst(tmpl, dst);
+	err = build_route_msg(tmpl, RTM_GETROUTE, 0, &msg);
+	if (err < 0)
+		return err;
+
+	err = nl_send_auto(sk, msg);
+	if (err < 0)
+		return err;
+
+	if ((err = nl_pickup(sk, route_msg_parser, &obj)) < 0)
+		return err;
+
+	*result = (struct rtnl_route *)obj;
+	wait_for_ack(sk);
+	return 0;
+}
+
 int rtnl_route_add(struct nl_sock *sk, struct rtnl_route *route, int flags)
 {
 	struct nl_msg *msg;
@@ -168,6 +199,7 @@ int rtnl_route_delete(struct nl_sock *sk, struct rtnl_route *route, int flags)
 static struct nl_af_group route_groups[] = {
 	{ AF_INET,	RTNLGRP_IPV4_ROUTE },
 	{ AF_INET6,	RTNLGRP_IPV6_ROUTE },
+	{ AF_MPLS,	RTNLGRP_MPLS_ROUTE },
 	{ AF_DECnet,	RTNLGRP_DECnet_ROUTE },
 	{ END_OF_GROUP_LIST },
 };
@@ -188,12 +220,12 @@ static struct nl_cache_ops rtnl_route_ops = {
 	.co_obj_ops		= &route_obj_ops,
 };
 
-static void __init route_init(void)
+static void _nl_init route_init(void)
 {
 	nl_cache_mngt_register(&rtnl_route_ops);
 }
 
-static void __exit route_exit(void)
+static void _nl_exit route_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_route_ops);
 }

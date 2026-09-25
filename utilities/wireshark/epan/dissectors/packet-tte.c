@@ -5,26 +5,13 @@
  * Author: Benjamin Roch, benjamin.roch (AT) tttech.com
  *
  * TTTech Computertechnik AG, Austria.
- * http://www.tttech.com/solutions/ttethernet/
+ * https://www.tttech.com/technologies/time-triggered-ethernet/
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
- * USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -41,25 +28,25 @@ void proto_reg_handoff_tte(void);
 static dissector_handle_t ethertype_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_tte = -1;
+static int proto_tte;
 
-static int hf_eth_dst       = -1;
-static int hf_tte_dst_cf    = -1;
-static int hf_tte_ctid      = -1;
-static int hf_eth_src       = -1;
-static int hf_eth_type      = -1;
+static int hf_eth_dst;
+static int hf_tte_dst_cf;
+static int hf_tte_ctid;
+static int hf_eth_src;
+static int hf_eth_type;
 
 /* preference value pointers */
-static guint32    tte_pref_ct_marker    = 0xFFFFFFFF;
-static guint32    tte_pref_ct_mask      = 0x0;
+static uint32_t   tte_pref_ct_marker    = 0xFFFFFFFF;
+static uint32_t   tte_pref_ct_mask      = 0x0;
 
 /* Initialize the subtree pointers */
-static gint ett_tte = -1;
-static gint ett_tte_macdest = -1;
+static int ett_tte;
+static int ett_tte_macdest;
 
 
 /* Code to actually dissect the packets */
-static int
+static bool
 dissect_tte(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     int is_frame_pcf;
@@ -71,7 +58,7 @@ dissect_tte(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 
     /* Check that there's enough data */
     if (tvb_reported_length(tvb) < TTE_HEADER_LENGTH)
-        return 0;
+        return false;
 
     /* check if data of pcf frame */
     is_frame_pcf =
@@ -81,11 +68,11 @@ dissect_tte(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     if (!is_frame_pcf)
     {
         if ( (tvb_get_ntohl(tvb, 0) & tte_pref_ct_mask) != tte_pref_ct_marker)
-            return 0;
+            return false;
     }
 
     /* Make entries in Protocol column and Info column on summary display */
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "TTE ");
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "TTE/");
 
     if (tvb_get_ntohs(tvb, TTE_MAC_LENGTH * 2) <= IEEE_802_3_MAX_LEN)
     {
@@ -130,14 +117,13 @@ dissect_tte(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 
     /* call std Ethernet dissector */
     ethertype_data.etype = tvb_get_ntohs(tvb, TTE_MAC_LENGTH * 2);
-    ethertype_data.offset_after_ethertype = 14;
+    ethertype_data.payload_offset = TTE_HEADER_LENGTH;
     ethertype_data.fh_tree = NULL;
-    ethertype_data.etype_id = hf_eth_type;
     ethertype_data.trailer_id = 0;
     ethertype_data.fcs_len = 0;
 
     call_dissector_with_data(ethertype_handle, tvb, pinfo, tree, &ethertype_data);
-    return tvb_reported_length(tvb);
+    return true;
 }
 
 
@@ -160,7 +146,7 @@ proto_register_tte(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_tte,
         &ett_tte_macdest
     };
@@ -201,7 +187,7 @@ proto_reg_handoff_tte(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

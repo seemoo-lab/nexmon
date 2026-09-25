@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,88 +33,12 @@
 
 #include "glibintl.h"
 
-/**
- * SECTION:gdbuserror
- * @title: GDBusError
- * @short_description: Mapping D-Bus errors to and from GError
- * @include: gio/gio.h
- *
- * All facilities that return errors from remote methods (such as
- * g_dbus_connection_call_sync()) use #GError to represent both D-Bus
- * errors (e.g. errors returned from the other peer) and locally
- * in-process generated errors.
- *
- * To check if a returned #GError is an error from a remote peer, use
- * g_dbus_error_is_remote_error(). To get the actual D-Bus error name,
- * use g_dbus_error_get_remote_error(). Before presenting an error,
- * always use g_dbus_error_strip_remote_error().
- *
- * In addition, facilities used to return errors to a remote peer also
- * use #GError. See g_dbus_method_invocation_return_error() for
- * discussion about how the D-Bus error name is set.
- *
- * Applications can associate a #GError error domain with a set of D-Bus errors in order to
- * automatically map from D-Bus errors to #GError and back. This
- * is typically done in the function returning the #GQuark for the
- * error domain:
- * |[<!-- language="C" -->
- * // foo-bar-error.h:
- *
- * #define FOO_BAR_ERROR (foo_bar_error_quark ())
- * GQuark foo_bar_error_quark (void);
- *
- * typedef enum
- * {
- *   FOO_BAR_ERROR_FAILED,
- *   FOO_BAR_ERROR_ANOTHER_ERROR,
- *   FOO_BAR_ERROR_SOME_THIRD_ERROR,
- *   FOO_BAR_N_ERRORS / *< skip >* /
- * } FooBarError;
- *
- * // foo-bar-error.c:
- *
- * static const GDBusErrorEntry foo_bar_error_entries[] =
- * {
- *   {FOO_BAR_ERROR_FAILED,           "org.project.Foo.Bar.Error.Failed"},
- *   {FOO_BAR_ERROR_ANOTHER_ERROR,    "org.project.Foo.Bar.Error.AnotherError"},
- *   {FOO_BAR_ERROR_SOME_THIRD_ERROR, "org.project.Foo.Bar.Error.SomeThirdError"},
- * };
- *
- * // Ensure that every error code has an associated D-Bus error name
- * G_STATIC_ASSERT (G_N_ELEMENTS (foo_bar_error_entries) == FOO_BAR_N_ERRORS);
- *
- * GQuark
- * foo_bar_error_quark (void)
- * {
- *   static volatile gsize quark_volatile = 0;
- *   g_dbus_error_register_error_domain ("foo-bar-error-quark",
- *                                       &quark_volatile,
- *                                       foo_bar_error_entries,
- *                                       G_N_ELEMENTS (foo_bar_error_entries));
- *   return (GQuark) quark_volatile;
- * }
- * ]|
- * With this setup, a D-Bus peer can transparently pass e.g. %FOO_BAR_ERROR_ANOTHER_ERROR and
- * other peers will see the D-Bus error name org.project.Foo.Bar.Error.AnotherError.
- *
- * If the other peer is using GDBus, and has registered the association with
- * g_dbus_error_register_error_domain() in advance (e.g. by invoking the %FOO_BAR_ERROR quark
- * generation itself in the previous example) the peer will see also %FOO_BAR_ERROR_ANOTHER_ERROR instead
- * of %G_IO_ERROR_DBUS_ERROR. Note that GDBus clients can still recover
- * org.project.Foo.Bar.Error.AnotherError using g_dbus_error_get_remote_error().
- *
- * Note that errors in the %G_DBUS_ERROR error domain is intended only
- * for returning errors from a remote message bus process. Errors
- * generated locally in-process by e.g. #GDBusConnection is from the
- * %G_IO_ERROR domain.
- */
-
 static const GDBusErrorEntry g_dbus_error_entries[] =
 {
-  {G_DBUS_ERROR_FAILED,                           "org.freedesktop.DBus.Error.Failed"},
+  {G_DBUS_ERROR_FAILED,                           DBUS_ERROR_FAILED},
   {G_DBUS_ERROR_NO_MEMORY,                        "org.freedesktop.DBus.Error.NoMemory"},
   {G_DBUS_ERROR_SERVICE_UNKNOWN,                  "org.freedesktop.DBus.Error.ServiceUnknown"},
-  {G_DBUS_ERROR_NAME_HAS_NO_OWNER,                "org.freedesktop.DBus.Error.NameHasNoOwner"},
+  {G_DBUS_ERROR_NAME_HAS_NO_OWNER,                DBUS_ERROR_NAME_HAS_NO_OWNER},
   {G_DBUS_ERROR_NO_REPLY,                         "org.freedesktop.DBus.Error.NoReply"},
   {G_DBUS_ERROR_IO_ERROR,                         "org.freedesktop.DBus.Error.IOError"},
   {G_DBUS_ERROR_BAD_ADDRESS,                      "org.freedesktop.DBus.Error.BadAddress"},
@@ -125,10 +51,10 @@ static const GDBusErrorEntry g_dbus_error_entries[] =
   {G_DBUS_ERROR_NO_NETWORK,                       "org.freedesktop.DBus.Error.NoNetwork"},
   {G_DBUS_ERROR_ADDRESS_IN_USE,                   "org.freedesktop.DBus.Error.AddressInUse"},
   {G_DBUS_ERROR_DISCONNECTED,                     "org.freedesktop.DBus.Error.Disconnected"},
-  {G_DBUS_ERROR_INVALID_ARGS,                     "org.freedesktop.DBus.Error.InvalidArgs"},
+  {G_DBUS_ERROR_INVALID_ARGS,                     DBUS_ERROR_INVALID_ARGS},
   {G_DBUS_ERROR_FILE_NOT_FOUND,                   "org.freedesktop.DBus.Error.FileNotFound"},
   {G_DBUS_ERROR_FILE_EXISTS,                      "org.freedesktop.DBus.Error.FileExists"},
-  {G_DBUS_ERROR_UNKNOWN_METHOD,                   "org.freedesktop.DBus.Error.UnknownMethod"},
+  {G_DBUS_ERROR_UNKNOWN_METHOD,                   DBUS_ERROR_UNKNOWN_METHOD},
   {G_DBUS_ERROR_TIMED_OUT,                        "org.freedesktop.DBus.Error.TimedOut"},
   {G_DBUS_ERROR_MATCH_RULE_NOT_FOUND,             "org.freedesktop.DBus.Error.MatchRuleNotFound"},
   {G_DBUS_ERROR_MATCH_RULE_INVALID,               "org.freedesktop.DBus.Error.MatchRuleInvalid"},
@@ -160,22 +86,27 @@ GQuark
 g_dbus_error_quark (void)
 {
   G_STATIC_ASSERT (G_N_ELEMENTS (g_dbus_error_entries) - 1 == G_DBUS_ERROR_PROPERTY_READ_ONLY);
-  static volatile gsize quark_volatile = 0;
+  static gsize quark = 0;
   g_dbus_error_register_error_domain ("g-dbus-error-quark",
-                                      &quark_volatile,
+                                      &quark,
                                       g_dbus_error_entries,
                                       G_N_ELEMENTS (g_dbus_error_entries));
-  return (GQuark) quark_volatile;
+  return (GQuark) quark;
 }
 
 /**
  * g_dbus_error_register_error_domain:
- * @error_domain_quark_name: The error domain name.
- * @quark_volatile: A pointer where to store the #GQuark.
- * @entries: A pointer to @num_entries #GDBusErrorEntry struct items.
- * @num_entries: Number of items to register.
+ * @error_domain_quark_name: the error domain name
+ * @quark_volatile: (out): return location for the [type@GLib.Quark] representing the
+ *   error domain
+ * @entries: (array length=num_entries): items to register
+ * @num_entries: number of items to register
  *
- * Helper function for associating a #GError error domain with D-Bus error names.
+ * Helper function for associating a [type@GLib.Error] error domain with D-Bus
+ * error names.
+ *
+ * While @quark_volatile has a `volatile` qualifier, this is a historical
+ * artifact and the argument passed to it should not be `volatile`.
  *
  * Since: 2.26
  */
@@ -185,25 +116,31 @@ g_dbus_error_register_error_domain (const gchar           *error_domain_quark_na
                                     const GDBusErrorEntry *entries,
                                     guint                  num_entries)
 {
+  gsize *quark;
+
   g_return_if_fail (error_domain_quark_name != NULL);
   g_return_if_fail (quark_volatile != NULL);
   g_return_if_fail (entries != NULL);
   g_return_if_fail (num_entries > 0);
 
-  if (g_once_init_enter (quark_volatile))
+  /* Drop the volatile qualifier, which should never have been on the argument
+   * in the first place. */
+  quark = (gsize *) quark_volatile;
+
+  if (g_once_init_enter (quark))
     {
       guint n;
-      GQuark quark;
+      GQuark new_quark;
 
-      quark = g_quark_from_static_string (error_domain_quark_name);
+      new_quark = g_quark_from_static_string (error_domain_quark_name);
 
       for (n = 0; n < num_entries; n++)
         {
-          g_warn_if_fail (g_dbus_error_register_error (quark,
+          g_warn_if_fail (g_dbus_error_register_error (new_quark,
                                                        entries[n].error_code,
                                                        entries[n].dbus_error_name));
         }
-      g_once_init_leave (quark_volatile, quark);
+      g_once_init_leave (quark, new_quark);
     }
 }
 
@@ -335,19 +272,18 @@ static GHashTable *dbus_error_name_to_re = NULL;
 
 /**
  * g_dbus_error_register_error:
- * @error_domain: A #GQuark for a error domain.
- * @error_code: An error code.
- * @dbus_error_name: A D-Bus error name.
+ * @error_domain: a [type@GLib.Quark] for an error domain
+ * @error_code: an error code
+ * @dbus_error_name: a D-Bus error name
  *
- * Creates an association to map between @dbus_error_name and
- * #GErrors specified by @error_domain and @error_code.
+ * Creates an association mapping between @dbus_error_name and
+ * [type@GLib.Error]s specified by @error_domain and @error_code.
  *
- * This is typically done in the routine that returns the #GQuark for
+ * This is typically done in the function that returns the [type@GLib.Quark] for
  * an error domain.
  *
- * Returns: %TRUE if the association was created, %FALSE if it already
- * exists.
- *
+ * Returns: true if the association was created, false if it already
+ *   exists
  * Since: 2.26
  */
 gboolean
@@ -401,14 +337,14 @@ g_dbus_error_register_error (GQuark       error_domain,
 
 /**
  * g_dbus_error_unregister_error:
- * @error_domain: A #GQuark for a error domain.
- * @error_code: An error code.
- * @dbus_error_name: A D-Bus error name.
+ * @error_domain: a [type@GLib.Quark] for an error domain
+ * @error_code: an error code
+ * @dbus_error_name: a D-Bus error name
  *
- * Destroys an association previously set up with g_dbus_error_register_error().
+ * Destroys an association previously set up with
+ * [func@Gio.DBusError.register_error].
  *
- * Returns: %TRUE if the association was destroyed, %FALSE if it wasn't found.
- *
+ * Returns: true if the association was destroyed, false if it wasn’t found
  * Since: 2.26
  */
 gboolean
@@ -474,14 +410,13 @@ g_dbus_error_unregister_error (GQuark       error_domain,
 
 /**
  * g_dbus_error_is_remote_error:
- * @error: A #GError.
+ * @error: an error
  *
- * Checks if @error represents an error received via D-Bus from a remote peer. If so,
- * use g_dbus_error_get_remote_error() to get the name of the error.
+ * Checks if @error represents an error received via D-Bus from a remote peer.
  *
- * Returns: %TRUE if @error represents an error from a remote peer,
- * %FALSE otherwise.
+ * If so, use [func@Gio.DBusError.get_remote_error] to get the name of the error.
  *
+ * Returns: true if @error represents an error from a remote peer; false otherwise
  * Since: 2.26
  */
 gboolean
@@ -494,18 +429,17 @@ g_dbus_error_is_remote_error (const GError *error)
 
 /**
  * g_dbus_error_get_remote_error:
- * @error: a #GError
+ * @error: an error
  *
  * Gets the D-Bus error name used for @error, if any.
  *
  * This function is guaranteed to return a D-Bus error name for all
- * #GErrors returned from functions handling remote method calls
- * (e.g. g_dbus_connection_call_finish()) unless
- * g_dbus_error_strip_remote_error() has been used on @error.
+ * [type@GLib.Error]s returned from functions handling remote method calls
+ * (for example, [method@Gio.DBusConnection.call_finish]) unless
+ * [func@Gio.DBusError.strip_remote_error] has already been used on @error.
  *
- * Returns: an allocated string or %NULL if the D-Bus error name
- *     could not be found. Free with g_free().
- *
+ * Returns: (nullable) (transfer full): an allocated string, or `NULL` if the
+ *   D-Bus error name could not be found
  * Since: 2.26
  */
 gchar *
@@ -561,38 +495,40 @@ g_dbus_error_get_remote_error (const GError *error)
 
 /**
  * g_dbus_error_new_for_dbus_error:
- * @dbus_error_name: D-Bus error name.
- * @dbus_error_message: D-Bus error message.
+ * @dbus_error_name: D-Bus error name
+ * @dbus_error_message: D-Bus error message
  *
- * Creates a #GError based on the contents of @dbus_error_name and
+ * Creates a [type@GLib.Error] based on the contents of @dbus_error_name and
  * @dbus_error_message.
  *
- * Errors registered with g_dbus_error_register_error() will be looked
+ * Errors registered with [func@Gio.DBusError.register_error] will be looked
  * up using @dbus_error_name and if a match is found, the error domain
- * and code is used. Applications can use g_dbus_error_get_remote_error()
+ * and code is used. Applications can use [func@Gio.DBusError.get_remote_error]
  * to recover @dbus_error_name.
  *
  * If a match against a registered error is not found and the D-Bus
- * error name is in a form as returned by g_dbus_error_encode_gerror()
+ * error name is in a form as returned by [func@Gio.DBusError.encode_gerror]
  * the error domain and code encoded in the name is used to
- * create the #GError. Also, @dbus_error_name is added to the error message
- * such that it can be recovered with g_dbus_error_get_remote_error().
+ * create the [type@GLib.Error]. Also, @dbus_error_name is added to the error
+ * message such that it can be recovered with
+ * [func@Gio.DBusError.get_remote_error].
  *
- * Otherwise, a #GError with the error code %G_IO_ERROR_DBUS_ERROR
- * in the #G_IO_ERROR error domain is returned. Also, @dbus_error_name is
+ * Otherwise, a [type@GLib.Error] with the error code
+ * [error@Gio.IOErrorEnum.DBUS_ERROR]
+ * in the [error@Gio.IOErrorEnum] error domain is returned. Also, @dbus_error_name is
  * added to the error message such that it can be recovered with
- * g_dbus_error_get_remote_error().
+ * [func@Gio.DBusError.get_remote_error].
  *
  * In all three cases, @dbus_error_name can always be recovered from the
- * returned #GError using the g_dbus_error_get_remote_error() function
- * (unless g_dbus_error_strip_remote_error() hasn't been used on the returned error).
+ * returned [type@GLib.Error] using the [func@Gio.DBusError.get_remote_error]
+ * function (unless [func@Gio.DBusError.strip_remote_error] hasn’t been used on
+ * the returned error).
  *
  * This function is typically only used in object mappings to prepare
- * #GError instances for applications. Regular applications should not use
- * it.
+ * [type@GLib.Error] instances for applications. Regular applications should not
+ * use it.
  *
- * Returns: An allocated #GError. Free with g_error_free().
- *
+ * Returns: (transfer full): an allocated [type@GLib.Error]
  * Since: 2.26
  */
 GError *
@@ -656,15 +592,21 @@ g_dbus_error_new_for_dbus_error (const gchar *dbus_error_name,
 
 /**
  * g_dbus_error_set_dbus_error:
- * @error: A pointer to a #GError or %NULL.
- * @dbus_error_name: D-Bus error name.
- * @dbus_error_message: D-Bus error message.
- * @format: (allow-none): printf()-style format to prepend to @dbus_error_message or %NULL.
- * @...: Arguments for @format.
+ * @error: (out callee-allocates) (optional) (nullable): return location for
+ *   a [type@GLib.Error]
+ * @dbus_error_name: D-Bus error name
+ * @dbus_error_message: D-Bus error message
+ * @format: (nullable): `printf()`-style format to prepend to
+ *   @dbus_error_message, or `NULL` to not modify the message
+ * @...: arguments for @format
  *
- * Does nothing if @error is %NULL. Otherwise sets *@error to
- * a new #GError created with g_dbus_error_new_for_dbus_error()
- * with @dbus_error_message prepend with @format (unless %NULL).
+ * Sets `*error` to a new [type@GLib.Error] created with
+ * [func@Gio.DBusError.new_for_dbus_error].
+ *
+ * If @format is non-`NULL` then it is prepended to @dbus_error_message.
+ * Otherwise @dbus_error_message is used unmodified.
+ *
+ * This function does nothing if @error is `NULL`.
  *
  * Since: 2.26
  */
@@ -701,13 +643,15 @@ g_dbus_error_set_dbus_error (GError      **error,
 
 /**
  * g_dbus_error_set_dbus_error_valist:
- * @error: A pointer to a #GError or %NULL.
- * @dbus_error_name: D-Bus error name.
- * @dbus_error_message: D-Bus error message.
- * @format: (allow-none): printf()-style format to prepend to @dbus_error_message or %NULL.
- * @var_args: Arguments for @format.
+ * @error: (out callee-allocates) (optional) (nullable): return location for
+ *   a [type@GLib.Error]
+ * @dbus_error_name: D-Bus error name
+ * @dbus_error_message: D-Bus error message
+ * @format: (nullable): `printf()`-style format to prepend to
+ *   @dbus_error_message, or `NULL` to not modify the message
+ * @var_args: arguments for @format
  *
- * Like g_dbus_error_set_dbus_error() but intended for language bindings.
+ * Like [func@Gio.DBusError.set_dbus_error] but intended for language bindings.
  *
  * Since: 2.26
  */
@@ -743,17 +687,18 @@ g_dbus_error_set_dbus_error_valist (GError      **error,
 
 /**
  * g_dbus_error_strip_remote_error:
- * @error: A #GError.
+ * @error: an error
  *
  * Looks for extra information in the error message used to recover
- * the D-Bus error name and strips it if found. If stripped, the
+ * the D-Bus error name and strips it if found.
+ *
+ * If stripped, the
  * message field in @error will correspond exactly to what was
  * received on the wire.
  *
  * This is typically used when presenting errors to the end user.
  *
- * Returns: %TRUE if information was stripped, %FALSE otherwise.
- *
+ * Returns: true if information was stripped; false otherwise
  * Since: 2.26
  */
 gboolean
@@ -787,22 +732,24 @@ g_dbus_error_strip_remote_error (GError *error)
 
 /**
  * g_dbus_error_encode_gerror:
- * @error: A #GError.
+ * @error: an error
  *
- * Creates a D-Bus error name to use for @error. If @error matches
- * a registered error (cf. g_dbus_error_register_error()), the corresponding
- * D-Bus error name will be returned.
+ * Creates a D-Bus error name to use for @error.
+ *
+ * If @error matches a registered error (see
+ * [func@Gio.DBusError.register_error]), the corresponding D-Bus error name
+ * will be returned.
  *
  * Otherwise the a name of the form
  * `org.gtk.GDBus.UnmappedGError.Quark._ESCAPED_QUARK_NAME.Code_ERROR_CODE`
  * will be used. This allows other GDBus applications to map the error
- * on the wire back to a #GError using g_dbus_error_new_for_dbus_error().
+ * on the wire back to a [type@GLib.Error] using
+ * [func@Gio.DBusError.new_for_dbus_error].
  *
  * This function is typically only used in object mappings to put a
- * #GError on the wire. Regular applications should not use it.
+ * [type@GLib.Error] on the wire. Regular applications should not use it.
  *
- * Returns: A D-Bus error name (never %NULL). Free with g_free().
- *
+ * Returns: (transfer full) (not nullable): a D-Bus error name
  * Since: 2.26
  */
 gchar *

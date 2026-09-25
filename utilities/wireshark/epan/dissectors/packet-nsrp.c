@@ -8,19 +8,7 @@
  * Copyright 1998 Gerald Combs
  *
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -50,45 +38,47 @@
 void proto_register_nsrp(void);
 void proto_reg_handoff_nsrp(void);
 
+static dissector_handle_t nsrp_handle;
+
 #define NSRP_MIN_LEN    32
 
 /* Initialize the protocol and registered fields */
-static int proto_nsrp       = -1;
+static int proto_nsrp;
 
-static int hf_nsrp_version       = -1;
-static int hf_nsrp_msg_type      = -1;
-static int hf_nsrp_clust_id      = -1;
-static int hf_nsrp_msg_flag      = -1;
-static int hf_nsrp_len           = -1;
-static int hf_nsrp_ha_port       = -1;
-static int hf_nsrp_not_used      = -1;
-static int hf_nsrp_dst_unit      = -1;
-static int hf_nsrp_src_unit      = -1;
-static int hf_nsrp_msgtype       = -1;
-static int hf_nsrp_wst_group     = -1;
-static int hf_nsrp_hst_group     = -1;
-static int hf_nsrp_msgflag     = -1;
-static int hf_nsrp_authflag      = -1;
-static int hf_nsrp_priority      = -1;
-static int hf_nsrp_dummy         = -1;
-static int hf_nsrp_authchecksum  = -1;
-static int hf_nsrp_ifnum         = -1;
+static int hf_nsrp_version;
+static int hf_nsrp_msg_type;
+static int hf_nsrp_clust_id;
+static int hf_nsrp_msg_flag;
+static int hf_nsrp_len;
+static int hf_nsrp_ha_port;
+static int hf_nsrp_not_used;
+static int hf_nsrp_dst_unit;
+static int hf_nsrp_src_unit;
+static int hf_nsrp_msgtype;
+static int hf_nsrp_wst_group;
+static int hf_nsrp_hst_group;
+static int hf_nsrp_msgflag;
+static int hf_nsrp_authflag;
+static int hf_nsrp_priority;
+static int hf_nsrp_dummy;
+static int hf_nsrp_authchecksum;
+static int hf_nsrp_ifnum;
 
 
 /* Dada defined for HA Message */
-static int hf_nsrp_msglen      = -1;
-static int hf_nsrp_encflag      = -1;
-/* static int hf_nsrp_notused = -1; */
+static int hf_nsrp_msglen;
+static int hf_nsrp_encflag;
+/* static int hf_nsrp_notused; */
 
-static int hf_nsrp_total_size = -1;
+static int hf_nsrp_total_size;
 
-static int hf_nsrp_ns = -1;
-static int hf_nsrp_nr = -1;
+static int hf_nsrp_ns;
+static int hf_nsrp_nr;
 
-static int hf_nsrp_no_used = -1;
-static int hf_nsrp_checksum = -1;
+static int hf_nsrp_no_used;
+static int hf_nsrp_checksum;
 
-static int hf_nsrp_data = -1;
+static int hf_nsrp_data;
 
 
 static const value_string nsrp_msg_type_vals[] = {
@@ -124,7 +114,7 @@ static const value_string nsrp_msgtype_vals[] = {
 };
 
 static const value_string nsrp_flag_vals[] = {
-    { 0x80,     "ENCRPT MESSAGE" },
+    { 0x80,     "ENCRYPT MESSAGE" },
     { 0x40,     "CLOSE SESSION" },
     { 0x20,     "CHANG SESSION" },
     { 0x10,     "CREATE SP SESSION" },
@@ -142,7 +132,7 @@ static const value_string nsrp_encflag_vals[] = {
 
 
 /* Initialize the subtree pointers */
-static gint ett_nsrp = -1;
+static int ett_nsrp;
 
 /* Code to actually dissect the packets */
 static int
@@ -150,8 +140,8 @@ dissect_nsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 {
     proto_item  *ti;
     proto_tree  *nsrp_tree = NULL;
-    gint        offset = 0;
-    guint8      msgtype = 0;
+    int         offset = 0;
+    uint8_t     msgtype = 0;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "NSRP");
 
@@ -165,7 +155,7 @@ dissect_nsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         proto_tree_add_item(nsrp_tree, hf_nsrp_version, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
-        msgtype = tvb_get_guint8(tvb, offset);
+        msgtype = tvb_get_uint8(tvb, offset);
         proto_tree_add_item(nsrp_tree, hf_nsrp_msg_type, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
@@ -246,7 +236,7 @@ dissect_nsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         proto_tree_add_checksum(nsrp_tree, tvb, offset, hf_nsrp_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
         offset += 2;
 
-        proto_tree_add_item(nsrp_tree, hf_nsrp_data, tvb, offset, -1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(nsrp_tree, hf_nsrp_data, tvb, offset, -1, ENC_ASCII);
 
     }
 
@@ -296,7 +286,7 @@ dissect_nsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         proto_tree_add_checksum(nsrp_tree, tvb, offset, hf_nsrp_authchecksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
         offset += 2;
 
-        proto_tree_add_item(nsrp_tree, hf_nsrp_data, tvb, offset, -1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(nsrp_tree, hf_nsrp_data, tvb, offset, -1, ENC_ASCII);
 
     }
 
@@ -341,7 +331,7 @@ dissect_nsrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         proto_tree_add_item(nsrp_tree, hf_nsrp_total_size, tvb, offset, 4, ENC_BIG_ENDIAN);
         offset += 4;
 
-        proto_tree_add_item(nsrp_tree, hf_nsrp_data, tvb, offset, -1, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(nsrp_tree, hf_nsrp_data, tvb, offset, -1, ENC_ASCII);
 
     }
 
@@ -494,7 +484,7 @@ proto_register_nsrp(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_nsrp
     };
 
@@ -502,21 +492,20 @@ proto_register_nsrp(void)
                                          "NSRP", "nsrp");
     proto_register_field_array(proto_nsrp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    nsrp_handle = register_dissector("nsrp", dissect_nsrp, proto_nsrp);
 }
 
 
 void
 proto_reg_handoff_nsrp(void)
 {
-    dissector_handle_t nsrp_handle;
-
-    nsrp_handle = create_dissector_handle(dissect_nsrp, proto_nsrp);
     dissector_add_uint("ethertype", ETHERTYPE_NSRP, nsrp_handle);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

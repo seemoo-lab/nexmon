@@ -7,22 +7,10 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Protocol ref:
- * http://tools.ietf.org/html/draft-davie-stt-07
+ * https://tools.ietf.org/html/draft-davie-stt-07
  */
 
 #include "config.h"
@@ -33,16 +21,18 @@
 #include <epan/ipproto.h>
 #include <epan/prefs.h>
 #include <epan/reassemble.h>
-#include <epan/to_str.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
+
+#include <wsutil/array.h>
 
 #include "packet-ip.h"
 
-static gboolean pref_reassemble = TRUE;
-static gboolean pref_check_checksum = FALSE;
+static bool pref_reassemble = true;
+static bool pref_check_checksum;
 
 /* IANA  ref:
- * http://www.iana.org/assignments/service-names-port-numbers/service-
- * names-port-numbers.xml
+ * https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
  */
 #define TCP_PORT_STT  7471
 
@@ -66,74 +56,74 @@ static gboolean pref_check_checksum = FALSE;
 void proto_register_stt(void);
 void proto_reg_handoff_stt(void);
 
-static int proto_stt = -1;
+static int proto_stt;
 
-static int hf_stt_stream_id = -1;
-static int hf_stt_dport = -1;
-static int hf_stt_pkt_len = -1;
-static int hf_stt_seg_off = -1;
-static int hf_stt_pkt_id = -1;
-static int hf_stt_checksum = -1;
-static int hf_stt_checksum_status = -1;
-static int hf_stt_tcp_data = -1;
-static int hf_stt_tcp_data_offset = -1;
-static int hf_stt_tcp_flags = -1;
-static int hf_stt_tcp_rsvd = -1;
-static int hf_stt_tcp_ns = -1;
-static int hf_stt_tcp_cwr = -1;
-static int hf_stt_tcp_ece = -1;
-static int hf_stt_tcp_urg = -1;
-static int hf_stt_tcp_ack = -1;
-static int hf_stt_tcp_psh = -1;
-static int hf_stt_tcp_rst = -1;
-static int hf_stt_tcp_syn = -1;
-static int hf_stt_tcp_fin = -1;
-static int hf_stt_tcp_window = -1;
-static int hf_stt_tcp_urg_ptr = -1;
+static int hf_stt_stream_id;
+static int hf_stt_dport;
+static int hf_stt_pkt_len;
+static int hf_stt_seg_off;
+static int hf_stt_pkt_id;
+static int hf_stt_checksum;
+static int hf_stt_checksum_status;
+static int hf_stt_tcp_data;
+static int hf_stt_tcp_data_offset;
+static int hf_stt_tcp_flags;
+static int hf_stt_tcp_rsvd;
+static int hf_stt_tcp_ns;
+static int hf_stt_tcp_cwr;
+static int hf_stt_tcp_ece;
+static int hf_stt_tcp_urg;
+static int hf_stt_tcp_ack;
+static int hf_stt_tcp_psh;
+static int hf_stt_tcp_rst;
+static int hf_stt_tcp_syn;
+static int hf_stt_tcp_fin;
+static int hf_stt_tcp_window;
+static int hf_stt_tcp_urg_ptr;
 
-static int hf_stt_version = -1;
-static int hf_stt_flags = -1;
-static int hf_stt_flag_rsvd = -1;
-static int hf_stt_flag_tcp = -1;
-static int hf_stt_flag_ipv4 = -1;
-static int hf_stt_flag_partial = -1;
-static int hf_stt_flag_verified = -1;
-static int hf_stt_l4_offset = -1;
-static int hf_stt_reserved_8 = -1;
-static int hf_stt_mss = -1;
-static int hf_stt_vlan = -1;
-static int hf_stt_pcp = -1;
-static int hf_stt_v = -1;
-static int hf_stt_vlan_id= -1;
-static int hf_stt_context_id = -1;
-static int hf_stt_padding = -1;
+static int hf_stt_version;
+static int hf_stt_flags;
+static int hf_stt_flag_rsvd;
+static int hf_stt_flag_tcp;
+static int hf_stt_flag_ipv4;
+static int hf_stt_flag_partial;
+static int hf_stt_flag_verified;
+static int hf_stt_l4_offset;
+static int hf_stt_reserved_8;
+static int hf_stt_mss;
+static int hf_stt_vlan;
+static int hf_stt_pcp;
+static int hf_stt_v;
+static int hf_stt_vlan_id;
+static int hf_stt_context_id;
+static int hf_stt_padding;
 
-static int hf_segments = -1;
-static int hf_segment = -1;
-static int hf_segment_overlap = -1;
-static int hf_segment_overlap_conflict = -1;
-static int hf_segment_multiple_tails = -1;
-static int hf_segment_too_long_fragment = -1;
-static int hf_segment_error = -1;
-static int hf_segment_count = -1;
-static int hf_reassembled_in = -1;
-static int hf_reassembled_length = -1;
+static int hf_segments;
+static int hf_segment;
+static int hf_segment_overlap;
+static int hf_segment_overlap_conflict;
+static int hf_segment_multiple_tails;
+static int hf_segment_too_long_fragment;
+static int hf_segment_error;
+static int hf_segment_count;
+static int hf_reassembled_in;
+static int hf_reassembled_length;
 
-static int ett_stt = -1;
-static int ett_stt_tcp_data = -1;
-static int ett_stt_tcp_flags = -1;
-static int ett_stt_flgs = -1;
-static int ett_stt_vlan = -1;
-static int ett_segment = -1;
-static int ett_segments = -1;
+static int ett_stt;
+static int ett_stt_tcp_data;
+static int ett_stt_tcp_flags;
+static int ett_stt_flgs;
+static int ett_stt_vlan;
+static int ett_segment;
+static int ett_segments;
 
 static reassembly_table stt_reassembly_table;
 
-static expert_field ei_stt_ver_unknown = EI_INIT;
-static expert_field ei_stt_checksum_bad = EI_INIT;
-static expert_field ei_stt_data_offset_bad = EI_INIT;
-static expert_field ei_stt_l4_offset = EI_INIT;
-static expert_field ei_stt_mss = EI_INIT;
+static expert_field ei_stt_ver_unknown;
+static expert_field ei_stt_checksum_bad;
+static expert_field ei_stt_data_offset_bad;
+static expert_field ei_stt_l4_offset;
+static expert_field ei_stt_mss;
 
 static dissector_handle_t eth_handle;
 
@@ -167,27 +157,14 @@ static const fragment_items frag_items = {
     "STT segments"
 };
 
-static void
-stt_segment_init(void)
-{
-    reassembly_table_init(&stt_reassembly_table,
-                          &addresses_reassembly_table_functions);
-}
-
-static void
-stt_segment_cleanup(void)
-{
-    reassembly_table_destroy(&stt_reassembly_table);
-}
-
 static tvbuff_t *
 handle_segment(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-               guint32 pkt_id, guint16 pkt_len, guint16 seg_off)
+               uint32_t pkt_id, uint16_t pkt_len, uint16_t seg_off)
 {
     fragment_head *frags;
     int offset;
-    guint32 frag_data_len;
-    gboolean more_frags;
+    uint32_t frag_data_len;
+    bool more_frags;
 
     /* Skip fake TCP header after the first segment. */
     if (seg_off == 0) {
@@ -218,28 +195,28 @@ handle_segment(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 static void
 dissect_stt_checksum(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree)
 {
-    gboolean can_checksum = !pinfo->fragmented &&
+    bool can_checksum = !pinfo->fragmented &&
                    tvb_bytes_exist(tvb, 0, tvb_reported_length(tvb));
 
     if (can_checksum && pref_check_checksum) {
         vec_t      cksum_vec[4];
-        guint32    phdr[2];
+        uint32_t   phdr[2];
 
         /* Set up the fields of the pseudo-header. */
-        SET_CKSUM_VEC_PTR(cksum_vec[0], (const guint8 *)pinfo->src.data,
+        SET_CKSUM_VEC_PTR(cksum_vec[0], (const uint8_t *)pinfo->src.data,
                           pinfo->src.len);
-        SET_CKSUM_VEC_PTR(cksum_vec[1], (const guint8 *)pinfo->dst.data,
+        SET_CKSUM_VEC_PTR(cksum_vec[1], (const uint8_t *)pinfo->dst.data,
                           pinfo->dst.len);
         switch (pinfo->src.type) {
         case AT_IPv4:
             phdr[0] = g_htonl((IP_PROTO_TCP<<16) + tvb_reported_length(tvb));
-            SET_CKSUM_VEC_PTR(cksum_vec[2], (const guint8 *)phdr, 4);
+            SET_CKSUM_VEC_PTR(cksum_vec[2], (const uint8_t *)phdr, 4);
             break;
 
         case AT_IPv6:
             phdr[0] = g_htonl(tvb_reported_length(tvb));
             phdr[1] = g_htonl(IP_PROTO_TCP);
-            SET_CKSUM_VEC_PTR(cksum_vec[2], (const guint8 *)phdr, 8);
+            SET_CKSUM_VEC_PTR(cksum_vec[2], (const uint8_t *)phdr, 8);
             break;
 
         default:
@@ -260,7 +237,7 @@ dissect_stt_checksum(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree)
 static int
 dissect_tcp_flags(proto_tree *tree, tvbuff_t *tvb, int offset)
 {
-    static const int *flags[] = {
+    static int * const flags[] = {
         &hf_stt_tcp_rsvd,
         &hf_stt_tcp_ns,
         &hf_stt_tcp_cwr,
@@ -309,12 +286,11 @@ dissect_tcp_tree(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree)
     tcp_tree = proto_item_add_subtree(tcp_item, ett_stt_tcp_data);
     proto_item_set_text(tcp_item, "TCP Data");
 
-    data_offset = hi_nibble(tvb_get_guint8(tvb, offset)) * 4;
-    data_offset_item = proto_tree_add_uint_format_value(tcp_tree,
-                                                        hf_stt_tcp_data_offset,
-                                                        tvb, offset, 1,
-                                                        data_offset,
-                                                        "%u bytes", data_offset);
+    data_offset = hi_nibble(tvb_get_uint8(tvb, offset)) * 4;
+    data_offset_item = proto_tree_add_uint(tcp_tree,
+                                            hf_stt_tcp_data_offset,
+                                            tvb, offset, 1,
+                                            data_offset);
     if (data_offset != STT_TCP_HDR_LEN) {
         expert_add_info(pinfo, data_offset_item, &ei_stt_data_offset_bad);
     }
@@ -335,7 +311,7 @@ dissect_tcp_tree(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree)
 static int
 dissect_stt_flags(proto_tree *tree, tvbuff_t *tvb, int offset)
 {
-    static const int *flags[] = {
+    static int * const flags[] = {
         &hf_stt_flag_rsvd,
         &hf_stt_flag_tcp,
         &hf_stt_flag_ipv4,
@@ -357,9 +333,9 @@ dissect_stt_tree(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree,
 {
     proto_tree *vlan_tree;
     proto_item *ver_item, *l4_offset_item, *vlan_item, *mss_item;
-    guint8 flags;
-    guint32 version, l4_offset, mss, attributes;
-    guint64 context_id;
+    uint8_t flags;
+    uint32_t version, l4_offset, mss, attributes;
+    uint64_t context_id;
     int offset = STT_TCP_HDR_LEN;
 
     /*
@@ -390,7 +366,7 @@ dissect_stt_tree(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree,
     offset++;
 
     /* Flags */
-    flags = tvb_get_guint8(tvb, offset);
+    flags = tvb_get_uint8(tvb, offset);
     offset = dissect_stt_flags(stt_tree, tvb, offset);
 
     /* Layer 4 offset */
@@ -443,14 +419,14 @@ dissect_stt_tree(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree,
     }
     /* Show if any part of this is set to aid debugging bad implementations. */
     if (attributes == 0) {
-        PROTO_ITEM_SET_HIDDEN(vlan_item);
+        proto_item_set_hidden(vlan_item);
     }
     offset += 2;
 
     /* Context ID */
     context_id = tvb_get_ntoh64(tvb, offset);
     proto_tree_add_item(stt_tree, hf_stt_context_id, tvb, offset, 8, ENC_BIG_ENDIAN);
-    proto_item_append_text(stt_item, ", Context ID: 0x%" G_GINT64_MODIFIER "x",
+    proto_item_append_text(stt_item, ", Context ID: 0x%" PRIx64,
                            context_id);
     offset += 8;
 
@@ -465,9 +441,9 @@ dissect_stt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     proto_item *stt_item;
     proto_tree *stt_tree;
     tvbuff_t *next_tvb;
-    guint16 seg_off, pkt_len, rx_bytes;
-    guint8 sub_off;
-    gboolean frag_save, is_seg;
+    uint16_t seg_off, pkt_len, rx_bytes;
+    uint8_t sub_off;
+    bool frag_save, is_seg;
 
     /* Make entry in Protocol column on summary display. */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "STT");
@@ -487,9 +463,9 @@ dissect_stt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     is_seg = pkt_len > rx_bytes;
 
     if (is_seg) {
-        guint32 pkt_id = tvb_get_ntohl(tvb, STT_TCP_OFF_PKT_ID);
+        uint32_t pkt_id = tvb_get_ntohl(tvb, STT_TCP_OFF_PKT_ID);
 
-        pinfo->fragmented = TRUE;
+        pinfo->fragmented = true;
         col_add_fstr(pinfo->cinfo, COL_INFO,
                      "STT Segment (ID: 0x%x Len: %hu, Off: %hu)",
                       pkt_id, pkt_len, seg_off);
@@ -503,12 +479,12 @@ dissect_stt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             if (reasm_tvb) {
                 tvb = reasm_tvb;
                 pinfo->fragmented = frag_save;
-                is_seg = FALSE;
+                is_seg = false;
             }
         } else if (seg_off == 0) {
            /* If we're not reassembling, move ahead as if we have the
             *  whole frame. */
-            is_seg = FALSE;
+            is_seg = false;
         }
     }
 
@@ -536,25 +512,23 @@ dissect_stt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     pinfo->fragmented = frag_save;
 }
 
-static gboolean
+static bool
 dissect_stt_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                 void *data)
+                 void *iph)
 {
-    ws_ip *iph = (ws_ip*)data;
-
     /* Make sure we at least have a TCP header */
-    if (iph->ip_nxt != IP_PROTO_TCP ||
+    if (ws_ip_protocol(iph) != IP_PROTO_TCP ||
         tvb_captured_length(tvb) < STT_TCP_HDR_LEN) {
-        return FALSE;
+        return false;
     }
 
     /* Check the TCP destination port */
     if (tvb_get_ntohs(tvb, STT_TCP_OFF_DPORT) != TCP_PORT_STT) {
-        return FALSE;
+        return false;
     }
 
     dissect_stt(tvb, pinfo, tree);
-    return TRUE;
+    return true;
 }
 
 /* Register STT with Wireshark */
@@ -599,91 +573,91 @@ proto_register_stt(void)
         { &hf_stt_tcp_data,
           { "TCP Data", "stt.tcp",
             FT_BYTES, BASE_NONE, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_data_offset,
           { "Data Offset", "stt.tcp.data_offset",
-            FT_UINT8, BASE_DEC, NULL, 0x0,
-            NULL, HFILL,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_flags,
           { "Flags", "stt.tcp.flags",
             FT_UINT16, BASE_HEX, NULL, 0x0FFF,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_rsvd,
           { "Reserved", "stt.tcp.flags.rsvd",
-            FT_BOOLEAN, 12, NULL, 0x0E00,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0xE00,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_ns,
           { "Nonce", "stt.tcp.flags.ns",
-            FT_BOOLEAN, 12, NULL, 0x0100,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x100,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_cwr,
           { "Congestion Window Reduced (CWR)", "stt.tcp.flags.cwr",
-            FT_BOOLEAN, 12, NULL, 0x0080,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x080,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_ece,
           { "ECN-Echo", "stt.tcp.flags.ece",
-            FT_BOOLEAN, 12, NULL, 0x0040,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x040,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_urg,
           { "Urgent", "stt.tcp.flags.urg",
-            FT_BOOLEAN, 12, NULL, 0x0020,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x020,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_ack,
           { "Acknowledgement", "stt.tcp.flags.ack",
-            FT_BOOLEAN, 12, NULL, 0x0010,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x010,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_psh,
           { "Push", "stt.tcp.flags.psh",
-            FT_BOOLEAN, 12, NULL, 0x0008,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x008,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_rst,
           { "Reset", "stt.tcp.flags.rst",
-            FT_BOOLEAN, 12, NULL, 0x0004,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x004,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_syn,
           { "Syn", "stt.tcp.flags.syn",
-            FT_BOOLEAN, 12, NULL, 0x0002,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x002,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_fin,
           { "Fin", "stt.tcp.flags.fin",
-            FT_BOOLEAN, 12, NULL, 0x0001,
-            NULL, HFILL,
+            FT_BOOLEAN, 12, NULL, 0x001,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_window,
           { "Window", "stt.tcp.window",
             FT_UINT16, BASE_DEC, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_tcp_urg_ptr,
           { "Urgent Pointer", "stt.tcp.urg_ptr",
             FT_UINT16, BASE_DEC, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
 
@@ -697,91 +671,91 @@ proto_register_stt(void)
         { &hf_stt_flags,
           { "Flags", "stt.flags",
             FT_UINT8, BASE_HEX, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_flag_rsvd,
           { "Reserved", "stt.flags.rsvd",
             FT_BOOLEAN, 8, NULL, 0xF0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_flag_tcp,
           { "TCP payload", "stt.flags.tcp",
             FT_BOOLEAN, 8, NULL, 0x08,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_flag_ipv4,
           { "IPv4 packet", "stt.flags.ipv4",
             FT_BOOLEAN, 8, NULL, 0x04,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_flag_partial,
           { "Checksum partial", "stt.flags.csum_partial",
             FT_BOOLEAN, 8, NULL, 0x02,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_flag_verified,
           { "Checksum verified", "stt.flags.csum_verified",
             FT_BOOLEAN, 8, NULL, 0x01,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_l4_offset,
           { "L4 Offset", "stt.l4offset",
             FT_UINT8, BASE_DEC, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_reserved_8,
           { "Reserved", "stt.reserved",
             FT_UINT8, BASE_HEX, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_mss,
           { "Max Segment Size", "stt.mss",
             FT_UINT16, BASE_DEC, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_vlan,
           { "VLAN", "stt.vlan",
             FT_UINT16, BASE_HEX, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_pcp,
           { "PCP", "stt.vlan.pcp",
             FT_UINT16, BASE_DEC, VALS(pri_vals), STT_PCP_MASK,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_v,
           { "V flag", "stt.vlan.v",
             FT_UINT16, BASE_DEC, NULL, STT_V_MASK,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_vlan_id,
           { "VLAN ID", "stt.vlan.id",
             FT_UINT16, BASE_DEC, NULL, STT_VLANID_MASK,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_context_id,
           { "Context ID", "stt.context_id",
             FT_UINT64, BASE_HEX, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
         { &hf_stt_padding,
           { "Padding", "stt.padding",
             FT_UINT16, BASE_HEX, NULL, 0x0,
-            NULL, HFILL,
+            NULL, HFILL
           },
         },
 
@@ -789,7 +763,7 @@ proto_register_stt(void)
         { &hf_stt_checksum,
           { "Checksum", "stt.checksum",
             FT_UINT16, BASE_HEX, NULL, 0x0,
-            "Details at: http://www.wireshark.org/docs/wsug_html_chunked/ChAdvChecksums.html", HFILL
+            "Details at: https://www.wireshark.org/docs/wsug_html_chunked/ChAdvChecksums.html", HFILL
           },
         },
         { &hf_stt_checksum_status,
@@ -845,7 +819,7 @@ proto_register_stt(void)
         { &hf_segments,
           { "Reassembled STT Segments", "stt.segments",
             FT_NONE, BASE_NONE, NULL, 0x0,
-            "STT Segments", HFILL
+            NULL, HFILL
           },
         },
         { &hf_reassembled_in,
@@ -863,7 +837,7 @@ proto_register_stt(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_stt,
         &ett_stt_tcp_data,
         &ett_stt_tcp_flags,
@@ -923,8 +897,8 @@ proto_register_stt(void)
                                    "Whether to validate the STT checksum or not.",
                                    &pref_check_checksum);
 
-    register_init_routine(stt_segment_init);
-    register_cleanup_routine(stt_segment_cleanup);
+    reassembly_table_register(&stt_reassembly_table,
+                          &addresses_reassembly_table_functions);
 }
 
 void
@@ -941,7 +915,7 @@ proto_reg_handoff_stt(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

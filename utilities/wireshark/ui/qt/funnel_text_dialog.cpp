@@ -4,31 +4,19 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "funnel_text_dialog.h"
 #include <ui_funnel_text_dialog.h>
 
 #include <QPushButton>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QTextCharFormat>
 #include <QTextCursor>
 
-#include "qt_ui_utils.h"
-#include "wireshark_application.h"
+#include <ui/qt/utils/qt_ui_utils.h>
+#include "main_application.h"
 
 // To do:
 // - Add "Find next" to highlighting.
@@ -37,20 +25,21 @@
 
 static QHash<QObject *, funnel_bt_t*> text_button_to_funnel_button_;
 
-FunnelTextDialog::FunnelTextDialog(const QString &title) :
-    GeometryStateDialog(NULL),
+FunnelTextDialog::FunnelTextDialog(QWidget *parent, const QString &title) :
+    GeometryStateDialog(parent),
     ui(new Ui::FunnelTextDialog),
     close_cb_(NULL),
     close_cb_data_(NULL)
 {
     ui->setupUi(this);
     if (!title.isEmpty()) {
-        loadGeometry(0, 0, QString("Funnel %1").arg(title));
+        loadGeometry(0, 0, QStringLiteral("Funnel %1").arg(title));
     }
+    setWindowTitle(mainApp->windowTitleString(title));
 
     funnel_text_window_.funnel_text_dialog = this;
 
-    ui->textEdit->setFont(wsApp->monospaceFont());
+    ui->textEdit->setFont(mainApp->monospaceFont());
     ui->textEdit->setReadOnly(true);
     ui->textEdit->setAcceptRichText(false);
 }
@@ -68,14 +57,25 @@ void FunnelTextDialog::reject()
         close_cb_(close_cb_data_);
     }
 
+    for (const auto& button : ui->buttonBox->buttons()) {
+        funnel_bt_t *funnel_button = text_button_to_funnel_button_.take(qobject_cast<QObject*>(button));
+        if (funnel_button != nullptr) {
+            if (funnel_button->free_data_fcn) {
+                funnel_button->free_data_fcn(funnel_button->data);
+            }
+            if (funnel_button->free_fcn) {
+                funnel_button->free_fcn(funnel_button);
+            }
+        }
+    }
+
     disconnect();
     deleteLater();
 }
 
-struct _funnel_text_window_t *FunnelTextDialog::textWindowNew(const QString title)
+struct _funnel_text_window_t *FunnelTextDialog::textWindowNew(QWidget *parent, const QString title)
 {
-    FunnelTextDialog *ftd = new FunnelTextDialog(title);
-    ftd->setWindowTitle(wsApp->windowTitleString(title));
+    FunnelTextDialog *ftd = new FunnelTextDialog(parent, title);
     ftd->show();
     return &ftd->funnel_text_window_;
 }
@@ -113,17 +113,20 @@ void FunnelTextDialog::setCloseCallback(text_win_close_cb_t close_cb, void *clos
     close_cb_data_ = close_cb_data;
 }
 
-void FunnelTextDialog::setTextEditable(gboolean editable)
+void FunnelTextDialog::setTextEditable(bool editable)
 {
     ui->textEdit->setReadOnly(!editable);
 }
 
-void FunnelTextDialog::addButton(funnel_bt_t *funnel_button, const QString label)
+void FunnelTextDialog::addButton(funnel_bt_t *funnel_button, QString label)
 {
+    // Use "&&" to get a real ampersand in the button.
+    label.replace('&', "&&");
+
     QPushButton *button = new QPushButton(label);
     ui->buttonBox->addButton(button, QDialogButtonBox::ActionRole);
     text_button_to_funnel_button_[button] = funnel_button;
-    connect(button, SIGNAL(clicked(bool)), this, SLOT(buttonClicked()));
+    connect(button, &QPushButton::clicked, this, &FunnelTextDialog::buttonClicked);
 }
 
 void FunnelTextDialog::buttonClicked()
@@ -138,7 +141,8 @@ void FunnelTextDialog::buttonClicked()
 
 void FunnelTextDialog::on_findLineEdit_textChanged(const QString &pattern)
 {
-    QRegExp re(pattern, Qt::CaseInsensitive);
+    QRegularExpression re(pattern, QRegularExpression::CaseInsensitiveOption |
+                          QRegularExpression::UseUnicodePropertiesOption);
     QTextCharFormat plain_fmt, highlight_fmt;
     highlight_fmt.setBackground(Qt::yellow);
     QTextCursor csr(ui->textEdit->document());
@@ -152,24 +156,19 @@ void FunnelTextDialog::on_findLineEdit_textChanged(const QString &pattern)
     csr.setCharFormat(plain_fmt);
 
     // Apply new highlighting
-    if (!pattern.isEmpty()) {
-        int match_pos = 0;
-        while ((match_pos = re.indexIn(ui->textEdit->toPlainText(), match_pos)) > -1) {
-            csr.setPosition(match_pos, QTextCursor::MoveAnchor);
-            csr.setPosition(match_pos + re.matchedLength(), QTextCursor::KeepAnchor);
+    if (!pattern.isEmpty() && re.isValid()) {
+        QRegularExpressionMatchIterator iter = re.globalMatch(ui->textEdit->toPlainText());
+        while (iter.hasNext()) {
+            QRegularExpressionMatch match = iter.next();
+            csr.setPosition(static_cast<int>(match.capturedStart()), QTextCursor::MoveAnchor);
+            csr.setPosition(static_cast<int>(match.capturedEnd()), QTextCursor::KeepAnchor);
             csr.setCharFormat(highlight_fmt);
-            match_pos += re.matchedLength();
         }
     }
 
     // Restore cursor and anchor
     csr.setPosition(position, QTextCursor::MoveAnchor);
     setUpdatesEnabled(true);
-}
-
-struct _funnel_text_window_t* text_window_new(const char* title)
-{
-    return FunnelTextDialog::textWindowNew(title);
 }
 
 void text_window_set_text(funnel_text_window_t *ftw, const char* text)
@@ -215,7 +214,7 @@ void text_window_set_close_cb(funnel_text_window_t *ftw, text_win_close_cb_t clo
     }
 }
 
-void text_window_set_editable(funnel_text_window_t *ftw, gboolean editable)
+void text_window_set_editable(funnel_text_window_t *ftw, bool editable)
 {
     if (ftw) {
         ftw->funnel_text_dialog->setTextEditable(editable);
@@ -235,16 +234,3 @@ void text_window_add_button(funnel_text_window_t *ftw, funnel_bt_t *funnel_butto
         ftw->funnel_text_dialog->addButton(funnel_button, label);
     }
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

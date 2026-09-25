@@ -1,0 +1,268 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRegexp" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRegexp</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRegexp_1af2ac496dd25a801876f09f2b0bd91e6d" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* string</definition>
+        <argsstring></argsstring>
+        <name>string</name>
+        <qualifiedname>_xmlRegexp::string</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="324" column="13" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="324" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1ac32824c1fdb1783338dc0e3b71d7d3dd" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbStates</definition>
+        <argsstring></argsstring>
+        <name>nbStates</name>
+        <qualifiedname>_xmlRegexp::nbStates</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="325" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="325" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1a35e0467412db84698df651c98c7cb108" prot="public" static="no" mutable="no">
+        <type>xmlRegStatePtr *</type>
+        <definition>xmlRegStatePtr* states</definition>
+        <argsstring></argsstring>
+        <name>states</name>
+        <qualifiedname>_xmlRegexp::states</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="326" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="326" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1a4bf2e037a0df57e1ed5f99ef5fc0c028" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbAtoms</definition>
+        <argsstring></argsstring>
+        <name>nbAtoms</name>
+        <qualifiedname>_xmlRegexp::nbAtoms</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="327" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="327" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1af7c897d79fb61dde09602672a70e5b84" prot="public" static="no" mutable="no">
+        <type>xmlRegAtomPtr *</type>
+        <definition>xmlRegAtomPtr* atoms</definition>
+        <argsstring></argsstring>
+        <name>atoms</name>
+        <qualifiedname>_xmlRegexp::atoms</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="328" column="19" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="328" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1ac3abda675968bb89a26ec94b3a418125" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbCounters</definition>
+        <argsstring></argsstring>
+        <name>nbCounters</name>
+        <qualifiedname>_xmlRegexp::nbCounters</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="329" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="329" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1adabc3f4cc24a6e96b9ddf45a10bd8ca6" prot="public" static="no" mutable="no">
+        <type>xmlRegCounter *</type>
+        <definition>xmlRegCounter* counters</definition>
+        <argsstring></argsstring>
+        <name>counters</name>
+        <qualifiedname>_xmlRegexp::counters</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="330" column="19" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="330" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1a9f125e1f0926df6d7b41fa62948c0439" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int determinist</definition>
+        <argsstring></argsstring>
+        <name>determinist</name>
+        <qualifiedname>_xmlRegexp::determinist</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="331" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="331" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlRegexp::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="332" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="332" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1ab54e3f87d4f76dbc84818c3d7070656d" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbstates</definition>
+        <argsstring></argsstring>
+        <name>nbstates</name>
+        <qualifiedname>_xmlRegexp::nbstates</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="336" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="336" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1ae64278a52b7f9f83b80989fd6c09b273" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* compact</definition>
+        <argsstring></argsstring>
+        <name>compact</name>
+        <qualifiedname>_xmlRegexp::compact</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="337" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="337" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1a8bcd21d50633eb3092e5ebf382527977" prot="public" static="no" mutable="no">
+        <type>void **</type>
+        <definition>void** transdata</definition>
+        <argsstring></argsstring>
+        <name>transdata</name>
+        <qualifiedname>_xmlRegexp::transdata</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="338" column="10" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="338" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1a0548488f21546158bc6486f7fd25cc54" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbstrings</definition>
+        <argsstring></argsstring>
+        <name>nbstrings</name>
+        <qualifiedname>_xmlRegexp::nbstrings</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="339" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="339" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegexp_1a809324797c0b13b783b61469cd4e3d34" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+        <definition>xmlChar** stringMap</definition>
+        <argsstring></argsstring>
+        <name>stringMap</name>
+        <qualifiedname>_xmlRegexp::stringMap</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="340" column="13" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="340" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>_xmlAutomataState</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlRegAtom</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlRegCounter</label>
+      </node>
+      <node id="5">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="3">
+        <label>_xmlRegTrans</label>
+        <childnode refid="4" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlRegexp</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="323" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="323" bodyend="341"/>
+    <listofallmembers>
+      <member refid="struct__xmlRegexp_1af7c897d79fb61dde09602672a70e5b84" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>atoms</name></member>
+      <member refid="struct__xmlRegexp_1ae64278a52b7f9f83b80989fd6c09b273" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>compact</name></member>
+      <member refid="struct__xmlRegexp_1adabc3f4cc24a6e96b9ddf45a10bd8ca6" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>counters</name></member>
+      <member refid="struct__xmlRegexp_1a9f125e1f0926df6d7b41fa62948c0439" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>determinist</name></member>
+      <member refid="struct__xmlRegexp_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>flags</name></member>
+      <member refid="struct__xmlRegexp_1a4bf2e037a0df57e1ed5f99ef5fc0c028" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>nbAtoms</name></member>
+      <member refid="struct__xmlRegexp_1ac3abda675968bb89a26ec94b3a418125" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>nbCounters</name></member>
+      <member refid="struct__xmlRegexp_1ac32824c1fdb1783338dc0e3b71d7d3dd" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>nbStates</name></member>
+      <member refid="struct__xmlRegexp_1ab54e3f87d4f76dbc84818c3d7070656d" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>nbstates</name></member>
+      <member refid="struct__xmlRegexp_1a0548488f21546158bc6486f7fd25cc54" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>nbstrings</name></member>
+      <member refid="struct__xmlRegexp_1a35e0467412db84698df651c98c7cb108" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>states</name></member>
+      <member refid="struct__xmlRegexp_1af2ac496dd25a801876f09f2b0bd91e6d" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>string</name></member>
+      <member refid="struct__xmlRegexp_1a809324797c0b13b783b61469cd4e3d34" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>stringMap</name></member>
+      <member refid="struct__xmlRegexp_1a8bcd21d50633eb3092e5ebf382527977" prot="public" virt="non-virtual"><scope>_xmlRegexp</scope><name>transdata</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,24 +16,29 @@
 #include <epan/capture_dissectors.h>
 #include <epan/prefs.h>
 #include <epan/decode_as.h>
-#include <wiretap/wtap.h>
 
 void proto_register_i2c(void);
 void proto_reg_handoff_i2c(void);
 
-static int proto_i2c = -1;
-static int proto_i2c_event = -1;
-static int proto_i2c_data = -1;
+static dissector_handle_t i2c_linux_handle;
+static capture_dissector_handle_t i2c_linux_cap_handle;
+static dissector_handle_t i2c_kontron_handle;
+
+static int proto_i2c;
+static int proto_i2c_event;
+static int proto_i2c_data;
 
 
-static int hf_i2c_bus = -1;
-static int hf_i2c_event = -1;
-static int hf_i2c_flags = -1;
-static int hf_i2c_addr = -1;
+static int hf_i2c_bus;
+static int hf_i2c_event;
+static int hf_i2c_flags;
+static int hf_i2c_addr;
 
-static gint ett_i2c = -1;
+static int ett_i2c;
 
 static dissector_table_t subdissector_table;
+
+static dissector_handle_t ipmb_handle;
 
 /* I2C packet flags. */
 #define I2C_FLAG_RD			0x00000001
@@ -76,18 +69,13 @@ static dissector_table_t subdissector_table;
 							   disconnected from the bus */
 #define I2C_EVENT_ERR_FAIL		(1 << 22)	/* Undiagnosed failure       */
 
-static void i2c_prompt(packet_info *pinfo _U_, gchar* result)
+static void i2c_prompt(packet_info *pinfo _U_, char* result)
 {
-	g_snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Interpret I2C messages as");
+	snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Interpret I2C messages as");
 }
 
-static gpointer i2c_value(packet_info *pinfo _U_)
-{
-	return 0;
-}
-
-static gboolean
-capture_i2c(const guchar *pd _U_, int offset _U_, int len _U_, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
+static bool
+capture_i2c_linux(const unsigned char *pd _U_, int offset _U_, int len _U_, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
 {
 	if (pseudo_header->i2c.is_event) {
 		capture_dissector_increment_count(cpinfo, proto_i2c_event);
@@ -95,11 +83,11 @@ capture_i2c(const guchar *pd _U_, int offset _U_, int len _U_, capture_packet_in
 		capture_dissector_increment_count(cpinfo, proto_i2c_data);
 	}
 
-	return TRUE;
+	return true;
 }
 
 static const char *
-i2c_get_event_desc(guint32 event)
+i2c_linux_get_event_desc(uint32_t event)
 {
 	const char *desc;
 
@@ -168,13 +156,13 @@ i2c_get_event_desc(guint32 event)
 }
 
 static int
-dissect_i2c(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+dissect_i2c_linux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item *ti;
 	proto_tree *i2c_tree;
-	guint8      is_event;
-	guint8      bus, addr;
-	guint32     flags;
+	uint8_t     is_event;
+	uint8_t     bus, addr;
+	uint32_t    flags;
 
 	flags = pinfo->pseudo_header->i2c.flags;
 
@@ -185,12 +173,12 @@ dissect_i2c(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	if (is_event) {
 		addr = 0;
 		col_set_str(pinfo->cinfo, COL_PROTOCOL, "I2C Event");
-		col_add_fstr(pinfo->cinfo, COL_DEF_DST, "----");
-		col_add_fstr(pinfo->cinfo, COL_INFO, "%s",
-				i2c_get_event_desc(flags));
+		col_set_str(pinfo->cinfo, COL_DEF_DST, "----");
+		col_add_str(pinfo->cinfo, COL_INFO,
+				i2c_linux_get_event_desc(flags));
 	} else {
 		/* Report 7-bit hardware address */
-		addr = tvb_get_guint8(tvb, 0) >> 1;
+		addr = tvb_get_uint8(tvb, 0) >> 1;
 		col_add_fstr(pinfo->cinfo, COL_PROTOCOL, "I2C %s",
 				(flags & I2C_FLAG_RD) ? "Read" : "Write");
 		col_add_fstr(pinfo->cinfo, COL_DEF_DST, "0x%02x", addr);
@@ -211,19 +199,59 @@ dissect_i2c(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	if (is_event) {
 		proto_tree_add_uint_format_value(i2c_tree, hf_i2c_event, tvb, 0, 0,
 				flags, "%s (0x%08x)",
-				i2c_get_event_desc(flags), flags);
+				i2c_linux_get_event_desc(flags), flags);
 	} else {
 		proto_tree_add_uint_format_value(i2c_tree, hf_i2c_addr, tvb, 0, 1,
 				addr, "0x%02x%s", addr, addr ? "" : " (General Call)");
 		proto_tree_add_uint(i2c_tree, hf_i2c_flags, tvb, 0, 0, flags);
 
-		/* Functionality for choosing subdissector is controlled through Decode As as I2C doesn't
-		   have a unique identifier to determine subdissector */
-		if (!dissector_try_uint(subdissector_table, 0, tvb, pinfo, tree))
+		if (!dissector_try_payload_with_data(subdissector_table, tvb, pinfo, tree, true, NULL))
 		{
 			call_data_dissector(tvb, pinfo, tree);
 		}
 	}
+	return tvb_captured_length(tvb);
+}
+
+/* IPMB-over-I2C, with Kontron pseudo-header */
+static int
+dissect_i2c_kontron(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+{
+	proto_item *ti;
+	proto_tree *i2c_tree;
+	int         offset = 0;
+	uint8_t     addr;
+	tvbuff_t   *new_tvb;
+
+	col_set_str(pinfo->cinfo, COL_DEF_SRC, "I2C");
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "I2C");
+
+	ti = proto_tree_add_protocol_format(tree, proto_i2c, tvb, 0, -1,
+			"Inter-Integrated Circuit (Data)");
+
+	/* Data length field */
+	offset++;
+
+	/* Port number on which the message was received */
+	offset++;
+
+	/* Report 7-bit hardware address */
+	addr = tvb_get_uint8(tvb, offset) >> 1;
+	col_append_fstr(pinfo->cinfo, COL_PROTOCOL, " %s",
+	    tvb_get_uint8(tvb, 0) & 0x01 ? "Read" : "Write");
+	col_add_fstr(pinfo->cinfo, COL_DEF_DST, "0x%02x", addr);
+	col_add_fstr(pinfo->cinfo, COL_INFO, "I2C, %d bytes",
+				tvb_captured_length(tvb));
+
+	pinfo->ptype = PT_I2C;
+
+	i2c_tree = proto_item_add_subtree(ti, ett_i2c);
+
+	proto_tree_add_uint_format_value(i2c_tree, hf_i2c_addr, tvb, 0, 3,
+			addr, "0x%02x%s", addr, addr ? "" : " (General Call)");
+
+	new_tvb = tvb_new_subset_remaining(tvb, offset);
+	call_dissector(ipmb_handle, new_tvb, pinfo, tree);
 	return tvb_captured_length(tvb);
 }
 
@@ -236,45 +264,42 @@ proto_register_i2c(void)
 		{ &hf_i2c_event, { "Event", "i2c.event", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 		{ &hf_i2c_flags, { "Flags", "i2c.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_i2c
 	};
 	module_t *m;
-
-	/* Decode As handling */
-	static build_valid_func i2c_da_build_value[1] = {i2c_value};
-	static decode_as_value_t i2c_da_values = {i2c_prompt, 1, i2c_da_build_value};
-	static decode_as_t i2c_da = {"i2c", "I2C Message", "i2c.message", 1, 0, &i2c_da_values, NULL, NULL,
-									decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
-
-	/* Placeholders for capture statistics */
-	proto_i2c_event = proto_register_protocol("I2C Events", "I2C Events", "i2c_event");
-	proto_i2c_data = proto_register_protocol("I2C Data", "I2C Data", "i2c_data");
 
 	proto_i2c = proto_register_protocol("Inter-Integrated Circuit", "I2C", "i2c");
 	proto_register_field_array(proto_i2c, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-	subdissector_table = register_dissector_table("i2c.message", "I2C messages dissector", proto_i2c, FT_UINT32, BASE_DEC);
+	/* Placeholders for capture statistics */
+	proto_i2c_event = proto_register_protocol_in_name_only("I2C Events", "I2C Events", "i2c_event", proto_i2c, FT_PROTOCOL);
+	proto_i2c_data = proto_register_protocol_in_name_only("I2C Data", "I2C Data", "i2c_data", proto_i2c, FT_PROTOCOL);
 
-	m = prefs_register_protocol(proto_i2c, NULL);
+	m = prefs_register_protocol_obsolete(proto_i2c);
 	prefs_register_obsolete_preference(m, "type");
 
-	register_decode_as(&i2c_da);
+	subdissector_table = register_decode_as_next_proto(proto_i2c, "i2c.message", "I2C messages dissector", i2c_prompt);
+
+	i2c_linux_handle = register_dissector("i2c_linux", dissect_i2c_linux, proto_i2c);
+	i2c_linux_cap_handle = register_capture_dissector("i2c_linux", capture_i2c_linux, proto_i2c);
+	i2c_kontron_handle = register_dissector("i2c_kontron", dissect_i2c_kontron, proto_i2c);
 }
 
 void
 proto_reg_handoff_i2c(void)
 {
-	dissector_handle_t i2c_handle;
+	dissector_add_uint("wtap_encap", WTAP_ENCAP_I2C_LINUX, i2c_linux_handle);
+	capture_dissector_add_uint("wtap_encap", WTAP_ENCAP_I2C_LINUX, i2c_linux_cap_handle);
 
-	i2c_handle = create_dissector_handle(dissect_i2c, proto_i2c);
-	dissector_add_uint("wtap_encap", WTAP_ENCAP_I2C, i2c_handle);
-	register_capture_dissector("wtap_encap", WTAP_ENCAP_I2C, capture_i2c, proto_i2c);
+	dissector_add_uint("wtap_encap", WTAP_ENCAP_IPMB_KONTRON, i2c_kontron_handle);
+
+	ipmb_handle = find_dissector("ipmb");
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

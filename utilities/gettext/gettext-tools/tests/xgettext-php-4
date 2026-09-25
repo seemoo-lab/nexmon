@@ -3,7 +3,7 @@
 
 # Test PHP support: string concatenation.
 
-cat <<EOF > xg-ph-4.php
+cat <<\EOF > xg-ph-4.php
 <?
 echo _("foo"."bar");
 echo _("hello " .
@@ -19,7 +19,7 @@ ${XGETTEXT} --omit-header --no-location --extract-all \
   -d xg-ph-4.tmp xg-ph-4.php || Exit 1
 LC_ALL=C tr -d '\r' < xg-ph-4.tmp.po > xg-ph-4.po || Exit 1
 
-cat <<EOF > xg-ph-4.ok
+cat <<\EOF > xg-ph-4.ok
 msgid "foobar"
 msgstr ""
 

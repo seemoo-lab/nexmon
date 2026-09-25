@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,89 +16,214 @@
 #include <epan/exceptions.h>
 #include "packet-smb-sidsnooping.h"
 #include "packet-windows-common.h"
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-smb.h"	/* for "sid_name_snooping" */
 
-static int hf_nt_sec_desc_revision = -1;
-static int hf_nt_sec_desc_type_owner_defaulted = -1;
-static int hf_nt_sec_desc_type_group_defaulted = -1;
-static int hf_nt_sec_desc_type_dacl_present = -1;
-static int hf_nt_sec_desc_type_dacl_defaulted = -1;
-static int hf_nt_sec_desc_type_sacl_present = -1;
-static int hf_nt_sec_desc_type_sacl_defaulted = -1;
-static int hf_nt_sec_desc_type_dacl_trusted = -1;
-static int hf_nt_sec_desc_type_server_security = -1;
-static int hf_nt_sec_desc_type_dacl_auto_inherit_req = -1;
-static int hf_nt_sec_desc_type_sacl_auto_inherit_req = -1;
-static int hf_nt_sec_desc_type_dacl_auto_inherited = -1;
-static int hf_nt_sec_desc_type_sacl_auto_inherited = -1;
-static int hf_nt_sec_desc_type_dacl_protected = -1;
-static int hf_nt_sec_desc_type_sacl_protected = -1;
-static int hf_nt_sec_desc_type_rm_control_valid = -1;
-static int hf_nt_sec_desc_type_self_relative = -1;
-static int hf_nt_sid = -1;
-static int hf_nt_sid_revision = -1;
-static int hf_nt_sid_num_auth = -1;
-static int hf_nt_sid_auth_dec = -1;
-static int hf_nt_sid_auth_hex = -1;
-static int hf_nt_sid_subauth = -1;
-static int hf_nt_sid_rid_dec = -1;
-static int hf_nt_sid_rid_hex = -1;
-static int hf_nt_sid_wkwn = -1;
-static int hf_nt_sid_domain = -1;
-static int hf_nt_acl_revision = -1;
-static int hf_nt_acl_size = -1;
-static int hf_nt_acl_num_aces = -1;
-static int hf_nt_ace_flags_object_inherit = -1;
-static int hf_nt_ace_flags_container_inherit = -1;
-static int hf_nt_ace_flags_non_propagate_inherit = -1;
-static int hf_nt_ace_flags_inherit_only = -1;
-static int hf_nt_ace_flags_inherited_ace = -1;
-static int hf_nt_ace_flags_successful_access = -1;
-static int hf_nt_ace_flags_failed_access = -1;
-static int hf_nt_ace_type = -1;
-static int hf_nt_ace_size = -1;
-static int hf_nt_ace_flags_object_type_present = -1;
-static int hf_nt_ace_flags_inherited_object_type_present = -1;
-static int hf_nt_ace_guid = -1;
-static int hf_nt_ace_inherited_guid = -1;
-static int hf_nt_security_information_sacl = -1;
-static int hf_nt_security_information_dacl = -1;
-static int hf_nt_security_information_group = -1;
-static int hf_nt_security_information_owner = -1;
+/* The types used in [MS-DTYP] v20180912 should be interpreted as
+ * follows (all multi-byte integer types are little endian):
+ * typedef uint8_t MS_BYTE;
+ * typedef uint16_t MS_WORD;
+ * typedef uint32_t MS_DWORD;
+ * typedef uint64_t MS_QWORD;
+ * typedef uint64_t MS_ULONG64;
+ * typedef uint64_t MS_DWORD64;
+ * typedef int64_t MS_LONG64;
+ */
+
+enum cond_ace_token {
+#define DEF_COND_ACE_TOKEN(VAL, VAR, STR) COND_ACE_TOKEN_ ## VAR = VAL,
+#define DEF_COND_ACE_TOKEN_WITH_DATA DEF_COND_ACE_TOKEN
+#include "cond_ace_token_enum.h"
+	COND_ACE_TOKEN_UNKNOWN = -1
+};
+
+static const value_string ace_cond_token_vals[] = {
+#define DEF_COND_ACE_TOKEN(VAL, VAR, STR) {VAL, STR},
+#define DEF_COND_ACE_TOKEN_WITH_DATA DEF_COND_ACE_TOKEN
+#include "cond_ace_token_enum.h"
+	{ 0, NULL }
+};
+
+static bool
+ace_cond_token_has_data(uint8_t token) {
+	switch (token) {
+#define DEF_COND_ACE_TOKEN(VAL, VAR, STR)
+#define DEF_COND_ACE_TOKEN_WITH_DATA(VAL, VAR, STR) case VAL:
+#include "cond_ace_token_enum.h"
+		return true;
+	}
+	return false;
+}
+
+static const value_string ace_cond_base_vals[] = {
+	{ 0x01, "OCT" },
+	{ 0x02, "DEC" },
+	{ 0x03, "HEX" },
+	{ 0, NULL }
+};
+
+static const value_string ace_cond_sign_vals[] = {
+	{ 0x01, "PLUS" },
+	{ 0x02, "MINUS" },
+	{ 0x03, "NONE" },
+	{ 0, NULL }
+};
+
+
+#define CLAIM_SECURITY_ATTRIBUTE_TYPE_INT64           0x0001
+#define CLAIM_SECURITY_ATTRIBUTE_TYPE_UINT64          0x0002
+#define CLAIM_SECURITY_ATTRIBUTE_TYPE_STRING          0x0003
+#define CLAIM_SECURITY_ATTRIBUTE_TYPE_SID             0x0005
+#define CLAIM_SECURITY_ATTRIBUTE_TYPE_BOOLEAN         0x0006
+#define CLAIM_SECURITY_ATTRIBUTE_TYPE_OCTET_STRING    0x0010
+
+static const value_string ace_sra_type_vals[] = {
+	{ CLAIM_SECURITY_ATTRIBUTE_TYPE_INT64, "INT64" },
+	{ CLAIM_SECURITY_ATTRIBUTE_TYPE_UINT64, "UINT64" },
+	{ CLAIM_SECURITY_ATTRIBUTE_TYPE_STRING, "STRING" },
+	{ CLAIM_SECURITY_ATTRIBUTE_TYPE_SID, "SID"},
+	{ CLAIM_SECURITY_ATTRIBUTE_TYPE_BOOLEAN, "BOOLEAN" },
+	{ CLAIM_SECURITY_ATTRIBUTE_TYPE_OCTET_STRING, "OCTET_STRING" },
+	{ 0, NULL }
+};
+
+static int hf_nt_sec_desc_revision;
+static int hf_nt_sec_desc_type_owner_defaulted;
+static int hf_nt_sec_desc_type_group_defaulted;
+static int hf_nt_sec_desc_type_dacl_present;
+static int hf_nt_sec_desc_type_dacl_defaulted;
+static int hf_nt_sec_desc_type_sacl_present;
+static int hf_nt_sec_desc_type_sacl_defaulted;
+static int hf_nt_sec_desc_type_dacl_trusted;
+static int hf_nt_sec_desc_type_server_security;
+static int hf_nt_sec_desc_type_dacl_auto_inherit_req;
+static int hf_nt_sec_desc_type_sacl_auto_inherit_req;
+static int hf_nt_sec_desc_type_dacl_auto_inherited;
+static int hf_nt_sec_desc_type_sacl_auto_inherited;
+static int hf_nt_sec_desc_type_dacl_protected;
+static int hf_nt_sec_desc_type_sacl_protected;
+static int hf_nt_sec_desc_type_rm_control_valid;
+static int hf_nt_sec_desc_type_self_relative;
+static int hf_nt_sid;
+static int hf_nt_sid_revision;
+static int hf_nt_sid_num_auth;
+static int hf_nt_sid_auth_dec;
+static int hf_nt_sid_auth_hex;
+static int hf_nt_sid_subauth;
+static int hf_nt_sid_rid_dec;
+static int hf_nt_sid_rid_hex;
+static int hf_nt_sid_wkwn;
+static int hf_nt_sid_domain;
+static int hf_nt_acl_revision;
+static int hf_nt_acl_size;
+static int hf_nt_acl_num_aces;
+static int hf_nt_ace_flags_object_inherit;
+static int hf_nt_ace_flags_container_inherit;
+static int hf_nt_ace_flags_non_propagate_inherit;
+static int hf_nt_ace_flags_inherit_only;
+static int hf_nt_ace_flags_inherited_ace;
+static int hf_nt_ace_flags_successful_access;
+static int hf_nt_ace_flags_failed_access;
+static int hf_nt_ace_type;
+static int hf_nt_ace_size;
+static int hf_nt_ace_flags_object_type_present;
+static int hf_nt_ace_flags_inherited_object_type_present;
+static int hf_nt_ace_guid;
+static int hf_nt_ace_inherited_guid;
+
+/* Conditional ACE dissect */
+static int hf_nt_ace_cond;
+static int hf_nt_ace_cond_token;
+static int hf_nt_ace_cond_sign;
+static int hf_nt_ace_cond_base;
+static int hf_nt_ace_cond_value_int8;
+static int hf_nt_ace_cond_value_int16;
+static int hf_nt_ace_cond_value_int32;
+static int hf_nt_ace_cond_value_int64;
+static int hf_nt_ace_cond_value_string;
+static int hf_nt_ace_cond_value_octet_string;
+static int hf_nt_ace_cond_local_attr;
+static int hf_nt_ace_cond_user_attr;
+static int hf_nt_ace_cond_resource_attr;
+static int hf_nt_ace_cond_device_attr;
+
+/* System Resource Attribute ACE dissect */
+static int hf_nt_ace_sra;
+static int hf_nt_ace_sra_name_offset;
+static int hf_nt_ace_sra_name;
+static int hf_nt_ace_sra_type;
+static int hf_nt_ace_sra_reserved;
+static int hf_nt_ace_sra_flags;
+static int hf_nt_ace_sra_flags_manual;
+static int hf_nt_ace_sra_flags_policy_derived;
+static int hf_nt_ace_sra_flags_non_inheritable;
+static int hf_nt_ace_sra_flags_case_sensitive;
+static int hf_nt_ace_sra_flags_deny_only;
+static int hf_nt_ace_sra_flags_disabled_by_default;
+static int hf_nt_ace_sra_flags_disabled;
+static int hf_nt_ace_sra_flags_mandatory;
+static int hf_nt_ace_sra_value_count;
+static int hf_nt_ace_sra_value_offset;
+static int hf_nt_ace_sra_value_int64;
+static int hf_nt_ace_sra_value_uint64;
+static int hf_nt_ace_sra_value_string;
+static int hf_nt_ace_sra_value_sid;
+static int hf_nt_ace_sra_value_boolean;
+static int hf_nt_ace_sra_value_octet_string;
+
+static int hf_nt_security_information_sacl;
+static int hf_nt_security_information_dacl;
+static int hf_nt_security_information_group;
+static int hf_nt_security_information_owner;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_nt_security_information = -1;
-static int hf_nt_sec_desc_type = -1;
-static int hf_nt_offset_to_dacl = -1;
-static int hf_nt_offset_to_owner_sid = -1;
-static int hf_nt_ace_flags_object = -1;
-static int hf_nt_offset_to_group_sid = -1;
-static int hf_nt_ace_flags = -1;
-static int hf_nt_offset_to_sacl = -1;
+static int hf_nt_security_information;
+static int hf_nt_sec_desc_type;
+static int hf_nt_offset_to_dacl;
+static int hf_nt_offset_to_owner_sid;
+static int hf_nt_ace_flags_object;
+static int hf_nt_offset_to_group_sid;
+static int hf_nt_ace_flags;
+static int hf_nt_offset_to_sacl;
 
-static gint ett_nt_sec_desc = -1;
-static gint ett_nt_sec_desc_type = -1;
-static gint ett_nt_sid = -1;
-static gint ett_nt_acl = -1;
-static gint ett_nt_ace = -1;
-static gint ett_nt_ace_flags = -1;
-static gint ett_nt_ace_object = -1;
-static gint ett_nt_ace_object_flags = -1;
-static gint ett_nt_security_information = -1;
+static int ett_nt_sec_desc;
+static int ett_nt_sec_desc_type;
+static int ett_nt_sid;
+static int ett_nt_acl;
+static int ett_nt_ace;
+static int ett_nt_ace_flags;
+static int ett_nt_ace_object;
+static int ett_nt_ace_object_flags;
+static int ett_nt_security_information;
+static int ett_nt_ace_cond;
+static int ett_nt_ace_cond_data;
+static int ett_nt_ace_sra;
+static int ett_nt_ace_sra_flags;
+static int ett_nt_ace_sra_value_offsets;
+static int ett_nt_ace_sra_values;
 
-static expert_field ei_nt_owner_sid_beyond_reassembled_data = EI_INIT;
-static expert_field ei_nt_ace_extends_beyond_reassembled_data = EI_INIT;
-static expert_field ei_nt_ace_extends_beyond_capture = EI_INIT;
-static expert_field ei_nt_group_sid_beyond_reassembled_data = EI_INIT;
-static expert_field ei_nt_group_sid_beyond_captured_data = EI_INIT;
-static expert_field ei_nt_owner_sid_beyond_captured_data = EI_INIT;
+static expert_field ei_nt_owner_sid_beyond_data;
+static expert_field ei_nt_owner_sid_beyond_reassembled_data;
+static expert_field ei_nt_ace_extends_beyond_data;
+static expert_field ei_nt_ace_extends_beyond_reassembled_data;
+static expert_field ei_nt_group_sid_beyond_data;
+static expert_field ei_nt_group_sid_beyond_reassembled_data;
+static expert_field ei_nt_item_offs_out_of_range;
 
 
 /* WERR error codes */
 
-VALUE_STRING_ARRAY2_GLOBAL_DEF(WERR_errors); /* XXX: Remove GLOBAL_DEF once all PIDL generated dissectors
-						     ref WERR_errors_ext */
+VALUE_STRING_ARRAY2(WERR_errors);
 value_string_ext WERR_errors_ext = VALUE_STRING_EXT_INIT(WERR_errors);
+
+/*
+ * HRES error codes.
+ */
+
+VALUE_STRING_ARRAY2(HRES_errors);
+value_string_ext HRES_errors_ext = VALUE_STRING_EXT_INIT(HRES_errors);
+
 
 /*
  * DOS error codes.
@@ -124,9 +237,13 @@ value_string_ext DOS_errors_ext = VALUE_STRING_EXT_INIT(DOS_errors);
  *
  * From
  *
- *	http://www.wildpackets.com/elements/misc/SMB_NT_Status_Codes.txt
+ *	https://web.archive.org/web/20100503121824/http://www.wildpackets.com/elements/misc/SMB_NT_Status_Codes.txt
+ *
+ * See also MS-ERREF section 2.3.1 "NTSTATUS Values":
+ *
+ *	https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55
  */
-const value_string NT_errors[] = {
+static const value_string NT_errors[] = {
 	{ 0x00000000, "STATUS_SUCCESS" },
 	/*{ 0x00000000, "STATUS_WAIT_0" }, */
 	{ 0x00000001, "STATUS_WAIT_1" },
@@ -161,7 +278,25 @@ const value_string NT_errors[] = {
 	{ 0x00000116, "STATUS_CRASH_DUMP" },
 	{ 0x00000117, "STATUS_BUFFER_ALL_ZEROS" },
 	{ 0x00000118, "STATUS_REPARSE_OBJECT" },
+	{ 0x00000119, "STATUS_RESOURCE_REQUIREMENTS_CHANGED" },
+	{ 0x00000120, "STATUS_TRANSLATION_COMPLETE" },
+	{ 0x00000121, "STATUS_DS_MEMBERSHIP_EVALUATED_LOCALLY" },
+	{ 0x00000122, "STATUS_NOTHING_TO_TERMINATE" },
+	{ 0x00000123, "STATUS_PROCESS_NOT_IN_JOB" },
+	{ 0x00000124, "STATUS_PROCESS_IN_JOB" },
+	{ 0x00000125, "STATUS_VOLSNAP_HIBERNATE_READY" },
+	{ 0x00000126, "STATUS_FSFILTER_OP_COMPLETED_SUCCESSFULLY" },
+	{ 0x00000127, "STATUS_INTERRUPT_VECTOR_ALREADY_CONNECTED" },
+	{ 0x00000128, "STATUS_INTERRUPT_STILL_CONNECTED" },
+	{ 0x00000129, "STATUS_PROCESS_CLONED" },
+	{ 0x0000012A, "STATUS_FILE_LOCKED_WITH_ONLY_READERS" },
+	{ 0x0000012B, "STATUS_FILE_LOCKED_WITH_WRITERS" },
+	{ 0x00000202, "STATUS_RESOURCEMANAGER_READ_ONLY" },
+	{ 0x00000367, "STATUS_WAIT_FOR_OPLOCK" },
 	{ 0x0000045C, "STATUS_NO_SHUTDOWN_IN_PROGRESS" },
+	{ 0x00010001, "STATUS_DBG_EXCEPTION_HANDLED" },
+	{ 0x00010002, "STATUS_DBG_CONTINUE" },
+	{ 0x001C0001, "STATUS_FLT_IO_COMPLETE" },
 	{ 0x40000000, "STATUS_OBJECT_NAME_EXISTS" },
 	{ 0x40000001, "STATUS_THREAD_WAS_SUSPENDED" },
 	{ 0x40000002, "STATUS_WORKING_SET_LIMIT_RANGE" },
@@ -200,9 +335,53 @@ const value_string NT_errors[] = {
 	{ 0x40000023, "STATUS_IMAGE_MACHINE_TYPE_MISMATCH_EXE" },
 	{ 0x40000024, "STATUS_NO_YIELD_PERFORMED" },
 	{ 0x40000025, "STATUS_TIMER_RESUME_IGNORED" },
+	{ 0x40000026, "STATUS_ARBITRATION_UNHANDLED" },
+	{ 0x40000027, "STATUS_CARDBUS_NOT_SUPPORTED" },
+	{ 0x40000028, "STATUS_WX86_CREATEWX86TIB" },
+	{ 0x40000029, "STATUS_MP_PROCESSOR_MISMATCH" },
+	{ 0x4000002A, "STATUS_HIBERNATED" },
+	{ 0x4000002B, "STATUS_RESUME_HIBERNATION" },
+	{ 0x4000002C, "STATUS_FIRMWARE_UPDATED" },
+	{ 0x4000002D, "STATUS_DRIVERS_LEAKING_LOCKED_PAGES" },
+	{ 0x4000002E, "STATUS_MESSAGE_RETRIEVED" },
+	{ 0x4000002F, "STATUS_SYSTEM_POWERSTATE_TRANSITION" },
+	{ 0x40000030, "STATUS_ALPC_CHECK_COMPLETION_LIST" },
+	{ 0x40000031, "STATUS_SYSTEM_POWERSTATE_COMPLEX_TRANSITION" },
+	{ 0x40000032, "STATUS_ACCESS_AUDIT_BY_POLICY" },
+	{ 0x40000033, "STATUS_ABANDON_HIBERFILE" },
+	{ 0x40000034, "STATUS_BIZRULES_NOT_ENABLED" },
 	{ 0x40000294, "STATUS_WAKE_SYSTEM" },
-	{ 0x40020056, "RPC_NT_UUID_LOCAL_ONLY" },
-	{ 0x400200AF, "RPC_NT_SEND_INCOMPLETE" },
+	{ 0x40000370, "STATUS_DS_SHUTTING_DOWN" },
+	{ 0x40010001, "STATUS_DBG_REPLY_LATER" },
+	{ 0x40010002, "STATUS_DBG_UNABLE_TO_PROVIDE_HANDLE" },
+	{ 0x40010003, "STATUS_DBG_TERMINATE_THREAD" },
+	{ 0x40010004, "STATUS_DBG_TERMINATE_PROCESS" },
+	{ 0x40010005, "STATUS_DBG_CONTROL_C" },
+	{ 0x40010006, "STATUS_DBG_PRINTEXCEPTION_C" },
+	{ 0x40010007, "STATUS_DBG_RIPEXCEPTION" },
+	{ 0x40010008, "STATUS_DBG_CONTROL_BREAK" },
+	{ 0x40010009, "STATUS_DBG_COMMAND_EXCEPTION" },
+	{ 0x40020056, "STATUS_RPC_UUID_LOCAL_ONLY" },
+	{ 0x400200AF, "STATUS_RPC_SEND_INCOMPLETE" },
+	{ 0x400A0004, "STATUS_CTX_CDM_CONNECT" },
+	{ 0x400A0005, "STATUS_CTX_CDM_DISCONNECT" },
+	{ 0x4015000D, "STATUS_SXS_RELEASE_ACTIVATION_CONTEXT" },
+	{ 0x40190034, "STATUS_RECOVERY_NOT_NEEDED" },
+	{ 0x40190035, "STATUS_RM_ALREADY_STARTED" },
+	{ 0x401A000C, "STATUS_LOG_NO_RESTART" },
+	{ 0x401B00EC, "STATUS_VIDEO_DRIVER_DEBUG_REPORT_REQUEST" },
+	{ 0x401E000A, "STATUS_GRAPHICS_PARTIAL_DATA_POPULATED" },
+	{ 0x401E0117, "STATUS_GRAPHICS_DRIVER_MISMATCH" },
+	{ 0x401E0307, "STATUS_GRAPHICS_MODE_NOT_PINNED" },
+	{ 0x401E031E, "STATUS_GRAPHICS_NO_PREFERRED_MODE" },
+	{ 0x401E034B, "STATUS_GRAPHICS_DATASET_IS_EMPTY" },
+	{ 0x401E034C, "STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET" },
+	{ 0x401E0351, "STATUS_GRAPHICS_PATH_CONTENT_GEOMETRY_TRANSFORMATION_NOT_PINNED" },
+	{ 0x401E042F, "STATUS_GRAPHICS_UNKNOWN_CHILD_STATUS" },
+	{ 0x401E0437, "STATUS_GRAPHICS_LEADLINK_START_DEFERRED" },
+	{ 0x401E0439, "STATUS_GRAPHICS_POLLING_TOO_FREQUENTLY" },
+	{ 0x401E043A, "STATUS_GRAPHICS_START_DEFERRED" },
+	{ 0x40230001, "STATUS_NDIS_INDICATION_REQUIRED" },
 	{ 0x80000001, "STATUS_GUARD_PAGE_VIOLATION" },
 	{ 0x80000002, "STATUS_DATATYPE_MISALIGNMENT" },
 	{ 0x80000003, "STATUS_BREAKPOINT" },
@@ -238,8 +417,17 @@ const value_string NT_errors[] = {
 	{ 0x80000024, "STATUS_SERVER_HAS_OPEN_HANDLES" },
 	{ 0x80000025, "STATUS_ALREADY_DISCONNECTED" },
 	{ 0x80000026, "STATUS_LONGJUMP" },
+	{ 0x80000027, "STATUS_CLEANER_CARTRIDGE_INSTALLED" },
+	{ 0x80000028, "STATUS_PLUGPLAY_QUERY_VETOED" },
+	{ 0x80000029, "STATUS_UNWIND_CONSOLIDATE" },
+	{ 0x8000002A, "STATUS_REGISTRY_HIVE_RECOVERED" },
+	{ 0x8000002B, "STATUS_DLL_MIGHT_BE_INSECURE" },
+	{ 0x8000002C, "STATUS_DLL_MIGHT_BE_INCOMPATIBLE" },
+	{ 0x8000002D, "STATUS_STOPPED_ON_SYMLINK" },
 	{ 0x80000288, "STATUS_DEVICE_REQUIRES_CLEANING" },
 	{ 0x80000289, "STATUS_DEVICE_DOOR_OPEN" },
+	{ 0x80000803, "STATUS_DATA_LOST_REPAIR" },
+	{ 0x80010001, "STATUS_DBG_EXCEPTION_NOT_HANDLED" },
 	{ 0x80040111, "MAPI_E_LOGON_FAILED" },
 	{ 0x80090300, "SEC_E_INSUFFICIENT_MEMORY" },
 	{ 0x80090301, "SEC_E_INVALID_HANDLE" },
@@ -250,6 +438,20 @@ const value_string NT_errors[] = {
 	{ 0x8009030F, "SEC_E_MESSAGE_ALTERED" },
 	{ 0x80090310, "SEC_E_OUT_OF_SEQUENCE" },
 	{ 0x80090311, "SEC_E_NO_AUTHENTICATING_AUTHORITY" },
+	{ 0x80130001, "STATUS_CLUSTER_NODE_ALREADY_UP" },
+	{ 0x80130002, "STATUS_CLUSTER_NODE_ALREADY_DOWN" },
+	{ 0x80130003, "STATUS_CLUSTER_NETWORK_ALREADY_ONLINE" },
+	{ 0x80130004, "STATUS_CLUSTER_NETWORK_ALREADY_OFFLINE" },
+	{ 0x80130005, "STATUS_CLUSTER_NODE_ALREADY_MEMBER" },
+	{ 0x80190009, "STATUS_COULD_NOT_RESIZE_LOG" },
+	{ 0x80190029, "STATUS_NO_TXF_METADATA" },
+	{ 0x80190031, "STATUS_CANT_RECOVER_WITH_HANDLE_OPEN" },
+	{ 0x80190041, "STATUS_TXF_METADATA_ALREADY_PRESENT" },
+	{ 0x80190042, "STATUS_TRANSACTION_SCOPE_CALLBACKS_NOT_SET" },
+	{ 0x801B00EB, "STATUS_VIDEO_HUNG_DISPLAY_DRIVER_THREAD_RECOVERED" },
+	{ 0x801C0001, "STATUS_FLT_BUFFER_TOO_SMALL" },
+	{ 0x80210001, "STATUS_FVE_PARTIAL_METADATA" },
+	{ 0x80210002, "STATUS_FVE_TRANSIENT_STATE" },
 	{ 0xC0000001, "STATUS_UNSUCCESSFUL" },
 	{ 0xC0000002, "STATUS_NOT_IMPLEMENTED" },
 	{ 0xC0000003, "STATUS_INVALID_INFO_CLASS" },
@@ -657,6 +859,15 @@ const value_string NT_errors[] = {
 	{ 0xC000019A, "STATUS_NOLOGON_SERVER_TRUST_ACCOUNT" },
 	{ 0xC000019B, "STATUS_DOMAIN_TRUST_INCONSISTENT" },
 	{ 0xC000019C, "STATUS_FS_DRIVER_REQUIRED" },
+	{ 0xC000019D, "STATUS_IMAGE_ALREADY_LOADED_AS_DLL" },
+	{ 0xC000019E, "STATUS_INCOMPATIBLE_WITH_GLOBAL_SHORT_NAME_REGISTRY_SETTING" },
+	{ 0xC000019F, "STATUS_SHORT_NAMES_NOT_ENABLED_ON_VOLUME" },
+	{ 0xC00001A0, "STATUS_SECURITY_STREAM_IS_INCONSISTENT" },
+	{ 0xC00001A1, "STATUS_INVALID_LOCK_RANGE" },
+	{ 0xC00001A2, "STATUS_INVALID_ACE_CONDITION" },
+	{ 0xC00001A3, "STATUS_IMAGE_SUBSYSTEM_NOT_PRESENT" },
+	{ 0xC00001A4, "STATUS_NOTIFICATION_GUID_ALREADY_DEFINED" },
+	{ 0xC0000201, "STATUS_NETWORK_OPEN_RESTRICTION" },
 	{ 0xC0000202, "STATUS_NO_USER_SESSION_KEY" },
 	{ 0xC0000203, "STATUS_USER_SESSION_DELETED" },
 	{ 0xC0000204, "STATUS_RESOURCE_LANG_NOT_FOUND" },
@@ -864,126 +1075,1026 @@ const value_string NT_errors[] = {
 	{ 0xC00002E6, "STATUS_DS_NO_FPO_IN_UNIVERSAL_GROUPS" },
 	{ 0xC00002E7, "STATUS_DS_MACHINE_ACCOUNT_QUOTA_EXCEEDED" },
 	{ 0xC00002E8, "STATUS_MULTIPLE_FAULT_VIOLATION" },
+	{ 0xC00002E9, "STATUS_CURRENT_DOMAIN_NOT_ALLOWED" },
+	{ 0xC00002EA, "STATUS_CANNOT_MAKE" },
+	{ 0xC00002EB, "STATUS_SYSTEM_SHUTDOWN" },
+	{ 0xC00002EC, "STATUS_DS_INIT_FAILURE_CONSOLE" },
+	{ 0xC00002ED, "STATUS_DS_SAM_INIT_FAILURE_CONSOLE" },
+	{ 0xC00002EE, "STATUS_UNFINISHED_CONTEXT_DELETED" },
+	{ 0xC00002EF, "STATUS_NO_TGT_REPLY" },
+	{ 0xC00002F0, "STATUS_OBJECTID_NOT_FOUND" },
+	{ 0xC00002F1, "STATUS_NO_IP_ADDRESSES" },
+	{ 0xC00002F2, "STATUS_WRONG_CREDENTIAL_HANDLE" },
+	{ 0xC00002F3, "STATUS_CRYPTO_SYSTEM_INVALID" },
+	{ 0xC00002F4, "STATUS_MAX_REFERRALS_EXCEEDED" },
+	{ 0xC00002F5, "STATUS_MUST_BE_KDC" },
+	{ 0xC00002F6, "STATUS_STRONG_CRYPTO_NOT_SUPPORTED" },
+	{ 0xC00002F7, "STATUS_TOO_MANY_PRINCIPALS" },
+	{ 0xC00002F8, "STATUS_NO_PA_DATA" },
+	{ 0xC00002F9, "STATUS_PKINIT_NAME_MISMATCH" },
+	{ 0xC00002FA, "STATUS_SMARTCARD_LOGON_REQUIRED" },
+	{ 0xC00002FB, "STATUS_KDC_INVALID_REQUEST" },
+	{ 0xC00002FC, "STATUS_KDC_UNABLE_TO_REFER" },
+	{ 0xC00002FD, "STATUS_KDC_UNKNOWN_ETYPE" },
+	{ 0xC00002FE, "STATUS_SHUTDOWN_IN_PROGRESS" },
+	{ 0xC00002FF, "STATUS_SERVER_SHUTDOWN_IN_PROGRESS" },
 	{ 0xC0000300, "STATUS_NOT_SUPPORTED_ON_SBS" },
+	{ 0xC0000301, "STATUS_WMI_GUID_DISCONNECTED" },
+	{ 0xC0000302, "STATUS_WMI_ALREADY_DISABLED" },
+	{ 0xC0000303, "STATUS_WMI_ALREADY_ENABLED" },
+	{ 0xC0000304, "STATUS_MFT_TOO_FRAGMENTED" },
+	{ 0xC0000305, "STATUS_COPY_PROTECTION_FAILURE" },
+	{ 0xC0000306, "STATUS_CSS_AUTHENTICATION_FAILURE" },
+	{ 0xC0000307, "STATUS_CSS_KEY_NOT_PRESENT" },
+	{ 0xC0000308, "STATUS_CSS_KEY_NOT_ESTABLISHED" },
+	{ 0xC0000309, "STATUS_CSS_SCRAMBLED_SECTOR" },
+	{ 0xC000030A, "STATUS_CSS_REGION_MISMATCH" },
+	{ 0xC000030B, "STATUS_CSS_RESETS_EXHAUSTED" },
+	{ 0xC0000320, "STATUS_PKINIT_FAILURE" },
+	{ 0xC0000321, "STATUS_SMARTCARD_SUBSYSTEM_FAILURE" },
+	{ 0xC0000322, "STATUS_NO_KERB_KEY" },
+	{ 0xC0000350, "STATUS_HOST_DOWN" },
+	{ 0xC0000351, "STATUS_UNSUPPORTED_PREAUTH" },
+	{ 0xC0000352, "STATUS_EFS_ALG_BLOB_TOO_BIG" },
+	{ 0xC0000353, "STATUS_PORT_NOT_SET" },
+	{ 0xC0000354, "STATUS_DEBUGGER_INACTIVE" },
+	{ 0xC0000355, "STATUS_DS_VERSION_CHECK_FAILURE" },
+	{ 0xC0000356, "STATUS_AUDITING_DISABLED" },
+	{ 0xC0000357, "STATUS_PRENT4_MACHINE_ACCOUNT" },
+	{ 0xC0000358, "STATUS_DS_AG_CANT_HAVE_UNIVERSAL_MEMBER" },
+	{ 0xC0000359, "STATUS_INVALID_IMAGE_WIN_32" },
+	{ 0xC000035A, "STATUS_INVALID_IMAGE_WIN_64" },
+	{ 0xC000035B, "STATUS_BAD_BINDINGS" },
 	{ 0xC000035C, "STATUS_NETWORK_SESSION_EXPIRED" },
+	{ 0xC000035D, "STATUS_APPHELP_BLOCK" },
+	{ 0xC000035E, "STATUS_ALL_SIDS_FILTERED" },
+	{ 0xC000035F, "STATUS_NOT_SAFE_MODE_DRIVER" },
+	{ 0xC0000361, "STATUS_ACCESS_DISABLED_BY_POLICY_DEFAULT" },
+	{ 0xC0000362, "STATUS_ACCESS_DISABLED_BY_POLICY_PATH" },
+	{ 0xC0000363, "STATUS_ACCESS_DISABLED_BY_POLICY_PUBLISHER" },
+	{ 0xC0000364, "STATUS_ACCESS_DISABLED_BY_POLICY_OTHER" },
+	{ 0xC0000365, "STATUS_FAILED_DRIVER_ENTRY" },
+	{ 0xC0000366, "STATUS_DEVICE_ENUMERATION_ERROR" },
+	{ 0xC0000368, "STATUS_MOUNT_POINT_NOT_RESOLVED" },
+	{ 0xC0000369, "STATUS_INVALID_DEVICE_OBJECT_PARAMETER" },
+	{ 0xC000036A, "STATUS_MCA_OCCURED" },
+	{ 0xC000036B, "STATUS_DRIVER_BLOCKED_CRITICAL" },
+	{ 0xC000036C, "STATUS_DRIVER_BLOCKED" },
+	{ 0xC000036D, "STATUS_DRIVER_DATABASE_ERROR" },
+	{ 0xC000036E, "STATUS_SYSTEM_HIVE_TOO_LARGE" },
+	{ 0xC000036F, "STATUS_INVALID_IMPORT_OF_NON_DLL" },
+	{ 0xC0000371, "STATUS_NO_SECRETS" },
+	{ 0xC0000372, "STATUS_ACCESS_DISABLED_NO_SAFER_UI_BY_POLICY" },
+	{ 0xC0000373, "STATUS_FAILED_STACK_SWITCH" },
+	{ 0xC0000374, "STATUS_HEAP_CORRUPTION" },
+	{ 0xC0000380, "STATUS_SMARTCARD_WRONG_PIN" },
+	{ 0xC0000381, "STATUS_SMARTCARD_CARD_BLOCKED" },
+	{ 0xC0000382, "STATUS_SMARTCARD_CARD_NOT_AUTHENTICATED" },
+	{ 0xC0000383, "STATUS_SMARTCARD_NO_CARD" },
+	{ 0xC0000384, "STATUS_SMARTCARD_NO_KEY_CONTAINER" },
+	{ 0xC0000385, "STATUS_SMARTCARD_NO_CERTIFICATE" },
+	{ 0xC0000386, "STATUS_SMARTCARD_NO_KEYSET" },
+	{ 0xC0000387, "STATUS_SMARTCARD_IO_ERROR" },
+	{ 0xC0000388, "STATUS_DOWNGRADE_DETECTED" },
+	{ 0xC0000389, "STATUS_SMARTCARD_CERT_REVOKED" },
+	{ 0xC000038A, "STATUS_ISSUING_CA_UNTRUSTED" },
+	{ 0xC000038B, "STATUS_REVOCATION_OFFLINE_C" },
+	{ 0xC000038C, "STATUS_PKINIT_CLIENT_FAILURE" },
+	{ 0xC000038D, "STATUS_SMARTCARD_CERT_EXPIRED" },
+	{ 0xC000038E, "STATUS_DRIVER_FAILED_PRIOR_UNLOAD" },
+	{ 0xC000038F, "STATUS_SMARTCARD_SILENT_CONTEXT" },
+	{ 0xC0000401, "STATUS_PER_USER_TRUST_QUOTA_EXCEEDED" },
+	{ 0xC0000402, "STATUS_ALL_USER_TRUST_QUOTA_EXCEEDED" },
+	{ 0xC0000403, "STATUS_USER_DELETE_TRUST_QUOTA_EXCEEDED" },
+	{ 0xC0000404, "STATUS_DS_NAME_NOT_UNIQUE" },
+	{ 0xC0000405, "STATUS_DS_DUPLICATE_ID_FOUND" },
+	{ 0xC0000406, "STATUS_DS_GROUP_CONVERSION_ERROR" },
+	{ 0xC0000407, "STATUS_VOLSNAP_PREPARE_HIBERNATE" },
+	{ 0xC0000408, "STATUS_USER2USER_REQUIRED" },
+	{ 0xC0000409, "STATUS_STACK_BUFFER_OVERRUN" },
+	{ 0xC000040A, "STATUS_NO_S4U_PROT_SUPPORT" },
+	{ 0xC000040B, "STATUS_CROSSREALM_DELEGATION_FAILURE" },
+	{ 0xC000040C, "STATUS_REVOCATION_OFFLINE_KDC" },
+	{ 0xC000040D, "STATUS_ISSUING_CA_UNTRUSTED_KDC" },
+	{ 0xC000040E, "STATUS_KDC_CERT_EXPIRED" },
+	{ 0xC000040F, "STATUS_KDC_CERT_REVOKED" },
+	{ 0xC0000410, "STATUS_PARAMETER_QUOTA_EXCEEDED" },
+	{ 0xC0000411, "STATUS_HIBERNATION_FAILURE" },
+	{ 0xC0000412, "STATUS_DELAY_LOAD_FAILED" },
+	{ 0xC0000413, "STATUS_AUTHENTICATION_FIREWALL_FAILED" },
+	{ 0xC0000414, "STATUS_VDM_DISALLOWED" },
+	{ 0xC0000415, "STATUS_HUNG_DISPLAY_DRIVER_THREAD" },
+	{ 0xC0000416, "STATUS_INSUFFICIENT_RESOURCE_FOR_SPECIFIED_SHARED_SECTION_SIZE" },
+	{ 0xC0000417, "STATUS_INVALID_CRUNTIME_PARAMETER" },
+	{ 0xC0000418, "STATUS_NTLM_BLOCKED" },
+	{ 0xC0000419, "STATUS_DS_SRC_SID_EXISTS_IN_FOREST" },
+	{ 0xC000041A, "STATUS_DS_DOMAIN_NAME_EXISTS_IN_FOREST" },
+	{ 0xC000041B, "STATUS_DS_FLAT_NAME_EXISTS_IN_FOREST" },
+	{ 0xC000041C, "STATUS_INVALID_USER_PRINCIPAL_NAME" },
+	{ 0xC0000420, "STATUS_ASSERTION_FAILURE" },
+	{ 0xC0000421, "STATUS_VERIFIER_STOP" },
+	{ 0xC0000423, "STATUS_CALLBACK_POP_STACK" },
+	{ 0xC0000424, "STATUS_INCOMPATIBLE_DRIVER_BLOCKED" },
+	{ 0xC0000425, "STATUS_HIVE_UNLOADED" },
+	{ 0xC0000426, "STATUS_COMPRESSION_DISABLED" },
+	{ 0xC0000427, "STATUS_FILE_SYSTEM_LIMITATION" },
+	{ 0xC0000428, "STATUS_INVALID_IMAGE_HASH" },
+	{ 0xC0000429, "STATUS_NOT_CAPABLE" },
+	{ 0xC000042A, "STATUS_REQUEST_OUT_OF_SEQUENCE" },
+	{ 0xC000042B, "STATUS_IMPLEMENTATION_LIMIT" },
+	{ 0xC000042C, "STATUS_ELEVATION_REQUIRED" },
+	{ 0xC000042D, "STATUS_NO_SECURITY_CONTEXT" },
+	{ 0xC000042E, "STATUS_PKU2U_CERT_FAILURE" },
+	{ 0xC0000432, "STATUS_BEYOND_VDL" },
+	{ 0xC0000433, "STATUS_ENCOUNTERED_WRITE_IN_PROGRESS" },
+	{ 0xC0000434, "STATUS_PTE_CHANGED" },
+	{ 0xC0000435, "STATUS_PURGE_FAILED" },
+	{ 0xC0000440, "STATUS_CRED_REQUIRES_CONFIRMATION" },
+	{ 0xC0000441, "STATUS_CS_ENCRYPTION_INVALID_SERVER_RESPONSE" },
+	{ 0xC0000442, "STATUS_CS_ENCRYPTION_UNSUPPORTED_SERVER" },
+	{ 0xC0000443, "STATUS_CS_ENCRYPTION_EXISTING_ENCRYPTED_FILE" },
+	{ 0xC0000444, "STATUS_CS_ENCRYPTION_NEW_ENCRYPTED_FILE" },
+	{ 0xC0000445, "STATUS_CS_ENCRYPTION_FILE_NOT_CSE" },
+	{ 0xC0000446, "STATUS_INVALID_LABEL" },
+	{ 0xC0000450, "STATUS_DRIVER_PROCESS_TERMINATED" },
+	{ 0xC0000451, "STATUS_AMBIGUOUS_SYSTEM_DEVICE" },
+	{ 0xC0000452, "STATUS_SYSTEM_DEVICE_NOT_FOUND" },
+	{ 0xC0000453, "STATUS_RESTART_BOOT_APPLICATION" },
+	{ 0xC0000454, "STATUS_INSUFFICIENT_NVRAM_RESOURCES" },
+	{ 0xC0000460, "STATUS_NO_RANGES_PROCESSED" },
+	{ 0xC0000463, "STATUS_DEVICE_FEATURE_NOT_SUPPORTED" },
+	{ 0xC0000464, "STATUS_DEVICE_UNREACHABLE" },
+	{ 0xC0000465, "STATUS_INVALID_TOKEN" },
+	{ 0xC0000466, "STATUS_SERVER_UNAVAILABLE" },
+	{ 0xc0000467, "STATUS_FILE_NOT_AVAILABLE" },
+	{ 0xc0000480, "STATUS_SHARE_UNAVAILABLE" },
+	{ 0xC0000500, "STATUS_INVALID_TASK_NAME" },
+	{ 0xC0000501, "STATUS_INVALID_TASK_INDEX" },
+	{ 0xC0000502, "STATUS_THREAD_ALREADY_IN_TASK" },
+	{ 0xC0000503, "STATUS_CALLBACK_BYPASS" },
+	{ 0xC0000602, "STATUS_FAIL_FAST_EXCEPTION" },
+	{ 0xC0000603, "STATUS_IMAGE_CERT_REVOKED" },
+	{ 0xC0000700, "STATUS_PORT_CLOSED" },
+	{ 0xC0000701, "STATUS_MESSAGE_LOST" },
+	{ 0xC0000702, "STATUS_INVALID_MESSAGE" },
+	{ 0xC0000703, "STATUS_REQUEST_CANCELED" },
+	{ 0xC0000704, "STATUS_RECURSIVE_DISPATCH" },
+	{ 0xC0000705, "STATUS_LPC_RECEIVE_BUFFER_EXPECTED" },
+	{ 0xC0000706, "STATUS_LPC_INVALID_CONNECTION_USAGE" },
+	{ 0xC0000707, "STATUS_LPC_REQUESTS_NOT_ALLOWED" },
+	{ 0xC0000708, "STATUS_RESOURCE_IN_USE" },
+	{ 0xC0000709, "STATUS_HARDWARE_MEMORY_ERROR" },
+	{ 0xC000070A, "STATUS_THREADPOOL_HANDLE_EXCEPTION" },
+	{ 0xC000070B, "STATUS_THREADPOOL_SET_EVENT_ON_COMPLETION_FAILED" },
+	{ 0xC000070C, "STATUS_THREADPOOL_RELEASE_SEMAPHORE_ON_COMPLETION_FAILED" },
+	{ 0xC000070D, "STATUS_THREADPOOL_RELEASE_MUTEX_ON_COMPLETION_FAILED" },
+	{ 0xC000070E, "STATUS_THREADPOOL_FREE_LIBRARY_ON_COMPLETION_FAILED" },
+	{ 0xC000070F, "STATUS_THREADPOOL_RELEASED_DURING_OPERATION" },
+	{ 0xC0000710, "STATUS_CALLBACK_RETURNED_WHILE_IMPERSONATING" },
+	{ 0xC0000711, "STATUS_APC_RETURNED_WHILE_IMPERSONATING" },
+	{ 0xC0000712, "STATUS_PROCESS_IS_PROTECTED" },
+	{ 0xC0000713, "STATUS_MCA_EXCEPTION" },
+	{ 0xC0000714, "STATUS_CERTIFICATE_MAPPING_NOT_UNIQUE" },
+	{ 0xC0000715, "STATUS_SYMLINK_CLASS_DISABLED" },
+	{ 0xC0000716, "STATUS_INVALID_IDN_NORMALIZATION" },
+	{ 0xC0000717, "STATUS_NO_UNICODE_TRANSLATION" },
+	{ 0xC0000718, "STATUS_ALREADY_REGISTERED" },
+	{ 0xC0000719, "STATUS_CONTEXT_MISMATCH" },
+	{ 0xC000071A, "STATUS_PORT_ALREADY_HAS_COMPLETION_LIST" },
+	{ 0xC000071B, "STATUS_CALLBACK_RETURNED_THREAD_PRIORITY" },
+	{ 0xC000071C, "STATUS_INVALID_THREAD" },
+	{ 0xC000071D, "STATUS_CALLBACK_RETURNED_TRANSACTION" },
+	{ 0xC000071E, "STATUS_CALLBACK_RETURNED_LDR_LOCK" },
+	{ 0xC000071F, "STATUS_CALLBACK_RETURNED_LANG" },
+	{ 0xC0000720, "STATUS_CALLBACK_RETURNED_PRI_BACK" },
+	{ 0xC0000800, "STATUS_DISK_REPAIR_DISABLED" },
+	{ 0xC0000801, "STATUS_DS_DOMAIN_RENAME_IN_PROGRESS" },
+	{ 0xC0000802, "STATUS_DISK_QUOTA_EXCEEDED" },
+	{ 0xC0000804, "STATUS_CONTENT_BLOCKED" },
+	{ 0xC0000805, "STATUS_BAD_CLUSTERS" },
+	{ 0xC0000806, "STATUS_VOLUME_DIRTY" },
+	{ 0xC0000901, "STATUS_FILE_CHECKED_OUT" },
+	{ 0xC0000902, "STATUS_CHECKOUT_REQUIRED" },
+	{ 0xC0000903, "STATUS_BAD_FILE_TYPE" },
+	{ 0xC0000904, "STATUS_FILE_TOO_LARGE" },
+	{ 0xC0000905, "STATUS_FORMS_AUTH_REQUIRED" },
+	{ 0xC0000906, "STATUS_VIRUS_INFECTED" },
+	{ 0xC0000907, "STATUS_VIRUS_DELETED" },
+	{ 0xC0000908, "STATUS_BAD_MCFG_TABLE" },
+	{ 0xC0000909, "STATUS_CANNOT_BREAK_OPLOCK" },
 	{ 0xC0009898, "STATUS_WOW_ASSERTION" },
-	{ 0xC0020001, "RPC_NT_INVALID_STRING_BINDING" },
-	{ 0xC0020002, "RPC_NT_WRONG_KIND_OF_BINDING" },
-	{ 0xC0020003, "RPC_NT_INVALID_BINDING" },
-	{ 0xC0020004, "RPC_NT_PROTSEQ_NOT_SUPPORTED" },
-	{ 0xC0020005, "RPC_NT_INVALID_RPC_PROTSEQ" },
-	{ 0xC0020006, "RPC_NT_INVALID_STRING_UUID" },
-	{ 0xC0020007, "RPC_NT_INVALID_ENDPOINT_FORMAT" },
-	{ 0xC0020008, "RPC_NT_INVALID_NET_ADDR" },
-	{ 0xC0020009, "RPC_NT_NO_ENDPOINT_FOUND" },
-	{ 0xC002000A, "RPC_NT_INVALID_TIMEOUT" },
-	{ 0xC002000B, "RPC_NT_OBJECT_NOT_FOUND" },
-	{ 0xC002000C, "RPC_NT_ALREADY_REGISTERED" },
-	{ 0xC002000D, "RPC_NT_TYPE_ALREADY_REGISTERED" },
-	{ 0xC002000E, "RPC_NT_ALREADY_LISTENING" },
-	{ 0xC002000F, "RPC_NT_NO_PROTSEQS_REGISTERED" },
-	{ 0xC0020010, "RPC_NT_NOT_LISTENING" },
-	{ 0xC0020011, "RPC_NT_UNKNOWN_MGR_TYPE" },
-	{ 0xC0020012, "RPC_NT_UNKNOWN_IF" },
-	{ 0xC0020013, "RPC_NT_NO_BINDINGS" },
-	{ 0xC0020014, "RPC_NT_NO_PROTSEQS" },
-	{ 0xC0020015, "RPC_NT_CANT_CREATE_ENDPOINT" },
-	{ 0xC0020016, "RPC_NT_OUT_OF_RESOURCES" },
-	{ 0xC0020017, "RPC_NT_SERVER_UNAVAILABLE" },
-	{ 0xC0020018, "RPC_NT_SERVER_TOO_BUSY" },
-	{ 0xC0020019, "RPC_NT_INVALID_NETWORK_OPTIONS" },
-	{ 0xC002001A, "RPC_NT_NO_CALL_ACTIVE" },
-	{ 0xC002001B, "RPC_NT_CALL_FAILED" },
-	{ 0xC002001C, "RPC_NT_CALL_FAILED_DNE" },
-	{ 0xC002001D, "RPC_NT_PROTOCOL_ERROR" },
-	{ 0xC002001F, "RPC_NT_UNSUPPORTED_TRANS_SYN" },
-	{ 0xC0020021, "RPC_NT_UNSUPPORTED_TYPE" },
-	{ 0xC0020022, "RPC_NT_INVALID_TAG" },
-	{ 0xC0020023, "RPC_NT_INVALID_BOUND" },
-	{ 0xC0020024, "RPC_NT_NO_ENTRY_NAME" },
-	{ 0xC0020025, "RPC_NT_INVALID_NAME_SYNTAX" },
-	{ 0xC0020026, "RPC_NT_UNSUPPORTED_NAME_SYNTAX" },
-	{ 0xC0020028, "RPC_NT_UUID_NO_ADDRESS" },
-	{ 0xC0020029, "RPC_NT_DUPLICATE_ENDPOINT" },
-	{ 0xC002002A, "RPC_NT_UNKNOWN_AUTHN_TYPE" },
-	{ 0xC002002B, "RPC_NT_MAX_CALLS_TOO_SMALL" },
-	{ 0xC002002C, "RPC_NT_STRING_TOO_LONG" },
-	{ 0xC002002D, "RPC_NT_PROTSEQ_NOT_FOUND" },
-	{ 0xC002002E, "RPC_NT_PROCNUM_OUT_OF_RANGE" },
-	{ 0xC002002F, "RPC_NT_BINDING_HAS_NO_AUTH" },
-	{ 0xC0020030, "RPC_NT_UNKNOWN_AUTHN_SERVICE" },
-	{ 0xC0020031, "RPC_NT_UNKNOWN_AUTHN_LEVEL" },
-	{ 0xC0020032, "RPC_NT_INVALID_AUTH_IDENTITY" },
-	{ 0xC0020033, "RPC_NT_UNKNOWN_AUTHZ_SERVICE" },
-	{ 0xC0020034, "EPT_NT_INVALID_ENTRY" },
-	{ 0xC0020035, "EPT_NT_CANT_PERFORM_OP" },
-	{ 0xC0020036, "EPT_NT_NOT_REGISTERED" },
-	{ 0xC0020037, "RPC_NT_NOTHING_TO_EXPORT" },
-	{ 0xC0020038, "RPC_NT_INCOMPLETE_NAME" },
-	{ 0xC0020039, "RPC_NT_INVALID_VERS_OPTION" },
-	{ 0xC002003A, "RPC_NT_NO_MORE_MEMBERS" },
-	{ 0xC002003B, "RPC_NT_NOT_ALL_OBJS_UNEXPORTED" },
-	{ 0xC002003C, "RPC_NT_INTERFACE_NOT_FOUND" },
-	{ 0xC002003D, "RPC_NT_ENTRY_ALREADY_EXISTS" },
-	{ 0xC002003E, "RPC_NT_ENTRY_NOT_FOUND" },
-	{ 0xC002003F, "RPC_NT_NAME_SERVICE_UNAVAILABLE" },
-	{ 0xC0020040, "RPC_NT_INVALID_NAF_ID" },
-	{ 0xC0020041, "RPC_NT_CANNOT_SUPPORT" },
-	{ 0xC0020042, "RPC_NT_NO_CONTEXT_AVAILABLE" },
-	{ 0xC0020043, "RPC_NT_INTERNAL_ERROR" },
-	{ 0xC0020044, "RPC_NT_ZERO_DIVIDE" },
-	{ 0xC0020045, "RPC_NT_ADDRESS_ERROR" },
-	{ 0xC0020046, "RPC_NT_FP_DIV_ZERO" },
-	{ 0xC0020047, "RPC_NT_FP_UNDERFLOW" },
-	{ 0xC0020048, "RPC_NT_FP_OVERFLOW" },
-	{ 0xC0020049, "RPC_NT_CALL_IN_PROGRESS" },
-	{ 0xC002004A, "RPC_NT_NO_MORE_BINDINGS" },
-	{ 0xC002004B, "RPC_NT_GROUP_MEMBER_NOT_FOUND" },
-	{ 0xC002004C, "EPT_NT_CANT_CREATE" },
-	{ 0xC002004D, "RPC_NT_INVALID_OBJECT" },
-	{ 0xC002004F, "RPC_NT_NO_INTERFACES" },
-	{ 0xC0020050, "RPC_NT_CALL_CANCELLED" },
-	{ 0xC0020051, "RPC_NT_BINDING_INCOMPLETE" },
-	{ 0xC0020052, "RPC_NT_COMM_FAILURE" },
-	{ 0xC0020053, "RPC_NT_UNSUPPORTED_AUTHN_LEVEL" },
-	{ 0xC0020054, "RPC_NT_NO_PRINC_NAME" },
-	{ 0xC0020055, "RPC_NT_NOT_RPC_ERROR" },
-	{ 0xC0020057, "RPC_NT_SEC_PKG_ERROR" },
-	{ 0xC0020058, "RPC_NT_NOT_CANCELLED" },
+	{ 0xC000A000, "STATUS_INVALID_SIGNATURE" },
+	{ 0xC000A001, "STATUS_HMAC_NOT_SUPPORTED" },
+	{ 0xC000A010, "STATUS_IPSEC_QUEUE_OVERFLOW" },
+	{ 0xC000A011, "STATUS_ND_QUEUE_OVERFLOW" },
+	{ 0xC000A012, "STATUS_HOPLIMIT_EXCEEDED" },
+	{ 0xC000A013, "STATUS_PROTOCOL_NOT_SUPPORTED" },
+	{ 0xC000A080, "STATUS_LOST_WRITEBEHIND_DATA_NETWORK_DISCONNECTED" },
+	{ 0xC000A081, "STATUS_LOST_WRITEBEHIND_DATA_NETWORK_SERVER_ERROR" },
+	{ 0xC000A082, "STATUS_LOST_WRITEBEHIND_DATA_LOCAL_DISK_ERROR" },
+	{ 0xC000A083, "STATUS_XML_PARSE_ERROR" },
+	{ 0xC000A084, "STATUS_XMLDSIG_ERROR" },
+	{ 0xC000A085, "STATUS_WRONG_COMPARTMENT" },
+	{ 0xC000A086, "STATUS_AUTHIP_FAILURE" },
+	{ 0xC000A087, "STATUS_DS_OID_MAPPED_GROUP_CANT_HAVE_MEMBERS" },
+	{ 0xC000A088, "STATUS_DS_OID_NOT_FOUND" },
+	{ 0xC000A100, "STATUS_HASH_NOT_SUPPORTED" },
+	{ 0xC000A101, "STATUS_HASH_NOT_PRESENT" },
+	{ 0xC000A2A1, "STATUS_OFFLOAD_READ_FLT_NOT_SUPPORTED" },
+	{ 0xC000A2A2, "STATUS_OFFLOAD_WRITE_FLT_NOT_SUPPORTED" },
+	{ 0xC000A2A3, "STATUS_OFFLOAD_READ_FILE_NOT_SUPPORTED" },
+	{ 0xC000A2A4, "STATUS_OFFLOAD_WRITE_FILE_NOT_SUPPORTED" },
+	{ 0xC0010001, "STATUS_DBG_NO_STATE_CHANGE" },
+	{ 0xC0010002, "STATUS_DBG_APP_NOT_IDLE" },
+	{ 0xC0020001, "STATUS_RPC_INVALID_STRING_BINDING" },
+	{ 0xC0020002, "STATUS_RPC_WRONG_KIND_OF_BINDING" },
+	{ 0xC0020003, "STATUS_RPC_INVALID_BINDING" },
+	{ 0xC0020004, "STATUS_RPC_PROTSEQ_NOT_SUPPORTED" },
+	{ 0xC0020005, "STATUS_RPC_INVALID_RPC_PROTSEQ" },
+	{ 0xC0020006, "STATUS_RPC_INVALID_STRING_UUID" },
+	{ 0xC0020007, "STATUS_RPC_INVALID_ENDPOINT_FORMAT" },
+	{ 0xC0020008, "STATUS_RPC_INVALID_NET_ADDR" },
+	{ 0xC0020009, "STATUS_RPC_NO_ENDPOINT_FOUND" },
+	{ 0xC002000A, "STATUS_RPC_INVALID_TIMEOUT" },
+	{ 0xC002000B, "STATUS_RPC_OBJECT_NOT_FOUND" },
+	{ 0xC002000C, "STATUS_RPC_ALREADY_REGISTERED" },
+	{ 0xC002000D, "STATUS_RPC_TYPE_ALREADY_REGISTERED" },
+	{ 0xC002000E, "STATUS_RPC_ALREADY_LISTENING" },
+	{ 0xC002000F, "STATUS_RPC_NO_PROTSEQS_REGISTERED" },
+	{ 0xC0020010, "STATUS_RPC_NOT_LISTENING" },
+	{ 0xC0020011, "STATUS_RPC_UNKNOWN_MGR_TYPE" },
+	{ 0xC0020012, "STATUS_RPC_UNKNOWN_IF" },
+	{ 0xC0020013, "STATUS_RPC_NO_BINDINGS" },
+	{ 0xC0020014, "STATUS_RPC_NO_PROTSEQS" },
+	{ 0xC0020015, "STATUS_RPC_CANT_CREATE_ENDPOINT" },
+	{ 0xC0020016, "STATUS_RPC_OUT_OF_RESOURCES" },
+	{ 0xC0020017, "STATUS_RPC_SERVER_UNAVAILABLE" },
+	{ 0xC0020018, "STATUS_RPC_SERVER_TOO_BUSY" },
+	{ 0xC0020019, "STATUS_RPC_INVALID_NETWORK_OPTIONS" },
+	{ 0xC002001A, "STATUS_RPC_NO_CALL_ACTIVE" },
+	{ 0xC002001B, "STATUS_RPC_CALL_FAILED" },
+	{ 0xC002001C, "STATUS_RPC_CALL_FAILED_DNE" },
+	{ 0xC002001D, "STATUS_RPC_PROTOCOL_ERROR" },
+	{ 0xC002001F, "STATUS_RPC_UNSUPPORTED_TRANS_SYN" },
+	{ 0xC0020021, "STATUS_RPC_UNSUPPORTED_TYPE" },
+	{ 0xC0020022, "STATUS_RPC_INVALID_TAG" },
+	{ 0xC0020023, "STATUS_RPC_INVALID_BOUND" },
+	{ 0xC0020024, "STATUS_RPC_NO_ENTRY_NAME" },
+	{ 0xC0020025, "STATUS_RPC_INVALID_NAME_SYNTAX" },
+	{ 0xC0020026, "STATUS_RPC_UNSUPPORTED_NAME_SYNTAX" },
+	{ 0xC0020028, "STATUS_RPC_UUID_NO_ADDRESS" },
+	{ 0xC0020029, "STATUS_RPC_DUPLICATE_ENDPOINT" },
+	{ 0xC002002A, "STATUS_RPC_UNKNOWN_AUTHN_TYPE" },
+	{ 0xC002002B, "STATUS_RPC_MAX_CALLS_TOO_SMALL" },
+	{ 0xC002002C, "STATUS_RPC_STRING_TOO_LONG" },
+	{ 0xC002002D, "STATUS_RPC_PROTSEQ_NOT_FOUND" },
+	{ 0xC002002E, "STATUS_RPC_PROCNUM_OUT_OF_RANGE" },
+	{ 0xC002002F, "STATUS_RPC_BINDING_HAS_NO_AUTH" },
+	{ 0xC0020030, "STATUS_RPC_UNKNOWN_AUTHN_SERVICE" },
+	{ 0xC0020031, "STATUS_RPC_UNKNOWN_AUTHN_LEVEL" },
+	{ 0xC0020032, "STATUS_RPC_INVALID_AUTH_IDENTITY" },
+	{ 0xC0020033, "STATUS_RPC_UNKNOWN_AUTHZ_SERVICE" },
+	{ 0xC0020034, "STATUS_EPT_INVALID_ENTRY" },
+	{ 0xC0020035, "STATUS_EPT_CANT_PERFORM_OP" },
+	{ 0xC0020036, "STATUS_EPT_NOT_REGISTERED" },
+	{ 0xC0020037, "STATUS_RPC_NOTHING_TO_EXPORT" },
+	{ 0xC0020038, "STATUS_RPC_INCOMPLETE_NAME" },
+	{ 0xC0020039, "STATUS_RPC_INVALID_VERS_OPTION" },
+	{ 0xC002003A, "STATUS_RPC_NO_MORE_MEMBERS" },
+	{ 0xC002003B, "STATUS_RPC_NOT_ALL_OBJS_UNEXPORTED" },
+	{ 0xC002003C, "STATUS_RPC_INTERFACE_NOT_FOUND" },
+	{ 0xC002003D, "STATUS_RPC_ENTRY_ALREADY_EXISTS" },
+	{ 0xC002003E, "STATUS_RPC_ENTRY_NOT_FOUND" },
+	{ 0xC002003F, "STATUS_RPC_NAME_SERVICE_UNAVAILABLE" },
+	{ 0xC0020040, "STATUS_RPC_INVALID_NAF_ID" },
+	{ 0xC0020041, "STATUS_RPC_CANNOT_SUPPORT" },
+	{ 0xC0020042, "STATUS_RPC_NO_CONTEXT_AVAILABLE" },
+	{ 0xC0020043, "STATUS_RPC_INTERNAL_ERROR" },
+	{ 0xC0020044, "STATUS_RPC_ZERO_DIVIDE" },
+	{ 0xC0020045, "STATUS_RPC_ADDRESS_ERROR" },
+	{ 0xC0020046, "STATUS_RPC_FP_DIV_ZERO" },
+	{ 0xC0020047, "STATUS_RPC_FP_UNDERFLOW" },
+	{ 0xC0020048, "STATUS_RPC_FP_OVERFLOW" },
+	{ 0xC0020049, "STATUS_RPC_CALL_IN_PROGRESS" },
+	{ 0xC002004A, "STATUS_RPC_NO_MORE_BINDINGS" },
+	{ 0xC002004B, "STATUS_RPC_GROUP_MEMBER_NOT_FOUND" },
+	{ 0xC002004C, "STATUS_EPT_CANT_CREATE" },
+	{ 0xC002004D, "STATUS_RPC_INVALID_OBJECT" },
+	{ 0xC002004F, "STATUS_RPC_NO_INTERFACES" },
+	{ 0xC0020050, "STATUS_RPC_CALL_CANCELLED" },
+	{ 0xC0020051, "STATUS_RPC_BINDING_INCOMPLETE" },
+	{ 0xC0020052, "STATUS_RPC_COMM_FAILURE" },
+	{ 0xC0020053, "STATUS_RPC_UNSUPPORTED_AUTHN_LEVEL" },
+	{ 0xC0020054, "STATUS_RPC_NO_PRINC_NAME" },
+	{ 0xC0020055, "STATUS_RPC_NOT_RPC_ERROR" },
+	{ 0xC0020057, "STATUS_RPC_SEC_PKG_ERROR" },
+	{ 0xC0020058, "STATUS_RPC_NOT_CANCELLED" },
+	{ 0xC0020062, "STATUS_RPC_INVALID_ASYNC_HANDLE" },
+	{ 0xC0020063, "STATUS_RPC_INVALID_ASYNC_CALL" },
+	{ 0xC0020064, "STATUS_RPC_PROXY_ACCESS_DENIED" },
 	{ 0xC0021007, "RPC_P_RECEIVE_ALERTED" },
 	{ 0xC0021008, "RPC_P_CONNECTION_CLOSED" },
 	{ 0xC0021009, "RPC_P_RECEIVE_FAILED" },
 	{ 0xC002100A, "RPC_P_SEND_FAILED" },
 	{ 0xC002100B, "RPC_P_TIMEOUT" },
 	{ 0xC002100C, "RPC_P_SERVER_TRANSPORT_ERROR" },
-	{ 0xC002100E, "RPC_P_EXCEPTION_OCCURED" },
+	{ 0xC002100E, "RPC_P_EXCEPTION_OCCURRED" },
 	{ 0xC0021012, "RPC_P_CONNECTION_SHUTDOWN" },
 	{ 0xC0021015, "RPC_P_THREAD_LISTENING" },
-	{ 0xC0030001, "RPC_NT_NO_MORE_ENTRIES" },
-	{ 0xC0030002, "RPC_NT_SS_CHAR_TRANS_OPEN_FAIL" },
-	{ 0xC0030003, "RPC_NT_SS_CHAR_TRANS_SHORT_FILE" },
-	{ 0xC0030004, "RPC_NT_SS_IN_NULL_CONTEXT" },
-	{ 0xC0030005, "RPC_NT_SS_CONTEXT_MISMATCH" },
-	{ 0xC0030006, "RPC_NT_SS_CONTEXT_DAMAGED" },
-	{ 0xC0030007, "RPC_NT_SS_HANDLES_MISMATCH" },
-	{ 0xC0030008, "RPC_NT_SS_CANNOT_GET_CALL_HANDLE" },
-	{ 0xC0030009, "RPC_NT_NULL_REF_POINTER" },
-	{ 0xC003000A, "RPC_NT_ENUM_VALUE_OUT_OF_RANGE" },
-	{ 0xC003000B, "RPC_NT_BYTE_COUNT_TOO_SMALL" },
-	{ 0xC003000C, "RPC_NT_BAD_STUB_DATA" },
-	{ 0xC0030059, "RPC_NT_INVALID_ES_ACTION" },
-	{ 0xC003005A, "RPC_NT_WRONG_ES_VERSION" },
-	{ 0xC003005B, "RPC_NT_WRONG_STUB_VERSION" },
-	{ 0xC003005C, "RPC_NT_INVALID_PIPE_OBJECT" },
-	{ 0xC003005D, "RPC_NT_INVALID_PIPE_OPERATION" },
-	{ 0xC003005E, "RPC_NT_WRONG_PIPE_VERSION" },
+	{ 0xC0030001, "STATUS_RPC_NO_MORE_ENTRIES" },
+	{ 0xC0030002, "STATUS_RPC_SS_CHAR_TRANS_OPEN_FAIL" },
+	{ 0xC0030003, "STATUS_RPC_SS_CHAR_TRANS_SHORT_FILE" },
+	{ 0xC0030004, "STATUS_RPC_SS_IN_NULL_CONTEXT" },
+	{ 0xC0030005, "STATUS_RPC_SS_CONTEXT_MISMATCH" },
+	{ 0xC0030006, "STATUS_RPC_SS_CONTEXT_DAMAGED" },
+	{ 0xC0030007, "STATUS_RPC_SS_HANDLES_MISMATCH" },
+	{ 0xC0030008, "STATUS_RPC_SS_CANNOT_GET_CALL_HANDLE" },
+	{ 0xC0030009, "STATUS_RPC_NULL_REF_POINTER" },
+	{ 0xC003000A, "STATUS_RPC_ENUM_VALUE_OUT_OF_RANGE" },
+	{ 0xC003000B, "STATUS_RPC_BYTE_COUNT_TOO_SMALL" },
+	{ 0xC003000C, "STATUS_RPC_BAD_STUB_DATA" },
+	{ 0xC0030059, "STATUS_RPC_INVALID_ES_ACTION" },
+	{ 0xC003005A, "STATUS_RPC_WRONG_ES_VERSION" },
+	{ 0xC003005B, "STATUS_RPC_WRONG_STUB_VERSION" },
+	{ 0xC003005C, "STATUS_RPC_INVALID_PIPE_OBJECT" },
+	{ 0xC003005D, "STATUS_RPC_INVALID_PIPE_OPERATION" },
+	{ 0xC003005E, "STATUS_RPC_WRONG_PIPE_VERSION" },
+	{ 0xC003005F, "STATUS_RPC_PIPE_CLOSED" },
+	{ 0xC0030060, "STATUS_RPC_PIPE_DISCIPLINE_ERROR" },
+	{ 0xC0030061, "STATUS_RPC_PIPE_EMPTY" },
+	{ 0xC0040035, "STATUS_PNP_BAD_MPS_TABLE" },
+	{ 0xC0040036, "STATUS_PNP_TRANSLATION_FAILED" },
+	{ 0xC0040037, "STATUS_PNP_IRQ_TRANSLATION_FAILED" },
+	{ 0xC0040038, "STATUS_PNP_INVALID_ID" },
+	{ 0xC0040039, "STATUS_IO_REISSUE_AS_CACHED" },
+	{ 0xC00A0001, "STATUS_CTX_WINSTATION_NAME_INVALID" },
+	{ 0xC00A0002, "STATUS_CTX_INVALID_PD" },
+	{ 0xC00A0003, "STATUS_CTX_PD_NOT_FOUND" },
+	{ 0xC00A0006, "STATUS_CTX_CLOSE_PENDING" },
+	{ 0xC00A0007, "STATUS_CTX_NO_OUTBUF" },
+	{ 0xC00A0008, "STATUS_CTX_MODEM_INF_NOT_FOUND" },
+	{ 0xC00A0009, "STATUS_CTX_INVALID_MODEMNAME" },
+	{ 0xC00A000A, "STATUS_CTX_RESPONSE_ERROR" },
+	{ 0xC00A000B, "STATUS_CTX_MODEM_RESPONSE_TIMEOUT" },
+	{ 0xC00A000C, "STATUS_CTX_MODEM_RESPONSE_NO_CARRIER" },
+	{ 0xC00A000D, "STATUS_CTX_MODEM_RESPONSE_NO_DIALTONE" },
+	{ 0xC00A000E, "STATUS_CTX_MODEM_RESPONSE_BUSY" },
+	{ 0xC00A000F, "STATUS_CTX_MODEM_RESPONSE_VOICE" },
+	{ 0xC00A0010, "STATUS_CTX_TD_ERROR" },
+	{ 0xC00A0012, "STATUS_CTX_LICENSE_CLIENT_INVALID" },
+	{ 0xC00A0013, "STATUS_CTX_LICENSE_NOT_AVAILABLE" },
+	{ 0xC00A0014, "STATUS_CTX_LICENSE_EXPIRED" },
+	{ 0xC00A0015, "STATUS_CTX_WINSTATION_NOT_FOUND" },
+	{ 0xC00A0016, "STATUS_CTX_WINSTATION_NAME_COLLISION" },
+	{ 0xC00A0017, "STATUS_CTX_WINSTATION_BUSY" },
+	{ 0xC00A0018, "STATUS_CTX_BAD_VIDEO_MODE" },
+	{ 0xC00A0022, "STATUS_CTX_GRAPHICS_INVALID" },
+	{ 0xC00A0024, "STATUS_CTX_NOT_CONSOLE" },
+	{ 0xC00A0026, "STATUS_CTX_CLIENT_QUERY_TIMEOUT" },
+	{ 0xC00A0027, "STATUS_CTX_CONSOLE_DISCONNECT" },
+	{ 0xC00A0028, "STATUS_CTX_CONSOLE_CONNECT" },
+	{ 0xC00A002A, "STATUS_CTX_SHADOW_DENIED" },
+	{ 0xC00A002B, "STATUS_CTX_WINSTATION_ACCESS_DENIED" },
+	{ 0xC00A002E, "STATUS_CTX_INVALID_WD" },
+	{ 0xC00A002F, "STATUS_CTX_WD_NOT_FOUND" },
+	{ 0xC00A0030, "STATUS_CTX_SHADOW_INVALID" },
+	{ 0xC00A0031, "STATUS_CTX_SHADOW_DISABLED" },
+	{ 0xC00A0032, "STATUS_RDP_PROTOCOL_ERROR" },
+	{ 0xC00A0033, "STATUS_CTX_CLIENT_LICENSE_NOT_SET" },
+	{ 0xC00A0034, "STATUS_CTX_CLIENT_LICENSE_IN_USE" },
+	{ 0xC00A0035, "STATUS_CTX_SHADOW_ENDED_BY_MODE_CHANGE" },
+	{ 0xC00A0036, "STATUS_CTX_SHADOW_NOT_RUNNING" },
+	{ 0xC00A0037, "STATUS_CTX_LOGON_DISABLED" },
+	{ 0xC00A0038, "STATUS_CTX_SECURITY_LAYER_ERROR" },
+	{ 0xC00A0039, "STATUS_TS_INCOMPATIBLE_SESSIONS" },
+	{ 0xC00B0001, "STATUS_MUI_FILE_NOT_FOUND" },
+	{ 0xC00B0002, "STATUS_MUI_INVALID_FILE" },
+	{ 0xC00B0003, "STATUS_MUI_INVALID_RC_CONFIG" },
+	{ 0xC00B0004, "STATUS_MUI_INVALID_LOCALE_NAME" },
+	{ 0xC00B0005, "STATUS_MUI_INVALID_ULTIMATEFALLBACK_NAME" },
+	{ 0xC00B0006, "STATUS_MUI_FILE_NOT_LOADED" },
+	{ 0xC00B0007, "STATUS_RESOURCE_ENUM_USER_STOP" },
+	{ 0xC0130001, "STATUS_CLUSTER_INVALID_NODE" },
+	{ 0xC0130002, "STATUS_CLUSTER_NODE_EXISTS" },
+	{ 0xC0130003, "STATUS_CLUSTER_JOIN_IN_PROGRESS" },
+	{ 0xC0130004, "STATUS_CLUSTER_NODE_NOT_FOUND" },
+	{ 0xC0130005, "STATUS_CLUSTER_LOCAL_NODE_NOT_FOUND" },
+	{ 0xC0130006, "STATUS_CLUSTER_NETWORK_EXISTS" },
+	{ 0xC0130007, "STATUS_CLUSTER_NETWORK_NOT_FOUND" },
+	{ 0xC0130008, "STATUS_CLUSTER_NETINTERFACE_EXISTS" },
+	{ 0xC0130009, "STATUS_CLUSTER_NETINTERFACE_NOT_FOUND" },
+	{ 0xC013000A, "STATUS_CLUSTER_INVALID_REQUEST" },
+	{ 0xC013000B, "STATUS_CLUSTER_INVALID_NETWORK_PROVIDER" },
+	{ 0xC013000C, "STATUS_CLUSTER_NODE_DOWN" },
+	{ 0xC013000D, "STATUS_CLUSTER_NODE_UNREACHABLE" },
+	{ 0xC013000E, "STATUS_CLUSTER_NODE_NOT_MEMBER" },
+	{ 0xC013000F, "STATUS_CLUSTER_JOIN_NOT_IN_PROGRESS" },
+	{ 0xC0130010, "STATUS_CLUSTER_INVALID_NETWORK" },
+	{ 0xC0130011, "STATUS_CLUSTER_NO_NET_ADAPTERS" },
+	{ 0xC0130012, "STATUS_CLUSTER_NODE_UP" },
+	{ 0xC0130013, "STATUS_CLUSTER_NODE_PAUSED" },
+	{ 0xC0130014, "STATUS_CLUSTER_NODE_NOT_PAUSED" },
+	{ 0xC0130015, "STATUS_CLUSTER_NO_SECURITY_CONTEXT" },
+	{ 0xC0130016, "STATUS_CLUSTER_NETWORK_NOT_INTERNAL" },
+	{ 0xC0130017, "STATUS_CLUSTER_POISONED" },
+	{ 0xC0140001, "STATUS_ACPI_INVALID_OPCODE" },
+	{ 0xC0140002, "STATUS_ACPI_STACK_OVERFLOW" },
+	{ 0xC0140003, "STATUS_ACPI_ASSERT_FAILED" },
+	{ 0xC0140004, "STATUS_ACPI_INVALID_INDEX" },
+	{ 0xC0140005, "STATUS_ACPI_INVALID_ARGUMENT" },
+	{ 0xC0140006, "STATUS_ACPI_FATAL" },
+	{ 0xC0140007, "STATUS_ACPI_INVALID_SUPERNAME" },
+	{ 0xC0140008, "STATUS_ACPI_INVALID_ARGTYPE" },
+	{ 0xC0140009, "STATUS_ACPI_INVALID_OBJTYPE" },
+	{ 0xC014000A, "STATUS_ACPI_INVALID_TARGETTYPE" },
+	{ 0xC014000B, "STATUS_ACPI_INCORRECT_ARGUMENT_COUNT" },
+	{ 0xC014000C, "STATUS_ACPI_ADDRESS_NOT_MAPPED" },
+	{ 0xC014000D, "STATUS_ACPI_INVALID_EVENTTYPE" },
+	{ 0xC014000E, "STATUS_ACPI_HANDLER_COLLISION" },
+	{ 0xC014000F, "STATUS_ACPI_INVALID_DATA" },
+	{ 0xC0140010, "STATUS_ACPI_INVALID_REGION" },
+	{ 0xC0140011, "STATUS_ACPI_INVALID_ACCESS_SIZE" },
+	{ 0xC0140012, "STATUS_ACPI_ACQUIRE_GLOBAL_LOCK" },
+	{ 0xC0140013, "STATUS_ACPI_ALREADY_INITIALIZED" },
+	{ 0xC0140014, "STATUS_ACPI_NOT_INITIALIZED" },
+	{ 0xC0140015, "STATUS_ACPI_INVALID_MUTEX_LEVEL" },
+	{ 0xC0140016, "STATUS_ACPI_MUTEX_NOT_OWNED" },
+	{ 0xC0140017, "STATUS_ACPI_MUTEX_NOT_OWNER" },
+	{ 0xC0140018, "STATUS_ACPI_RS_ACCESS" },
+	{ 0xC0140019, "STATUS_ACPI_INVALID_TABLE" },
+	{ 0xC0140020, "STATUS_ACPI_REG_HANDLER_FAILED" },
+	{ 0xC0140021, "STATUS_ACPI_POWER_REQUEST_FAILED" },
+	{ 0xC0150001, "STATUS_SXS_SECTION_NOT_FOUND" },
+	{ 0xC0150002, "STATUS_SXS_CANT_GEN_ACTCTX" },
+	{ 0xC0150003, "STATUS_SXS_INVALID_ACTCTXDATA_FORMAT" },
+	{ 0xC0150004, "STATUS_SXS_ASSEMBLY_NOT_FOUND" },
+	{ 0xC0150005, "STATUS_SXS_MANIFEST_FORMAT_ERROR" },
+	{ 0xC0150006, "STATUS_SXS_MANIFEST_PARSE_ERROR" },
+	{ 0xC0150007, "STATUS_SXS_ACTIVATION_CONTEXT_DISABLED" },
+	{ 0xC0150008, "STATUS_SXS_KEY_NOT_FOUND" },
+	{ 0xC0150009, "STATUS_SXS_VERSION_CONFLICT" },
+	{ 0xC015000A, "STATUS_SXS_WRONG_SECTION_TYPE" },
+	{ 0xC015000B, "STATUS_SXS_THREAD_QUERIES_DISABLED" },
+	{ 0xC015000C, "STATUS_SXS_ASSEMBLY_MISSING" },
+	{ 0xC015000E, "STATUS_SXS_PROCESS_DEFAULT_ALREADY_SET" },
+	{ 0xC015000F, "STATUS_SXS_EARLY_DEACTIVATION" },
+	{ 0xC0150010, "STATUS_SXS_INVALID_DEACTIVATION" },
+	{ 0xC0150011, "STATUS_SXS_MULTIPLE_DEACTIVATION" },
+	{ 0xC0150012, "STATUS_SXS_SYSTEM_DEFAULT_ACTIVATION_CONTEXT_EMPTY" },
+	{ 0xC0150013, "STATUS_SXS_PROCESS_TERMINATION_REQUESTED" },
+	{ 0xC0150014, "STATUS_SXS_CORRUPT_ACTIVATION_STACK" },
+	{ 0xC0150015, "STATUS_SXS_CORRUPTION" },
+	{ 0xC0150016, "STATUS_SXS_INVALID_IDENTITY_ATTRIBUTE_VALUE" },
+	{ 0xC0150017, "STATUS_SXS_INVALID_IDENTITY_ATTRIBUTE_NAME" },
+	{ 0xC0150018, "STATUS_SXS_IDENTITY_DUPLICATE_ATTRIBUTE" },
+	{ 0xC0150019, "STATUS_SXS_IDENTITY_PARSE_ERROR" },
+	{ 0xC015001A, "STATUS_SXS_COMPONENT_STORE_CORRUPT" },
+	{ 0xC015001B, "STATUS_SXS_FILE_HASH_MISMATCH" },
+	{ 0xC015001C, "STATUS_SXS_MANIFEST_IDENTITY_SAME_BUT_CONTENTS_DIFFERENT" },
+	{ 0xC015001D, "STATUS_SXS_IDENTITIES_DIFFERENT" },
+	{ 0xC015001E, "STATUS_SXS_ASSEMBLY_IS_NOT_A_DEPLOYMENT" },
+	{ 0xC015001F, "STATUS_SXS_FILE_NOT_PART_OF_ASSEMBLY" },
+	{ 0xC0150020, "STATUS_ADVANCED_INSTALLER_FAILED" },
+	{ 0xC0150021, "STATUS_XML_ENCODING_MISMATCH" },
+	{ 0xC0150022, "STATUS_SXS_MANIFEST_TOO_BIG" },
+	{ 0xC0150023, "STATUS_SXS_SETTING_NOT_REGISTERED" },
+	{ 0xC0150024, "STATUS_SXS_TRANSACTION_CLOSURE_INCOMPLETE" },
+	{ 0xC0150025, "STATUS_SMI_PRIMITIVE_INSTALLER_FAILED" },
+	{ 0xC0150026, "STATUS_GENERIC_COMMAND_FAILED" },
+	{ 0xC0150027, "STATUS_SXS_FILE_HASH_MISSING" },
+	{ 0xC0190001, "STATUS_TRANSACTIONAL_CONFLICT" },
+	{ 0xC0190002, "STATUS_INVALID_TRANSACTION" },
+	{ 0xC0190003, "STATUS_TRANSACTION_NOT_ACTIVE" },
+	{ 0xC0190004, "STATUS_TM_INITIALIZATION_FAILED" },
+	{ 0xC0190005, "STATUS_RM_NOT_ACTIVE" },
+	{ 0xC0190006, "STATUS_RM_METADATA_CORRUPT" },
+	{ 0xC0190007, "STATUS_TRANSACTION_NOT_JOINED" },
+	{ 0xC0190008, "STATUS_DIRECTORY_NOT_RM" },
+	{ 0xC019000A, "STATUS_TRANSACTIONS_UNSUPPORTED_REMOTE" },
+	{ 0xC019000B, "STATUS_LOG_RESIZE_INVALID_SIZE" },
+	{ 0xC019000C, "STATUS_REMOTE_FILE_VERSION_MISMATCH" },
+	{ 0xC019000F, "STATUS_CRM_PROTOCOL_ALREADY_EXISTS" },
+	{ 0xC0190010, "STATUS_TRANSACTION_PROPAGATION_FAILED" },
+	{ 0xC0190011, "STATUS_CRM_PROTOCOL_NOT_FOUND" },
+	{ 0xC0190012, "STATUS_TRANSACTION_SUPERIOR_EXISTS" },
+	{ 0xC0190013, "STATUS_TRANSACTION_REQUEST_NOT_VALID" },
+	{ 0xC0190014, "STATUS_TRANSACTION_NOT_REQUESTED" },
+	{ 0xC0190015, "STATUS_TRANSACTION_ALREADY_ABORTED" },
+	{ 0xC0190016, "STATUS_TRANSACTION_ALREADY_COMMITTED" },
+	{ 0xC0190017, "STATUS_TRANSACTION_INVALID_MARSHALL_BUFFER" },
+	{ 0xC0190018, "STATUS_CURRENT_TRANSACTION_NOT_VALID" },
+	{ 0xC0190019, "STATUS_LOG_GROWTH_FAILED" },
+	{ 0xC0190021, "STATUS_OBJECT_NO_LONGER_EXISTS" },
+	{ 0xC0190022, "STATUS_STREAM_MINIVERSION_NOT_FOUND" },
+	{ 0xC0190023, "STATUS_STREAM_MINIVERSION_NOT_VALID" },
+	{ 0xC0190024, "STATUS_MINIVERSION_INACCESSIBLE_FROM_SPECIFIED_TRANSACTION" },
+	{ 0xC0190025, "STATUS_CANT_OPEN_MINIVERSION_WITH_MODIFY_INTENT" },
+	{ 0xC0190026, "STATUS_CANT_CREATE_MORE_STREAM_MINIVERSIONS" },
+	{ 0xC0190028, "STATUS_HANDLE_NO_LONGER_VALID" },
+	{ 0xC0190030, "STATUS_LOG_CORRUPTION_DETECTED" },
+	{ 0xC0190032, "STATUS_RM_DISCONNECTED" },
+	{ 0xC0190033, "STATUS_ENLISTMENT_NOT_SUPERIOR" },
+	{ 0xC0190036, "STATUS_FILE_IDENTITY_NOT_PERSISTENT" },
+	{ 0xC0190037, "STATUS_CANT_BREAK_TRANSACTIONAL_DEPENDENCY" },
+	{ 0xC0190038, "STATUS_CANT_CROSS_RM_BOUNDARY" },
+	{ 0xC0190039, "STATUS_TXF_DIR_NOT_EMPTY" },
+	{ 0xC019003A, "STATUS_INDOUBT_TRANSACTIONS_EXIST" },
+	{ 0xC019003B, "STATUS_TM_VOLATILE" },
+	{ 0xC019003C, "STATUS_ROLLBACK_TIMER_EXPIRED" },
+	{ 0xC019003D, "STATUS_TXF_ATTRIBUTE_CORRUPT" },
+	{ 0xC019003E, "STATUS_EFS_NOT_ALLOWED_IN_TRANSACTION" },
+	{ 0xC019003F, "STATUS_TRANSACTIONAL_OPEN_NOT_ALLOWED" },
+	{ 0xC0190040, "STATUS_TRANSACTED_MAPPING_UNSUPPORTED_REMOTE" },
+	{ 0xC0190043, "STATUS_TRANSACTION_REQUIRED_PROMOTION" },
+	{ 0xC0190044, "STATUS_CANNOT_EXECUTE_FILE_IN_TRANSACTION" },
+	{ 0xC0190045, "STATUS_TRANSACTIONS_NOT_FROZEN" },
+	{ 0xC0190046, "STATUS_TRANSACTION_FREEZE_IN_PROGRESS" },
+	{ 0xC0190047, "STATUS_NOT_SNAPSHOT_VOLUME" },
+	{ 0xC0190048, "STATUS_NO_SAVEPOINT_WITH_OPEN_FILES" },
+	{ 0xC0190049, "STATUS_SPARSE_NOT_ALLOWED_IN_TRANSACTION" },
+	{ 0xC019004A, "STATUS_TM_IDENTITY_MISMATCH" },
+	{ 0xC019004B, "STATUS_FLOATED_SECTION" },
+	{ 0xC019004C, "STATUS_CANNOT_ACCEPT_TRANSACTED_WORK" },
+	{ 0xC019004D, "STATUS_CANNOT_ABORT_TRANSACTIONS" },
+	{ 0xC019004E, "STATUS_TRANSACTION_NOT_FOUND" },
+	{ 0xC019004F, "STATUS_RESOURCEMANAGER_NOT_FOUND" },
+	{ 0xC0190050, "STATUS_ENLISTMENT_NOT_FOUND" },
+	{ 0xC0190051, "STATUS_TRANSACTIONMANAGER_NOT_FOUND" },
+	{ 0xC0190052, "STATUS_TRANSACTIONMANAGER_NOT_ONLINE" },
+	{ 0xC0190053, "STATUS_TRANSACTIONMANAGER_RECOVERY_NAME_COLLISION" },
+	{ 0xC0190054, "STATUS_TRANSACTION_NOT_ROOT" },
+	{ 0xC0190055, "STATUS_TRANSACTION_OBJECT_EXPIRED" },
+	{ 0xC0190056, "STATUS_COMPRESSION_NOT_ALLOWED_IN_TRANSACTION" },
+	{ 0xC0190057, "STATUS_TRANSACTION_RESPONSE_NOT_ENLISTED" },
+	{ 0xC0190058, "STATUS_TRANSACTION_RECORD_TOO_LONG" },
+	{ 0xC0190059, "STATUS_NO_LINK_TRACKING_IN_TRANSACTION" },
+	{ 0xC019005A, "STATUS_OPERATION_NOT_SUPPORTED_IN_TRANSACTION" },
+	{ 0xC019005B, "STATUS_TRANSACTION_INTEGRITY_VIOLATED" },
+	{ 0xC0190060, "STATUS_EXPIRED_HANDLE" },
+	{ 0xC0190061, "STATUS_TRANSACTION_NOT_ENLISTED" },
+	{ 0xC01A0001, "STATUS_LOG_SECTOR_INVALID" },
+	{ 0xC01A0002, "STATUS_LOG_SECTOR_PARITY_INVALID" },
+	{ 0xC01A0003, "STATUS_LOG_SECTOR_REMAPPED" },
+	{ 0xC01A0004, "STATUS_LOG_BLOCK_INCOMPLETE" },
+	{ 0xC01A0005, "STATUS_LOG_INVALID_RANGE" },
+	{ 0xC01A0006, "STATUS_LOG_BLOCKS_EXHAUSTED" },
+	{ 0xC01A0007, "STATUS_LOG_READ_CONTEXT_INVALID" },
+	{ 0xC01A0008, "STATUS_LOG_RESTART_INVALID" },
+	{ 0xC01A0009, "STATUS_LOG_BLOCK_VERSION" },
+	{ 0xC01A000A, "STATUS_LOG_BLOCK_INVALID" },
+	{ 0xC01A000B, "STATUS_LOG_READ_MODE_INVALID" },
+	{ 0xC01A000D, "STATUS_LOG_METADATA_CORRUPT" },
+	{ 0xC01A000E, "STATUS_LOG_METADATA_INVALID" },
+	{ 0xC01A000F, "STATUS_LOG_METADATA_INCONSISTENT" },
+	{ 0xC01A0010, "STATUS_LOG_RESERVATION_INVALID" },
+	{ 0xC01A0011, "STATUS_LOG_CANT_DELETE" },
+	{ 0xC01A0012, "STATUS_LOG_CONTAINER_LIMIT_EXCEEDED" },
+	{ 0xC01A0013, "STATUS_LOG_START_OF_LOG" },
+	{ 0xC01A0014, "STATUS_LOG_POLICY_ALREADY_INSTALLED" },
+	{ 0xC01A0015, "STATUS_LOG_POLICY_NOT_INSTALLED" },
+	{ 0xC01A0016, "STATUS_LOG_POLICY_INVALID" },
+	{ 0xC01A0017, "STATUS_LOG_POLICY_CONFLICT" },
+	{ 0xC01A0018, "STATUS_LOG_PINNED_ARCHIVE_TAIL" },
+	{ 0xC01A0019, "STATUS_LOG_RECORD_NONEXISTENT" },
+	{ 0xC01A001A, "STATUS_LOG_RECORDS_RESERVED_INVALID" },
+	{ 0xC01A001B, "STATUS_LOG_SPACE_RESERVED_INVALID" },
+	{ 0xC01A001C, "STATUS_LOG_TAIL_INVALID" },
+	{ 0xC01A001D, "STATUS_LOG_FULL" },
+	{ 0xC01A001E, "STATUS_LOG_MULTIPLEXED" },
+	{ 0xC01A001F, "STATUS_LOG_DEDICATED" },
+	{ 0xC01A0020, "STATUS_LOG_ARCHIVE_NOT_IN_PROGRESS" },
+	{ 0xC01A0021, "STATUS_LOG_ARCHIVE_IN_PROGRESS" },
+	{ 0xC01A0022, "STATUS_LOG_EPHEMERAL" },
+	{ 0xC01A0023, "STATUS_LOG_NOT_ENOUGH_CONTAINERS" },
+	{ 0xC01A0024, "STATUS_LOG_CLIENT_ALREADY_REGISTERED" },
+	{ 0xC01A0025, "STATUS_LOG_CLIENT_NOT_REGISTERED" },
+	{ 0xC01A0026, "STATUS_LOG_FULL_HANDLER_IN_PROGRESS" },
+	{ 0xC01A0027, "STATUS_LOG_CONTAINER_READ_FAILED" },
+	{ 0xC01A0028, "STATUS_LOG_CONTAINER_WRITE_FAILED" },
+	{ 0xC01A0029, "STATUS_LOG_CONTAINER_OPEN_FAILED" },
+	{ 0xC01A002A, "STATUS_LOG_CONTAINER_STATE_INVALID" },
+	{ 0xC01A002B, "STATUS_LOG_STATE_INVALID" },
+	{ 0xC01A002C, "STATUS_LOG_PINNED" },
+	{ 0xC01A002D, "STATUS_LOG_METADATA_FLUSH_FAILED" },
+	{ 0xC01A002E, "STATUS_LOG_INCONSISTENT_SECURITY" },
+	{ 0xC01A002F, "STATUS_LOG_APPENDED_FLUSH_FAILED" },
+	{ 0xC01A0030, "STATUS_LOG_PINNED_RESERVATION" },
+	{ 0xC01B00EA, "STATUS_VIDEO_HUNG_DISPLAY_DRIVER_THREAD" },
+	{ 0xC01C0001, "STATUS_FLT_NO_HANDLER_DEFINED" },
+	{ 0xC01C0002, "STATUS_FLT_CONTEXT_ALREADY_DEFINED" },
+	{ 0xC01C0003, "STATUS_FLT_INVALID_ASYNCHRONOUS_REQUEST" },
+	{ 0xC01C0004, "STATUS_FLT_DISALLOW_FAST_IO" },
+	{ 0xC01C0005, "STATUS_FLT_INVALID_NAME_REQUEST" },
+	{ 0xC01C0006, "STATUS_FLT_NOT_SAFE_TO_POST_OPERATION" },
+	{ 0xC01C0007, "STATUS_FLT_NOT_INITIALIZED" },
+	{ 0xC01C0008, "STATUS_FLT_FILTER_NOT_READY" },
+	{ 0xC01C0009, "STATUS_FLT_POST_OPERATION_CLEANUP" },
+	{ 0xC01C000A, "STATUS_FLT_INTERNAL_ERROR" },
+	{ 0xC01C000B, "STATUS_FLT_DELETING_OBJECT" },
+	{ 0xC01C000C, "STATUS_FLT_MUST_BE_NONPAGED_POOL" },
+	{ 0xC01C000D, "STATUS_FLT_DUPLICATE_ENTRY" },
+	{ 0xC01C000E, "STATUS_FLT_CBDQ_DISABLED" },
+	{ 0xC01C000F, "STATUS_FLT_DO_NOT_ATTACH" },
+	{ 0xC01C0010, "STATUS_FLT_DO_NOT_DETACH" },
+	{ 0xC01C0011, "STATUS_FLT_INSTANCE_ALTITUDE_COLLISION" },
+	{ 0xC01C0012, "STATUS_FLT_INSTANCE_NAME_COLLISION" },
+	{ 0xC01C0013, "STATUS_FLT_FILTER_NOT_FOUND" },
+	{ 0xC01C0014, "STATUS_FLT_VOLUME_NOT_FOUND" },
+	{ 0xC01C0015, "STATUS_FLT_INSTANCE_NOT_FOUND" },
+	{ 0xC01C0016, "STATUS_FLT_CONTEXT_ALLOCATION_NOT_FOUND" },
+	{ 0xC01C0017, "STATUS_FLT_INVALID_CONTEXT_REGISTRATION" },
+	{ 0xC01C0018, "STATUS_FLT_NAME_CACHE_MISS" },
+	{ 0xC01C0019, "STATUS_FLT_NO_DEVICE_OBJECT" },
+	{ 0xC01C001A, "STATUS_FLT_VOLUME_ALREADY_MOUNTED" },
+	{ 0xC01C001B, "STATUS_FLT_ALREADY_ENLISTED" },
+	{ 0xC01C001C, "STATUS_FLT_CONTEXT_ALREADY_LINKED" },
+	{ 0xC01C0020, "STATUS_FLT_NO_WAITER_FOR_REPLY" },
+	{ 0xC01D0001, "STATUS_MONITOR_NO_DESCRIPTOR" },
+	{ 0xC01D0002, "STATUS_MONITOR_UNKNOWN_DESCRIPTOR_FORMAT" },
+	{ 0xC01D0003, "STATUS_MONITOR_INVALID_DESCRIPTOR_CHECKSUM" },
+	{ 0xC01D0004, "STATUS_MONITOR_INVALID_STANDARD_TIMING_BLOCK" },
+	{ 0xC01D0005, "STATUS_MONITOR_WMI_DATABLOCK_REGISTRATION_FAILED" },
+	{ 0xC01D0006, "STATUS_MONITOR_INVALID_SERIAL_NUMBER_MONDSC_BLOCK" },
+	{ 0xC01D0007, "STATUS_MONITOR_INVALID_USER_FRIENDLY_MONDSC_BLOCK" },
+	{ 0xC01D0008, "STATUS_MONITOR_NO_MORE_DESCRIPTOR_DATA" },
+	{ 0xC01D0009, "STATUS_MONITOR_INVALID_DETAILED_TIMING_BLOCK" },
+	{ 0xC01D000A, "STATUS_MONITOR_INVALID_MANUFACTURE_DATE" },
+	{ 0xC01E0000, "STATUS_GRAPHICS_NOT_EXCLUSIVE_MODE_OWNER" },
+	{ 0xC01E0001, "STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER" },
+	{ 0xC01E0002, "STATUS_GRAPHICS_INVALID_DISPLAY_ADAPTER" },
+	{ 0xC01E0003, "STATUS_GRAPHICS_ADAPTER_WAS_RESET" },
+	{ 0xC01E0004, "STATUS_GRAPHICS_INVALID_DRIVER_MODEL" },
+	{ 0xC01E0005, "STATUS_GRAPHICS_PRESENT_MODE_CHANGED" },
+	{ 0xC01E0006, "STATUS_GRAPHICS_PRESENT_OCCLUDED" },
+	{ 0xC01E0007, "STATUS_GRAPHICS_PRESENT_DENIED" },
+	{ 0xC01E0008, "STATUS_GRAPHICS_CANNOTCOLORCONVERT" },
+	{ 0xC01E000B, "STATUS_GRAPHICS_PRESENT_REDIRECTION_DISABLED" },
+	{ 0xC01E000C, "STATUS_GRAPHICS_PRESENT_UNOCCLUDED" },
+	{ 0xC01E0100, "STATUS_GRAPHICS_NO_VIDEO_MEMORY" },
+	{ 0xC01E0101, "STATUS_GRAPHICS_CANT_LOCK_MEMORY" },
+	{ 0xC01E0102, "STATUS_GRAPHICS_ALLOCATION_BUSY" },
+	{ 0xC01E0103, "STATUS_GRAPHICS_TOO_MANY_REFERENCES" },
+	{ 0xC01E0104, "STATUS_GRAPHICS_TRY_AGAIN_LATER" },
+	{ 0xC01E0105, "STATUS_GRAPHICS_TRY_AGAIN_NOW" },
+	{ 0xC01E0106, "STATUS_GRAPHICS_ALLOCATION_INVALID" },
+	{ 0xC01E0107, "STATUS_GRAPHICS_UNSWIZZLING_APERTURE_UNAVAILABLE" },
+	{ 0xC01E0108, "STATUS_GRAPHICS_UNSWIZZLING_APERTURE_UNSUPPORTED" },
+	{ 0xC01E0109, "STATUS_GRAPHICS_CANT_EVICT_PINNED_ALLOCATION" },
+	{ 0xC01E0110, "STATUS_GRAPHICS_INVALID_ALLOCATION_USAGE" },
+	{ 0xC01E0111, "STATUS_GRAPHICS_CANT_RENDER_LOCKED_ALLOCATION" },
+	{ 0xC01E0112, "STATUS_GRAPHICS_ALLOCATION_CLOSED" },
+	{ 0xC01E0113, "STATUS_GRAPHICS_INVALID_ALLOCATION_INSTANCE" },
+	{ 0xC01E0114, "STATUS_GRAPHICS_INVALID_ALLOCATION_HANDLE" },
+	{ 0xC01E0115, "STATUS_GRAPHICS_WRONG_ALLOCATION_DEVICE" },
+	{ 0xC01E0116, "STATUS_GRAPHICS_ALLOCATION_CONTENT_LOST" },
+	{ 0xC01E0200, "STATUS_GRAPHICS_GPU_EXCEPTION_ON_DEVICE" },
+	{ 0xC01E0300, "STATUS_GRAPHICS_INVALID_VIDPN_TOPOLOGY" },
+	{ 0xC01E0301, "STATUS_GRAPHICS_VIDPN_TOPOLOGY_NOT_SUPPORTED" },
+	{ 0xC01E0302, "STATUS_GRAPHICS_VIDPN_TOPOLOGY_CURRENTLY_NOT_SUPPORTED" },
+	{ 0xC01E0303, "STATUS_GRAPHICS_INVALID_VIDPN" },
+	{ 0xC01E0304, "STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE" },
+	{ 0xC01E0305, "STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_TARGET" },
+	{ 0xC01E0306, "STATUS_GRAPHICS_VIDPN_MODALITY_NOT_SUPPORTED" },
+	{ 0xC01E0308, "STATUS_GRAPHICS_INVALID_VIDPN_SOURCEMODESET" },
+	{ 0xC01E0309, "STATUS_GRAPHICS_INVALID_VIDPN_TARGETMODESET" },
+	{ 0xC01E030A, "STATUS_GRAPHICS_INVALID_FREQUENCY" },
+	{ 0xC01E030B, "STATUS_GRAPHICS_INVALID_ACTIVE_REGION" },
+	{ 0xC01E030C, "STATUS_GRAPHICS_INVALID_TOTAL_REGION" },
+	{ 0xC01E0310, "STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE_MODE" },
+	{ 0xC01E0311, "STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_TARGET_MODE" },
+	{ 0xC01E0312, "STATUS_GRAPHICS_PINNED_MODE_MUST_REMAIN_IN_SET" },
+	{ 0xC01E0313, "STATUS_GRAPHICS_PATH_ALREADY_IN_TOPOLOGY" },
+	{ 0xC01E0314, "STATUS_GRAPHICS_MODE_ALREADY_IN_MODESET" },
+	{ 0xC01E0315, "STATUS_GRAPHICS_INVALID_VIDEOPRESENTSOURCESET" },
+	{ 0xC01E0316, "STATUS_GRAPHICS_INVALID_VIDEOPRESENTTARGETSET" },
+	{ 0xC01E0317, "STATUS_GRAPHICS_SOURCE_ALREADY_IN_SET" },
+	{ 0xC01E0318, "STATUS_GRAPHICS_TARGET_ALREADY_IN_SET" },
+	{ 0xC01E0319, "STATUS_GRAPHICS_INVALID_VIDPN_PRESENT_PATH" },
+	{ 0xC01E031A, "STATUS_GRAPHICS_NO_RECOMMENDED_VIDPN_TOPOLOGY" },
+	{ 0xC01E031B, "STATUS_GRAPHICS_INVALID_MONITOR_FREQUENCYRANGESET" },
+	{ 0xC01E031C, "STATUS_GRAPHICS_INVALID_MONITOR_FREQUENCYRANGE" },
+	{ 0xC01E031D, "STATUS_GRAPHICS_FREQUENCYRANGE_NOT_IN_SET" },
+	{ 0xC01E031F, "STATUS_GRAPHICS_FREQUENCYRANGE_ALREADY_IN_SET" },
+	{ 0xC01E0320, "STATUS_GRAPHICS_STALE_MODESET" },
+	{ 0xC01E0321, "STATUS_GRAPHICS_INVALID_MONITOR_SOURCEMODESET" },
+	{ 0xC01E0322, "STATUS_GRAPHICS_INVALID_MONITOR_SOURCE_MODE" },
+	{ 0xC01E0323, "STATUS_GRAPHICS_NO_RECOMMENDED_FUNCTIONAL_VIDPN" },
+	{ 0xC01E0324, "STATUS_GRAPHICS_MODE_ID_MUST_BE_UNIQUE" },
+	{ 0xC01E0325, "STATUS_GRAPHICS_EMPTY_ADAPTER_MONITOR_MODE_SUPPORT_INTERSECTION" },
+	{ 0xC01E0326, "STATUS_GRAPHICS_VIDEO_PRESENT_TARGETS_LESS_THAN_SOURCES" },
+	{ 0xC01E0327, "STATUS_GRAPHICS_PATH_NOT_IN_TOPOLOGY" },
+	{ 0xC01E0328, "STATUS_GRAPHICS_ADAPTER_MUST_HAVE_AT_LEAST_ONE_SOURCE" },
+	{ 0xC01E0329, "STATUS_GRAPHICS_ADAPTER_MUST_HAVE_AT_LEAST_ONE_TARGET" },
+	{ 0xC01E032A, "STATUS_GRAPHICS_INVALID_MONITORDESCRIPTORSET" },
+	{ 0xC01E032B, "STATUS_GRAPHICS_INVALID_MONITORDESCRIPTOR" },
+	{ 0xC01E032C, "STATUS_GRAPHICS_MONITORDESCRIPTOR_NOT_IN_SET" },
+	{ 0xC01E032D, "STATUS_GRAPHICS_MONITORDESCRIPTOR_ALREADY_IN_SET" },
+	{ 0xC01E032E, "STATUS_GRAPHICS_MONITORDESCRIPTOR_ID_MUST_BE_UNIQUE" },
+	{ 0xC01E032F, "STATUS_GRAPHICS_INVALID_VIDPN_TARGET_SUBSET_TYPE" },
+	{ 0xC01E0330, "STATUS_GRAPHICS_RESOURCES_NOT_RELATED" },
+	{ 0xC01E0331, "STATUS_GRAPHICS_SOURCE_ID_MUST_BE_UNIQUE" },
+	{ 0xC01E0332, "STATUS_GRAPHICS_TARGET_ID_MUST_BE_UNIQUE" },
+	{ 0xC01E0333, "STATUS_GRAPHICS_NO_AVAILABLE_VIDPN_TARGET" },
+	{ 0xC01E0334, "STATUS_GRAPHICS_MONITOR_COULD_NOT_BE_ASSOCIATED_WITH_ADAPTER" },
+	{ 0xC01E0335, "STATUS_GRAPHICS_NO_VIDPNMGR" },
+	{ 0xC01E0336, "STATUS_GRAPHICS_NO_ACTIVE_VIDPN" },
+	{ 0xC01E0337, "STATUS_GRAPHICS_STALE_VIDPN_TOPOLOGY" },
+	{ 0xC01E0338, "STATUS_GRAPHICS_MONITOR_NOT_CONNECTED" },
+	{ 0xC01E0339, "STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY" },
+	{ 0xC01E033A, "STATUS_GRAPHICS_INVALID_PRIMARYSURFACE_SIZE" },
+	{ 0xC01E033B, "STATUS_GRAPHICS_INVALID_VISIBLEREGION_SIZE" },
+	{ 0xC01E033C, "STATUS_GRAPHICS_INVALID_STRIDE" },
+	{ 0xC01E033D, "STATUS_GRAPHICS_INVALID_PIXELFORMAT" },
+	{ 0xC01E033E, "STATUS_GRAPHICS_INVALID_COLORBASIS" },
+	{ 0xC01E033F, "STATUS_GRAPHICS_INVALID_PIXELVALUEACCESSMODE" },
+	{ 0xC01E0340, "STATUS_GRAPHICS_TARGET_NOT_IN_TOPOLOGY" },
+	{ 0xC01E0341, "STATUS_GRAPHICS_NO_DISPLAY_MODE_MANAGEMENT_SUPPORT" },
+	{ 0xC01E0342, "STATUS_GRAPHICS_VIDPN_SOURCE_IN_USE" },
+	{ 0xC01E0343, "STATUS_GRAPHICS_CANT_ACCESS_ACTIVE_VIDPN" },
+	{ 0xC01E0344, "STATUS_GRAPHICS_INVALID_PATH_IMPORTANCE_ORDINAL" },
+	{ 0xC01E0345, "STATUS_GRAPHICS_INVALID_PATH_CONTENT_GEOMETRY_TRANSFORMATION" },
+	{ 0xC01E0346, "STATUS_GRAPHICS_PATH_CONTENT_GEOMETRY_TRANSFORMATION_NOT_SUPPORTED" },
+	{ 0xC01E0347, "STATUS_GRAPHICS_INVALID_GAMMA_RAMP" },
+	{ 0xC01E0348, "STATUS_GRAPHICS_GAMMA_RAMP_NOT_SUPPORTED" },
+	{ 0xC01E0349, "STATUS_GRAPHICS_MULTISAMPLING_NOT_SUPPORTED" },
+	{ 0xC01E034A, "STATUS_GRAPHICS_MODE_NOT_IN_MODESET" },
+	{ 0xC01E034D, "STATUS_GRAPHICS_INVALID_VIDPN_TOPOLOGY_RECOMMENDATION_REASON" },
+	{ 0xC01E034E, "STATUS_GRAPHICS_INVALID_PATH_CONTENT_TYPE" },
+	{ 0xC01E034F, "STATUS_GRAPHICS_INVALID_COPYPROTECTION_TYPE" },
+	{ 0xC01E0350, "STATUS_GRAPHICS_UNASSIGNED_MODESET_ALREADY_EXISTS" },
+	{ 0xC01E0352, "STATUS_GRAPHICS_INVALID_SCANLINE_ORDERING" },
+	{ 0xC01E0353, "STATUS_GRAPHICS_TOPOLOGY_CHANGES_NOT_ALLOWED" },
+	{ 0xC01E0354, "STATUS_GRAPHICS_NO_AVAILABLE_IMPORTANCE_ORDINALS" },
+	{ 0xC01E0355, "STATUS_GRAPHICS_INCOMPATIBLE_PRIVATE_FORMAT" },
+	{ 0xC01E0356, "STATUS_GRAPHICS_INVALID_MODE_PRUNING_ALGORITHM" },
+	{ 0xC01E0357, "STATUS_GRAPHICS_INVALID_MONITOR_CAPABILITY_ORIGIN" },
+	{ 0xC01E0358, "STATUS_GRAPHICS_INVALID_MONITOR_FREQUENCYRANGE_CONSTRAINT" },
+	{ 0xC01E0359, "STATUS_GRAPHICS_MAX_NUM_PATHS_REACHED" },
+	{ 0xC01E035A, "STATUS_GRAPHICS_CANCEL_VIDPN_TOPOLOGY_AUGMENTATION" },
+	{ 0xC01E035B, "STATUS_GRAPHICS_INVALID_CLIENT_TYPE" },
+	{ 0xC01E035C, "STATUS_GRAPHICS_CLIENTVIDPN_NOT_SET" },
+	{ 0xC01E0400, "STATUS_GRAPHICS_SPECIFIED_CHILD_ALREADY_CONNECTED" },
+	{ 0xC01E0401, "STATUS_GRAPHICS_CHILD_DESCRIPTOR_NOT_SUPPORTED" },
+	{ 0xC01E0430, "STATUS_GRAPHICS_NOT_A_LINKED_ADAPTER" },
+	{ 0xC01E0431, "STATUS_GRAPHICS_LEADLINK_NOT_ENUMERATED" },
+	{ 0xC01E0432, "STATUS_GRAPHICS_CHAINLINKS_NOT_ENUMERATED" },
+	{ 0xC01E0433, "STATUS_GRAPHICS_ADAPTER_CHAIN_NOT_READY" },
+	{ 0xC01E0434, "STATUS_GRAPHICS_CHAINLINKS_NOT_STARTED" },
+	{ 0xC01E0435, "STATUS_GRAPHICS_CHAINLINKS_NOT_POWERED_ON" },
+	{ 0xC01E0436, "STATUS_GRAPHICS_INCONSISTENT_DEVICE_LINK_STATE" },
+	{ 0xC01E0438, "STATUS_GRAPHICS_NOT_POST_DEVICE_DRIVER" },
+	{ 0xC01E043B, "STATUS_GRAPHICS_ADAPTER_ACCESS_NOT_EXCLUDED" },
+	{ 0xC01E0500, "STATUS_GRAPHICS_OPM_NOT_SUPPORTED" },
+	{ 0xC01E0501, "STATUS_GRAPHICS_COPP_NOT_SUPPORTED" },
+	{ 0xC01E0502, "STATUS_GRAPHICS_UAB_NOT_SUPPORTED" },
+	{ 0xC01E0503, "STATUS_GRAPHICS_OPM_INVALID_ENCRYPTED_PARAMETERS" },
+	{ 0xC01E0504, "STATUS_GRAPHICS_OPM_PARAMETER_ARRAY_TOO_SMALL" },
+	{ 0xC01E0505, "STATUS_GRAPHICS_OPM_NO_PROTECTED_OUTPUTS_EXIST" },
+	{ 0xC01E0506, "STATUS_GRAPHICS_PVP_NO_DISPLAY_DEVICE_CORRESPONDS_TO_NAME" },
+	{ 0xC01E0507, "STATUS_GRAPHICS_PVP_DISPLAY_DEVICE_NOT_ATTACHED_TO_DESKTOP" },
+	{ 0xC01E0508, "STATUS_GRAPHICS_PVP_MIRRORING_DEVICES_NOT_SUPPORTED" },
+	{ 0xC01E050A, "STATUS_GRAPHICS_OPM_INVALID_POINTER" },
+	{ 0xC01E050B, "STATUS_GRAPHICS_OPM_INTERNAL_ERROR" },
+	{ 0xC01E050C, "STATUS_GRAPHICS_OPM_INVALID_HANDLE" },
+	{ 0xC01E050D, "STATUS_GRAPHICS_PVP_NO_MONITORS_CORRESPOND_TO_DISPLAY_DEVICE" },
+	{ 0xC01E050E, "STATUS_GRAPHICS_PVP_INVALID_CERTIFICATE_LENGTH" },
+	{ 0xC01E050F, "STATUS_GRAPHICS_OPM_SPANNING_MODE_ENABLED" },
+	{ 0xC01E0510, "STATUS_GRAPHICS_OPM_THEATER_MODE_ENABLED" },
+	{ 0xC01E0511, "STATUS_GRAPHICS_PVP_HFS_FAILED" },
+	{ 0xC01E0512, "STATUS_GRAPHICS_OPM_INVALID_SRM" },
+	{ 0xC01E0513, "STATUS_GRAPHICS_OPM_OUTPUT_DOES_NOT_SUPPORT_HDCP" },
+	{ 0xC01E0514, "STATUS_GRAPHICS_OPM_OUTPUT_DOES_NOT_SUPPORT_ACP" },
+	{ 0xC01E0515, "STATUS_GRAPHICS_OPM_OUTPUT_DOES_NOT_SUPPORT_CGMSA" },
+	{ 0xC01E0516, "STATUS_GRAPHICS_OPM_HDCP_SRM_NEVER_SET" },
+	{ 0xC01E0517, "STATUS_GRAPHICS_OPM_RESOLUTION_TOO_HIGH" },
+	{ 0xC01E0518, "STATUS_GRAPHICS_OPM_ALL_HDCP_HARDWARE_ALREADY_IN_USE" },
+	{ 0xC01E051A, "STATUS_GRAPHICS_OPM_PROTECTED_OUTPUT_NO_LONGER_EXISTS" },
+	{ 0xC01E051B, "STATUS_GRAPHICS_OPM_SESSION_TYPE_CHANGE_IN_PROGRESS" },
+	{ 0xC01E051C, "STATUS_GRAPHICS_OPM_PROTECTED_OUTPUT_DOES_NOT_HAVE_COPP_SEMANTICS" },
+	{ 0xC01E051D, "STATUS_GRAPHICS_OPM_INVALID_INFORMATION_REQUEST" },
+	{ 0xC01E051E, "STATUS_GRAPHICS_OPM_DRIVER_INTERNAL_ERROR" },
+	{ 0xC01E051F, "STATUS_GRAPHICS_OPM_PROTECTED_OUTPUT_DOES_NOT_HAVE_OPM_SEMANTICS" },
+	{ 0xC01E0520, "STATUS_GRAPHICS_OPM_SIGNALING_NOT_SUPPORTED" },
+	{ 0xC01E0521, "STATUS_GRAPHICS_OPM_INVALID_CONFIGURATION_REQUEST" },
+	{ 0xC01E0580, "STATUS_GRAPHICS_I2C_NOT_SUPPORTED" },
+	{ 0xC01E0581, "STATUS_GRAPHICS_I2C_DEVICE_DOES_NOT_EXIST" },
+	{ 0xC01E0582, "STATUS_GRAPHICS_I2C_ERROR_TRANSMITTING_DATA" },
+	{ 0xC01E0583, "STATUS_GRAPHICS_I2C_ERROR_RECEIVING_DATA" },
+	{ 0xC01E0584, "STATUS_GRAPHICS_DDCCI_VCP_NOT_SUPPORTED" },
+	{ 0xC01E0585, "STATUS_GRAPHICS_DDCCI_INVALID_DATA" },
+	{ 0xC01E0586, "STATUS_GRAPHICS_DDCCI_MONITOR_RETURNED_INVALID_TIMING_STATUS_BYTE" },
+	{ 0xC01E0587, "STATUS_GRAPHICS_DDCCI_INVALID_CAPABILITIES_STRING" },
+	{ 0xC01E0588, "STATUS_GRAPHICS_MCA_INTERNAL_ERROR" },
+	{ 0xC01E0589, "STATUS_GRAPHICS_DDCCI_INVALID_MESSAGE_COMMAND" },
+	{ 0xC01E058A, "STATUS_GRAPHICS_DDCCI_INVALID_MESSAGE_LENGTH" },
+	{ 0xC01E058B, "STATUS_GRAPHICS_DDCCI_INVALID_MESSAGE_CHECKSUM" },
+	{ 0xC01E058C, "STATUS_GRAPHICS_INVALID_PHYSICAL_MONITOR_HANDLE" },
+	{ 0xC01E058D, "STATUS_GRAPHICS_MONITOR_NO_LONGER_EXISTS" },
+	{ 0xC01E05E0, "STATUS_GRAPHICS_ONLY_CONSOLE_SESSION_SUPPORTED" },
+	{ 0xC01E05E1, "STATUS_GRAPHICS_NO_DISPLAY_DEVICE_CORRESPONDS_TO_NAME" },
+	{ 0xC01E05E2, "STATUS_GRAPHICS_DISPLAY_DEVICE_NOT_ATTACHED_TO_DESKTOP" },
+	{ 0xC01E05E3, "STATUS_GRAPHICS_MIRRORING_DEVICES_NOT_SUPPORTED" },
+	{ 0xC01E05E4, "STATUS_GRAPHICS_INVALID_POINTER" },
+	{ 0xC01E05E5, "STATUS_GRAPHICS_NO_MONITORS_CORRESPOND_TO_DISPLAY_DEVICE" },
+	{ 0xC01E05E6, "STATUS_GRAPHICS_PARAMETER_ARRAY_TOO_SMALL" },
+	{ 0xC01E05E7, "STATUS_GRAPHICS_INTERNAL_ERROR" },
+	{ 0xC01E05E8, "STATUS_GRAPHICS_SESSION_TYPE_CHANGE_IN_PROGRESS" },
+	{ 0xC0210000, "STATUS_FVE_LOCKED_VOLUME" },
+	{ 0xC0210001, "STATUS_FVE_NOT_ENCRYPTED" },
+	{ 0xC0210002, "STATUS_FVE_BAD_INFORMATION" },
+	{ 0xC0210003, "STATUS_FVE_TOO_SMALL" },
+	{ 0xC0210004, "STATUS_FVE_FAILED_WRONG_FS" },
+	{ 0xC0210005, "STATUS_FVE_FAILED_BAD_FS" },
+	{ 0xC0210006, "STATUS_FVE_FS_NOT_EXTENDED" },
+	{ 0xC0210007, "STATUS_FVE_FS_MOUNTED" },
+	{ 0xC0210008, "STATUS_FVE_NO_LICENSE" },
+	{ 0xC0210009, "STATUS_FVE_ACTION_NOT_ALLOWED" },
+	{ 0xC021000A, "STATUS_FVE_BAD_DATA" },
+	{ 0xC021000B, "STATUS_FVE_VOLUME_NOT_BOUND" },
+	{ 0xC021000C, "STATUS_FVE_NOT_DATA_VOLUME" },
+	{ 0xC021000D, "STATUS_FVE_CONV_READ_ERROR" },
+	{ 0xC021000E, "STATUS_FVE_CONV_WRITE_ERROR" },
+	{ 0xC021000F, "STATUS_FVE_OVERLAPPED_UPDATE" },
+	{ 0xC0210010, "STATUS_FVE_FAILED_SECTOR_SIZE" },
+	{ 0xC0210011, "STATUS_FVE_FAILED_AUTHENTICATION" },
+	{ 0xC0210012, "STATUS_FVE_NOT_OS_VOLUME" },
+	{ 0xC0210013, "STATUS_FVE_KEYFILE_NOT_FOUND" },
+	{ 0xC0210014, "STATUS_FVE_KEYFILE_INVALID" },
+	{ 0xC0210015, "STATUS_FVE_KEYFILE_NO_VMK" },
+	{ 0xC0210016, "STATUS_FVE_TPM_DISABLED" },
+	{ 0xC0210017, "STATUS_FVE_TPM_SRK_AUTH_NOT_ZERO" },
+	{ 0xC0210018, "STATUS_FVE_TPM_INVALID_PCR" },
+	{ 0xC0210019, "STATUS_FVE_TPM_NO_VMK" },
+	{ 0xC021001A, "STATUS_FVE_PIN_INVALID" },
+	{ 0xC021001B, "STATUS_FVE_AUTH_INVALID_APPLICATION" },
+	{ 0xC021001C, "STATUS_FVE_AUTH_INVALID_CONFIG" },
+	{ 0xC021001D, "STATUS_FVE_DEBUGGER_ENABLED" },
+	{ 0xC021001E, "STATUS_FVE_DRY_RUN_FAILED" },
+	{ 0xC021001F, "STATUS_FVE_BAD_METADATA_POINTER" },
+	{ 0xC0210020, "STATUS_FVE_OLD_METADATA_COPY" },
+	{ 0xC0210021, "STATUS_FVE_REBOOT_REQUIRED" },
+	{ 0xC0210022, "STATUS_FVE_RAW_ACCESS" },
+	{ 0xC0210023, "STATUS_FVE_RAW_BLOCKED" },
+	{ 0xC0210026, "STATUS_FVE_NO_FEATURE_LICENSE" },
+	{ 0xC0210027, "STATUS_FVE_POLICY_USER_DISABLE_RDV_NOT_ALLOWED" },
+	{ 0xC0210028, "STATUS_FVE_CONV_RECOVERY_FAILED" },
+	{ 0xC0210029, "STATUS_FVE_VIRTUALIZED_SPACE_TOO_BIG" },
+	{ 0xC0210030, "STATUS_FVE_VOLUME_TOO_SMALL" },
+	{ 0xC0220001, "STATUS_FWP_CALLOUT_NOT_FOUND" },
+	{ 0xC0220002, "STATUS_FWP_CONDITION_NOT_FOUND" },
+	{ 0xC0220003, "STATUS_FWP_FILTER_NOT_FOUND" },
+	{ 0xC0220004, "STATUS_FWP_LAYER_NOT_FOUND" },
+	{ 0xC0220005, "STATUS_FWP_PROVIDER_NOT_FOUND" },
+	{ 0xC0220006, "STATUS_FWP_PROVIDER_CONTEXT_NOT_FOUND" },
+	{ 0xC0220007, "STATUS_FWP_SUBLAYER_NOT_FOUND" },
+	{ 0xC0220008, "STATUS_FWP_NOT_FOUND" },
+	{ 0xC0220009, "STATUS_FWP_ALREADY_EXISTS" },
+	{ 0xC022000A, "STATUS_FWP_IN_USE" },
+	{ 0xC022000B, "STATUS_FWP_DYNAMIC_SESSION_IN_PROGRESS" },
+	{ 0xC022000C, "STATUS_FWP_WRONG_SESSION" },
+	{ 0xC022000D, "STATUS_FWP_NO_TXN_IN_PROGRESS" },
+	{ 0xC022000E, "STATUS_FWP_TXN_IN_PROGRESS" },
+	{ 0xC022000F, "STATUS_FWP_TXN_ABORTED" },
+	{ 0xC0220010, "STATUS_FWP_SESSION_ABORTED" },
+	{ 0xC0220011, "STATUS_FWP_INCOMPATIBLE_TXN" },
+	{ 0xC0220012, "STATUS_FWP_TIMEOUT" },
+	{ 0xC0220013, "STATUS_FWP_NET_EVENTS_DISABLED" },
+	{ 0xC0220014, "STATUS_FWP_INCOMPATIBLE_LAYER" },
+	{ 0xC0220015, "STATUS_FWP_KM_CLIENTS_ONLY" },
+	{ 0xC0220016, "STATUS_FWP_LIFETIME_MISMATCH" },
+	{ 0xC0220017, "STATUS_FWP_BUILTIN_OBJECT" },
+#if 0
+	/* MS-ERREF defines this one status code to have two values */
+	https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55
+	{ 0xC0220018, "STATUS_FWP_TOO_MANY_BOOTTIME_FILTERS" },
+	{ 0xC0220018, "STATUS_FWP_TOO_MANY_CALLOUTS" },
+#endif
+	{ 0xC0220018, "STATUS_FWP_TOO_MANY_BOOTTIME_FILTERS_OR_CALLOUTS" },
+	{ 0xC0220019, "STATUS_FWP_NOTIFICATION_DROPPED" },
+	{ 0xC022001A, "STATUS_FWP_TRAFFIC_MISMATCH" },
+	{ 0xC022001B, "STATUS_FWP_INCOMPATIBLE_SA_STATE" },
+	{ 0xC022001C, "STATUS_FWP_NULL_POINTER" },
+	{ 0xC022001D, "STATUS_FWP_INVALID_ENUMERATOR" },
+	{ 0xC022001E, "STATUS_FWP_INVALID_FLAGS" },
+	{ 0xC022001F, "STATUS_FWP_INVALID_NET_MASK" },
+	{ 0xC0220020, "STATUS_FWP_INVALID_RANGE" },
+	{ 0xC0220021, "STATUS_FWP_INVALID_INTERVAL" },
+	{ 0xC0220022, "STATUS_FWP_ZERO_LENGTH_ARRAY" },
+	{ 0xC0220023, "STATUS_FWP_NULL_DISPLAY_NAME" },
+	{ 0xC0220024, "STATUS_FWP_INVALID_ACTION_TYPE" },
+	{ 0xC0220025, "STATUS_FWP_INVALID_WEIGHT" },
+	{ 0xC0220026, "STATUS_FWP_MATCH_TYPE_MISMATCH" },
+	{ 0xC0220027, "STATUS_FWP_TYPE_MISMATCH" },
+	{ 0xC0220028, "STATUS_FWP_OUT_OF_BOUNDS" },
+	{ 0xC0220029, "STATUS_FWP_RESERVED" },
+	{ 0xC022002A, "STATUS_FWP_DUPLICATE_CONDITION" },
+	{ 0xC022002B, "STATUS_FWP_DUPLICATE_KEYMOD" },
+	{ 0xC022002C, "STATUS_FWP_ACTION_INCOMPATIBLE_WITH_LAYER" },
+	{ 0xC022002D, "STATUS_FWP_ACTION_INCOMPATIBLE_WITH_SUBLAYER" },
+	{ 0xC022002E, "STATUS_FWP_CONTEXT_INCOMPATIBLE_WITH_LAYER" },
+	{ 0xC022002F, "STATUS_FWP_CONTEXT_INCOMPATIBLE_WITH_CALLOUT" },
+	{ 0xC0220030, "STATUS_FWP_INCOMPATIBLE_AUTH_METHOD" },
+	{ 0xC0220031, "STATUS_FWP_INCOMPATIBLE_DH_GROUP" },
+	{ 0xC0220032, "STATUS_FWP_EM_NOT_SUPPORTED" },
+	{ 0xC0220033, "STATUS_FWP_NEVER_MATCH" },
+	{ 0xC0220034, "STATUS_FWP_PROVIDER_CONTEXT_MISMATCH" },
+	{ 0xC0220035, "STATUS_FWP_INVALID_PARAMETER" },
+	{ 0xC0220036, "STATUS_FWP_TOO_MANY_SUBLAYERS" },
+	{ 0xC0220037, "STATUS_FWP_CALLOUT_NOTIFICATION_FAILED" },
+	{ 0xC0220038, "STATUS_FWP_INCOMPATIBLE_AUTH_CONFIG" },
+	{ 0xC0220039, "STATUS_FWP_INCOMPATIBLE_CIPHER_CONFIG" },
+	{ 0xC022003C, "STATUS_FWP_DUPLICATE_AUTH_METHOD" },
+	{ 0xC0220100, "STATUS_FWP_TCPIP_NOT_READY" },
+	{ 0xC0220101, "STATUS_FWP_INJECT_HANDLE_CLOSING" },
+	{ 0xC0220102, "STATUS_FWP_INJECT_HANDLE_STALE" },
+	{ 0xC0220103, "STATUS_FWP_CANNOT_PEND" },
+	{ 0xC0230002, "STATUS_NDIS_CLOSING" },
+	{ 0xC0230004, "STATUS_NDIS_BAD_VERSION" },
+	{ 0xC0230005, "STATUS_NDIS_BAD_CHARACTERISTICS" },
+	{ 0xC0230006, "STATUS_NDIS_ADAPTER_NOT_FOUND" },
+	{ 0xC0230007, "STATUS_NDIS_OPEN_FAILED" },
+	{ 0xC0230008, "STATUS_NDIS_DEVICE_FAILED" },
+	{ 0xC0230009, "STATUS_NDIS_MULTICAST_FULL" },
+	{ 0xC023000A, "STATUS_NDIS_MULTICAST_EXISTS" },
+	{ 0xC023000B, "STATUS_NDIS_MULTICAST_NOT_FOUND" },
+	{ 0xC023000C, "STATUS_NDIS_REQUEST_ABORTED" },
+	{ 0xC023000D, "STATUS_NDIS_RESET_IN_PROGRESS" },
+	{ 0xC023000F, "STATUS_NDIS_INVALID_PACKET" },
+	{ 0xC0230010, "STATUS_NDIS_INVALID_DEVICE_REQUEST" },
+	{ 0xC0230011, "STATUS_NDIS_ADAPTER_NOT_READY" },
+	{ 0xC0230014, "STATUS_NDIS_INVALID_LENGTH" },
+	{ 0xC0230015, "STATUS_NDIS_INVALID_DATA" },
+	{ 0xC0230016, "STATUS_NDIS_BUFFER_TOO_SHORT" },
+	{ 0xC0230017, "STATUS_NDIS_INVALID_OID" },
+	{ 0xC0230018, "STATUS_NDIS_ADAPTER_REMOVED" },
+	{ 0xC0230019, "STATUS_NDIS_UNSUPPORTED_MEDIA" },
+	{ 0xC023001A, "STATUS_NDIS_GROUP_ADDRESS_IN_USE" },
+	{ 0xC023001B, "STATUS_NDIS_FILE_NOT_FOUND" },
+	{ 0xC023001C, "STATUS_NDIS_ERROR_READING_FILE" },
+	{ 0xC023001D, "STATUS_NDIS_ALREADY_MAPPED" },
+	{ 0xC023001E, "STATUS_NDIS_RESOURCE_CONFLICT" },
+	{ 0xC023001F, "STATUS_NDIS_MEDIA_DISCONNECTED" },
+	{ 0xC0230022, "STATUS_NDIS_INVALID_ADDRESS" },
+	{ 0xC023002A, "STATUS_NDIS_PAUSED" },
+	{ 0xC023002B, "STATUS_NDIS_INTERFACE_NOT_FOUND" },
+	{ 0xC023002C, "STATUS_NDIS_UNSUPPORTED_REVISION" },
+	{ 0xC023002D, "STATUS_NDIS_INVALID_PORT" },
+	{ 0xC023002E, "STATUS_NDIS_INVALID_PORT_STATE" },
+	{ 0xC023002F, "STATUS_NDIS_LOW_POWER_STATE" },
+	{ 0xC02300BB, "STATUS_NDIS_NOT_SUPPORTED" },
+	{ 0xC023100F, "STATUS_NDIS_OFFLOAD_POLICY" },
+	{ 0xC0231012, "STATUS_NDIS_OFFLOAD_CONNECTION_REJECTED" },
+	{ 0xC0231013, "STATUS_NDIS_OFFLOAD_PATH_REJECTED" },
+	{ 0xC0232000, "STATUS_NDIS_DOT11_AUTO_CONFIG_ENABLED" },
+	{ 0xC0232001, "STATUS_NDIS_DOT11_MEDIA_IN_USE" },
+	{ 0xC0232002, "STATUS_NDIS_DOT11_POWER_STATE_INVALID" },
+	{ 0xC0232003, "STATUS_NDIS_PM_WOL_PATTERN_LIST_FULL" },
+	{ 0xC0232004, "STATUS_NDIS_PM_PROTOCOL_OFFLOAD_LIST_FULL" },
+	{ 0xC0360001, "STATUS_IPSEC_BAD_SPI" },
+	{ 0xC0360002, "STATUS_IPSEC_SA_LIFETIME_EXPIRED" },
+	{ 0xC0360003, "STATUS_IPSEC_WRONG_SA" },
+	{ 0xC0360004, "STATUS_IPSEC_REPLAY_CHECK_FAILED" },
+	{ 0xC0360005, "STATUS_IPSEC_INVALID_PACKET" },
+	{ 0xC0360006, "STATUS_IPSEC_INTEGRITY_CHECK_FAILED" },
+	{ 0xC0360007, "STATUS_IPSEC_CLEAR_TEXT_DROP" },
+	{ 0xC0360008, "STATUS_IPSEC_AUTH_FIREWALL_DROP" },
+	{ 0xC0360009, "STATUS_IPSEC_THROTTLE_DROP" },
+	{ 0xC0368000, "STATUS_IPSEC_DOSP_BLOCK" },
+	{ 0xC0368001, "STATUS_IPSEC_DOSP_RECEIVED_MULTICAST" },
+	{ 0xC0368002, "STATUS_IPSEC_DOSP_INVALID_PACKET" },
+	{ 0xC0368003, "STATUS_IPSEC_DOSP_STATE_LOOKUP_FAILED" },
+	{ 0xC0368004, "STATUS_IPSEC_DOSP_MAX_ENTRIES" },
+	{ 0xC0368005, "STATUS_IPSEC_DOSP_KEYMOD_NOT_ALLOWED" },
+	{ 0xC0368006, "STATUS_IPSEC_DOSP_MAX_PER_IP_RATELIMIT_QUEUES" },
+	{ 0xC038005B, "STATUS_VOLMGR_MIRROR_NOT_SUPPORTED" },
+	{ 0xC038005C, "STATUS_VOLMGR_RAID5_NOT_SUPPORTED" },
+	{ 0xC03A0014, "STATUS_VIRTDISK_PROVIDER_NOT_FOUND" },
+	{ 0xC03A0015, "STATUS_VIRTDISK_NOT_VIRTUAL_DISK" },
+	{ 0xC03A0016, "STATUS_VHD_PARENT_VHD_ACCESS_DENIED" },
+	{ 0xC03A0017, "STATUS_VHD_CHILD_PARENT_SIZE_MISMATCH" },
+	{ 0xC03A0018, "STATUS_VHD_DIFFERENCING_CHAIN_CYCLE_DETECTED" },
+	{ 0xC03A0019, "STATUS_VHD_DIFFERENCING_CHAIN_ERROR_IN_PARENT" },
+	{ 0xC05C0000, "STATUS_SVHDX_ERROR_STORED" },
+	{ 0xC05CFF00, "STATUS_SVHDX_ERROR_NOT_AVAILABLE" },
+	{ 0xC05CFF01, "STATUS_SVHDX_UNIT_ATTENTION_AVAILABLE" },
+	{ 0xC05CFF02, "STATUS_SVHDX_UNIT_ATTENTION_CAPACITY_DATA_CHANGED" },
+	{ 0xC05CFF03, "STATUS_SVHDX_UNIT_ATTENTION_RESERVATIONS_PREEMPTED" },
+	{ 0xC05CFF04, "STATUS_SVHDX_UNIT_ATTENTION_RESERVATIONS_RELEASED" },
+	{ 0xC05CFF05, "STATUS_SVHDX_UNIT_ATTENTION_REGISTRATIONS_PREEMPTED" },
+	{ 0xC05CFF06, "STATUS_SVHDX_UNIT_ATTENTION_OPERATING_DEFINITION_CHANGED" },
+	{ 0xC05CFF07, "STATUS_SVHDX_RESERVATION_CONFLICT" },
+	{ 0xC05CFF08, "STATUS_SVHDX_WRONG_FILE_TYPE" },
+	{ 0xC05CFF09, "STATUS_SVHDX_VERSION_MISMATCH" },
+	{ 0xC05CFF0A, "STATUS_VHD_SHARED" },
+	{ 0xC05D0000, "STATUS_SMB_NO_PREAUTH_INTEGRITY_HASH_OVERLAP" },
+	{ 0xC05D0001, "STATUS_SMB_BAD_CLUSTER_DIALECT" },
 	{ 0,          NULL }
 };
 value_string_ext NT_errors_ext = VALUE_STRING_EXT_INIT(NT_errors);
 
 /* These are the MS country codes from
 
-	http://www.unicode.org/unicode/onlinedat/countries.html
+	https://web.archive.org/web/20081224015707/http://www.unicode.org/unicode/onlinedat/countries.html
 
    For countries that share the same number, I choose to use only the
    name of the largest country. Apologies for this. If this offends you,
@@ -1109,105 +2220,92 @@ value_string_ext ms_country_codes_ext = VALUE_STRING_EXT_INIT(ms_country_codes);
  /*module_t* module;*/
  /*pref_t* sid_display_hex;*/
 
-/*
- * Translate an 8-byte FILETIME value, given as the upper and lower 32 bits,
- * to an "nstime_t".
- * A FILETIME is a 64-bit integer, giving the time since Jan 1, 1601,
- * midnight "UTC", in 100ns units.
- * Return TRUE if the conversion succeeds, FALSE otherwise.
- *
- * According to the Samba code, it appears to be kludge-GMT (at least for
- * file listings). This means it's the GMT you get by taking a local time
- * and adding the server time zone offset.  This is NOT the same as GMT in
- * some cases.   However, we don't know the server time zone, so we don't
- * do that adjustment.
- *
- * This code is based on the Samba code:
- *
- *	Unix SMB/Netbios implementation.
- *	Version 1.9.
- *	time handling functions
- *	Copyright (C) Andrew Tridgell 1992-1998
- */
-static gboolean
-nt_time_to_nstime(guint32 filetime_high, guint32 filetime_low, nstime_t *tv, gboolean onesec_resolution)
+static proto_item *
+add_nttime(tvbuff_t *tvb, proto_tree *tree, int offset, int hf_date,
+	   uint64_t filetime)
 {
-	guint64 d;
-
-	if (filetime_high == 0)
-		return FALSE;
-
-	d = ((guint64)filetime_high << 32) | filetime_low;
-
-	if (onesec_resolution) {
-		d *= 10000000;
-	}
-
-	return filetime_to_nstime(tv, d);
-}
-
-int
-dissect_nt_64bit_time_opt(tvbuff_t *tvb, proto_tree *tree, int offset, int hf_date, gboolean onesec_resolution _U_)
-{
-	return dissect_nt_64bit_time_ex(tvb, tree, offset, hf_date, NULL, FALSE);
-}
-
-int
-dissect_nt_64bit_time_ex(tvbuff_t *tvb, proto_tree *tree, int offset, int hf_date, proto_item **createdItem, gboolean onesec_resolution)
-{
-	guint32 filetime_high, filetime_low;
+	proto_item *item;
 	nstime_t ts;
 
-	/* XXX there seems also to be another special time value which is fairly common :
-	   0x40000000 00000000
-	   the meaning of this one is yet unknown
-	*/
-	if (tree) {
-		proto_item *item = NULL;
-		filetime_low = tvb_get_letohl(tvb, offset);
-		filetime_high = tvb_get_letohl(tvb, offset + 4);
-		if (filetime_low == 0 && filetime_high == 0) {
-			ts.secs = 0;
-			ts.nsecs = 0;
-			item = proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
-			    &ts, "No time specified (0)");
-		} else if(filetime_low==0 && filetime_high==0x80000000){
-			ts.secs = filetime_low;
-			ts.nsecs = filetime_high;
-			item = proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
-			    &ts, "Infinity (relative time)");
-		} else if(filetime_low==0xffffffff && filetime_high==0x7fffffff){
-			ts.secs = filetime_low;
-			ts.nsecs = filetime_high;
-			item = proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
-			    &ts, "Infinity (absolute time)");
+	if (filetime == 0) {
+		ts.secs = 0;
+		ts.nsecs = 0;
+		item = proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
+		    &ts, "No time specified (0)");
+	} else if (filetime == UINT64_C(0x8000000000000000)) {
+		ts.secs = 0;
+		ts.nsecs = 0x80000000;
+		item = proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
+		    &ts, "Infinity (relative time)");
+	} else if (filetime == UINT64_C(0x7fffffffffffffff)) {
+		ts.secs = 0xffffffff;
+		ts.nsecs = 0x7fffffff;
+		item = proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
+		    &ts, "Infinity (absolute time)");
+	} else {
+		if (filetime_to_nstime(&ts, filetime)) {
+			item = proto_tree_add_time(tree, hf_date, tvb,
+			    offset, 8, &ts);
 		} else {
-			if (nt_time_to_nstime(filetime_high, filetime_low, &ts, onesec_resolution)) {
-				proto_tree_add_time(tree, hf_date, tvb,
-				    offset, 8, &ts);
-			} else {
-				item = proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
-				    &ts, "Time can't be converted");
-			}
-		}
-		if (createdItem != NULL)
-		{
-			*createdItem = item;
+			item = proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
+			    &ts, "Time can't be converted");
 		}
 	}
-
-	offset += 8;
-	return offset;
+	return item;
 }
 
-int
-dissect_nt_64bit_time(tvbuff_t *tvb, proto_tree *tree, int offset, int hf_date)
+proto_item *
+dissect_nttime(tvbuff_t *tvb, proto_tree *tree, int offset, int hf_date, const unsigned encoding)
 {
-	return dissect_nt_64bit_time_opt(tvb, tree, offset, hf_date, FALSE);
+	if (tree) {
+		uint32_t filetime_high, filetime_low;
+		uint64_t filetime;
+
+		filetime_low = tvb_get_uint32(tvb, offset, encoding);
+		filetime_high = tvb_get_uint32(tvb, offset + 4, encoding);
+		filetime =  ((uint64_t)filetime_high << 32) | filetime_low;
+		return add_nttime(tvb, tree, offset, hf_date, filetime);
+	}
+	return NULL;
 }
 
-/* Well-known SIDs defined in http://support.microsoft.com/kb/243330 */
+proto_item *
+dissect_nttime_hyper(tvbuff_t *tvb, proto_tree *tree, int offset, int hf_date, const unsigned encoding)
+{
+	if (tree) {
+		uint64_t filetime;
 
+		filetime = tvb_get_uint64(tvb, offset, encoding);
+		return add_nttime(tvb, tree, offset, hf_date, filetime);
+	}
+	return NULL;
+}
+
+proto_item *
+dissect_nttime_hyper_1sec(tvbuff_t *tvb, proto_tree *tree, int offset, int hf_date, const unsigned encoding)
+{
+	if (tree) {
+		uint64_t ftsecs;
+		nstime_t ts;
+
+		ftsecs = tvb_get_uint64(tvb, offset, encoding);
+		if (filetime_1sec_to_nstime(&ts, ftsecs)) {
+			return proto_tree_add_time(tree, hf_date, tvb,
+			    offset, 8, &ts);
+		} else {
+			ts.secs = ftsecs;
+			ts.nsecs = 0;
+			return proto_tree_add_time_format_value(tree, hf_date, tvb, offset, 8,
+			    &ts, "Time can't be converted");
+		}
+	}
+	return NULL;
+}
+
+/* Well-known SIDs defined in
+
+     https://support.microsoft.com/en-us/help/243330/well-known-security-identifiers-in-windows-operating-systems
+*/
 static const sid_strings well_known_sids[] = {
 	{"S-1-0",          "Null Authority"},
 	{"S-1-0-0",        "Nobody"},
@@ -1224,6 +2322,7 @@ static const sid_strings well_known_sids[] = {
 	{"S-1-3-4",        "Owner Rights"},
 	{"S-1-4",          "Non-unique Authority"},
 
+	{"S-1-5",          "NT Authority"},
 	{"S-1-5-1",        "Dialup"},
 	{"S-1-5-2",        "Network"},
 	{"S-1-5-3",        "Batch"},
@@ -1235,7 +2334,7 @@ static const sid_strings well_known_sids[] = {
 	{"S-1-5-9",        "Enterprise Domain Controllers"},
 	{"S-1-5-10",       "Principal Self"},
 	{"S-1-5-11",       "Authenticated Users"},
-	{"S-1-5-12",       "Reserved"},
+	{"S-1-5-12",       "Restricted Code"},
 	{"S-1-5-13",       "Terminal Server Users"},
 	{"S-1-5-14",       "Remote Interactive Logon"},
 	{"S-1-5-15",       "All users in this organization"},
@@ -1243,6 +2342,10 @@ static const sid_strings well_known_sids[] = {
 	{"S-1-5-18",       "Local System"},
 	{"S-1-5-19",       "Local Service"},
 	{"S-1-5-20",       "Network Service"},
+
+	{"S-1-5-21-0-0-0-496", "Compounded Authentication"},
+	{"S-1-5-21-0-0-0-497", "Claims Valid"},
+
 	/*
 	 * S-1-5-21-<d1>-<d2>-<d3>-<RID> where "<d1>-<d2>-<d3>" is the NT domain
 	 *          RIDs are defined in 'wkwn_S_1_5_21_rids' */
@@ -1268,9 +2371,18 @@ static const sid_strings well_known_sids[] = {
 	{"S-1-5-32-560",   "Windows Authorization Access Group"},
 	{"S-1-5-32-561",   "Terminal Server License Servers"},
 	{"S-1-5-32-562",   "Distributed COM Users"},
+	{"S-1-5-32-568",   "IIS Users"},
 	{"S-1-5-32-569",   "Cryptographic Operators"},
 	{"S-1-5-32-573",   "Event Log Readers"},
 	{"S-1-5-32-574",   "Certificate Service DCOM Access"},
+	{"S-1-5-32-575",   "RDS Remote Access Servers"},
+	{"S-1-5-32-576",   "RDS Endpoint Servers"},
+	{"S-1-5-32-577",   "RDS Management Servers"},
+	{"S-1-5-32-578",   "Hyper-V Admins"},
+	{"S-1-5-32-579",   "Access Control Assistance Operators"},
+	{"S-1-5-32-580",   "Remote Management Users"},
+
+	{"S-1-5-33",       "Write Restricted Code"},
 
 	{"S-1-5-64",       "Authentication"},
 	{"S-1-5-64-10",    "NTLM"},
@@ -1278,6 +2390,15 @@ static const sid_strings well_known_sids[] = {
 	{"S-1-5-64-21",    "Digest"},
 
 	{"S-1-5-80",       "NT Service"},
+
+	{"S-1-5-84-0-0-0-0-0", "User Mode Drivers"},
+
+	{"S-1-5-113",      "Local Account"},
+	{"S-1-5-114",      "Local Administrator Account"},
+
+	{"S-1-5-1000",     "Other Organisation"},
+
+	{"S-1-15-2-1",     "All App Packages"},
 
 	{"S-1-16",         "Mandatory Level"},
 	{"S-1-16-0",       "Untrusted"},
@@ -1288,6 +2409,14 @@ static const sid_strings well_known_sids[] = {
 	{"S-1-16-16384",   "System"},
 	{"S-1-16-20480",   "Protected Process"},
 	{"S-1-16-28672",   "Secure Process"},
+
+	{"S-1-18-1",       "Authentication Authority Asserted Identity"},
+	{"S-1-18-2",       "Service Asserted Identity"},
+	{"S-1-18-3",       "Fresh Public Key Identity"},
+	{"S-1-18-4",       "Key Trust Identity"},
+	{"S-1-18-5",       "Key Property Multifactor Authentication"},
+	{"S-1-18-6",       "Key Property Attestation"},
+
 	{NULL, NULL}
 };
 
@@ -1296,7 +2425,7 @@ match_wkwn_sids(const char* sid) {
 	int i = 0;
 	while (well_known_sids[i].name) {
 		if (strcmp(well_known_sids[i].sid, sid)==0) {
-			return(well_known_sids[i].name);
+			return well_known_sids[i].name;
 		}
 		i++;
 	}
@@ -1306,9 +2435,13 @@ match_wkwn_sids(const char* sid) {
 /* For SIDs in the form 'S-1-5-21-X-Y-Z-<RID>', '21-X-Y-Z' is referred to
    as the "domain SID" (NT domain) or "machine SID" (local machine).
    The following are well-known RIDs which are appended to domain/machine SIDs
-   as defined in http://support.microsoft.com/kb/243330. */
+   as defined in
 
+     https://support.microsoft.com/en-us/help/243330/well-known-security-identifiers-in-windows-operating-systems
+*/
 static const value_string wkwn_S_1_5_21_rids[] = {
+	{496,	"Compounded Authentication"},
+	{497,	"Claims Valid"},
 	{498,   "Enterprise Read-only Domain Controllers"},
 	{500,	"Administrator"},
 	{501,	"Guest"},
@@ -1323,6 +2456,10 @@ static const value_string wkwn_S_1_5_21_rids[] = {
 	{519,	"Enterprise Admins"},
 	{520,	"Group Policy Creator Owners"},
 	{521,	"Read-only Domain Controllers"},
+	{522,	"Cloneable Controllers"},
+	{525,	"Protected Users"},
+	{526,	"Key Admins"},
+	{527,	"Enterprise Key Admins"},
 	{553,	"RAS and IAS Servers"},
 	{571,	"Allowed RODC Password Replication Group"},
 	{572,	"Denied RODC Password Replication Group"},
@@ -1338,66 +2475,73 @@ static value_string_ext wkwn_S_1_5_21_rids_ext = VALUE_STRING_EXT_INIT(wkwn_S_1_
  * field, it will just pass a FT_STRING hf field here
  */
 int
-dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
-				const char *name, char **sid_str, int hf_sid)
+dissect_nt_sid(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *parent_tree,
+	       const char *name, char **sid_str, int hf_sid)
 {
 	int offset_sid_start = offset, sa_offset, rid_offset=0, wkwn_sid1_len=0,
 		wkwn_sid2_len = 0, i;
-	guint8 revision, num_auth;
-	guint32 sa_field, rid=0;
-	guint64 authority=0;
+	uint8_t revision, num_auth;
+	uint32_t sa_field, rid=0;
+	uint64_t authority=0;
 	wmem_strbuf_t *sa_str = NULL, *sid_in_dec_str = NULL, *sid_in_hex_str = NULL, *label_str = NULL,
 				  *domain_str = NULL, *wkwn_sid1_str = NULL, *wkwn_sid2_str = NULL;
 	const char *mapped_name = NULL, *mapped_rid = NULL;
-	gboolean domain_sid = FALSE, s_1_5_32 = FALSE, s_1_5_64 = FALSE, locally_defined = FALSE,
-			 S_1_16 = FALSE;
+	bool domain_sid = false, s_1_5_32 = false, s_1_5_64 = false, locally_defined = false,
+		S_1_16 = false;
 	proto_item *item = NULL, *hidden_item;
 	proto_tree *subtree = NULL;
 
 	/* Revision of SID */
-	revision = tvb_get_guint8(tvb, offset);
+	revision = tvb_get_uint8(tvb, offset);
 	offset++;
 
 	/* Number of subauthority fields */
-	num_auth = tvb_get_guint8(tvb, offset);
+	num_auth = tvb_get_uint8(tvb, offset);
 	offset++;
 
 	if(sid_str)
 		*sid_str=NULL;
 
-	if(hf_sid==-1){
+	if(hf_sid <= 0){
 		/* if no tree, just return the offset of the end_of_SID+1 */
 		if (!parent_tree)
-			return(offset+(6+(num_auth*4)));
+			return offset+(6+(num_auth*4));
 
 		hf_sid=hf_nt_sid;
 	}
 
 	/* Identifier Authority */
 	for(i=0; i<6; i++){
-		authority = (authority << 8) + tvb_get_guint8(tvb, offset);
+		authority = (authority << 8) + tvb_get_uint8(tvb, offset);
 		offset++;
 	}
 
-	sid_in_dec_str = wmem_strbuf_new_label(wmem_packet_scope());
-	wmem_strbuf_append_printf (sid_in_dec_str, "S-%u-%" G_GINT64_MODIFIER "u", revision, authority);
+	sid_in_dec_str = wmem_strbuf_create(pinfo->pool);
+	wmem_strbuf_append_printf (sid_in_dec_str, "S-%u-%" PRIu64, revision, authority);
 
 	/*  If sid_display_hex is set, sid_in_dec_str is still needed for
 		looking up well-known SIDs*/
 	if (sid_display_hex) {
-		sid_in_hex_str = wmem_strbuf_new_label(wmem_packet_scope());
-		wmem_strbuf_append_printf (sid_in_hex_str, "S-%x-%" G_GINT64_MODIFIER "x", revision, authority);
+		sid_in_hex_str = wmem_strbuf_create(pinfo->pool);
+		wmem_strbuf_append_printf (sid_in_hex_str, "S-%x-%" PRIx64, revision, authority);
 	}
 
-	wkwn_sid1_str = wmem_strbuf_new_label(wmem_packet_scope());
-	label_str = wmem_strbuf_new_label(wmem_packet_scope());
+	wkwn_sid1_str = wmem_strbuf_create(pinfo->pool);
+	label_str = wmem_strbuf_create(pinfo->pool);
 
 	if (strcmp(wmem_strbuf_get_str(sid_in_dec_str), "S-1-16")==0)
-		S_1_16 = TRUE;
+		S_1_16 = true;
+
+	/* Check for Scoped Policy ID (S-1-17-<subauth1>...) */
+	if (authority == 17) {
+		mapped_name = "Central Access Policy";
+	}
 
 	/* Look for well-known SIDs in format 'S-1-<Identifier Authority>' (i.e., exactly 3 fields) */
-	if (num_auth==0 || S_1_16) {
-		mapped_name = match_wkwn_sids(wmem_strbuf_get_str(sid_in_dec_str));
+	if (num_auth==0 || S_1_16 || mapped_name) {
+		if (!mapped_name)
+			mapped_name = match_wkwn_sids(wmem_strbuf_get_str(sid_in_dec_str));
+
 		if (mapped_name) {
 			wmem_strbuf_append(label_str, mapped_name);
 			wmem_strbuf_append(wkwn_sid1_str,
@@ -1406,10 +2550,11 @@ dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 		}
 	}
 
+
 	sa_offset = offset;
-	sa_str = wmem_strbuf_new_label(wmem_packet_scope());
-	wkwn_sid2_str = wmem_strbuf_new_label(wmem_packet_scope());
-	domain_str = wmem_strbuf_new_label(wmem_packet_scope());
+	sa_str = wmem_strbuf_create(pinfo->pool);
+	wkwn_sid2_str = wmem_strbuf_create(pinfo->pool);
+	domain_str = wmem_strbuf_create(pinfo->pool);
 
 	/* Build the sub-authorities and full SID strings */
 	for(i=1; i<num_auth+1; i++) {
@@ -1454,13 +2599,13 @@ dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 				/* The following three SID types have (unique) RIDs */
 				if (strcmp(wmem_strbuf_get_str(sid_in_dec_str), "S-1-5-21")==0) {
 					/* Domain SID */
-					domain_sid = TRUE;
+					domain_sid = true;
 				} else if (strcmp(wmem_strbuf_get_str(sid_in_dec_str), "S-1-5-32")==0) {
 					/* Local Group (S-1-5-32) SID */
-					s_1_5_32 = TRUE;
+					s_1_5_32 = true;
 				} else if (strcmp(wmem_strbuf_get_str(sid_in_dec_str), "S-1-5-64")==0) {
 					/* Authentication (S-1-5-64) SID */
-					s_1_5_64 = TRUE;
+					s_1_5_64 = true;
 				}
 			}
 		} else if (i==2  && !domain_sid) {
@@ -1478,12 +2623,12 @@ dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 					wkwn_sid2_len=16;
 				} else {
 					/* The RID not well-known. */
-					locally_defined = TRUE;
+					locally_defined = true;
 				}
 			} else {
 				if (mapped_name) {
 					/* A level 1 well-known SID appended with locally defined value */
-					locally_defined = TRUE;
+					locally_defined = true;
 				}
 			}
 		} else {
@@ -1504,7 +2649,7 @@ dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 						wmem_strbuf_append_printf(label_str, "-%s", mapped_rid);
 
 					} else {
-						locally_defined = TRUE;
+						locally_defined = true;
 					}
 				} else {
 					mapped_name = "Corrupt domain SID";
@@ -1512,7 +2657,7 @@ dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 			} else {
 				if (mapped_name) {
 					/* A locally defined value appended to a level 2 well-known SID*/
-					locally_defined = TRUE;
+					locally_defined = true;
 				}
 			}
 		}
@@ -1539,17 +2684,19 @@ dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 		(sid_display_hex ? wmem_strbuf_get_str(sid_in_hex_str) : wmem_strbuf_get_str(sid_in_dec_str)),
 		"%s: %s", name, (sid_display_hex ? wmem_strbuf_get_str(sid_in_hex_str) : wmem_strbuf_get_str(sid_in_dec_str))
 	);
-	proto_item_append_text(item, "  (%s)", wmem_strbuf_get_str(label_str));
 
+	if (wmem_strbuf_get_len(label_str) > 0) {
+		proto_item_append_text(item, "  (%s)", wmem_strbuf_get_str(label_str));
+	}
 
 	subtree = proto_item_add_subtree(item, ett_nt_sid);
 
 	/* Add revision, num_auth, and authority */
 	proto_tree_add_item(subtree, hf_nt_sid_revision, tvb, offset_sid_start, 1, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(subtree, hf_nt_sid_num_auth, tvb, offset_sid_start+1, 1, ENC_LITTLE_ENDIAN);
-	proto_tree_add_uint64_format_value(subtree,
+	proto_tree_add_uint64(subtree,
 		(sid_display_hex ? hf_nt_sid_auth_hex : hf_nt_sid_auth_dec),
-		tvb, offset_sid_start+2, 6, authority, "%" G_GINT64_MODIFIER "u", authority);
+		tvb, offset_sid_start+2, 6, authority);
 
 	/* Add subauthorities */
 	proto_tree_add_string_format_value(subtree, hf_nt_sid_subauth, tvb, sa_offset,
@@ -1558,7 +2705,9 @@ dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 	if (rid) {
 		item = proto_tree_add_item (subtree,
 			(sid_display_hex ? hf_nt_sid_rid_hex : hf_nt_sid_rid_dec), tvb, rid_offset, 4, ENC_LITTLE_ENDIAN);
-		proto_item_append_text(item, "  (%s)", mapped_rid);
+
+		if (mapped_rid)
+			proto_item_append_text(item, "  (%s)", mapped_rid);
 	}
 
 	/* Add well-known SID and domain strings if present */
@@ -1566,80 +2715,496 @@ dissect_nt_sid(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 		hidden_item = proto_tree_add_string_format_value(
 			subtree, hf_nt_sid_wkwn, tvb, offset_sid_start, wkwn_sid1_len,
 			wmem_strbuf_get_str(wkwn_sid1_str), "%s", wmem_strbuf_get_str(wkwn_sid1_str));
-		proto_item_append_text(hidden_item, "  (%s)", mapped_name);
-		PROTO_ITEM_SET_HIDDEN(hidden_item);
+
+		if (mapped_name) {
+			proto_item_append_text(hidden_item, "  (%s)", mapped_name);
+		}
+		proto_item_set_hidden(hidden_item);
 	}
 	if (wmem_strbuf_get_len(wkwn_sid2_str) > 0) {
 		hidden_item = proto_tree_add_string_format_value(
 			subtree, hf_nt_sid_wkwn, tvb, offset_sid_start, wkwn_sid2_len,
 			wmem_strbuf_get_str(wkwn_sid2_str), "%s", wmem_strbuf_get_str(wkwn_sid2_str));
-		proto_item_append_text(hidden_item, "  (%s)", wmem_strbuf_get_str(label_str));
-		PROTO_ITEM_SET_HIDDEN(hidden_item);
+		if (wmem_strbuf_get_len(label_str) > 0) {
+			proto_item_append_text(hidden_item, "  (%s)", wmem_strbuf_get_str(label_str));
+		}
+		proto_item_set_hidden(hidden_item);
 	}
 	if (domain_sid && wmem_strbuf_get_len(domain_str) > 0) {
 		hidden_item = proto_tree_add_string_format_value(
 			subtree, hf_nt_sid_domain, tvb, offset_sid_start + 12, 12,
 			wmem_strbuf_get_str(domain_str), "%s", wmem_strbuf_get_str(domain_str));
-		PROTO_ITEM_SET_HIDDEN(hidden_item);
+		proto_item_set_hidden(hidden_item);
 	}
 
 	/* If requested, return SID string with mapped name */
 	if(sid_str){
-		if(mapped_name){
-			*sid_str = wmem_strdup_printf(wmem_packet_scope(), "%s  (%s)",
+		if(wmem_strbuf_get_len(label_str) > 0){
+			*sid_str = wmem_strdup_printf(pinfo->pool, "%s  (%s)",
 				(sid_display_hex ? wmem_strbuf_get_str(sid_in_hex_str) : wmem_strbuf_get_str(sid_in_dec_str)), wmem_strbuf_get_str(label_str));
 		} else {
-			*sid_str = wmem_strdup(wmem_packet_scope(), sid_display_hex ? wmem_strbuf_get_str(sid_in_hex_str) : wmem_strbuf_get_str(sid_in_dec_str));
+			*sid_str = wmem_strdup(pinfo->pool, sid_display_hex ? wmem_strbuf_get_str(sid_in_hex_str) : wmem_strbuf_get_str(sid_in_dec_str));
 		}
 		if(!(*sid_str)){
-			*sid_str=wmem_strdup(wmem_packet_scope(), "corrupted SID");
+			*sid_str=wmem_strdup(pinfo->pool, "corrupted SID");
 		}
 	}
 	return offset;
 }
 
-/* Dissect an access mask.  All this stuff is kind of explained at MSDN:
+/* Dissect SYSTEM_RESOURCE_ATTRIBUTE_ACE Value, see [MS-DTYP] v20180912 section 2.4.4.15 */
+static int
+dissect_nt_ace_system_resource_attribute_value(tvbuff_t *tvb, packet_info* pinfo, int value_offset, proto_tree *tree,
+					       uint16_t value_type, proto_item *sra_item)
+{
+	unsigned value_len;
+	uint32_t blob_len;
+	proto_item *value_item = NULL;
+	char *value_str = NULL; /* packet scope, do not free */
+	bool quote = false;
+	switch (value_type) {
+	    case CLAIM_SECURITY_ATTRIBUTE_TYPE_INT64:
+		value_len = sizeof(int64_t);
+		value_item = proto_tree_add_item(tree, hf_nt_ace_sra_value_int64,
+						 tvb, value_offset, value_len,
+						 ENC_LITTLE_ENDIAN);
+		value_offset += value_len;
+		break;
 
-http://msdn.microsoft.com/library/default.asp?url=/library/en-us/security/security/windows_2000_windows_nt_access_mask_format.asp
+	    case CLAIM_SECURITY_ATTRIBUTE_TYPE_UINT64:
+		value_len = sizeof(uint64_t);
+		value_item = proto_tree_add_item(tree, hf_nt_ace_sra_value_uint64,
+						 tvb, value_offset, value_len,
+						 ENC_LITTLE_ENDIAN);
+		value_offset += value_len;
+		break;
+
+	    case CLAIM_SECURITY_ATTRIBUTE_TYPE_STRING:
+		value_len = tvb_unicode_strsize(tvb, value_offset);
+		value_item = proto_tree_add_item(tree, hf_nt_ace_sra_value_string,
+						 tvb, value_offset, value_len,
+						 ENC_UTF_16 | ENC_LITTLE_ENDIAN);
+		quote = true;
+		value_offset += value_len;
+		break;
+
+	    case CLAIM_SECURITY_ATTRIBUTE_TYPE_SID:
+		value_offset = dissect_nt_sid(tvb, pinfo, value_offset, tree,
+					      "SID", &value_str, hf_nt_ace_sra_value_sid);
+		break;
+
+	    case CLAIM_SECURITY_ATTRIBUTE_TYPE_BOOLEAN:
+		value_len = sizeof(uint64_t);
+		value_item = proto_tree_add_item(tree, hf_nt_ace_sra_value_boolean,
+						 tvb, value_offset, value_len,
+						 ENC_LITTLE_ENDIAN);
+		value_offset += value_len;
+		break;
+
+	    case CLAIM_SECURITY_ATTRIBUTE_TYPE_OCTET_STRING:
+		blob_len = tvb_get_letohl(tvb, value_offset);
+		value_offset += sizeof(blob_len);
+		value_item = proto_tree_add_item(tree, hf_nt_ace_sra_value_octet_string,
+						 tvb, value_offset, blob_len, ENC_NA);
+		/* do not append binary to sra_item */
+		value_str = "<bin>";
+		value_offset += blob_len;
+		break;
+
+	    default:
+		break;
+	}
+
+	if (sra_item) {
+		if ((value_str == NULL) && value_item) {
+			value_str = proto_item_get_display_repr(pinfo->pool, value_item);
+		}
+
+		if (value_str == NULL) {
+			/* missing system resource attribute value */
+			value_str = "???";
+		}
+
+		if (value_str) {
+			proto_item_append_text(sra_item,
+					       (quote) ? "\"%s\"" : "%s",
+					       value_str);
+		}
+	}
+
+	return value_offset;
+}
+
+/* Dissect SYSTEM_RESOURCE_ATTRIBUTE_ACE, see [MS-DTYP] v20180912 section 2.4.4.15 */
+static int
+dissect_nt_ace_system_resource_attribute(tvbuff_t *tvb, packet_info* pinfo, int offset, uint16_t size, proto_tree *parent_tree)
+{
+	/* The caller has already dissected Header, Mask and Sid. Therefore
+	   this function only dissects Attribute Data. This data takes
+	   the form of a CLAIM_SECURITY_ATTRIBUTE_RELATIVE_V1. The
+	   following code dissects the structure piecemeal */
+	int start_offset = offset;
+	uint32_t name; /* offset, relative to start_offset */
+	uint16_t value_type;
+	uint32_t value_count;
+
+	/* Add a subtree to hold the system resource attribute details */
+	proto_item *sra_item;
+	proto_tree *sra_tree;
+	sra_item = proto_tree_add_item(parent_tree, hf_nt_ace_sra, tvb, offset, size, ENC_NA);
+	sra_tree = proto_item_add_subtree(sra_item, ett_nt_ace_sra);
+
+	/* Name offset */
+	name = tvb_get_letohl(tvb, offset);
+	proto_tree_add_uint(sra_tree, hf_nt_ace_sra_name_offset,
+			    tvb, offset, sizeof(name), name);
+
+	int name_offset = (start_offset + name);
+	unsigned name_len = tvb_unicode_strsize(tvb, name_offset);
+	proto_item *name_item;
+	name_item = proto_tree_add_item(sra_tree, hf_nt_ace_sra_name,
+					tvb, name_offset, name_len,
+					ENC_UTF_16 | ENC_LITTLE_ENDIAN);
+	proto_item_append_text(sra_item, ": %s=",
+			       proto_item_get_display_repr(pinfo->pool, name_item));
+	offset += sizeof(name);
+
+	/* ValueType */
+	value_type = tvb_get_letohs(tvb, offset);
+	proto_tree_add_uint(sra_tree, hf_nt_ace_sra_type,
+			    tvb, offset, sizeof(value_type), value_type);
+	offset += sizeof(value_type);
+
+	/* Reserved */
+	proto_tree_add_item(sra_tree, hf_nt_ace_sra_reserved,
+			    tvb, offset, sizeof(uint16_t),
+			    ENC_LITTLE_ENDIAN);
+	offset += sizeof(uint16_t);
+
+	/* Flags */
+	static int * const flags[] = {
+		&hf_nt_ace_sra_flags_policy_derived,
+		&hf_nt_ace_sra_flags_manual,
+		&hf_nt_ace_sra_flags_mandatory,
+		&hf_nt_ace_sra_flags_disabled,
+		&hf_nt_ace_sra_flags_disabled_by_default,
+		&hf_nt_ace_sra_flags_deny_only,
+		&hf_nt_ace_sra_flags_case_sensitive,
+		&hf_nt_ace_sra_flags_non_inheritable,
+		NULL
+	};
+
+	proto_tree_add_bitmask(sra_tree, tvb, offset, hf_nt_ace_sra_flags,
+			       ett_nt_ace_sra_flags, flags, ENC_LITTLE_ENDIAN);
+	offset += sizeof(uint32_t);
+
+	/* ValueCount */
+	value_count = tvb_get_letohl(tvb, offset);
+	proto_tree_add_uint(sra_tree, hf_nt_ace_sra_value_count,
+			    tvb, offset, sizeof(value_count), value_count);
+	offset += sizeof(value_count);
+
+	/* Value Offsets and Values */
+	uint32_t value_offset;
+	proto_tree *value_offset_tree = sra_tree;
+	proto_tree *value_tree = sra_tree;
+	if (value_count > 1) {
+		/* Use independent value offset and value trees when
+		   there are multiple values. */
+		int value_offset_tree_offset = offset;
+		int value_offset_tree_len = value_count * sizeof(value_offset);
+		value_offset_tree = proto_tree_add_subtree(sra_tree, tvb,
+							   value_offset_tree_offset,
+							   value_offset_tree_len,
+							   ett_nt_ace_sra_value_offsets,
+							   NULL, "Value Offsets");
+
+		/* The range associated with the value tree will
+		   include some non-value data (but that's fine as the
+		   value items it contains will have accurate ranges) */
+		int value_tree_offset = value_offset_tree_offset + value_offset_tree_len;
+		int value_tree_len = (start_offset + size) - value_tree_offset;
+		value_tree = proto_tree_add_subtree(sra_tree, tvb,
+						    value_tree_offset,
+						    value_tree_len,
+						    ett_nt_ace_sra_values,
+						    NULL, "Values");
+	}
+
+	proto_item_append_text(sra_item, "{");
+	for (uint32_t i = 0; i < value_count; ++i) {
+		if (i) {
+			proto_item_append_text(sra_item, ", ");
+		}
+		value_offset = tvb_get_letohl(tvb, offset);
+		proto_tree_add_uint(value_offset_tree, hf_nt_ace_sra_value_offset,
+				    tvb, offset, sizeof(value_offset), value_offset);
+		dissect_nt_ace_system_resource_attribute_value(tvb, pinfo, start_offset + value_offset,
+							       value_tree, value_type, sra_item);
+		offset += sizeof(value_offset);
+	}
+	proto_item_append_text(sra_item, "}");
+
+	return start_offset + size;
+}
+
+/* Dissect Condition ACE token, see [MS-DTYP] v20180912 section 2.4.4.17.4 */
+static int
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_nt_conditional_ace_token(tvbuff_t *tvb, packet_info *pinfo, int offset, uint16_t size, proto_tree *parent_tree)
+{
+	int start_offset = offset;
+	proto_tree *tree = parent_tree;
+	proto_item *item = NULL;
+	uint8_t token = tvb_get_uint8(tvb, offset);
+	uint32_t len;
+
+	item = proto_tree_add_uint(tree, hf_nt_ace_cond_token,
+				   tvb, offset, sizeof(token), token);
+
+	if (ace_cond_token_has_data(token)) {
+		tree = proto_item_add_subtree(item, ett_nt_ace_cond_data);
+	}
+	offset += sizeof(token);
+
+	switch (token) {
+	    case COND_ACE_TOKEN_INT8:
+		proto_tree_add_item(tree, hf_nt_ace_cond_value_int8,
+				    tvb, offset, sizeof(uint64_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint64_t);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_sign,
+				    tvb, offset, sizeof(uint8_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_base,
+				    tvb, offset, sizeof(uint8_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+		break;
+
+	    case COND_ACE_TOKEN_INT16:
+		proto_tree_add_item(tree, hf_nt_ace_cond_value_int16,
+				    tvb, offset, sizeof(uint64_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint64_t);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_sign,
+				    tvb, offset, sizeof(uint8_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_base,
+				    tvb, offset, sizeof(uint8_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+		break;
+
+	    case COND_ACE_TOKEN_INT32:
+		proto_tree_add_item(tree, hf_nt_ace_cond_value_int32,
+				    tvb, offset, sizeof(uint64_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint64_t);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_sign,
+				    tvb, offset, sizeof(uint8_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_base,
+				    tvb, offset, sizeof(uint8_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+		break;
+
+	    case COND_ACE_TOKEN_INT64:
+		proto_tree_add_item(tree, hf_nt_ace_cond_value_int64,
+				    tvb, offset, sizeof(uint64_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint64_t);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_sign,
+				    tvb, offset, sizeof(uint8_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_base,
+				    tvb, offset, sizeof(uint8_t),
+				    ENC_LITTLE_ENDIAN);
+		offset += sizeof(uint8_t);
+		break;
+
+	    case COND_ACE_TOKEN_UNICODE_STRING:
+		len = tvb_get_letohl(tvb, offset); /* in bytes */
+		offset += sizeof(len);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_value_string,
+				    tvb, offset, len,
+				    ENC_UTF_16 | ENC_LITTLE_ENDIAN);
+		offset += len;
+		break;
+
+	    case COND_ACE_TOKEN_OCTET_STRING:
+		len = tvb_get_letohl(tvb, offset); /* in bytes */
+		offset += sizeof(len);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_value_octet_string,
+				    tvb, offset, len, ENC_NA);
+		offset += len;
+		break;
+
+	    case COND_ACE_TOKEN_COMPOSITE:
+		/* Create another tree for composite */
+		len = tvb_get_letohl(tvb, offset); /* in bytes */
+		offset += sizeof(len);
+		if (len) {
+			int remaining = size - (offset - start_offset);
+			if (remaining >= (int)len) {
+				int end_offset = offset + len;
+				increment_dissection_depth(pinfo);
+				while (offset < end_offset) {
+					offset = dissect_nt_conditional_ace_token(tvb, pinfo, offset, remaining, tree);
+				}
+				decrement_dissection_depth(pinfo);
+			} else {
+				/* malformed: composite len is longer
+				 * than the remaining data in the ace
+				 */
+				offset += remaining;
+			}
+		}
+		break;
+
+	    case COND_ACE_TOKEN_SID:
+		offset += sizeof(len);
+
+		offset = dissect_nt_sid(tvb, pinfo, offset, tree, "SID", NULL, -1);
+		break;
+
+	    case COND_ACE_TOKEN_LOCAL_ATTRIBUTE:
+		len = tvb_get_letohl(tvb, offset); /* in bytes */
+		offset += sizeof(len);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_local_attr,
+				    tvb, offset, len,
+				    ENC_UTF_16 | ENC_LITTLE_ENDIAN);
+		offset += len;
+		break;
+
+	    case COND_ACE_TOKEN_USER_ATTRIBUTE:
+		len = tvb_get_letohl(tvb, offset); /* in bytes */
+		offset += sizeof(len);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_user_attr,
+				    tvb, offset, len,
+				    ENC_UTF_16 | ENC_LITTLE_ENDIAN);
+		offset += len;
+		break;
+
+	    case COND_ACE_TOKEN_RESOURCE_ATTRIBUTE:
+		len = tvb_get_letohl(tvb, offset); /* in bytes */
+		offset += sizeof(len);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_resource_attr,
+				    tvb, offset, len,
+				    ENC_UTF_16 | ENC_LITTLE_ENDIAN);
+		offset += len;
+		break;
+
+	    case COND_ACE_TOKEN_DEVICE_ATTRIBUTE:
+		len = tvb_get_letohl(tvb, offset); /* in bytes */
+		offset += sizeof(len);
+
+		proto_tree_add_item(tree, hf_nt_ace_cond_device_attr,
+				    tvb, offset, len,
+				    ENC_UTF_16 | ENC_LITTLE_ENDIAN);
+		offset += len;
+		break;
+
+	    default:
+		DISSECTOR_ASSERT(!ace_cond_token_has_data(token));
+		break;
+	}
+
+	proto_item_set_len(item, offset - start_offset);
+	return offset;
+}
+
+
+/* Dissect Conditional ACE (if present), see [MS-DTYP] v20180912 section 2.4.4.17.4 */
+static int
+dissect_nt_conditional_ace(tvbuff_t *tvb, packet_info *pinfo, int offset, uint16_t size, proto_tree *parent_tree)
+{
+	int start_offset = offset;
+
+	/* Conditional ACE Application Data starts with "artx" */
+	if (size >= 4) {
+		const uint32_t artx = 0x78747261; /* "xtra" (LE) */
+		uint32_t prefix = tvb_get_letohl(tvb, offset);
+		offset += sizeof(prefix);
+
+		if (prefix == artx) {
+			/* Add a subtree to hold the condition expression tokens */
+			proto_item *item = NULL;
+			item = proto_tree_add_item(parent_tree, hf_nt_ace_cond, tvb, start_offset, size, ENC_NA);
+			parent_tree = proto_item_add_subtree(item, ett_nt_ace_cond);
+
+			/* Add the tokens to the subtree */
+			int remaining;
+			while (true) {
+				remaining = size - (offset - start_offset);
+				if (remaining <= 0)
+					break;
+				offset = dissect_nt_conditional_ace_token(tvb, pinfo, offset, remaining, parent_tree);
+			}
+		}
+	}
+	return start_offset + size;
+}
+
+/* Dissect an access mask.  All this stuff is kind of explained at
+
+     https://docs.microsoft.com/en-us/windows/win32/secauthz/access-mask-format
 
 */
+static int ett_nt_access_mask;
+static int ett_nt_access_mask_generic;
+static int ett_nt_access_mask_standard;
+static int ett_nt_access_mask_specific;
 
-static gint ett_nt_access_mask = -1;
-static gint ett_nt_access_mask_generic = -1;
-static gint ett_nt_access_mask_standard = -1;
-static gint ett_nt_access_mask_specific = -1;
-
-static int hf_access_sacl = -1;
-static int hf_access_maximum_allowed = -1;
-static int hf_access_generic_read = -1;
-static int hf_access_generic_write = -1;
-static int hf_access_generic_execute = -1;
-static int hf_access_generic_all = -1;
-static int hf_access_standard_delete = -1;
-static int hf_access_standard_read_control = -1;
-static int hf_access_standard_synchronise = -1;
-static int hf_access_standard_write_dac = -1;
-static int hf_access_standard_write_owner = -1;
-static int hf_access_specific_15 = -1;
-static int hf_access_specific_14 = -1;
-static int hf_access_specific_13 = -1;
-static int hf_access_specific_12 = -1;
-static int hf_access_specific_11 = -1;
-static int hf_access_specific_10 = -1;
-static int hf_access_specific_9 = -1;
-static int hf_access_specific_8 = -1;
-static int hf_access_specific_7 = -1;
-static int hf_access_specific_6 = -1;
-static int hf_access_specific_5 = -1;
-static int hf_access_specific_4 = -1;
-static int hf_access_specific_3 = -1;
-static int hf_access_specific_2 = -1;
-static int hf_access_specific_1 = -1;
-static int hf_access_specific_0 = -1;
+static int hf_access_sacl;
+static int hf_access_maximum_allowed;
+static int hf_access_generic_read;
+static int hf_access_generic_write;
+static int hf_access_generic_execute;
+static int hf_access_generic_all;
+static int hf_access_standard_delete;
+static int hf_access_standard_read_control;
+static int hf_access_standard_synchronise;
+static int hf_access_standard_write_dac;
+static int hf_access_standard_write_owner;
+static int hf_access_specific_15;
+static int hf_access_specific_14;
+static int hf_access_specific_13;
+static int hf_access_specific_12;
+static int hf_access_specific_11;
+static int hf_access_specific_10;
+static int hf_access_specific_9;
+static int hf_access_specific_8;
+static int hf_access_specific_7;
+static int hf_access_specific_6;
+static int hf_access_specific_5;
+static int hf_access_specific_4;
+static int hf_access_specific_3;
+static int hf_access_specific_2;
+static int hf_access_specific_1;
+static int hf_access_specific_0;
 
 /* Map generic permissions to specific permissions */
 
-static void map_generic_access(guint32 *access_mask,
+static void map_generic_access(uint32_t *access_mask,
 			       struct generic_mapping *mapping)
 {
 	if (*access_mask & GENERIC_READ_ACCESS) {
@@ -1665,7 +3230,7 @@ static void map_generic_access(guint32 *access_mask,
 
 /* Map standard permissions to specific permissions */
 
-static void map_standard_access(guint32 *access_mask,
+static void map_standard_access(uint32_t *access_mask,
 				struct standard_mapping *mapping)
 {
 	if (*access_mask & READ_CONTROL_ACCESS) {
@@ -1683,15 +3248,15 @@ static void map_standard_access(guint32 *access_mask,
 }
 
 int
-dissect_nt_access_mask(tvbuff_t *tvb, gint offset, packet_info *pinfo,
-		       proto_tree *tree, dcerpc_info *di, guint8 *drep, int hfindex,
-		       struct access_mask_info *ami, guint32 *perms)
+dissect_nt_access_mask(tvbuff_t *tvb, int offset, packet_info *pinfo,
+		       proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hfindex,
+		       struct access_mask_info *ami, uint32_t *perms)
 {
 	proto_item *item;
 	proto_tree *subtree, *generic_tree, *standard_tree, *specific_tree;
-	guint32 access;
+	uint32_t access;
 
-	static const int * generic_access_flags[] = {
+	static int * const generic_access_flags[] = {
 		&hf_access_generic_read,
 		&hf_access_generic_write,
 		&hf_access_generic_execute,
@@ -1701,7 +3266,7 @@ dissect_nt_access_mask(tvbuff_t *tvb, gint offset, packet_info *pinfo,
 		NULL
 	};
 
-	static const int * standard_access_flags[] = {
+	static int * const standard_access_flags[] = {
 		&hf_access_standard_synchronise,
 		&hf_access_standard_write_owner,
 		&hf_access_standard_write_dac,
@@ -1710,7 +3275,7 @@ dissect_nt_access_mask(tvbuff_t *tvb, gint offset, packet_info *pinfo,
 		NULL
 	};
 
-	static const int * access_specific_flags[] = {
+	static int * const access_specific_flags[] = {
 		&hf_access_specific_15,
 		&hf_access_specific_14,
 		&hf_access_specific_13,
@@ -1789,7 +3354,7 @@ dissect_nt_access_mask(tvbuff_t *tvb, gint offset, packet_info *pinfo,
 					   access & SPECIFIC_RIGHTS_MASK);
 
 	if (ami && ami->specific_rights_fn) {
-		guint32 mapped_access = access;
+		uint32_t mapped_access = access;
 		proto_tree *specific_mapped;
 
 		specific_mapped = proto_item_add_subtree(
@@ -1818,7 +3383,7 @@ dissect_nt_access_mask(tvbuff_t *tvb, gint offset, packet_info *pinfo,
 	return offset;
 }
 
-static int hf_nt_access_mask = -1;
+static int hf_nt_access_mask;
 
 #define ACL_REVISION_NT4		2
 #define ACL_REVISION_ADS		4
@@ -1846,6 +3411,9 @@ static const value_string acl_revision_vals[] = {
 #define ACE_TYPE_SYSTEM_AUDIT_CALLBACK_OBJECT   15
 #define ACE_TYPE_SYSTEM_ALARM_CALLBACK_OBJECT   16
 #define ACE_TYPE_SYSTEM_MANDATORY_LABEL         17
+#define ACE_TYPE_SYSTEM_RESOURCE_ATTRIBUTE      18
+#define ACE_TYPE_SYSTEM_SCOPED_POLICY_ID        19
+
 static const value_string ace_type_vals[] = {
 	{ ACE_TYPE_ACCESS_ALLOWED,		   "Access Allowed"},
 	{ ACE_TYPE_ACCESS_DENIED,		   "Access Denied"},
@@ -1865,6 +3433,8 @@ static const value_string ace_type_vals[] = {
 	{ ACE_TYPE_SYSTEM_AUDIT_CALLBACK_OBJECT,   "Audit Callback Object"},
 	{ ACE_TYPE_SYSTEM_ALARM_CALLBACK_OBJECT,   "Alarm Callback Object"},
 	{ ACE_TYPE_SYSTEM_MANDATORY_LABEL,         "Mandatory label"},
+	{ ACE_TYPE_SYSTEM_RESOURCE_ATTRIBUTE,      "Resource Attribute"},
+	{ ACE_TYPE_SYSTEM_SCOPED_POLICY_ID,        "Scoped Policy ID" },
 	{ 0, NULL}
 };
 static const true_false_string tfs_ace_flags_object_inherit = {
@@ -1913,6 +3483,47 @@ static const true_false_string flags_sec_info_owner = {
 	"Do NOT request owner"
 };
 
+static const true_false_string flags_ace_sra_info_manual = {
+	"Manually Assigned",
+	"NOT Manually Assigned"
+};
+
+
+static const true_false_string flags_ace_sra_info_policy_derived = {
+	"Policy Derived",
+	"NOT Policy Derived"
+};
+
+static const true_false_string flags_ace_sra_info_non_inheritable = {
+	"Non-Inheritable",
+	"Inheritable"
+};
+
+static const true_false_string flags_ace_sra_info_case_sensitive = {
+	"Case Sensitive",
+	"NOT Case Sensitive"
+};
+
+static const true_false_string flags_ace_sra_info_deny_only = {
+	"Deny Only",
+	"NOT Deny Only"
+};
+
+static const true_false_string flags_ace_sra_info_disabled_by_default = {
+	"Disabled By Default",
+	"NOT Disabled By Default"
+};
+
+static const true_false_string flags_ace_sra_info_disabled = {
+	"Disabled",
+	"NOT Disabled"
+};
+
+static const true_false_string flags_ace_sra_info_mandatory = {
+	"Mandatory",
+	"NOT Mandatory"
+};
+
 #define APPEND_ACE_TEXT(flag, item, string) \
 	if(flag){							\
 		if(item)						\
@@ -1927,10 +3538,10 @@ dissect_nt_ace_object(tvbuff_t *tvb, int offset, proto_tree *parent_tree)
 	proto_item *item;
 	proto_tree *tree;
 	proto_item *flags_item;
-	guint32 flags;
+	uint32_t flags;
 	int old_offset=offset;
 	const char *sep = " ";
-	static const int * ace_flags[] = {
+	static int * const ace_flags[] = {
 		&hf_nt_ace_flags_object_type_present,
 		&hf_nt_ace_flags_inherited_object_type_present,
 		NULL
@@ -1967,12 +3578,12 @@ dissect_nt_ace_object(tvbuff_t *tvb, int offset, proto_tree *parent_tree)
 
 static int
 dissect_nt_v2_ace_flags(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
-			guint8 *data)
+			uint8_t *data)
 {
 	proto_item *item = NULL;
-	guint8 mask;
+	uint8_t mask;
 	const char *sep = " ";
-	static const int * ace_flags[] = {
+	static int * const ace_flags[] = {
 		&hf_nt_ace_flags_failed_access,
 		&hf_nt_ace_flags_successful_access,
 		&hf_nt_ace_flags_inherited_ace,
@@ -1983,7 +3594,7 @@ dissect_nt_v2_ace_flags(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 		NULL
 	};
 
-	mask = tvb_get_guint8(tvb, offset);
+	mask = tvb_get_uint8(tvb, offset);
 
 	if (data)
 		*data = mask;
@@ -2006,23 +3617,24 @@ dissect_nt_v2_ace_flags(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 
 static int
 dissect_nt_v2_ace(tvbuff_t *tvb, int offset, packet_info *pinfo,
-		  proto_tree *parent_tree, guint8 *drep,
+		  proto_tree *parent_tree, uint8_t *drep,
 		  struct access_mask_info *ami)
 {
 	proto_item *item;
 	proto_tree *tree;
 	int old_offset = offset;
 	char *sid_str = NULL;
-	guint16 size;
-	guint8 type;
-	guint8 flags;
-	guint32 perms = 0;
+	uint16_t size;
+	uint16_t data_size;
+	uint8_t type;
+	uint8_t flags;
+	uint32_t perms = 0;
 
 	tree = proto_tree_add_subtree(parent_tree, tvb, offset, -1,
 					   ett_nt_ace, &item, "NT ACE: ");
 
 	/* type */
-	type = tvb_get_guint8(tvb, offset);
+	type = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(tree, hf_nt_ace_type, tvb, offset, 1, type);
 	offset += 1;
 
@@ -2067,6 +3679,8 @@ dissect_nt_v2_ace(tvbuff_t *tvb, int offset, packet_info *pinfo,
 	case ACE_TYPE_SYSTEM_AUDIT_CALLBACK_OBJECT:
 	case ACE_TYPE_SYSTEM_ALARM_CALLBACK_OBJECT:
 	case ACE_TYPE_SYSTEM_MANDATORY_LABEL:
+	case ACE_TYPE_SYSTEM_RESOURCE_ATTRIBUTE:
+	case ACE_TYPE_SYSTEM_SCOPED_POLICY_ID:
 		/* access mask */
 		offset = dissect_nt_access_mask(
 			tvb, offset, pinfo, tree, NULL, drep,
@@ -2086,13 +3700,33 @@ dissect_nt_v2_ace(tvbuff_t *tvb, int offset, packet_info *pinfo,
 		}
 
 		/* SID */
-		offset = dissect_nt_sid(tvb, offset, tree, "SID", &sid_str, -1);
+		offset = dissect_nt_sid(tvb, pinfo, offset, tree, "SID", &sid_str, -1);
 
 		if (item)
 			proto_item_append_text(
 				item, "%s, flags 0x%02x, %s, mask 0x%08x", sid_str, flags,
-				val_to_str(type, ace_type_vals, "Unknown ACE type (0x%02x)"),
+				val_to_str(pinfo->pool, type, ace_type_vals, "Unknown ACE type (0x%02x)"),
 				perms);
+
+		data_size = size - (offset - old_offset);
+
+		/* Dissect Dynamic Access Control related ACE types
+		   (if present). That is, Conditional ACE and Resource
+		   Attributes. See [MS-DTYP] v20180912 section 2.4.4.17 */
+		switch (type) {
+		    case ACE_TYPE_ACCESS_ALLOWED_CALLBACK:
+		    case ACE_TYPE_ACCESS_DENIED_CALLBACK:
+		    case ACE_TYPE_ACCESS_ALLOWED_CALLBACK_OBJECT:
+		    case ACE_TYPE_ACCESS_DENIED_CALLBACK_OBJECT:
+		    case ACE_TYPE_SYSTEM_AUDIT_CALLBACK:
+		    case ACE_TYPE_SYSTEM_AUDIT_CALLBACK_OBJECT:
+			dissect_nt_conditional_ace(tvb, pinfo, offset, data_size, tree);
+			break;
+
+		    case ACE_TYPE_SYSTEM_RESOURCE_ATTRIBUTE:
+			dissect_nt_ace_system_resource_attribute(tvb, pinfo, offset, data_size, tree);
+			break;
+		}
 		break;
 	};
 
@@ -2106,18 +3740,18 @@ dissect_nt_v2_ace(tvbuff_t *tvb, int offset, packet_info *pinfo,
 
 static int
 dissect_nt_acl(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
-	       proto_tree *parent_tree, guint8 *drep, const char *name,
+	       proto_tree *parent_tree, uint8_t *drep, const char *name,
 	       struct access_mask_info *ami)
 {
 	proto_item *item;
 	proto_tree *tree;
 	int old_offset = offset_a;
 	int pre_ace_offset;
-	guint16 revision;
-	volatile guint32 num_aces;
+	uint16_t revision;
+	uint32_t num_aces;
 	volatile int offset_v = offset_a;
-	volatile gboolean missing_data = FALSE;
-	volatile gboolean bad_ace = FALSE;
+	volatile bool missing_data = false;
+	volatile bool bad_ace = false;
 
 	tree = proto_tree_add_subtree_format(parent_tree, tvb, offset_v, -1,
 					   ett_nt_acl, &item, "NT %s ACL", name);
@@ -2126,7 +3760,7 @@ dissect_nt_acl(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	/*
 	 * XXX - is this *really* 2 bytes?  The page at
 	 *
-	 *	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/secauthz/security/acl.asp
+	 *	https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-_acl
 	 *
 	 * indicates that it's one byte of revision and one byte of
 	 * zero padding, which means the code that used to be here
@@ -2174,18 +3808,18 @@ dissect_nt_acl(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 			/*
 			 * Bogus ACE, with a length < 4.
 			 */
-			bad_ace = TRUE;
+			bad_ace = true;
 		  }
 		}
 
-		CATCH(BoundsError) {
-			proto_tree_add_expert(tree, pinfo, &ei_nt_ace_extends_beyond_capture, tvb, offset_v, 0);
-			missing_data = TRUE;
+		CATCH(ContainedBoundsError) {
+			proto_tree_add_expert(tree, pinfo, &ei_nt_ace_extends_beyond_data, tvb, offset_v, 0);
+			missing_data = true;
 		}
 
 		CATCH(ReportedBoundsError) {
 			proto_tree_add_expert(tree, pinfo, &ei_nt_ace_extends_beyond_reassembled_data, tvb, offset_v, 0);
-			missing_data = TRUE;
+			missing_data = true;
 		}
 
 		ENDTRY;
@@ -2265,7 +3899,7 @@ static const true_false_string tfs_sec_desc_type_self_relative = {
 static int
 dissect_nt_sec_desc_type(tvbuff_t *tvb, int offset, proto_tree *parent_tree)
 {
-	static const int * flags[] = {
+	static int * const flags[] = {
 		&hf_nt_sec_desc_type_self_relative,
 		&hf_nt_sec_desc_type_rm_control_valid,
 		&hf_nt_sec_desc_type_sacl_protected,
@@ -2296,8 +3930,8 @@ int
 dissect_nt_security_information(tvbuff_t *tvb, int offset, proto_tree *parent_tree)
 {
 	proto_item *item = NULL;
-	guint32 mask;
-	static const int * flags[] = {
+	uint32_t mask;
+	static int * const flags[] = {
 		&hf_nt_security_information_sacl,
 		&hf_nt_security_information_dacl,
 		&hf_nt_security_information_group,
@@ -2329,21 +3963,25 @@ dissect_nt_security_information(tvbuff_t *tvb, int offset, proto_tree *parent_tr
 
 int
 dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
-		    proto_tree *parent_tree, guint8 *drep,
-		    gboolean len_supplied _U_, int len,
+		    proto_tree *parent_tree, uint8_t *drep,
+		    bool len_supplied _U_, int len,
 		    struct access_mask_info *ami)
 {
 	proto_item *item = NULL;
-	proto_tree *tree = NULL;
-	guint16 revision;
+	proto_tree * volatile tree = NULL;
+	uint16_t revision;
 	int start_offset = offset_a;
 	volatile int offset_v=offset_a;
 	volatile int end_offset;
 	volatile int item_offset;
-	guint32 owner_sid_offset;
-	volatile guint32 group_sid_offset;
-	volatile guint32 sacl_offset;
-	volatile guint32 dacl_offset;
+	uint32_t owner_sid_offset;
+	proto_item *it_owner_sid_offs = NULL;
+	volatile uint32_t group_sid_offset;
+	proto_item * volatile it_gr_sid_offs = NULL;
+	volatile uint32_t sacl_offset;
+	proto_item * volatile it_sacl_offs = NULL;
+	volatile uint32_t dacl_offset;
+	proto_item * volatile it_dacl_offs = NULL;
 
 	tree = proto_tree_add_subtree(parent_tree, tvb, offset_v, -1,
 				   ett_nt_sec_desc, &item, "NT Security Descriptor");
@@ -2366,7 +4004,7 @@ dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	    proto_tree_add_uint_format_value(tree, hf_nt_offset_to_owner_sid, tvb, offset_v, 4, owner_sid_offset, "%u (bogus, must be >= 20)", owner_sid_offset);
 	    owner_sid_offset = 0;
 	  } else
-	    proto_tree_add_item(tree, hf_nt_offset_to_owner_sid, tvb, offset_v, 4, ENC_LITTLE_ENDIAN);
+	    it_owner_sid_offs = proto_tree_add_item(tree, hf_nt_offset_to_owner_sid, tvb, offset_v, 4, ENC_LITTLE_ENDIAN);
 	  offset_v += 4;
 
 	  /* offset to group sid */
@@ -2376,7 +4014,7 @@ dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	    proto_tree_add_uint_format_value(tree, hf_nt_offset_to_group_sid, tvb, offset_v, 4, group_sid_offset, "%u (bogus, must be >= 20)", group_sid_offset);
 	    group_sid_offset = 0;
 	  } else
-	    proto_tree_add_item(tree, hf_nt_offset_to_group_sid, tvb, offset_v, 4, ENC_LITTLE_ENDIAN);
+	    it_gr_sid_offs = proto_tree_add_item(tree, hf_nt_offset_to_group_sid, tvb, offset_v, 4, ENC_LITTLE_ENDIAN);
 	  offset_v += 4;
 
 	  /* offset to sacl */
@@ -2386,7 +4024,7 @@ dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	    proto_tree_add_uint_format_value(tree, hf_nt_offset_to_sacl, tvb, offset_v, 4, sacl_offset, "%u (bogus, must be >= 20)", sacl_offset);
 	    sacl_offset = 0;
 	  } else
-	    proto_tree_add_item(tree, hf_nt_offset_to_sacl, tvb, offset_v, 4, ENC_LITTLE_ENDIAN);
+	    it_sacl_offs = proto_tree_add_item(tree, hf_nt_offset_to_sacl, tvb, offset_v, 4, ENC_LITTLE_ENDIAN);
 	  offset_v += 4;
 
 	  /* offset to dacl */
@@ -2396,7 +4034,7 @@ dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	    proto_tree_add_uint_format_value(tree, hf_nt_offset_to_dacl, tvb, offset_v, 4, dacl_offset, "%u (bogus, must be >= 20)", dacl_offset);
 	    dacl_offset = 0;
 	  } else
-	    proto_tree_add_item(tree, hf_nt_offset_to_dacl, tvb, offset_v, 4, ENC_LITTLE_ENDIAN);
+	    it_dacl_offs = proto_tree_add_item(tree, hf_nt_offset_to_dacl, tvb, offset_v, 4, ENC_LITTLE_ENDIAN);
 	  offset_v += 4;
 
 	  end_offset = offset_v;
@@ -2405,19 +4043,18 @@ dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	  if(owner_sid_offset){
 	    item_offset = start_offset+owner_sid_offset;
 	    if (item_offset < start_offset) {
-	      /*
-	       * Overflow - throw an exception.
-	       */
-	      THROW(ReportedBoundsError);
+		    expert_add_info(pinfo, it_owner_sid_offs,
+				    &ei_nt_item_offs_out_of_range);
+		    break;
 	    }
 	    TRY{
-	      offset_v = dissect_nt_sid(tvb, item_offset, tree, "Owner", NULL, -1);
+	      offset_v = dissect_nt_sid(tvb, pinfo, item_offset, tree, "Owner", NULL, -1);
 	      if (offset_v > end_offset)
 	        end_offset = offset_v;
 	    }
 
-	    CATCH(BoundsError) {
-	      proto_tree_add_expert(tree, pinfo, &ei_nt_owner_sid_beyond_captured_data, tvb, item_offset, 0);
+	    CATCH(ContainedBoundsError) {
+	      proto_tree_add_expert(tree, pinfo, &ei_nt_owner_sid_beyond_data, tvb, item_offset, 0);
 	    }
 
 	    CATCH(ReportedBoundsError) {
@@ -2431,19 +4068,18 @@ dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	  if(group_sid_offset){
 	    item_offset = start_offset+group_sid_offset;
 	    if (item_offset < start_offset) {
-	      /*
-	       * Overflow - throw an exception.
-	       */
-	      THROW(ReportedBoundsError);
+		    expert_add_info(pinfo, it_gr_sid_offs,
+				    &ei_nt_item_offs_out_of_range);
+		    break;
 	    }
 	    TRY {
-	      offset_v = dissect_nt_sid(tvb, item_offset, tree, "Group", NULL, -1);
+	      offset_v = dissect_nt_sid(tvb, pinfo, item_offset, tree, "Group", NULL, -1);
 	      if (offset_v > end_offset)
 	        end_offset = offset_v;
 	    }
 
-	    CATCH(BoundsError) {
-	      proto_tree_add_expert(tree, pinfo, &ei_nt_group_sid_beyond_captured_data, tvb, item_offset, 0);
+	    CATCH(ContainedBoundsError) {
+	      proto_tree_add_expert(tree, pinfo, &ei_nt_group_sid_beyond_data, tvb, item_offset, 0);
 	    }
 
 	    CATCH(ReportedBoundsError) {
@@ -2457,10 +4093,9 @@ dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	  if(sacl_offset){
 	    item_offset = start_offset+sacl_offset;
 	    if (item_offset < start_offset) {
-	      /*
-	       * Overflow - throw an exception.
-	       */
-	      THROW(ReportedBoundsError);
+		    expert_add_info(pinfo, it_sacl_offs,
+				    &ei_nt_item_offs_out_of_range);
+		    break;
 	    }
 	    offset_v = dissect_nt_acl(tvb, item_offset, pinfo, tree,
 				    drep, "System (SACL)", ami);
@@ -2472,10 +4107,9 @@ dissect_nt_sec_desc(tvbuff_t *tvb, int offset_a, packet_info *pinfo,
 	  if(dacl_offset){
 	    item_offset = start_offset+dacl_offset;
 	    if (item_offset < start_offset) {
-	      /*
-	       * Overflow - throw an exception.
-	       */
-	      THROW(ReportedBoundsError);
+		    expert_add_info(pinfo, it_dacl_offs,
+				    &ei_nt_item_offs_out_of_range);
+		    break;
 	    }
 	    offset_v = dissect_nt_acl(tvb, item_offset, pinfo, tree,
 				    drep, "User (DACL)", ami);
@@ -2738,82 +4372,82 @@ proto_do_register_windows_common(int proto_smb)
 		{ &hf_access_specific_15,
 		  { "Specific access, bit 15", "nt.access_mask.specific_15",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x8000, NULL, HFILL }},
+		    0x00008000, NULL, HFILL }},
 
 		{ &hf_access_specific_14,
 		  { "Specific access, bit 14", "nt.access_mask.specific_14",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x4000, NULL, HFILL }},
+		    0x00004000, NULL, HFILL }},
 
 		{ &hf_access_specific_13,
 		  { "Specific access, bit 13", "nt.access_mask.specific_13",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x2000, NULL, HFILL }},
+		    0x00002000, NULL, HFILL }},
 
 		{ &hf_access_specific_12,
 		  { "Specific access, bit 12", "nt.access_mask.specific_12",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x1000, NULL, HFILL }},
+		    0x00001000, NULL, HFILL }},
 
 		{ &hf_access_specific_11,
 		  { "Specific access, bit 11", "nt.access_mask.specific_11",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0800, NULL, HFILL }},
+		    0x00000800, NULL, HFILL }},
 
 		{ &hf_access_specific_10,
 		  { "Specific access, bit 10", "nt.access_mask.specific_10",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0400, NULL, HFILL }},
+		    0x00000400, NULL, HFILL }},
 
 		{ &hf_access_specific_9,
 		  { "Specific access, bit 9", "nt.access_mask.specific_9",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0200, NULL, HFILL }},
+		    0x00000200, NULL, HFILL }},
 
 		{ &hf_access_specific_8,
 		  { "Specific access, bit 8", "nt.access_mask.specific_8",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0100, NULL, HFILL }},
+		    0x00000100, NULL, HFILL }},
 
 		{ &hf_access_specific_7,
 		  { "Specific access, bit 7", "nt.access_mask.specific_7",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0080, NULL, HFILL }},
+		    0x00000080, NULL, HFILL }},
 
 		{ &hf_access_specific_6,
 		  { "Specific access, bit 6", "nt.access_mask.specific_6",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0040, NULL, HFILL }},
+			0x00000040, NULL, HFILL }},
 
 		{ &hf_access_specific_5,
 		  { "Specific access, bit 5", "nt.access_mask.specific_5",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0020, NULL, HFILL }},
+		    0x00000020, NULL, HFILL }},
 
 		{ &hf_access_specific_4,
 		  { "Specific access, bit 4", "nt.access_mask.specific_4",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0010, NULL, HFILL }},
+		    0x00000010, NULL, HFILL }},
 
 		{ &hf_access_specific_3,
 		  { "Specific access, bit 3", "nt.access_mask.specific_3",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0008, NULL, HFILL }},
+		    0x00000008, NULL, HFILL }},
 
 		{ &hf_access_specific_2,
 		  { "Specific access, bit 2", "nt.access_mask.specific_2",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0004, NULL, HFILL }},
+		    0x00000004, NULL, HFILL }},
 
 		{ &hf_access_specific_1,
 		  { "Specific access, bit 1", "nt.access_mask.specific_1",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0002, NULL, HFILL }},
+		    0x00000002, NULL, HFILL }},
 
 		{ &hf_access_specific_0,
 		  { "Specific access, bit 0", "nt.access_mask.specific_0",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    0x0001, NULL, HFILL }},
+		    0x00000001, NULL, HFILL }},
 
 		{ &hf_nt_ace_flags_object_type_present,
 		  { "Object Type Present", "nt.ace.object.flags.object_type_present",
@@ -2832,6 +4466,154 @@ proto_do_register_windows_common(int proto_smb)
 	        { &hf_nt_ace_inherited_guid,
 		  { "Inherited GUID", "nt.ace.object.inherited_guid", FT_GUID, BASE_NONE,
 		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond,
+		  { "Conditional Expression", "nt.ace.cond", FT_NONE, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_token,
+		  { "Token", "nt.ace.cond.token",
+		    FT_UINT8, BASE_HEX, VALS(ace_cond_token_vals), 0, "Type of Token",
+		    HFILL }},
+
+		{ &hf_nt_ace_cond_sign,
+		  { "SIGN", "nt.ace.cond.sign",
+		    FT_UINT8, BASE_HEX, VALS(ace_cond_sign_vals), 0,
+		    NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_base,
+		  { "BASE", "nt.ace.cond.base",
+		    FT_UINT8, BASE_HEX, VALS(ace_cond_base_vals), 0,
+		    NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_value_int8,
+		  { "INT8", "nt.ace.cond.value_int8", FT_INT8, BASE_DEC,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_value_int16,
+		  { "INT16", "nt.ace.cond.value_int16", FT_INT16, BASE_DEC,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_value_int32,
+		  { "INT32", "nt.ace.cond.value_int32", FT_INT32, BASE_DEC,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_value_int64,
+		  { "INT64", "nt.ace.cond.value_int64", FT_INT64, BASE_DEC,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_value_string,
+		  { "UNICODE_STRING", "nt.ace.cond.value_string", FT_STRING, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_value_octet_string,
+		  { "OCTET_STRING", "nt.ace.cond.value_octet_string", FT_BYTES, BASE_NONE,
+		    NULL, 0x0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_local_attr,
+		  { "LOCAL_ATTRIBUTE", "nt.ace.cond.local_attr", FT_STRING, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_user_attr,
+		  { "USER_ATTRIBUTE", "nt.ace.cond.user_attr", FT_STRING, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_resource_attr,
+		  { "RESOURCE_ATTRIBUTE", "nt.ace.cond.resource_attr", FT_STRING, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_cond_device_attr,
+		  { "DEVICE_ATTRIBUTE", "nt.ace.cond.device_attr", FT_STRING, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra,
+		  { "Resource Attribute", "nt.ace.sra", FT_NONE, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_name_offset,
+		  { "Name Offset", "nt.ace.sra.name_offset", FT_UINT32, BASE_DEC, NULL, 0,
+		    "Offset to Name of Resource Attribute", HFILL }},
+
+		{ &hf_nt_ace_sra_name,
+		  { "Name", "nt.ace.sra.name", FT_STRING, BASE_NONE, NULL, 0,
+		    "Name of Resource Attribute", HFILL }},
+
+		{ &hf_nt_ace_sra_type,
+		  { "Type", "nt.ace.sra.type",
+		    FT_UINT16, BASE_DEC, VALS(ace_sra_type_vals), 0,
+		    "Type of Resource Attribute", HFILL }},
+
+		{ &hf_nt_ace_sra_reserved,
+		  { "Reserved", "nt.ace.sra.reserved", FT_UINT16, BASE_HEX, NULL, 0,
+		    "Reserved of Resource Attribute", HFILL }},
+
+		{ &hf_nt_ace_sra_flags,
+		  { "Flags", "nt.ace.sra.flags", FT_UINT32, BASE_HEX, NULL, 0,
+		    "Flags of Resource Attribute", HFILL }},
+
+		{ &hf_nt_ace_sra_flags_manual,
+		  { "Manual", "nt.ace.sra.flags.manual", FT_BOOLEAN, 32,
+		    TFS(&flags_ace_sra_info_manual), 0x00010000, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_flags_policy_derived,
+		  { "Policy Derived", "nt.ace.sra.flags.policy_derived", FT_BOOLEAN, 32,
+		    TFS(&flags_ace_sra_info_policy_derived), 0x00020000, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_flags_non_inheritable,
+		  { "Non-Inheritable", "nt.ace.sra.flags.non_inheritable", FT_BOOLEAN, 32,
+		    TFS(&flags_ace_sra_info_non_inheritable), 0x00000001, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_flags_case_sensitive,
+		  { "Case Sensitive", "nt.ace.sra.flags.case_sensitive", FT_BOOLEAN, 32,
+		    TFS(&flags_ace_sra_info_case_sensitive), 0x00000002, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_flags_deny_only,
+		  { "Deny Only", "nt.ace.sra.flags.deny_only", FT_BOOLEAN, 32,
+		    TFS(&flags_ace_sra_info_deny_only), 0x00000004, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_flags_disabled_by_default,
+		  { "Disabled By Default", "nt.ace.sra.flags.disabled_by_default", FT_BOOLEAN, 32,
+		    TFS(&flags_ace_sra_info_disabled_by_default), 0x00000008, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_flags_disabled,
+		  { "Disabled", "nt.ace.sra.flags.disabled", FT_BOOLEAN, 32,
+		    TFS(&flags_ace_sra_info_disabled), 0x00000010, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_flags_mandatory,
+		  { "Mandatory", "nt.ace.sra.flags.mandatory", FT_BOOLEAN, 32,
+		    TFS(&flags_ace_sra_info_mandatory), 0x00000020, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_value_count,
+		  { "Value Count", "nt.ace.sra.value_count", FT_UINT32, BASE_DEC, NULL, 0,
+		    "Value Count of Resource Attribute", HFILL }},
+
+		{ &hf_nt_ace_sra_value_offset,
+		  { "Value Offset", "nt.ace.sra.name_offset", FT_UINT32, BASE_DEC, NULL, 0,
+		    "Offset to a Resource Attribute Value", HFILL }},
+
+		{ &hf_nt_ace_sra_value_int64,
+		  { "INT64", "nt.ace.sra.value_int64", FT_INT64, BASE_DEC, NULL, 0,
+		    NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_value_uint64,
+		  { "UINT64", "nt.ace.sra.value_uint64", FT_UINT64, BASE_DEC, NULL, 0,
+		    NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_value_string,
+		  { "STRING", "nt.ace.sra.value_string", FT_STRING, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_value_sid,
+		  { "SID", "nt.ace.sra.value_sid", FT_STRING, BASE_NONE,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_value_boolean,
+		  { "BOOLEAN", "nt.ace.sra.value_boolean", FT_UINT64, BASE_DEC,
+		    NULL, 0, NULL, HFILL }},
+
+		{ &hf_nt_ace_sra_value_octet_string,
+		  { "OCTET_STRING", "nt.ace.sra.value_octet_string", FT_BYTES, BASE_NONE,
+		    NULL, 0x0, NULL, HFILL }},
 
 		{ &hf_nt_security_information_sacl,
 		  { "SACL", "nt.sec_info.sacl", FT_BOOLEAN, 32,
@@ -2860,7 +4642,7 @@ proto_do_register_windows_common(int proto_smb)
 		{ &hf_nt_offset_to_dacl, { "Offset to DACL", "nt.offset_to_dacl", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_nt_sec_desc,
 		&ett_nt_sec_desc_type,
 		&ett_nt_sid,
@@ -2874,15 +4656,22 @@ proto_do_register_windows_common(int proto_smb)
 		&ett_nt_access_mask_standard,
 		&ett_nt_access_mask_specific,
 		&ett_nt_security_information,
+		&ett_nt_ace_cond,
+		&ett_nt_ace_cond_data,
+		&ett_nt_ace_sra,
+		&ett_nt_ace_sra_flags,
+		&ett_nt_ace_sra_value_offsets,
+		&ett_nt_ace_sra_values,
 	};
 
 	static ei_register_info ei[] = {
-		{ &ei_nt_ace_extends_beyond_capture, { "nt.ace_extends_beyond_capture", PI_MALFORMED, PI_ERROR, "ACE Extends beyond end of captured data", EXPFILL }},
+		{ &ei_nt_ace_extends_beyond_data, { "nt.ace_extends_beyond_data", PI_MALFORMED, PI_ERROR, "ACE Extends beyond end of data", EXPFILL }},
 		{ &ei_nt_ace_extends_beyond_reassembled_data, { "nt.ace_extends_beyond_reassembled_data", PI_MALFORMED, PI_ERROR, "ACE Extends beyond end of reassembled data", EXPFILL }},
-		{ &ei_nt_owner_sid_beyond_captured_data, { "nt.owner_sid.beyond_captured_data", PI_MALFORMED, PI_ERROR, "Owner SID beyond end of captured data", EXPFILL }},
+		{ &ei_nt_owner_sid_beyond_data, { "nt.owner_sid.beyond_data", PI_MALFORMED, PI_ERROR, "Owner SID beyond end of data", EXPFILL }},
 		{ &ei_nt_owner_sid_beyond_reassembled_data, { "nt.owner_sid.beyond_reassembled_data", PI_MALFORMED, PI_ERROR, "Owner SID beyond end of reassembled data", EXPFILL }},
-		{ &ei_nt_group_sid_beyond_captured_data, { "nt.group_sid.beyond_captured_data", PI_MALFORMED, PI_ERROR, "Group SID beyond end of captured data", EXPFILL }},
+		{ &ei_nt_group_sid_beyond_data, { "nt.group_sid.beyond_data", PI_MALFORMED, PI_ERROR, "Group SID beyond end of data", EXPFILL }},
 		{ &ei_nt_group_sid_beyond_reassembled_data, { "nt.group_sid.beyond_reassembled_data", PI_MALFORMED, PI_ERROR, "Group SID beyond end of reassembled data", EXPFILL }},
+		{ &ei_nt_item_offs_out_of_range, { "nt.item_offset.out_of_range", PI_MALFORMED, PI_ERROR, "Item offset is out of range", EXPFILL }},
 	};
 
 	expert_module_t* expert_nt;
@@ -2894,7 +4683,7 @@ proto_do_register_windows_common(int proto_smb)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

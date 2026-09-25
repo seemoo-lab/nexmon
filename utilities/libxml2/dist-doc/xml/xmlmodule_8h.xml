@@ -1,0 +1,266 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlmodule_8h" kind="file" language="C++">
+    <compoundname>xmlmodule.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includedby refid="xmlmodule_8c" local="no">/builds/GNOME/libxml2/xmlmodule.c</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>xmlmodule.h</label>
+        <link refid="xmlmodule_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="xmlmodule_8h_1a3da2abf53bc0cb57bcc3cc4fa8989162" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlModuleOption</name>
+        <enumvalue id="xmlmodule_8h_1a3da2abf53bc0cb57bcc3cc4fa8989162a259f3ae3f32d6a749d308cd31fface3f" prot="public">
+          <name>XML_MODULE_LAZY</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlmodule_8h_1a3da2abf53bc0cb57bcc3cc4fa8989162ae39d56a46be39a2cfc8becf7a7eaca28" prot="public">
+          <name>XML_MODULE_LOCAL</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>enumeration of options that can be passed down to <ref refid="xmlmodule_8h_1ad1060e845e7984a1af144789b3ca2b67" kindref="member">xmlModuleOpen</ref> </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlmodule.h" line="34" column="1" bodyfile="xmlmodule.h" bodystart="34" bodyend="37"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" prot="public" static="no">
+        <type>struct _xmlModule</type>
+        <definition>typedef struct _xmlModule xmlModule</definition>
+        <argsstring></argsstring>
+        <name>xmlModule</name>
+        <briefdescription>
+<para>A handle to a dynamically loaded module. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlmodule.h" line="28" column="25" bodyfile="xmlmodule.h" bodystart="28" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlmodule_8h_1a6e5b590177251bd4196810e20985168f" prot="public" static="no">
+        <type><ref refid="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" kindref="member">xmlModule</ref> *</type>
+        <definition>typedef xmlModule* xmlModulePtr</definition>
+        <argsstring></argsstring>
+        <name>xmlModulePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlmodule.h" line="29" column="19" bodyfile="xmlmodule.h" bodystart="29" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xmlmodule_8h_1ad1060e845e7984a1af144789b3ca2b67" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" kindref="member">xmlModule</ref> *</type>
+        <definition>xmlModule * xmlModuleOpen</definition>
+        <argsstring>(const char *filename, int options)</argsstring>
+        <name>xmlModuleOpen</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+          <defname>name</defname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Opens a module/shared library given its name or path. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000392"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Will be removed.</para>
+</xrefdescription></xrefsect></para>
+<para>NOTE: that due to portability issues, behaviour can only be guaranteed with <computeroutput>name</computeroutput> using ASCII. We cannot guarantee that an UTF-8 string would work, which is why name is a const char * and not a const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> * . TODO: options are not yet implemented.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the module name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of <ref refid="xmlmodule_8h_1a3da2abf53bc0cb57bcc3cc4fa8989162" kindref="member">xmlModuleOption</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a handle for the module or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlmodule.h" line="40" column="13" bodyfile="/builds/GNOME/libxml2/xmlmodule.c" bodystart="60" bodyend="79" declfile="xmlmodule.h" declline="40" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmodule_8h_1a907ca4f0afc57ba6a595bb45644372d5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlModuleSymbol</definition>
+        <argsstring>(xmlModule *module, const char *name, void **result)</argsstring>
+        <name>xmlModuleSymbol</name>
+        <param>
+          <type><ref refid="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" kindref="member">xmlModule</ref> *</type>
+          <declname>module</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>void **</type>
+          <declname>result</declname>
+          <defname>symbol</defname>
+        </param>
+        <briefdescription>
+<para>Lookup for a symbol address in the given module. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000393"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Will be removed.</para>
+</xrefdescription></xrefsect></para>
+<para>NOTE: that due to portability issues, behaviour can only be guaranteed with <computeroutput>name</computeroutput> using ASCII. We cannot guarantee that an UTF-8 string would work, which is why name is a const char * and not a const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> * .</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>module</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the module </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the symbol </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>symbol</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the resulting symbol address </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the symbol was found, or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlmodule.h" line="44" column="7" bodyfile="/builds/GNOME/libxml2/xmlmodule.c" bodystart="97" bodyend="110" declfile="xmlmodule.h" declline="44" declcolumn="7"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmodule_8h_1a9e84822abde464ae8e3671b66c0e5848" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlModuleClose</definition>
+        <argsstring>(xmlModule *module)</argsstring>
+        <name>xmlModuleClose</name>
+        <param>
+          <type><ref refid="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" kindref="member">xmlModule</ref> *</type>
+          <declname>module</declname>
+        </param>
+        <briefdescription>
+<para>The close operations unload the associated module and free the data associated to the module. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000394"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Will be removed.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>module</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the module handle </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of argument error and -2 if the module could not be closed/unloaded. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlmodule.h" line="49" column="7" bodyfile="/builds/GNOME/libxml2/xmlmodule.c" bodystart="123" bodyend="137" declfile="xmlmodule.h" declline="49" declcolumn="7"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmodule_8h_1a67dc559ae72da88b9e769a712bde1a48" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlModuleFree</definition>
+        <argsstring>(xmlModule *module)</argsstring>
+        <name>xmlModuleFree</name>
+        <param>
+          <type><ref refid="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" kindref="member">xmlModule</ref> *</type>
+          <declname>module</declname>
+        </param>
+        <briefdescription>
+<para>The free operations free the data associated to the module but does not unload the associated shared library which may still be in use. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000395"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Will be removed.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>module</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the module handle </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of argument error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlmodule.h" line="52" column="7" bodyfile="/builds/GNOME/libxml2/xmlmodule.c" bodystart="150" bodyend="159" declfile="xmlmodule.h" declline="52" declcolumn="7"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Dynamic module loading. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>API for dynamic module loading. Only used by old libxslt versions and subject to removal.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Joel W. Reed </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xmlmodule.h"/>
+  </compounddef>
+</doxygen>

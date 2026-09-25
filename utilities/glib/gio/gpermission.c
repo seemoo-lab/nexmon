@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,13 +31,9 @@
 
 
 /**
- * SECTION:gpermission
- * @title: GPermission
- * @short_description: An object representing the permission
- *     to perform a certain action
- * @include: gio/gio.h
+ * GPermission:
  *
- * A #GPermission represents the status of the caller's permission to
+ * A `GPermission` represents the status of the caller’s permission to
  * perform a certain action.
  *
  * You can query if the action is currently allowed and if it is
@@ -45,18 +43,11 @@
  * There is also an API to actually acquire the permission and one to
  * release it.
  *
- * As an example, a #GPermission might represent the ability for the
- * user to write to a #GSettings object.  This #GPermission object could
- * then be used to decide if it is appropriate to show a "Click here to
- * unlock" button in a dialog and to provide the mechanism to invoke
+ * As an example, a `GPermission` might represent the ability for the
+ * user to write to a [class@Gio.Settings] object.  This `GPermission` object
+ * could then be used to decide if it is appropriate to show a “Click here to
+ * unlock” button in a dialog and to provide the mechanism to invoke
  * when that button is clicked.
- **/
-
-/**
- * GPermission:
- *
- * #GPermission is an opaque data structure and can only be accessed
- * using the following functions.
  **/
 
 struct _GPermissionPrivate
@@ -78,7 +69,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GPermission, g_permission, G_TYPE_OBJECT)
 /**
  * g_permission_acquire:
  * @permission: a #GPermission instance
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: a pointer to a %NULL #GError, or %NULL
  *
  * Attempts to acquire the permission represented by @permission.
@@ -114,7 +105,7 @@ g_permission_acquire (GPermission   *permission,
 /**
  * g_permission_acquire_async:
  * @permission: a #GPermission instance
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @callback: the #GAsyncReadyCallback to call when done
  * @user_data: the user data to pass to @callback
  *
@@ -165,7 +156,7 @@ g_permission_acquire_finish (GPermission   *permission,
 /**
  * g_permission_release:
  * @permission: a #GPermission instance
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: a pointer to a %NULL #GError, or %NULL
  *
  * Attempts to release the permission represented by @permission.
@@ -201,7 +192,7 @@ g_permission_release (GPermission   *permission,
 /**
  * g_permission_release_async:
  * @permission: a #GPermission instance
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @callback: the #GAsyncReadyCallback to call when done
  * @user_data: the user data to pass to @callback
  *
@@ -442,9 +433,7 @@ g_permission_class_init (GPermissionClass *class)
    * @permission represents the permission to perform.
    */
    g_object_class_install_property (object_class, PROP_ALLOWED,
-     g_param_spec_boolean ("allowed",
-                           P_("Is allowed"),
-                           P_("If the caller is allowed to perform the action"),
+     g_param_spec_boolean ("allowed", NULL, NULL,
                            FALSE,
                            G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -455,9 +444,7 @@ g_permission_class_init (GPermissionClass *class)
    * g_permission_acquire().
    */
    g_object_class_install_property (object_class, PROP_CAN_ACQUIRE,
-     g_param_spec_boolean ("can-acquire",
-                           P_("Can acquire"),
-                           P_("If calling g_permission_acquire() makes sense"),
+     g_param_spec_boolean ("can-acquire", NULL, NULL,
                            FALSE,
                            G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 
@@ -468,9 +455,7 @@ g_permission_class_init (GPermissionClass *class)
    * g_permission_release().
    */
    g_object_class_install_property (object_class, PROP_CAN_RELEASE,
-     g_param_spec_boolean ("can-release",
-                           P_("Can release"),
-                           P_("If calling g_permission_release() makes sense"),
+     g_param_spec_boolean ("can-release", NULL, NULL,
                            FALSE,
                            G_PARAM_STATIC_STRINGS | G_PARAM_READABLE));
 }

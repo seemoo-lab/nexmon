@@ -1,0 +1,283 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRegAtom" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRegAtom</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a196206e0ab201e18d79c3878336d7d20" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int no</definition>
+        <argsstring></argsstring>
+        <name>no</name>
+        <qualifiedname>_xmlRegAtom::no</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="232" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="232" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a32ff668be30ecb40c2caffb8df2b8107" prot="public" static="no" mutable="no">
+        <type>xmlRegAtomType</type>
+        <definition>xmlRegAtomType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlRegAtom::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="233" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="233" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a613886c1f6e23ce6d1221d4714f3e32e" prot="public" static="no" mutable="no">
+        <type>xmlRegQuantType</type>
+        <definition>xmlRegQuantType quant</definition>
+        <argsstring></argsstring>
+        <name>quant</name>
+        <qualifiedname>_xmlRegAtom::quant</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="234" column="21" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="234" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a3e202b201e6255d975cd6d3aff1f5a4d" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int min</definition>
+        <argsstring></argsstring>
+        <name>min</name>
+        <qualifiedname>_xmlRegAtom::min</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="235" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="235" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1ae1e1dde676c120fa6d10f3bb2c14059e" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int max</definition>
+        <argsstring></argsstring>
+        <name>max</name>
+        <qualifiedname>_xmlRegAtom::max</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="236" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="236" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a6a4083fab79d9123bef0010a202c3c27" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* valuep</definition>
+        <argsstring></argsstring>
+        <name>valuep</name>
+        <qualifiedname>_xmlRegAtom::valuep</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="238" column="10" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="238" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a710f36c52391b4dfc8afd61f41111e95" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* valuep2</definition>
+        <argsstring></argsstring>
+        <name>valuep2</name>
+        <qualifiedname>_xmlRegAtom::valuep2</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="239" column="10" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="239" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a186b6342d483ea691785eb9a6d88605b" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int neg</definition>
+        <argsstring></argsstring>
+        <name>neg</name>
+        <qualifiedname>_xmlRegAtom::neg</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="240" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="240" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a1737c67eb2c9e2d32a5906f2e65d9fd3" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int codepoint</definition>
+        <argsstring></argsstring>
+        <name>codepoint</name>
+        <qualifiedname>_xmlRegAtom::codepoint</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="241" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="241" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a02a3a6fd47137fb55ed247acf3a122ad" prot="public" static="no" mutable="no">
+        <type>xmlRegStatePtr</type>
+        <definition>xmlRegStatePtr start</definition>
+        <argsstring></argsstring>
+        <name>start</name>
+        <qualifiedname>_xmlRegAtom::start</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="242" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="242" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1ad17e6432a546ef3418beeea2bb16704e" prot="public" static="no" mutable="no">
+        <type>xmlRegStatePtr</type>
+        <definition>xmlRegStatePtr start0</definition>
+        <argsstring></argsstring>
+        <name>start0</name>
+        <qualifiedname>_xmlRegAtom::start0</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="243" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="243" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1abfed80f2681dc1d7d9d3958e179542af" prot="public" static="no" mutable="no">
+        <type>xmlRegStatePtr</type>
+        <definition>xmlRegStatePtr stop</definition>
+        <argsstring></argsstring>
+        <name>stop</name>
+        <qualifiedname>_xmlRegAtom::stop</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="244" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="244" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a51cd6852d33d1ea9e7f940ebf9c0dddf" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxRanges</definition>
+        <argsstring></argsstring>
+        <name>maxRanges</name>
+        <qualifiedname>_xmlRegAtom::maxRanges</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="245" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="245" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a94e6f495ca0bbd1e831838d4dc9253fb" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbRanges</definition>
+        <argsstring></argsstring>
+        <name>nbRanges</name>
+        <qualifiedname>_xmlRegAtom::nbRanges</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="246" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="246" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1aa13fdda84697e2ad074c8beafbf068e8" prot="public" static="no" mutable="no">
+        <type>xmlRegRangePtr *</type>
+        <definition>xmlRegRangePtr* ranges</definition>
+        <argsstring></argsstring>
+        <name>ranges</name>
+        <qualifiedname>_xmlRegAtom::ranges</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="247" column="20" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="247" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegAtom_1a735984d41155bc1032e09bece8f8d66d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* data</definition>
+        <argsstring></argsstring>
+        <name>data</name>
+        <qualifiedname>_xmlRegAtom::data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="248" column="10" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="248" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>_xmlAutomataState</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlRegAtom</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="3">
+        <label>_xmlRegTrans</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="231" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="231" bodyend="249"/>
+    <listofallmembers>
+      <member refid="struct__xmlRegAtom_1a1737c67eb2c9e2d32a5906f2e65d9fd3" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>codepoint</name></member>
+      <member refid="struct__xmlRegAtom_1a735984d41155bc1032e09bece8f8d66d" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>data</name></member>
+      <member refid="struct__xmlRegAtom_1ae1e1dde676c120fa6d10f3bb2c14059e" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>max</name></member>
+      <member refid="struct__xmlRegAtom_1a51cd6852d33d1ea9e7f940ebf9c0dddf" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>maxRanges</name></member>
+      <member refid="struct__xmlRegAtom_1a3e202b201e6255d975cd6d3aff1f5a4d" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>min</name></member>
+      <member refid="struct__xmlRegAtom_1a94e6f495ca0bbd1e831838d4dc9253fb" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>nbRanges</name></member>
+      <member refid="struct__xmlRegAtom_1a186b6342d483ea691785eb9a6d88605b" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>neg</name></member>
+      <member refid="struct__xmlRegAtom_1a196206e0ab201e18d79c3878336d7d20" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>no</name></member>
+      <member refid="struct__xmlRegAtom_1a613886c1f6e23ce6d1221d4714f3e32e" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>quant</name></member>
+      <member refid="struct__xmlRegAtom_1aa13fdda84697e2ad074c8beafbf068e8" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>ranges</name></member>
+      <member refid="struct__xmlRegAtom_1a02a3a6fd47137fb55ed247acf3a122ad" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>start</name></member>
+      <member refid="struct__xmlRegAtom_1ad17e6432a546ef3418beeea2bb16704e" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>start0</name></member>
+      <member refid="struct__xmlRegAtom_1abfed80f2681dc1d7d9d3958e179542af" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>stop</name></member>
+      <member refid="struct__xmlRegAtom_1a32ff668be30ecb40c2caffb8df2b8107" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>type</name></member>
+      <member refid="struct__xmlRegAtom_1a6a4083fab79d9123bef0010a202c3c27" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>valuep</name></member>
+      <member refid="struct__xmlRegAtom_1a710f36c52391b4dfc8afd61f41111e95" prot="public" virt="non-virtual"><scope>_xmlRegAtom</scope><name>valuep2</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

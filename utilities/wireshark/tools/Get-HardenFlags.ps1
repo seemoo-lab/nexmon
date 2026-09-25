@@ -7,19 +7,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 #requires -version 2
 
@@ -28,7 +16,7 @@
 #   on all the binaries in the distribution, and then filters
 #   for the NXCOMPAT and DYNAMICBASE flags.
 
-# This script will probably fail for the forseeable future.
+# This script will probably fail for the foreseeable future.
 #
 # Many of our third-party libraries are compiled using MinGW-w64. Its version
 # of `ld` doesn't enable the dynamicbase, nxcompat, or high-entropy-va flags
@@ -40,7 +28,7 @@
 # As a result, none of the distributions that produce Windows applications
 # and libraries have any sort of hardening flags enabled:
 #
-#   http://mingw-w64.org/doku.php/download
+#   https://mingw-w64.org/doku.php/download
 #
 
 <#
@@ -88,7 +76,6 @@ $SoftBins = (
     "libgcrypt-20.dll",
     "libgdk-win32-2.0-0.dll",
     "libgdk_pixbuf-2.0-0.dll",
-    "libGeoIP-1.dll",
     "libgio-2.0-0.dll",
     "libglib-2.0-0.dll",
     "libgmodule-2.0-0.dll",
@@ -103,6 +90,7 @@ $SoftBins = (
     "libjasper-1.dll",
     "libjpeg-8.dll",
     "liblzma-5.dll",
+    "libmaxminddb.dll",
     "libnettle-4-6.dll",
     "libp11-kit-0.dll",
     "libpango-1.0-0.dll",

@@ -9,26 +9,17 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 
-#define EGD_PORT 18246 /* 0x4746 */
+#define EGD_PORT 18246 /* 0x4746 "GF" for GE Fanuc - Not IANA registered */
+/* The above port is used for data packets. UDP port 7937 (also not registered)
+ * is used for configuration commands, but this dissector doesn't support them.
+ */
 
 #define EGD_ST_NONEW        0
 #define EGD_ST_NOERROR      1
@@ -50,6 +41,8 @@
 void proto_register_egd(void);
 void proto_reg_handoff_egd(void);
 
+static dissector_handle_t egd_handle;
+
 /* Translate status to string */
 static const value_string egd_stat_vals[] = {
   { EGD_ST_NONEW,                  "No new status event has occurred" },
@@ -70,24 +63,32 @@ static const value_string egd_stat_vals[] = {
   { 0,                             NULL }
 };
 
-static int proto_egd = -1;
+static int proto_egd;
 
-static int hf_egd_ver = -1;
-static int hf_egd_type = -1;
-static int hf_egd_rid = -1;
-static int hf_egd_pid = -1;
-static int hf_egd_exid = -1;
-static int hf_egd_time = -1;
-static int hf_egd_notime = -1;
-static int hf_egd_stat = -1;
-static int hf_egd_csig = -1;
-static int hf_egd_resv = -1;
+static int hf_egd_ver;
+static int hf_egd_type;
+static int hf_egd_rid;
+static int hf_egd_pid;
+static int hf_egd_exid;
+static int hf_egd_time;
+static int hf_egd_notime;
+static int hf_egd_stat;
+static int hf_egd_csig;
+static int hf_egd_resv;
 
-static gint ett_egd = -1;
-static gint ett_status_item = -1;
+static int ett_egd;
+static int ett_status_item;
 
 static int dissect_egd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
+  /* EGD Data messages are PDU type 13 (0x0d) and version 1.
+   * All other PDU types are Control messages, which are sent to a different
+   * port, each have a different format, and not handled by this dissector.
+   */
+  if (tvb_get_ntohs(tvb, 0) != 0x0d01) {
+    return 0;
+  }
+
   /* replace UDP with EGD in display */
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "EGD");
 
@@ -102,11 +103,9 @@ static int dissect_egd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     proto_item *notime = NULL;
     proto_tree *egd_tree = NULL;
     tvbuff_t *next_tvb = NULL;
-    gint offset, data_length;
-    guint32 sectime;
-    nstime_t egd_time;
+    int offset, data_length;
+    uint32_t sectime;
 
-    memset(&egd_time, 0, sizeof(nstime_t));
     offset = 0;
 
     ti = proto_tree_add_item(tree, proto_egd, tvb, 0, -1, ENC_NA);
@@ -131,9 +130,7 @@ static int dissect_egd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     }
     else
     {
-      egd_time.secs  = tvb_get_letohl(tvb, offset);
-      egd_time.nsecs = tvb_get_letohl(tvb, offset+4);
-      proto_tree_add_time(egd_tree, hf_egd_time, tvb, offset, 8, &egd_time);
+      proto_tree_add_item(egd_tree, hf_egd_time, tvb, offset, 8, ENC_LITTLE_ENDIAN);
     }
     offset += 8;
 
@@ -220,31 +217,26 @@ void proto_register_egd(void)
       }
     };
 
-  static gint *ett[] =
+  static int *ett[] =
     {
       &ett_egd,
       &ett_status_item
     };
 
-  proto_egd = proto_register_protocol (
-    "Ethernet Global Data",  /* name */
-    "EGD",                   /* short name */
-    "egd"                    /* abbrev */
-    );
+  proto_egd = proto_register_protocol ("Ethernet Global Data", "EGD", "egd");
   proto_register_field_array(proto_egd, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  egd_handle = register_dissector("egd", dissect_egd, proto_egd);
 }
 
 void proto_reg_handoff_egd(void)
 {
-  dissector_handle_t egd_handle;
-
-  egd_handle = create_dissector_handle(dissect_egd, proto_egd);
-  dissector_add_uint("udp.port", EGD_PORT, egd_handle);
+  dissector_add_uint_with_preference("udp.port", EGD_PORT, egd_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

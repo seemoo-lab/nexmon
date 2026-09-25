@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,22 +34,61 @@
 #endif
 #ifdef G_OS_WIN32
 #include <io.h>
+#include "gwin32sid.h"
+#endif
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
 #endif
 
 #include "gdbusauthmechanismsha1.h"
 #include "gcredentials.h"
 #include "gdbuserror.h"
+#include "glocalfileinfo.h"
 #include "gioenumtypes.h"
 #include "gioerror.h"
 #include "gdbusprivate.h"
+#include "glib-private.h"
 
 #include "glibintl.h"
+
+/*
+ * Arbitrary timeouts for keys in the keyring.
+ * For interoperability, these match the reference implementation, libdbus.
+ * To make them easier to compare, their names also match libdbus
+ * (see dbus/dbus-keyring.c).
+ */
+
+/*
+ * Maximum age of a key before we create a new key to use in challenges:
+ * 5 minutes.
+ */
+#define NEW_KEY_TIMEOUT_SECONDS (60*5)
+
+/*
+ * Time before we drop a key from the keyring: 7 minutes.
+ * Authentication will succeed if it takes less than
+ * EXPIRE_KEYS_TIMEOUT_SECONDS - NEW_KEY_TIMEOUT_SECONDS (2 minutes)
+ * to complete.
+ * The spec says "delete any cookies that are old (the timeout can be
+ * fairly short)".
+ */
+#define EXPIRE_KEYS_TIMEOUT_SECONDS (NEW_KEY_TIMEOUT_SECONDS + (60*2))
+
+/*
+ * Maximum amount of time a key can be in the future due to clock skew
+ * with a shared home directory: 5 minutes.
+ * The spec says "a reasonable time in the future".
+ */
+#define MAX_TIME_TRAVEL_SECONDS (60*5)
+
 
 struct _GDBusAuthMechanismSha1Private
 {
   gboolean is_client;
   gboolean is_server;
   GDBusAuthMechanismState state;
+  gchar *reject_reason;  /* non-NULL iff (state == G_DBUS_AUTH_MECHANISM_STATE_REJECTED) */
 
   /* used on the client side */
   gchar *to_send;
@@ -78,10 +119,11 @@ static void                     mechanism_server_data_receive       (GDBusAuthMe
                                                                      gsize                 data_len);
 static gchar                   *mechanism_server_data_send          (GDBusAuthMechanism   *mechanism,
                                                                      gsize                *out_data_len);
-static gchar                   *mechanism_server_get_reject_reason  (GDBusAuthMechanism   *mechanism);
+static gchar                   *mechanism_server_or_client_get_reject_reason (GDBusAuthMechanism   *mechanism);
 static void                     mechanism_server_shutdown           (GDBusAuthMechanism   *mechanism);
 static GDBusAuthMechanismState  mechanism_client_get_state          (GDBusAuthMechanism   *mechanism);
 static gchar                   *mechanism_client_initiate           (GDBusAuthMechanism   *mechanism,
+                                                                     GDBusConnectionFlags  conn_flags,
                                                                      gsize                *out_initial_response_len);
 static void                     mechanism_client_data_receive       (GDBusAuthMechanism   *mechanism,
                                                                      const gchar          *data,
@@ -101,6 +143,7 @@ _g_dbus_auth_mechanism_sha1_finalize (GObject *object)
 {
   GDBusAuthMechanismSha1 *mechanism = G_DBUS_AUTH_MECHANISM_SHA1 (object);
 
+  g_free (mechanism->priv->reject_reason);
   g_free (mechanism->priv->to_send);
 
   g_free (mechanism->priv->cookie);
@@ -129,12 +172,13 @@ _g_dbus_auth_mechanism_sha1_class_init (GDBusAuthMechanismSha1Class *klass)
   mechanism_class->server_initiate           = mechanism_server_initiate;
   mechanism_class->server_data_receive       = mechanism_server_data_receive;
   mechanism_class->server_data_send          = mechanism_server_data_send;
-  mechanism_class->server_get_reject_reason  = mechanism_server_get_reject_reason;
+  mechanism_class->server_get_reject_reason  = mechanism_server_or_client_get_reject_reason;
   mechanism_class->server_shutdown           = mechanism_server_shutdown;
   mechanism_class->client_get_state          = mechanism_client_get_state;
   mechanism_class->client_initiate           = mechanism_client_initiate;
   mechanism_class->client_data_receive       = mechanism_client_data_receive;
   mechanism_class->client_data_send          = mechanism_client_data_send;
+  mechanism_class->client_get_reject_reason  = mechanism_server_or_client_get_reject_reason;
   mechanism_class->client_shutdown           = mechanism_client_shutdown;
 }
 
@@ -232,8 +276,25 @@ ensure_keyring_directory (GError **error)
 {
   gchar *path;
   const gchar *e;
+#ifdef G_OS_UNIX
+  struct stat statbuf;
+#endif
 
   g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  /* If running as setuid, we can’t trust the environment (as it’s provided by
+   * a user running at a lower privilege level), so we can’t check
+   * $G_DBUS_COOKIE_SHA1_KEYRING_DIR *and* we can’t build it using $HOME.
+   * Just bail out in that case. */
+  if (GLIB_PRIVATE_CALL (g_check_setuid) ())
+    {
+      g_set_error_literal (error,
+                           G_IO_ERROR,
+                           G_IO_ERROR_PERMISSION_DENIED,
+                           _("Error accessing D-Bus keyring: keyring-based "
+                             "authentication is not supported when running as setuid"));
+      return NULL;
+    }
 
   e = g_getenv ("G_DBUS_COOKIE_SHA1_KEYRING_DIR");
   if (e != NULL)
@@ -247,96 +308,70 @@ ensure_keyring_directory (GError **error)
                                NULL);
     }
 
+#ifdef G_OS_UNIX
+  if (stat (path, &statbuf) != 0)
+    {
+      int errsv = errno;
+
+      if (errsv != ENOENT)
+        {
+          g_set_error (error,
+                       G_IO_ERROR,
+                       g_io_error_from_errno (errsv),
+                       _("Error when getting information for directory “%s”: %s"),
+                       path,
+                       g_strerror (errsv));
+          g_clear_pointer (&path, g_free);
+          return NULL;
+        }
+    }
+  else if (S_ISDIR (statbuf.st_mode))
+    {
+      if (g_getenv ("G_DBUS_COOKIE_SHA1_KEYRING_DIR_IGNORE_PERMISSION") == NULL &&
+          (statbuf.st_mode & 0777) != 0700)
+        {
+          g_set_error (error,
+                       G_IO_ERROR,
+                       G_IO_ERROR_FAILED,
+                       _("Permissions on directory “%s” are malformed. Expected mode 0700, got 0%o"),
+                       path,
+                       (guint) (statbuf.st_mode & 0777));
+          g_clear_pointer (&path, g_free);
+          return NULL;
+        }
+
+      return g_steal_pointer (&path);
+    }
+#else  /* if !G_OS_UNIX */
+  /* On non-Unix platforms, check that it exists as a directory, but don’t do
+   * permissions checks at the moment. */
   if (g_file_test (path, G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR))
     {
-      if (g_getenv ("G_DBUS_COOKIE_SHA1_KEYRING_DIR_IGNORE_PERMISSION") == NULL)
-        {
-#ifdef G_OS_UNIX
-          struct stat statbuf;
-          if (stat (path, &statbuf) != 0)
-            {
-              g_set_error (error,
-                           G_IO_ERROR,
-                           g_io_error_from_errno (errno),
-                           _("Error when getting information for directory '%s': %s"),
-                           path,
-                           strerror (errno));
-              g_free (path);
-              path = NULL;
-              goto out;
-            }
-          if ((statbuf.st_mode  & 0777) != 0700)
-            {
-              g_set_error (error,
-                           G_IO_ERROR,
-                           G_IO_ERROR_FAILED,
-                           _("Permissions on directory '%s' are malformed. Expected mode 0700, got 0%o"),
-                           path,
-                           statbuf.st_mode & 0777);
-              g_free (path);
-              path = NULL;
-              goto out;
-            }
-#else
 #ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wcpp"
 #warning Please implement permission checking on this non-UNIX platform
-#endif
-#endif
-        }
-        goto out;
+#pragma GCC diagnostic pop
+#endif  /* __GNUC__ */
+      return g_steal_pointer (&path);
     }
+#endif  /* if !G_OS_UNIX */
 
-  if (g_mkdir (path, 0700) != 0)
+  /* Only create the directory if not running as setuid */
+  if (g_mkdir_with_parents (path, 0700) != 0)
     {
+      int errsv = errno;
       g_set_error (error,
                    G_IO_ERROR,
-                   g_io_error_from_errno (errno),
-                   _("Error creating directory '%s': %s"),
+                   g_io_error_from_errno (errsv),
+                   _("Error creating directory “%s”: %s"),
                    path,
-                   strerror (errno));
-      g_free (path);
-      path = NULL;
-      goto out;
+                   g_strerror (errsv));
+      g_clear_pointer (&path, g_free);
+      return NULL;
     }
 
-out:
-  return path;
-}
-
-/* ---------------------------------------------------------------------------------------------------- */
-
-static void
-append_nibble (GString *s, gint val)
-{
-  g_string_append_c (s, val >= 10 ? ('a' + val - 10) : ('0' + val));
-}
-
-static gchar *
-hexencode (const gchar *str,
-           gssize       len)
-{
-  guint n;
-  GString *s;
-
-  if (len == -1)
-    len = strlen (str);
-
-  s = g_string_new (NULL);
-  for (n = 0; n < len; n++)
-    {
-      gint val;
-      gint upper_nibble;
-      gint lower_nibble;
-
-      val = ((const guchar *) str)[n];
-      upper_nibble = val >> 4;
-      lower_nibble = val & 0x0f;
-
-      append_nibble (s, upper_nibble);
-      append_nibble (s, lower_nibble);
-    }
-
-  return g_string_free (s, FALSE);
+  return g_steal_pointer (&path);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -374,7 +409,7 @@ keyring_lookup_entry (const gchar  *cookie_context,
                             error))
     {
       g_prefix_error (error,
-                      _("Error opening keyring '%s' for reading: "),
+                      _("Error opening keyring “%s” for reading: "),
                       path);
       goto out;
     }
@@ -387,7 +422,6 @@ keyring_lookup_entry (const gchar  *cookie_context,
       gchar **tokens;
       gchar *endp;
       gint line_id;
-      guint64 line_when;
 
       if (line[0] == '\0')
         continue;
@@ -398,7 +432,7 @@ keyring_lookup_entry (const gchar  *cookie_context,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_FAILED,
-                       _("Line %d of the keyring at '%s' with content '%s' is malformed"),
+                       _("Line %d of the keyring at “%s” with content “%s” is malformed"),
                        n + 1,
                        path,
                        line);
@@ -412,7 +446,7 @@ keyring_lookup_entry (const gchar  *cookie_context,
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_FAILED,
-                       _("First token of line %d of the keyring at '%s' with content '%s' is malformed"),
+                       _("First token of line %d of the keyring at “%s” with content “%s” is malformed"),
                        n + 1,
                        path,
                        line);
@@ -420,14 +454,13 @@ keyring_lookup_entry (const gchar  *cookie_context,
           goto out;
         }
 
-      line_when = g_ascii_strtoll (tokens[1], &endp, 10);
-      line_when = line_when; /* To avoid -Wunused-but-set-variable */
+      (void)g_ascii_strtoll (tokens[1], &endp, 10); /* do not care what the timestamp is */
       if (*endp != '\0')
         {
           g_set_error (error,
                        G_IO_ERROR,
                        G_IO_ERROR_FAILED,
-                       _("Second token of line %d of the keyring at '%s' with content '%s' is malformed"),
+                       _("Second token of line %d of the keyring at “%s” with content “%s” is malformed"),
                        n + 1,
                        path,
                        line);
@@ -451,7 +484,7 @@ keyring_lookup_entry (const gchar  *cookie_context,
   g_set_error (error,
                G_IO_ERROR,
                G_IO_ERROR_FAILED,
-               _("Didn't find cookie with id %d in the keyring at '%s'"),
+               _("Didn’t find cookie with id %d in the keyring at “%s”"),
                cookie_id,
                path);
 
@@ -481,22 +514,64 @@ _log (const gchar *message,
   g_free (s);
 }
 
+/* Returns FD for lock file, if it was created exclusively (didn't exist already,
+ * and was created successfully) */
+static gint
+create_lock_exclusive (const gchar  *lock_path,
+                       gint64       *mtime_nsec,
+                       GError      **error)
+{
+  int errsv;
+  gint ret;
+
+  ret = g_open (lock_path, O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+  errsv = errno;
+  if (ret < 0)
+    {
+      GLocalFileStat stat_buf;
+
+      /* Get the modification time to distinguish between the lock being stale
+       * or highly contested. */
+      if (mtime_nsec != NULL &&
+          g_local_file_stat (lock_path, G_LOCAL_FILE_STAT_FIELD_MTIME, G_LOCAL_FILE_STAT_FIELD_ALL, &stat_buf) == 0)
+        *mtime_nsec = _g_stat_mtime (&stat_buf) * G_USEC_PER_SEC * 1000 + _g_stat_mtim_nsec (&stat_buf);
+      else if (mtime_nsec != NULL)
+        *mtime_nsec = 0;
+
+      g_set_error (error,
+                   G_IO_ERROR,
+                   g_io_error_from_errno (errsv),
+                   _("Error creating lock file “%s”: %s"),
+                   lock_path,
+                   g_strerror (errsv));
+      return -1;
+    }
+
+  return ret;
+}
+
 static gint
 keyring_acquire_lock (const gchar  *path,
                       GError      **error)
 {
-  gchar *lock;
+  gchar *lock = NULL;
   gint ret;
   guint num_tries;
-  guint num_create_tries;
+  int errsv;
+  gint64 lock_mtime_nsec = 0, lock_mtime_nsec_prev = 0;
 
-  g_return_val_if_fail (path != NULL, FALSE);
-  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+  /* Total possible sleep period = max_tries * timeout_usec = 0.5s */
+  const guint max_tries = 50;
+  const guint timeout_usec = 1000 * 10;
+
+  g_return_val_if_fail (path != NULL, -1);
+  g_return_val_if_fail (error == NULL || *error == NULL, -1);
 
   ret = -1;
-  lock = g_strdup_printf ("%s.lock", path);
+  lock = g_strconcat (path, ".lock", NULL);
 
   /* This is what the D-Bus spec says
+   * (https://dbus.freedesktop.org/doc/dbus-specification.html#auth-mechanisms-sha)
    *
    *  Create a lockfile name by appending ".lock" to the name of the
    *  cookie file. The server should attempt to create this file using
@@ -509,65 +584,51 @@ keyring_acquire_lock (const gchar  *path,
    *         real locking implementations are still flaky on network filesystems
    */
 
-  num_create_tries = 0;
-#ifdef EEXISTS
- again:
-#endif
-  num_tries = 0;
-  while (g_file_test (lock, G_FILE_TEST_EXISTS))
+  for (num_tries = 0; num_tries < max_tries; num_tries++)
     {
+      lock_mtime_nsec_prev = lock_mtime_nsec;
+
+      /* Ignore the error until the final call. */
+      ret = create_lock_exclusive (lock, &lock_mtime_nsec, NULL);
+      if (ret >= 0)
+        break;
+
       /* sleep 10ms, then try again */
-      g_usleep (1000*10);
-      num_tries++;
-      if (num_tries == 50)
-        {
-          /* ok, we slept 50*10ms = 0.5 seconds. Conclude that the lock file must be
-           * stale (nuke the it from orbit)
-           */
-          if (g_unlink (lock) != 0)
-            {
-              g_set_error (error,
-                           G_IO_ERROR,
-                           g_io_error_from_errno (errno),
-                           _("Error deleting stale lock file '%s': %s"),
-                           lock,
-                           strerror (errno));
-              goto out;
-            }
-          _log ("Deleted stale lock file '%s'", lock);
-          break;
-        }
+      g_usleep (timeout_usec);
+
+      /* If the mtime of the lock file changed, don’t count the retry, as it
+       * seems like there’s contention between processes for the lock file,
+       * rather than a stale lock file from a crashed process. */
+      if (num_tries > 0 && lock_mtime_nsec != lock_mtime_nsec_prev)
+        num_tries--;
     }
 
-  ret = g_open (lock, O_CREAT |
-#ifdef O_EXCL
-                O_EXCL,
-#else
-                0,
-#endif
-                0700);
-  if (ret == -1)
+  if (num_tries == max_tries)
     {
-#ifdef EEXISTS
-      /* EEXIST: pathname already exists and O_CREAT and O_EXCL were used. */
-      if (errno == EEXISTS)
+      /* ok, we slept 50*10ms = 0.5 seconds. Conclude that the lock file must be
+       * stale (nuke it from orbit)
+       */
+      if (g_unlink (lock) != 0)
         {
-          num_create_tries++;
-          if (num_create_tries < 5)
-            goto again;
+          errsv = errno;
+          g_set_error (error,
+                       G_IO_ERROR,
+                       g_io_error_from_errno (errsv),
+                       _("Error deleting stale lock file “%s”: %s"),
+                       lock,
+                       g_strerror (errsv));
+          goto out;
         }
-#endif
-      num_create_tries = num_create_tries; /* To avoid -Wunused-but-set-variable */
-      g_set_error (error,
-                   G_IO_ERROR,
-                   g_io_error_from_errno (errno),
-                   _("Error creating lock file '%s': %s"),
-                   lock,
-                   strerror (errno));
-      goto out;
+
+      _log ("Deleted stale lock file '%s'", lock);
+
+      /* Try one last time to create it, now that we've deleted the stale one */
+      ret = create_lock_exclusive (lock, NULL, error);
+      if (ret < 0)
+        goto out;
     }
 
- out:
+out:
   g_free (lock);
   return ret;
 }
@@ -588,22 +649,24 @@ keyring_release_lock (const gchar  *path,
   lock = g_strdup_printf ("%s.lock", path);
   if (close (lock_fd) != 0)
     {
+      int errsv = errno;
       g_set_error (error,
                    G_IO_ERROR,
-                   g_io_error_from_errno (errno),
-                   _("Error closing (unlinked) lock file '%s': %s"),
+                   g_io_error_from_errno (errsv),
+                   _("Error closing (unlinked) lock file “%s”: %s"),
                    lock,
-                   strerror (errno));
+                   g_strerror (errsv));
       goto out;
     }
   if (g_unlink (lock) != 0)
     {
+      int errsv = errno;
       g_set_error (error,
                    G_IO_ERROR,
-                   g_io_error_from_errno (errno),
-                   _("Error unlinking lock file '%s': %s"),
+                   g_io_error_from_errno (errsv),
+                   _("Error unlinking lock file “%s”: %s"),
                    lock,
-                   strerror (errno));
+                   g_strerror (errsv));
       goto out;
     }
 
@@ -626,11 +689,11 @@ keyring_generate_entry (const gchar  *cookie_context,
   gchar *keyring_dir;
   gchar *path;
   gchar *contents;
-  GError *local_error;
+  GError *local_error = NULL;
   gchar **lines;
   gint max_line_id;
   GString *new_contents;
-  guint64 now;
+  gint64 now;
   gboolean have_id;
   gint use_id;
   gchar *use_cookie;
@@ -662,7 +725,6 @@ keyring_generate_entry (const gchar  *cookie_context,
   if (lock_fd == -1)
     goto out;
 
-  local_error = NULL;
   contents = NULL;
   if (!g_file_get_contents (path,
                             &contents,
@@ -672,20 +734,20 @@ keyring_generate_entry (const gchar  *cookie_context,
       if (local_error->domain == G_FILE_ERROR && local_error->code == G_FILE_ERROR_NOENT)
         {
           /* file doesn't have to exist */
-          g_error_free (local_error);
+          g_clear_error (&local_error);
         }
       else
         {
           g_propagate_prefixed_error (error,
-                                      local_error,
-                                      _("Error opening keyring '%s' for writing: "),
+                                      g_steal_pointer (&local_error),
+                                      _("Error opening keyring “%s” for writing: "),
                                       path);
           goto out;
         }
     }
 
   new_contents = g_string_new (NULL);
-  now = time (NULL);
+  now = g_get_real_time () / G_USEC_PER_SEC;
   changed_file = FALSE;
 
   max_line_id = 0;
@@ -699,7 +761,7 @@ keyring_generate_entry (const gchar  *cookie_context,
           gchar **tokens;
           gchar *endp;
           gint line_id;
-          guint64 line_when;
+          gint64 line_when;
           gboolean keep_entry;
 
           if (line[0] == '\0')
@@ -711,7 +773,7 @@ keyring_generate_entry (const gchar  *cookie_context,
               g_set_error (error,
                            G_IO_ERROR,
                            G_IO_ERROR_FAILED,
-                           _("Line %d of the keyring at '%s' with content '%s' is malformed"),
+                           _("Line %d of the keyring at “%s” with content “%s” is malformed"),
                            n + 1,
                            path,
                            line);
@@ -725,7 +787,7 @@ keyring_generate_entry (const gchar  *cookie_context,
               g_set_error (error,
                            G_IO_ERROR,
                            G_IO_ERROR_FAILED,
-                           _("First token of line %d of the keyring at '%s' with content '%s' is malformed"),
+                           _("First token of line %d of the keyring at “%s” with content “%s” is malformed"),
                            n + 1,
                            path,
                            line);
@@ -739,14 +801,13 @@ keyring_generate_entry (const gchar  *cookie_context,
               g_set_error (error,
                            G_IO_ERROR,
                            G_IO_ERROR_FAILED,
-                           _("Second token of line %d of the keyring at '%s' with content '%s' is malformed"),
+                           _("Second token of line %d of the keyring at “%s” with content “%s” is malformed"),
                            n + 1,
                            path,
                            line);
               g_strfreev (tokens);
               goto out;
             }
-          line_when = line_when; /* To avoid -Wunused-but-set-variable */
 
 
           /* D-Bus spec says:
@@ -765,12 +826,8 @@ keyring_generate_entry (const gchar  *cookie_context,
             {
               /* Oddball case: entry is more recent than our current wall-clock time..
                * This is OK, it means that another server on another machine but with
-               * same $HOME wrote the entry.
-               *
-               * So discard the entry if it's more than 1 day in the future ("reasonable
-               * time in the future").
-               */
-              if (line_when - now > 24*60*60)
+               * same $HOME wrote the entry. */
+              if (line_when - now > MAX_TIME_TRAVEL_SECONDS)
                 {
                   keep_entry = FALSE;
                   _log ("Deleted SHA1 cookie from %" G_GUINT64_FORMAT " seconds in the future", line_when - now);
@@ -778,8 +835,8 @@ keyring_generate_entry (const gchar  *cookie_context,
             }
           else
             {
-              /* Discard entry if it's older than 15 minutes ("can be fairly short") */
-              if (now - line_when > 15*60)
+              /* Discard entry if it's too old. */
+              if (now - line_when > EXPIRE_KEYS_TIMEOUT_SECONDS)
                 {
                   keep_entry = FALSE;
                 }
@@ -797,13 +854,13 @@ keyring_generate_entry (const gchar  *cookie_context,
                                       line_when,
                                       tokens[2]);
               max_line_id = MAX (line_id, max_line_id);
-              /* Only reuse entry if not older than 10 minutes.
+              /* Only reuse entry if not older than 5 minutes.
                *
-               * (We need a bit of grace time compared to 15 minutes above.. otherwise
-               * there's a race where we reuse the 14min59.9 secs old entry and a
-               * split-second later another server purges the now 15 minute old entry.)
+               * (We need a bit of grace time compared to 7 minutes above.. otherwise
+               * there's a race where we reuse the 6min59.9 secs old entry and a
+               * split-second later another server purges the now 7 minute old entry.)
                */
-              if (now - line_when < 10 * 60)
+              if (now - line_when < NEW_KEY_TIMEOUT_SECONDS)
                 {
                   if (!have_id)
                     {
@@ -831,13 +888,13 @@ keyring_generate_entry (const gchar  *cookie_context,
       gchar *raw_cookie;
       *out_id = max_line_id + 1;
       raw_cookie = random_blob (32);
-      *out_cookie = hexencode (raw_cookie, 32);
+      *out_cookie = _g_dbus_hexencode (raw_cookie, 32);
       g_free (raw_cookie);
 
       g_string_append_printf (new_contents,
-                              "%d %" G_GUINT64_FORMAT " %s\n",
+                              "%d %" G_GINT64_FORMAT " %s\n",
                               *out_id,
-                              (guint64) time (NULL),
+                              g_get_real_time () / G_USEC_PER_SEC,
                               *out_cookie);
       changed_file = TRUE;
     }
@@ -845,25 +902,27 @@ keyring_generate_entry (const gchar  *cookie_context,
   /* and now actually write the cookie file if there are changes (this is atomic) */
   if (changed_file)
     {
-      if (!g_file_set_contents (path,
-                                new_contents->str,
-                                -1,
-                                error))
+      if (!g_file_set_contents_full (path,
+                                     new_contents->str,
+                                     -1,
+                                     G_FILE_SET_CONTENTS_CONSISTENT,
+                                     0600,
+                                     error))
         {
           *out_id = 0;
-          *out_cookie = 0;
           g_free (*out_cookie);
+          *out_cookie = 0;
           ret = FALSE;
           goto out;
         }
     }
 
  out:
+  /* Any error should have been propagated to @error by now */
+  g_assert (local_error == NULL);
 
   if (lock_fd != -1)
     {
-      GError *local_error;
-      local_error = NULL;
       if (!keyring_release_lock (path, lock_fd, &local_error))
         {
           if (error != NULL)
@@ -875,9 +934,10 @@ keyring_generate_entry (const gchar  *cookie_context,
               else
                 {
                   g_prefix_error (error,
-                                  _("(Additionally, releasing the lock for '%s' also failed: %s) "),
+                                  _("(Additionally, releasing the lock for “%s” also failed: %s) "),
                                   path,
                                   local_error->message);
+                  g_error_free (local_error);
                 }
             }
           else
@@ -944,7 +1004,7 @@ mechanism_server_initiate (GDBusAuthMechanism   *mechanism,
   m->priv->is_server = TRUE;
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
 
-  if (initial_response != NULL && strlen (initial_response) > 0)
+  if (initial_response != NULL && initial_response_len > 0)
     {
 #ifdef G_OS_UNIX
       gint64 uid;
@@ -960,9 +1020,12 @@ mechanism_server_initiate (GDBusAuthMechanism   *mechanism,
         }
 #elif defined(G_OS_WIN32)
       gchar *sid;
-      sid = _g_dbus_win32_get_user_sid ();
+
+      sid = _g_win32_current_process_sid_string (NULL);
+
       if (g_strcmp0 (initial_response, sid) == 0)
         m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_HAVE_DATA_TO_SEND;
+
       g_free (sid);
 #else
 #error Please implement for your OS
@@ -991,7 +1054,8 @@ mechanism_server_data_receive (GDBusAuthMechanism   *mechanism,
   tokens = g_strsplit (data, " ", 0);
   if (g_strv_length (tokens) != 2)
     {
-      g_warning ("Malformed data '%s'", data);
+      g_free (m->priv->reject_reason);
+      m->priv->reject_reason = g_strdup_printf ("Malformed data '%s'", data);
       m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
       goto out;
     }
@@ -1007,6 +1071,8 @@ mechanism_server_data_receive (GDBusAuthMechanism   *mechanism,
     }
   else
     {
+      g_free (m->priv->reject_reason);
+      m->priv->reject_reason = g_strdup_printf ("SHA-1 mismatch");
       m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
     }
 
@@ -1030,6 +1096,7 @@ mechanism_server_data_send (GDBusAuthMechanism   *mechanism,
   g_return_val_if_fail (m->priv->state == G_DBUS_AUTH_MECHANISM_STATE_HAVE_DATA_TO_SEND, NULL);
 
   s = NULL;
+  *out_data_len = 0;
 
   /* TODO: use GDBusAuthObserver here to get the cookie context to use? */
   cookie_context = "org_gtk_gdbus_general";
@@ -1041,7 +1108,8 @@ mechanism_server_data_send (GDBusAuthMechanism   *mechanism,
                                &m->priv->cookie,
                                &error))
     {
-      g_warning ("Error adding entry to keyring: %s", error->message);
+      g_free (m->priv->reject_reason);
+      m->priv->reject_reason = g_strdup_printf ("Error adding entry to keyring: %s", error->message);
       g_error_free (error);
       m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
       goto out;
@@ -1052,6 +1120,7 @@ mechanism_server_data_send (GDBusAuthMechanism   *mechanism,
                        cookie_context,
                        cookie_id,
                        m->priv->server_challenge);
+  *out_data_len = strlen (s);
 
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_WAITING_FOR_DATA;
 
@@ -1060,18 +1129,14 @@ mechanism_server_data_send (GDBusAuthMechanism   *mechanism,
 }
 
 static gchar *
-mechanism_server_get_reject_reason (GDBusAuthMechanism   *mechanism)
+mechanism_server_or_client_get_reject_reason (GDBusAuthMechanism *mechanism)
 {
   GDBusAuthMechanismSha1 *m = G_DBUS_AUTH_MECHANISM_SHA1 (mechanism);
 
   g_return_val_if_fail (G_IS_DBUS_AUTH_MECHANISM_SHA1 (mechanism), NULL);
-  g_return_val_if_fail (m->priv->is_server && !m->priv->is_client, NULL);
   g_return_val_if_fail (m->priv->state == G_DBUS_AUTH_MECHANISM_STATE_REJECTED, NULL);
 
-  /* can never end up here because we are never in the REJECTED state */
-  g_assert_not_reached ();
-
-  return NULL;
+  return g_strdup (m->priv->reject_reason);
 }
 
 static void
@@ -1100,6 +1165,7 @@ mechanism_client_get_state (GDBusAuthMechanism   *mechanism)
 
 static gchar *
 mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
+                           GDBusConnectionFlags  conn_flags,
                            gsize                *out_initial_response_len)
 {
   GDBusAuthMechanismSha1 *m = G_DBUS_AUTH_MECHANISM_SHA1 (mechanism);
@@ -1109,20 +1175,55 @@ mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
   g_return_val_if_fail (!m->priv->is_server && !m->priv->is_client, NULL);
 
   m->priv->is_client = TRUE;
-  m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_WAITING_FOR_DATA;
 
-  *out_initial_response_len = -1;
+  *out_initial_response_len = 0;
 
 #ifdef G_OS_UNIX
   initial_response = g_strdup_printf ("%" G_GINT64_FORMAT, (gint64) getuid ());
 #elif defined (G_OS_WIN32)
-initial_response = _g_dbus_win32_get_user_sid ();
+  initial_response = _g_win32_current_process_sid_string (NULL);
 #else
 #error Please implement for your OS
 #endif
-  g_assert (initial_response != NULL);
+  if (initial_response)
+    {
+      m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_WAITING_FOR_DATA;
+      *out_initial_response_len = strlen (initial_response);
+    }
+  else
+    {
+      m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
+    }
 
   return initial_response;
+}
+
+/* Context names must be valid ASCII, nonzero length, and may not contain the
+ * characters slash ("/"), backslash ("\"), space (" "), newline ("\n"),
+ * carriage return ("\r"), tab ("\t"), or period (".").
+ *
+ * See https://dbus.freedesktop.org/doc/dbus-specification.html#auth-mechanisms-sha */
+static gboolean
+validate_cookie_context (const char *cookie_context)
+{
+  size_t i = 0;
+
+  g_return_val_if_fail (cookie_context != NULL, FALSE);
+
+  for (i = 0; cookie_context[i] != '\0'; i++)
+    {
+      if ((uint8_t) cookie_context[i] >= 128 ||
+          cookie_context[i] == '/' ||
+          cookie_context[i] == '\\' ||
+          cookie_context[i] == ' ' ||
+          cookie_context[i] == '\n' ||
+          cookie_context[i] == '\r' ||
+          cookie_context[i] == '\t' ||
+          cookie_context[i] == '.')
+        return FALSE;
+    }
+
+  return (i > 0);
 }
 
 static void
@@ -1133,7 +1234,7 @@ mechanism_client_data_receive (GDBusAuthMechanism   *mechanism,
   GDBusAuthMechanismSha1 *m = G_DBUS_AUTH_MECHANISM_SHA1 (mechanism);
   gchar **tokens;
   const gchar *cookie_context;
-  guint cookie_id;
+  int64_t cookie_id;
   const gchar *server_challenge;
   gchar *client_challenge;
   gchar *endp;
@@ -1152,26 +1253,37 @@ mechanism_client_data_receive (GDBusAuthMechanism   *mechanism,
   tokens = g_strsplit (data, " ", 0);
   if (g_strv_length (tokens) != 3)
     {
-      g_warning ("Malformed data '%s'", data);
+      g_free (m->priv->reject_reason);
+      m->priv->reject_reason = g_strdup_printf ("Malformed data '%s'", data);
       m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
       goto out;
     }
 
   cookie_context = tokens[0];
-  cookie_id = g_ascii_strtoll (tokens[1], &endp, 10);
-  if (*endp != '\0')
+  if (!validate_cookie_context (tokens[0]))
     {
-      g_warning ("Malformed cookie_id '%s'", tokens[1]);
+      g_free (m->priv->reject_reason);
+      m->priv->reject_reason = g_strdup_printf ("Malformed cookie_context '%s'", tokens[0]);
+      m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
+      goto out;
+    }
+
+  cookie_id = g_ascii_strtoll (tokens[1], &endp, 10);
+  if (*endp != '\0' || endp == tokens[1] || cookie_id < 0 || cookie_id > UINT32_MAX)
+    {
+      g_free (m->priv->reject_reason);
+      m->priv->reject_reason = g_strdup_printf ("Malformed cookie_id '%s'", tokens[1]);
       m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
       goto out;
     }
   server_challenge = tokens[2];
 
   error = NULL;
-  cookie = keyring_lookup_entry (cookie_context, cookie_id, &error);
+  cookie = keyring_lookup_entry (cookie_context, (unsigned int) cookie_id, &error);
   if (cookie == NULL)
     {
-      g_warning ("Problems looking up entry in keyring: %s", error->message);
+      g_free (m->priv->reject_reason);
+      m->priv->reject_reason = g_strdup_printf ("Problems looking up entry in keyring: %s", error->message);
       g_error_free (error);
       m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
       goto out;
@@ -1203,6 +1315,7 @@ mechanism_client_data_send (GDBusAuthMechanism   *mechanism,
 
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_ACCEPTED;
 
+  *out_data_len = strlen (m->priv->to_send);
   return g_strdup (m->priv->to_send);
 }
 

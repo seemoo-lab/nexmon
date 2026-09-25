@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,6 +32,7 @@
 #endif
 
 #include <glib/gutils.h>
+#include <glib/glib-typeof.h>
 
 G_BEGIN_DECLS
 
@@ -68,7 +71,10 @@ typedef struct _GMemVTable GMemVTable;
  */
 
 GLIB_AVAILABLE_IN_ALL
-void	 g_free	          (gpointer	 mem);
+void     (g_free)         (gpointer	     mem);
+GLIB_AVAILABLE_IN_2_76
+void     g_free_sized     (gpointer      mem,
+                           size_t        size);
 
 GLIB_AVAILABLE_IN_2_34
 void     g_clear_pointer  (gpointer      *pp,
@@ -80,14 +86,14 @@ GLIB_AVAILABLE_IN_ALL
 gpointer g_malloc0        (gsize	 n_bytes) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_ALL
 gpointer g_realloc        (gpointer	 mem,
-			   gsize	 n_bytes) G_GNUC_WARN_UNUSED_RESULT;
+			   gsize	 n_bytes) G_GNUC_WARN_UNUSED_RESULT G_GNUC_ALLOC_SIZE(2);
 GLIB_AVAILABLE_IN_ALL
 gpointer g_try_malloc     (gsize	 n_bytes) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_ALL
 gpointer g_try_malloc0    (gsize	 n_bytes) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE(1);
 GLIB_AVAILABLE_IN_ALL
 gpointer g_try_realloc    (gpointer	 mem,
-			   gsize	 n_bytes) G_GNUC_WARN_UNUSED_RESULT;
+			   gsize	 n_bytes) G_GNUC_WARN_UNUSED_RESULT G_GNUC_ALLOC_SIZE(2);
 
 GLIB_AVAILABLE_IN_ALL
 gpointer g_malloc_n       (gsize	 n_blocks,
@@ -98,7 +104,7 @@ gpointer g_malloc0_n      (gsize	 n_blocks,
 GLIB_AVAILABLE_IN_ALL
 gpointer g_realloc_n      (gpointer	 mem,
 			   gsize	 n_blocks,
-			   gsize	 n_block_bytes) G_GNUC_WARN_UNUSED_RESULT;
+			   gsize	 n_block_bytes) G_GNUC_WARN_UNUSED_RESULT G_GNUC_ALLOC_SIZE2(2,3);
 GLIB_AVAILABLE_IN_ALL
 gpointer g_try_malloc_n   (gsize	 n_blocks,
 			   gsize	 n_block_bytes) G_GNUC_MALLOC G_GNUC_ALLOC_SIZE2(1,2);
@@ -108,24 +114,65 @@ gpointer g_try_malloc0_n  (gsize	 n_blocks,
 GLIB_AVAILABLE_IN_ALL
 gpointer g_try_realloc_n  (gpointer	 mem,
 			   gsize	 n_blocks,
-			   gsize	 n_block_bytes) G_GNUC_WARN_UNUSED_RESULT;
+			   gsize	 n_block_bytes) G_GNUC_WARN_UNUSED_RESULT G_GNUC_ALLOC_SIZE2(2,3);
 
+GLIB_AVAILABLE_IN_2_72
+gpointer g_aligned_alloc  (gsize         n_blocks,
+                           gsize         n_block_bytes,
+                           gsize         alignment) G_GNUC_WARN_UNUSED_RESULT G_GNUC_ALLOC_SIZE2(1,2);
+GLIB_AVAILABLE_IN_2_72
+gpointer g_aligned_alloc0 (gsize         n_blocks,
+                           gsize         n_block_bytes,
+                           gsize         alignment) G_GNUC_WARN_UNUSED_RESULT G_GNUC_ALLOC_SIZE2(1,2);
+GLIB_AVAILABLE_IN_2_72
+void     g_aligned_free   (gpointer      mem);
+GLIB_AVAILABLE_IN_2_76
+void     g_aligned_free_sized (gpointer  mem,
+                               size_t    alignment,
+                               size_t    size);
+
+#if defined(glib_typeof) && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_58
+#define g_clear_pointer(pp, destroy)                     \
+  G_STMT_START                                           \
+  {                                                      \
+    G_STATIC_ASSERT (sizeof *(pp) == sizeof (gpointer)); \
+    glib_typeof ((pp)) _pp = (pp);                       \
+    glib_typeof (*(pp)) _ptr = *_pp;                     \
+    *_pp = NULL;                                         \
+    if (_ptr)                                            \
+      (destroy) (_ptr);                                  \
+  }                                                      \
+  G_STMT_END                                             \
+  GLIB_AVAILABLE_MACRO_IN_2_34
+#else /* __GNUC__ */
 #define g_clear_pointer(pp, destroy) \
   G_STMT_START {                                                               \
     G_STATIC_ASSERT (sizeof *(pp) == sizeof (gpointer));                       \
-    /* Only one access, please */                                              \
-    gpointer *_pp = (gpointer *) (pp);                                         \
+    /* Only one access, please; work around type aliasing */                   \
+    union { char *in; gpointer *out; } _pp;                                    \
     gpointer _p;                                                               \
     /* This assignment is needed to avoid a gcc warning */                     \
     GDestroyNotify _destroy = (GDestroyNotify) (destroy);                      \
                                                                                \
-    _p = *_pp;                                                                 \
+    _pp.in = (char *) (pp);                                                    \
+    _p = *_pp.out;                                                             \
     if (_p) 								       \
       { 								       \
-        *_pp = NULL;							       \
+        *_pp.out = NULL;                                                       \
         _destroy (_p);                                                         \
       }                                                                        \
-  } G_STMT_END
+  } G_STMT_END                                                                 \
+  GLIB_AVAILABLE_MACRO_IN_2_34
+#endif /* __GNUC__ */
+
+
+#if G_GNUC_CHECK_VERSION (4, 1) && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_78 && defined(G_HAVE_FREE_SIZED)
+
+#define g_free(mem)                                                            \
+  (__builtin_object_size ((mem), 0) != ((size_t) - 1)) ?                       \
+    g_free_sized (mem, __builtin_object_size ((mem), 0)) : (g_free) (mem)
+
+#endif /* G_GNUC_CHECK_VERSION (4, 1) && && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_78 && defined(G_HAVE_FREE_SIZED) */
 
 /**
  * g_steal_pointer:
@@ -182,6 +229,10 @@ gpointer g_try_realloc_n  (gpointer	 mem,
  *
  * Since: 2.44
  */
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_44
+static inline gpointer g_steal_pointer (gpointer pp);
+
+GLIB_AVAILABLE_STATIC_INLINE_IN_2_44
 static inline gpointer
 g_steal_pointer (gpointer pp)
 {
@@ -195,8 +246,14 @@ g_steal_pointer (gpointer pp)
 }
 
 /* type safety */
+#if defined(glib_typeof) && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_58
+#define g_steal_pointer(pp) ((glib_typeof (*pp)) (g_steal_pointer) (pp))
+#else  /* __GNUC__ */
+/* This version does not depend on gcc extensions, but gcc does not warn
+ * about incompatible-pointer-types: */
 #define g_steal_pointer(pp) \
   (0 ? (*(pp)) : (g_steal_pointer) (pp))
+#endif /* __GNUC__ */
 
 /* Optimise: avoid the call to the (slower) _n function if we can
  * determine at compile-time that no overflow happens.
@@ -204,31 +261,31 @@ g_steal_pointer (gpointer pp)
 #if defined (__GNUC__) && (__GNUC__ >= 2) && defined (__OPTIMIZE__)
 #  define _G_NEW(struct_type, n_structs, func) \
 	(struct_type *) (G_GNUC_EXTENSION ({			\
-	  gsize __n = (gsize) (n_structs);			\
-	  gsize __s = sizeof (struct_type);			\
-	  gpointer __p;						\
-	  if (__s == 1)						\
-	    __p = g_##func (__n);				\
-	  else if (__builtin_constant_p (__n) &&		\
-	           (__s == 0 || __n <= G_MAXSIZE / __s))	\
-	    __p = g_##func (__n * __s);				\
+	  gsize _n = (gsize) (n_structs);			\
+	  gsize _s = sizeof (struct_type);			\
+	  gpointer _p;						\
+	  if (_s == 1)						\
+	    _p = g_##func (_n);					\
+	  else if (__builtin_constant_p (_n) &&			\
+	           (_s == 0 || _n <= G_MAXSIZE / _s))		\
+	    _p = g_##func (_n * _s);				\
 	  else							\
-	    __p = g_##func##_n (__n, __s);			\
-	  __p;							\
+	    _p = g_##func##_n (_n, _s);				\
+	  _p;							\
 	}))
 #  define _G_RENEW(struct_type, mem, n_structs, func) \
 	(struct_type *) (G_GNUC_EXTENSION ({			\
-	  gsize __n = (gsize) (n_structs);			\
-	  gsize __s = sizeof (struct_type);			\
-	  gpointer __p = (gpointer) (mem);			\
-	  if (__s == 1)						\
-	    __p = g_##func (__p, __n);				\
-	  else if (__builtin_constant_p (__n) &&		\
-	           (__s == 0 || __n <= G_MAXSIZE / __s))	\
-	    __p = g_##func (__p, __n * __s);			\
+	  gsize _n = (gsize) (n_structs);			\
+	  gsize _s = sizeof (struct_type);			\
+	  gpointer _p = (gpointer) (mem);			\
+	  if (_s == 1)						\
+	    _p = g_##func (_p, _n);				\
+	  else if (__builtin_constant_p (_n) &&			\
+	           (_s == 0 || _n <= G_MAXSIZE / _s))		\
+	    _p = g_##func (_p, _n * _s);			\
 	  else							\
-	    __p = g_##func##_n (__p, __n, __s);			\
-	  __p;							\
+	    _p = g_##func##_n (_p, _n, _s);			\
+	  _p;							\
 	}))
 
 #else
@@ -298,7 +355,7 @@ g_steal_pointer (gpointer pp)
  * Attempts to allocate @n_structs elements of type @struct_type, and returns
  * %NULL on failure. Contrast with g_new(), which aborts the program on failure.
  * The returned pointer is cast to a pointer to the given type.
- * The function returns %NULL when @n_structs is 0 of if an overflow occurs.
+ * The function returns %NULL when @n_structs is 0 or if an overflow occurs.
  * 
  * Since: 2.8
  * Returns: a pointer to the allocated memory, cast to a pointer to @struct_type

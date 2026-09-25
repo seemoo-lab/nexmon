@@ -1,0 +1,19 @@
+diff --git a/src/parser.c b/src/parser.c
+index 7ce433c..eda3381 100644
+--- a/src/parser.c
++++ b/src/parser.c
+@@ -1,3 +1,14 @@
++/* GCC miscompiles this compilation unit on i386 at the -O2 optimization level
++   on
++     - gcc 4.5.2 (Slackware 13.37)
++     - gcc 4.6.2 (openSUSE 12.1)
++     - gcc 4.7.1 (Slackware 14)
++     - gcc 4.7.2 (Debian GNU/kFreeBSD 7.11)
++   This works around it by reducing the optimization level.  */
++#if __GNUC__ == 4 && __GNUC_MINOR__ >= 4 && __GNUC_MINOR__ < 8 && !defined __clang__ && defined __i386
++#pragma GCC optimize ("O0")
++#endif
++
+ #include "tree_sitter/parser.h"
+ 
+ #if defined(__GNUC__) || defined(__clang__)

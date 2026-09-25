@@ -22,7 +22,7 @@ EOF
 ${XGETTEXT} -o prog.tmp --omit-header --no-location prog.js || Exit 1
 LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
 
-cat <<EOF > prog.ok
+cat <<\EOF > prog.ok
 msgid "'Your command, please?', asked the waiter."
 msgstr ""
 
@@ -58,7 +58,7 @@ test -d fr || mkdir fr
 test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} -o fr/LC_MESSAGES/prog.mo fr.po
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
 
 # Test for presence of gjs.
 (gjs -h) >/dev/null 2>/dev/null \
@@ -66,13 +66,25 @@ ${MSGFMT} -o fr/LC_MESSAGES/prog.mo fr.po
 (gjs -c imports.gettext) >/dev/null 2>/dev/null \
   || { echo "Skipping test: gjs gettext module not found"; Exit 77; }
 (gjs -c imports.format) >/dev/null 2>/dev/null \
-    || { echo "Skipping test: gjs format module not found"; Exit 77; }
-(pkg-config gjs-1.0 --atleast-version=1.40) >/dev/null 2>/dev/null \
-    || { echo "Skipping test: gjs version is older than 1.40"; Exit 77; }
+  || { echo "Skipping test: gjs format module not found"; Exit 77; }
+# Test for presence of gjs version 1.40 or newer.
+(gjs -c 'print(imports.format.vprintf("%3$s%2$s%1$s", ["x","y","z"]))') 2>/dev/null | grep zyx >/dev/null \
+  || { echo "Skipping test: gjs version is older than 1.40"; Exit 77; }
+# On some versions of macOS, gjs from Homebrew is installed without a working 'textdomain' binding, leading to an error
+#   Gjs-CRITICAL **: 11:03:06.647: JS ERROR: GIRepository.InvokeError: Could not locate gjs_textdomain: dlopen(libgjs.0.dylib, 0x0009): tried: 'libgjs.0.dylib' (no such file), '/System/Volumes/Preboot/Cryptexes/OSlibgjs.0.dylib' (no such file), '/opt/homebrew/Cellar/gjs/1.86.0/bin/../../../../opt/glib/lib/libgjs.0.dylib' (no such file), '/usr/lib/libgjs.0.dylib' (no such file, not in dyld cache), 'libgjs.0.dylib' (no such file)
+#   textdomain@resource:///org/gnome/gjs/modules/core/_gettext.js:31:5
+#   @prog.js:7:9
+case "$host_os" in
+  darwin*) echo "Skipping test: gjs gettext module possibly broken"; Exit 77;;
+esac
 
 # Test which of the fr_FR locales are installed.
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+# gjs on macOS supports only UTF-8 locales.
+case "$host_os" in
+  darwin*) LOCALE_FR=none ;;
+esac
 if test $LOCALE_FR != none; then
   LC_ALL=$LOCALE_FR ../testlocale
   case $? in
@@ -111,14 +123,12 @@ EOF
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
 if test $LOCALE_FR != none; then
-  prepare_locale_ fr $LOCALE_FR
   LANGUAGE= LC_ALL=$LOCALE_FR gjs prog.js > prog.out || Exit 1
   ${DIFF} prog.ok prog.out || Exit 1
 fi
 if test $LOCALE_FR_UTF8 != none; then
-  prepare_locale_ fr $LOCALE_FR_UTF8
   LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 gjs prog.js > prog.out || Exit 1
-  ${DIFF} -u prog.oku prog.out || Exit 1
+  ${DIFF} prog.oku prog.out || Exit 1
 fi
 
 Exit 0

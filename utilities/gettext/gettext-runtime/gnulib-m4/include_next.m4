@@ -1,12 +1,15 @@
-# include_next.m4 serial 23
-dnl Copyright (C) 2006-2016 Free Software Foundation, Inc.
+# include_next.m4
+# serial 27
+dnl Copyright (C) 2006-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl From Paul Eggert and Derek Price.
 
-dnl Sets INCLUDE_NEXT and PRAGMA_SYSTEM_HEADER.
+dnl Sets INCLUDE_NEXT, INCLUDE_NEXT_AS_FIRST_DIRECTIVE, PRAGMA_SYSTEM_HEADER,
+dnl and PRAGMA_COLUMNS.
 dnl
 dnl INCLUDE_NEXT expands to 'include_next' if the compiler supports it, or to
 dnl 'include' otherwise.
@@ -73,17 +76,17 @@ EOF
 #endif
 #define DEFINED_IN_CONFTESTD2
 EOF
-     gl_save_CPPFLAGS="$CPPFLAGS"
-     CPPFLAGS="$gl_save_CPPFLAGS -Iconftestd1b -Iconftestd2"
+     gl_saved_CPPFLAGS="$CPPFLAGS"
+     CPPFLAGS="$gl_saved_CPPFLAGS -Iconftestd1b -Iconftestd2"
 dnl We intentionally avoid using AC_LANG_SOURCE here.
      AC_COMPILE_IFELSE([AC_LANG_DEFINES_PROVIDED[#include <conftest.h>]],
        [gl_cv_have_include_next=yes],
-       [CPPFLAGS="$gl_save_CPPFLAGS -Iconftestd1a -Iconftestd2"
+       [CPPFLAGS="$gl_saved_CPPFLAGS -Iconftestd1a -Iconftestd2"
         AC_COMPILE_IFELSE([AC_LANG_DEFINES_PROVIDED[#include <conftest.h>]],
           [gl_cv_have_include_next=buggy],
           [gl_cv_have_include_next=no])
        ])
-     CPPFLAGS="$gl_save_CPPFLAGS"
+     CPPFLAGS="$gl_saved_CPPFLAGS"
      rm -rf conftestd1a conftestd1b conftestd2
     ])
   PRAGMA_SYSTEM_HEADER=
@@ -105,19 +108,21 @@ dnl We intentionally avoid using AC_LANG_SOURCE here.
   AC_SUBST([INCLUDE_NEXT])
   AC_SUBST([INCLUDE_NEXT_AS_FIRST_DIRECTIVE])
   AC_SUBST([PRAGMA_SYSTEM_HEADER])
-  AC_CACHE_CHECK([whether system header files limit the line length],
-    [gl_cv_pragma_columns],
-    [dnl HP NonStop systems, which define __TANDEM, have this misfeature.
-     AC_EGREP_CPP([choke me],
+
+  dnl HP NonStop systems, which define __TANDEM, limit the line length
+  dnl after including some system header files.
+  AC_CACHE_CHECK([whether source code line length is unlimited],
+    [gl_cv_source_line_length_unlimited],
+    [AC_EGREP_CPP([choke me],
        [
 #ifdef __TANDEM
 choke me
 #endif
        ],
-       [gl_cv_pragma_columns=yes],
-       [gl_cv_pragma_columns=no])
+       [gl_cv_source_line_length_unlimited=no],
+       [gl_cv_source_line_length_unlimited=yes])
     ])
-  if test $gl_cv_pragma_columns = yes; then
+  if test $gl_cv_source_line_length_unlimited = no; then
     PRAGMA_COLUMNS="#pragma COLUMNS 10000"
   else
     PRAGMA_COLUMNS=
@@ -175,42 +180,40 @@ AC_DEFUN([gl_NEXT_HEADERS_INTERNAL],
     [AC_CHECK_HEADERS_ONCE([$1])
     ])
 
-dnl FIXME: gl_next_header and gl_header_exists must be used unquoted
-dnl until we can assume autoconf 2.64 or newer.
   m4_foreach_w([gl_HEADER_NAME], [$1],
     [AS_VAR_PUSHDEF([gl_next_header],
                     [gl_cv_next_]m4_defn([gl_HEADER_NAME]))
      if test $gl_cv_have_include_next = yes; then
-       AS_VAR_SET(gl_next_header, ['<'gl_HEADER_NAME'>'])
+       AS_VAR_SET([gl_next_header], ['<'gl_HEADER_NAME'>'])
      else
        AC_CACHE_CHECK(
          [absolute name of <]m4_defn([gl_HEADER_NAME])[>],
-         m4_defn([gl_next_header]),
+         [gl_next_header],
          [m4_if([$2], [check],
             [AS_VAR_PUSHDEF([gl_header_exists],
                             [ac_cv_header_]m4_defn([gl_HEADER_NAME]))
-             if test AS_VAR_GET(gl_header_exists) = yes; then
+             if test AS_VAR_GET([gl_header_exists]) = yes; then
              AS_VAR_POPDEF([gl_header_exists])
             ])
-           gl_ABSOLUTE_HEADER_ONE(gl_HEADER_NAME)
-           AS_VAR_COPY([gl_header], [gl_cv_absolute_]AS_TR_SH(gl_HEADER_NAME))
-           AS_VAR_SET(gl_next_header, ['"'$gl_header'"'])
+          gl_ABSOLUTE_HEADER_ONE(gl_HEADER_NAME)
+          AS_VAR_COPY([gl_header], [gl_cv_absolute_]AS_TR_SH(gl_HEADER_NAME))
+          AS_VAR_SET([gl_next_header], ['"'$gl_header'"'])
           m4_if([$2], [check],
             [else
-               AS_VAR_SET(gl_next_header, ['<'gl_HEADER_NAME'>'])
+               AS_VAR_SET([gl_next_header], ['<'gl_HEADER_NAME'>'])
              fi
             ])
          ])
      fi
      AC_SUBST(
        AS_TR_CPP([NEXT_]m4_defn([gl_HEADER_NAME])),
-       [AS_VAR_GET(gl_next_header)])
+       [AS_VAR_GET([gl_next_header])])
      if test $gl_cv_have_include_next = yes || test $gl_cv_have_include_next = buggy; then
        # INCLUDE_NEXT_AS_FIRST_DIRECTIVE='include_next'
        gl_next_as_first_directive='<'gl_HEADER_NAME'>'
      else
        # INCLUDE_NEXT_AS_FIRST_DIRECTIVE='include'
-       gl_next_as_first_directive=AS_VAR_GET(gl_next_header)
+       gl_next_as_first_directive=AS_VAR_GET([gl_next_header])
      fi
      AC_SUBST(
        AS_TR_CPP([NEXT_AS_FIRST_DIRECTIVE_]m4_defn([gl_HEADER_NAME])),

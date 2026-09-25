@@ -1,13 +1,14 @@
-# glibc2.m4 serial 3
-dnl Copyright (C) 2000-2002, 2004, 2008, 2010-2016 Free Software Foundation,
-dnl Inc.
+# glibc2.m4
+# serial 4
+dnl Copyright (C) 2000-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
-# Test for the GNU C Library, version 2.0 or newer.
-# From Bruno Haible.
+dnl From Bruno Haible.
 
+dnl Test for the GNU C Library, version 2.0 or newer.
 AC_DEFUN([gt_GLIBC2],
   [
     AC_CACHE_CHECK([whether we are using the GNU C Library 2 or newer],

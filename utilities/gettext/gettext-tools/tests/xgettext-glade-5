@@ -3,7 +3,7 @@
 
 # Test of Glade 2 support for msgctxt.
 
-cat <<EOF > xg-gl-5-empty.glade
+cat <<\EOF > xg-gl-5-empty.glade
 <?xml version="1.0"?>
 <GTK-Interface/>
 EOF
@@ -15,7 +15,7 @@ test $? = 0 || {
   Exit 77
 }
 
-cat <<EOF > xg-gl-5.glade
+cat <<\EOF > xg-gl-5.glade
 <?xml version="1.0"?>
 <glade-interface>
   <!-- interface-requires gtk+ 2.8 -->
@@ -55,9 +55,7 @@ EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} -o xg-gl-5.tmp xg-gl-5.glade || Exit 1
-# Don't simplify this to "grep ... < xg-gl-5.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-gl-5.tmp | grep -v 'POT-Creation-Date' > xg-gl-5.pot
+func_filter_POT_Creation_Date xg-gl-5.tmp xg-gl-5.pot
 
 cat <<\EOF > xg-gl-5.ok
 # SOME DESCRIPTIVE TITLE.
@@ -99,9 +97,7 @@ test $result = 0 || {
 # Check with --extract-all option
 rm xg-gl-5.tmp
 ${XGETTEXT} -a -o xg-gl-5.tmp xg-gl-5.glade || Exit 1
-# Don't simplify this to "grep ... < xg-gl-5.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-gl-5.tmp | grep -v 'POT-Creation-Date' > xg-gl-5.pot
+func_filter_POT_Creation_Date xg-gl-5.tmp xg-gl-5.pot
 
 ${DIFF} xg-gl-5.ok xg-gl-5.pot
 result=$?
@@ -110,7 +106,7 @@ test $result = 0 || {
   exit $result
 }
 
-cat <<EOF > xg-gl-5b.glade
+cat <<\EOF > xg-gl-5b.glade
 <?xml version="1.0"?>
 <glade-interface>
   <!-- interface-requires gtk+ 2.8 -->
@@ -150,9 +146,7 @@ EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} -o xg-gl-5b.tmp xg-gl-5b.glade 2>/dev/null || Exit 1
-# Don't simplify this to "grep ... < xg-gl-5b.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-gl-5b.tmp | grep -v 'POT-Creation-Date' > xg-gl-5b.pot
+func_filter_POT_Creation_Date xg-gl-5b.tmp xg-gl-5b.pot
 
 cat <<\EOF > xg-gl-5b.ok
 # SOME DESCRIPTIVE TITLE.

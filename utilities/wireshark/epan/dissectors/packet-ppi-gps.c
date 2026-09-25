@@ -8,19 +8,7 @@
  *
  * Copied from packet-radiotap.c
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -68,66 +56,66 @@ enum ppi_geotagging_type {
 void proto_register_ppi_gps(void);
 
 /* protocol */
-static int proto_ppi_gps = -1;
+static int proto_ppi_gps;
 
-static int hf_ppi_gps_version = -1;
-static int hf_ppi_gps_pad = -1;
-static int hf_ppi_gps_length = -1;
-static int hf_ppi_gps_present = -1;
-static int hf_ppi_gps_gpsflags_flags = -1;
-static int hf_ppi_gps_lon = -1;
-static int hf_ppi_gps_lat = -1;
-static int hf_ppi_gps_alt = -1;
-static int hf_ppi_gps_alt_gnd = -1;
-static int hf_ppi_gps_gpstime = -1;
-/* static int hf_ppi_gps_fractime = -1; */
-static int hf_ppi_gps_eph = -1;
-static int hf_ppi_gps_epv = -1;
-static int hf_ppi_gps_ept = -1;
-static int hf_ppi_gps_descstr = -1;
-static int hf_ppi_gps_appspecific_num = -1; /* 4-byte tag no */
-static int hf_ppi_gps_appspecific_data = -1; /* 60 byte arbitrary data */
+static int hf_ppi_gps_version;
+static int hf_ppi_gps_pad;
+static int hf_ppi_gps_length;
+static int hf_ppi_gps_present;
+static int hf_ppi_gps_gpsflags_flags;
+static int hf_ppi_gps_lon;
+static int hf_ppi_gps_lat;
+static int hf_ppi_gps_alt;
+static int hf_ppi_gps_alt_gnd;
+static int hf_ppi_gps_gpstime;
+static int hf_ppi_gps_fractime;
+static int hf_ppi_gps_eph;
+static int hf_ppi_gps_epv;
+static int hf_ppi_gps_ept;
+static int hf_ppi_gps_descstr;
+static int hf_ppi_gps_appspecific_num; /* 4-byte tag no */
+static int hf_ppi_gps_appspecific_data; /* 60 byte arbitrary data */
 /* "Present" flags, tese represent decoded-bits in the gui */
-static int hf_ppi_gps_present_gpsflags_flags = -1;
-static int hf_ppi_gps_present_lon = -1;
-static int hf_ppi_gps_present_lat = -1;
-static int hf_ppi_gps_present_alt = -1;
-static int hf_ppi_gps_present_alt_gnd = -1;
-static int hf_ppi_gps_present_gpstime = -1;
-static int hf_ppi_gps_present_fractime = -1;
-static int hf_ppi_gps_present_eph = -1;
-static int hf_ppi_gps_present_epv = -1;
-static int hf_ppi_gps_present_ept = -1;
-static int hf_ppi_gps_present_descr = -1;
-static int hf_ppi_gps_present_appspecific_num = -1;
-static int hf_ppi_gps_present_appspecific_data = -1;
-static int hf_ppi_gps_present_ext = -1;
+static int hf_ppi_gps_present_gpsflags_flags;
+static int hf_ppi_gps_present_lon;
+static int hf_ppi_gps_present_lat;
+static int hf_ppi_gps_present_alt;
+static int hf_ppi_gps_present_alt_gnd;
+static int hf_ppi_gps_present_gpstime;
+static int hf_ppi_gps_present_fractime;
+static int hf_ppi_gps_present_eph;
+static int hf_ppi_gps_present_epv;
+static int hf_ppi_gps_present_ept;
+static int hf_ppi_gps_present_descr;
+static int hf_ppi_gps_present_appspecific_num;
+static int hf_ppi_gps_present_appspecific_data;
+static int hf_ppi_gps_present_ext;
 
 /* Devicetype flags. not to be confused with "present" flags. These are optional */
-static int hf_ppi_gps_gpsflags_flag0_nofix = -1;
-static int hf_ppi_gps_gpsflags_flag1_gpsfix = -1;
-static int hf_ppi_gps_gpsflags_flag2_diffgps = -1;
-static int hf_ppi_gps_gpsflags_flag3_PPS = -1;
-static int hf_ppi_gps_gpsflags_flag4_RTK = -1;
-static int hf_ppi_gps_gpsflags_flag5_floatRTK = -1;
-static int hf_ppi_gps_gpsflags_flag6_dead_reck = -1;
-static int hf_ppi_gps_gpsflags_flag7_manual = -1;
-static int hf_ppi_gps_gpsflags_flag8_sim = -1;
+static int hf_ppi_gps_gpsflags_flag0_nofix;
+static int hf_ppi_gps_gpsflags_flag1_gpsfix;
+static int hf_ppi_gps_gpsflags_flag2_diffgps;
+static int hf_ppi_gps_gpsflags_flag3_PPS;
+static int hf_ppi_gps_gpsflags_flag4_RTK;
+static int hf_ppi_gps_gpsflags_flag5_floatRTK;
+static int hf_ppi_gps_gpsflags_flag6_dead_reck;
+static int hf_ppi_gps_gpsflags_flag7_manual;
+static int hf_ppi_gps_gpsflags_flag8_sim;
 
 /* These represent arrow-dropdownthings in the gui */
-static gint ett_ppi_gps = -1;
-static gint ett_ppi_gps_present = -1;
-static gint ett_ppi_gps_gpsflags_flags= -1;
+static int ett_ppi_gps;
+static int ett_ppi_gps_present;
+static int ett_ppi_gps_gpsflags_flags;
 
-static expert_field ei_ppi_gps_present_bit = EI_INIT;
-static expert_field ei_ppi_gps_version = EI_INIT;
-static expert_field ei_ppi_gps_length = EI_INIT;
+static expert_field ei_ppi_gps_present_bit;
+static expert_field ei_ppi_gps_version;
+static expert_field ei_ppi_gps_length;
 
 static int
 dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_) {
     /* These are locals used for processing the current tvb */
-    guint length;
-    gint  length_remaining;
+    unsigned length;
+    int   length_remaining;
     int offset = 0;
 
     proto_tree *ppi_gps_tree = NULL;
@@ -135,7 +123,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     proto_item *version_item, *length_item, *pt;
     proto_item *gps_line = NULL;
 
-    static const int * ppi_gps_present_flags[] = {
+    static int * const ppi_gps_present_flags[] = {
         &hf_ppi_gps_present_gpsflags_flags,
         &hf_ppi_gps_present_lat,
         &hf_ppi_gps_present_lon,
@@ -153,7 +141,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
         NULL
     };
 
-    static const int * ppi_antenna_gps_flags[] = {
+    static int * const ppi_antenna_gps_flags[] = {
         &hf_ppi_gps_gpsflags_flag0_nofix,
         &hf_ppi_gps_gpsflags_flag1_gpsfix,
         &hf_ppi_gps_gpsflags_flag2_diffgps,
@@ -168,20 +156,20 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 
     /* bits */
     int bit;
-    guint32 present, next_present;
+    uint32_t present, next_present;
     /* values actually read out, for displaying */
-    guint32 version;
-    gdouble lat, lon, alt, alt_gnd;
+    uint32_t version;
+    double lat, lon, alt, alt_gnd;
     nstime_t gps_timestamp;
     int gps_time_size, already_processed_fractime; /* we use this internally to track if this is a 4 or 8 byte wide timestamp */
-    gdouble eph, epv, ept;
-    gchar *curr_str;
+    double eph, epv, ept;
+    char *curr_str;
 
 
     /* these are temporary intermediate values, used in the individual cases below */
-    guint32 t_lat, t_lon, t_alt, t_alt_gnd;
-    guint32 t_herr, t_verr, t_terr;
-    guint32 t_appspecific_num;
+    uint32_t t_lat, t_lon, t_alt, t_alt_gnd;
+    uint32_t t_herr, t_verr, t_terr;
+    uint32_t t_appspecific_num;
     /* initialize the timestamp value(s) */
     gps_timestamp.secs = gps_timestamp.nsecs = already_processed_fractime = 0;
 
@@ -189,7 +177,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     col_clear(pinfo->cinfo,COL_INFO);
 
     /* pull out the first three fields of the BASE-GEOTAG-HEADER */
-    version = tvb_get_guint8(tvb, offset);
+    version = tvb_get_uint8(tvb, offset);
     length  = tvb_get_letohs(tvb, offset+2);
     present = tvb_get_letohl(tvb, offset+4);
 
@@ -250,7 +238,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
             if (length_remaining < 4)
                 break;
             t_lat = tvb_get_letohl(tvb, offset);
-            lat =  ppi_fixed3_7_to_gdouble(t_lat);
+            lat =  ppi_fixed3_7_to_double(t_lat);
             if (tree)
             {
                 proto_tree_add_double(ppi_gps_tree, hf_ppi_gps_lat, tvb, offset, 4, lat);
@@ -263,7 +251,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
             if (length_remaining < 4)
                 break;
             t_lon = tvb_get_letohl(tvb, offset);
-            lon =  ppi_fixed3_7_to_gdouble(t_lon);
+            lon =  ppi_fixed3_7_to_double(t_lon);
             if (tree)
             {
                 proto_tree_add_double(ppi_gps_tree, hf_ppi_gps_lon, tvb, offset, 4, lon);
@@ -276,7 +264,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
             if (length_remaining < 4)
                 break;
             t_alt = tvb_get_letohl(tvb, offset);
-            alt = ppi_fixed6_4_to_gdouble(t_alt);
+            alt = ppi_fixed6_4_to_double(t_alt);
             if (tree)
             {
                 proto_tree_add_double(ppi_gps_tree, hf_ppi_gps_alt, tvb, offset, 4, alt);
@@ -289,7 +277,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
             if (length_remaining < 4)
                 break;
             t_alt_gnd = tvb_get_letohl(tvb, offset);
-            alt_gnd = ppi_fixed6_4_to_gdouble(t_alt_gnd);
+            alt_gnd = ppi_fixed6_4_to_double(t_alt_gnd);
             if (tree)
             {
                 proto_tree_add_double(ppi_gps_tree, hf_ppi_gps_alt_gnd, tvb, offset, 4, alt_gnd);
@@ -307,7 +295,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
             /* This is somewhat tricky, inside the GPSTIME case we test if the optional fractional time */
             /* is present. If so, we pull it out, and combine it with GPSTime. */
             /* If we do this, we set already_processed_fractime to avoid hitting it below */
-            if (length_remaining < 4 && (present & PPI_GPS_MASK_FRACTIME))
+            if (length_remaining < 8 && (present & PPI_GPS_MASK_FRACTIME))
                 break;
             else if (present & PPI_GPS_MASK_FRACTIME) {
                 gps_timestamp.nsecs =  tvb_get_letohl(tvb, offset + 4); /* manually offset seconds */
@@ -323,12 +311,15 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
                 break;
             if (already_processed_fractime)
                 break;
+            proto_tree_add_item(ppi_gps_tree, hf_ppi_gps_fractime, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+            offset += 4;
+            length_remaining -= 4;
             break;
         case  PPI_GEOTAG_EPH:
             if (length_remaining < 4)
                 break;
             t_herr = tvb_get_letohl(tvb, offset);
-            eph  =  ppi_fixed3_6_to_gdouble(t_herr);
+            eph  =  ppi_fixed3_6_to_double(t_herr);
             proto_tree_add_double(ppi_gps_tree, hf_ppi_gps_eph, tvb, offset, 4, eph);
             offset+=4;
             length_remaining-=4;
@@ -337,7 +328,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
             if (length_remaining < 4)
                 break;
             t_verr = tvb_get_letohl(tvb, offset);
-            epv  =  ppi_fixed3_6_to_gdouble(t_verr);
+            epv  =  ppi_fixed3_6_to_double(t_verr);
             proto_tree_add_double(ppi_gps_tree, hf_ppi_gps_epv, tvb, offset, 4, epv);
             offset+=4;
             length_remaining-=4;
@@ -346,7 +337,7 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
             if (length_remaining < 4)
                 break;
             t_terr = tvb_get_letohl(tvb, offset);
-            ept  =  ppi_ns_counter_to_gdouble(t_terr);
+            ept  =  ppi_ns_counter_to_double(t_terr);
             proto_tree_add_double(ppi_gps_tree, hf_ppi_gps_ept, tvb, offset, 4, ept);
             offset+=4;
             length_remaining-=4;
@@ -356,8 +347,8 @@ dissect_ppi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
                 break;
             if (tree)
             {
-                /* proto_tree_add_item(ppi_gps_tree, hf_ppi_gps_descstr, tvb, offset, 32,  ENC_ASCII|ENC_NA); */
-                curr_str = tvb_format_stringzpad(tvb, offset, 32); /* need to append_text this */
+                /* proto_tree_add_item(ppi_gps_tree, hf_ppi_gps_descstr, tvb, offset, 32,  ENC_ASCII); */
+                curr_str = tvb_format_stringzpad(pinfo->pool, tvb, offset, 32); /* need to append_text this */
                 proto_tree_add_string(ppi_gps_tree, hf_ppi_gps_descstr, tvb, offset, 32, curr_str);
                 proto_item_append_text(gps_line, " (%s)", curr_str);
             }
@@ -516,12 +507,10 @@ proto_register_ppi_gps(void) {
           { "GPSTimestamp", "ppi_gps.gpstime",
             FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, NULL, 0x0,
             "GPSTimestamp packet was received at", HFILL } },
-#if 0
         { &hf_ppi_gps_fractime,
           { "fractional Timestamp", "ppi_gps.fractime",
-            FT_DOUBLE, BASE_NONE, NULL, 0x0,
-            "fractional GPSTimestamp packet was received at", HFILL } },
-#endif
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            "Fractional of GPSTimestamp packet was received at", HFILL } },
         { &hf_ppi_gps_eph,
           { "Horizontal Error (m)", "ppi_gps.eph",
             FT_DOUBLE, BASE_NONE, NULL, 0x0,
@@ -595,7 +584,7 @@ proto_register_ppi_gps(void) {
             NULL, HFILL } },
 
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ppi_gps,
         &ett_ppi_gps_present,
         &ett_ppi_gps_gpsflags_flags

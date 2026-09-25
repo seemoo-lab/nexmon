@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,6 +29,7 @@
 #include <gio/gdummyfile.h>
 #include <sys/types.h>
 #ifdef G_OS_UNIX
+#include "glib-unix.h"
 #include <pwd.h>
 #endif
 #include <string.h>
@@ -79,7 +82,10 @@ static GFile *
 g_local_vfs_get_file_for_path (GVfs       *vfs,
                                const char *path)
 {
-  return _g_local_file_new (path);
+  if (*path == '\0')
+    return _g_dummy_file_new (path);
+  else
+    return _g_local_file_new (path);
 }
 
 static GFile *
@@ -88,22 +94,9 @@ g_local_vfs_get_file_for_uri (GVfs       *vfs,
 {
   char *path;
   GFile *file;
-  char *stripped_uri, *hash;
-  
-  if (strchr (uri, '#') != NULL)
-    {
-      stripped_uri = g_strdup (uri);
-      hash = strchr (stripped_uri, '#');
-      *hash = 0;
-    }
-  else
-    stripped_uri = (char *)uri;
-      
-  path = g_filename_from_uri (stripped_uri, NULL, NULL);
 
-  if (stripped_uri != uri)
-    g_free (stripped_uri);
-  
+  path = g_filename_from_uri (uri, NULL, NULL);
+
   if (path != NULL)
     file = _g_local_file_new (path);
   else
@@ -129,7 +122,7 @@ g_local_vfs_parse_name (GVfs       *vfs,
   GFile *file;
   char *filename;
   char *user_prefix;
-  const char *user_start, *user_end;
+  const char *user_end;
   char *rest;
   
   g_return_val_if_fail (G_IS_VFS (vfs), NULL);
@@ -141,33 +134,40 @@ g_local_vfs_parse_name (GVfs       *vfs,
     {
       if (*parse_name == '~')
 	{
+#ifdef G_OS_UNIX
+	  const char *user_start;
+	  user_start = parse_name + 1;
+#endif
 	  parse_name ++;
-	  user_start = parse_name;
 	  
 	  while (*parse_name != 0 && *parse_name != '/')
 	    parse_name++;
 	  
 	  user_end = parse_name;
 
+#ifdef G_OS_UNIX
 	  if (user_end == user_start)
 	    user_prefix = g_strdup (g_get_home_dir ());
 	  else
 	    {
-#ifdef G_OS_UNIX
               struct passwd *passwd_file_entry;
               char *user_name;
 
-	      user_name = g_strndup (user_start, user_end - user_start);
-	      passwd_file_entry = getpwnam (user_name);
-	      g_free (user_name);
-	      
-	      if (passwd_file_entry != NULL &&
-		  passwd_file_entry->pw_dir != NULL)
-		user_prefix = g_strdup (passwd_file_entry->pw_dir);
-	      else
-#endif
-		user_prefix = g_strdup (g_get_home_dir ());
+              user_name = g_strndup (user_start, user_end - user_start);
+              passwd_file_entry = g_unix_get_passwd_entry (user_name, NULL);
+              g_free (user_name);
+
+              if (passwd_file_entry != NULL &&
+                  passwd_file_entry->pw_dir != NULL)
+                user_prefix = g_strdup (passwd_file_entry->pw_dir);
+              else
+                user_prefix = g_strdup (g_get_home_dir ());
+
+              g_free (passwd_file_entry);
 	    }
+#else
+	  user_prefix = g_strdup (g_get_home_dir ());
+#endif
 
 	  rest = NULL;
 	  if (*user_end != 0)

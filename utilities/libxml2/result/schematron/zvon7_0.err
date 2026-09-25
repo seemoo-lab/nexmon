@@ -1,0 +1,2 @@
+./test/schematron/zvon7_0.xml:1: element AAA: schematron error : /AAA line 1: The AAA value is not an integer.
+./test/schematron/zvon7_0.xml fails to validate

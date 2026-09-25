@@ -1,29 +1,21 @@
 /* packet-noe.c
  * Routines for UA/UDP (Universal Alcatel over UDP) and NOE packet dissection.
  * Copyright 2012, Alcatel-Lucent Enterprise <lars.ruoff@alcatel-lucent.com>
+ * Copyright 2017, Alcatel-Lucent Enterprise <nicolas.bertin@al-enterprise.com>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
 #include "config.h"
 
+#include <stdlib.h>
+
 #include "epan/packet.h"
+#include <wsutil/str_util.h>
+
 void proto_register_noe(void);
 void proto_reg_handoff_noe(void);
 
@@ -37,9 +29,8 @@ void proto_reg_handoff_noe(void);
 #define OPCODE_C_date                7
 #define OPCODE_C_AOMV                8
 #define OPCODE_C_bluetooth           9
+#define OPCODE_C_locappl            10
 #define OPCODE_C_callstate          12
-#define OPCODE_C_resource           13
-#define OPCODE_C_widgets_default    14
 #define OPCODE_C_framebox          128
 #define OPCODE_C_tabbox            129
 #define OPCODE_C_listbox           130
@@ -79,6 +70,7 @@ static const value_string val_str_class[] = {
     {OPCODE_C_date              , "Date"},
     {OPCODE_C_AOMV              , "AOMV"},
     {OPCODE_C_bluetooth         , "Bluetooth"},
+    {OPCODE_C_locappl           , "Locappl"},
     {OPCODE_C_callstate         , "Callstate"},
     {OPCODE_C_framebox          , "FrameBox"},
     {OPCODE_C_tabbox            , "TabBox"},
@@ -133,6 +125,8 @@ static value_string_ext val_str_class_ext = VALUE_STRING_EXT_INIT(val_str_class)
 #define OPCODE_P_B_h                    19
 #define OPCODE_P_B_contrast             20
 #define OPCODE_P_B_clearscreen          21
+#define OPCODE_P_B_system_id            22
+#define OPCODE_P_B_advanced_mode        23
 #define OPCODE_P_B_year                 24
 #define OPCODE_P_B_month                25
 #define OPCODE_P_B_day                  26
@@ -140,11 +134,8 @@ static value_string_ext val_str_class_ext = VALUE_STRING_EXT_INIT(val_str_class)
 #define OPCODE_P_B_s                    28
 #define OPCODE_P_B_enable               29
 #define OPCODE_P_B_address              30
-#define OPCODE_P_B_port                 31
-#define OPCODE_P_B_protocol             32
+#define OPCODE_P_B_disable              31
 #define OPCODE_P_B_name                 33
-#define OPCODE_P_B_checked              34
-#define OPCODE_P_B_unchecked            35
 #define OPCODE_P_B_anchorid             36
 #define OPCODE_P_B_grid                 37
 #define OPCODE_P_B_x                    38
@@ -159,10 +150,6 @@ static value_string_ext val_str_class_ext = VALUE_STRING_EXT_INIT(val_str_class)
 #define OPCODE_P_B_mode                 47
 #define OPCODE_P_B_showevent            48
 #define OPCODE_P_B_showactive           49
-#define OPCODE_P_B_action_active        50
-#define OPCODE_P_B_action_count         51
-#define OPCODE_P_B_foreground           52
-#define OPCODE_P_B_background           53
 #define OPCODE_P_B_icon                 54
 #define OPCODE_P_B_label                55
 #define OPCODE_P_B_value                56
@@ -226,8 +213,6 @@ static value_string_ext val_str_class_ext = VALUE_STRING_EXT_INIT(val_str_class)
 #define OPCODE_P_B_fetch_timeout       115
 #define OPCODE_P_B_mask_subst          116
 #define OPCODE_P_B_use_customisation   117
-#define OPCODE_P_B_ADTTS_request       118
-#define OPCODE_P_B_AP_mac_notify       119
 #define OPCODE_P_B_page_active         120
 #define OPCODE_P_B_overwrite           121
 #define OPCODE_P_B_ime_lock            122
@@ -236,9 +221,6 @@ static value_string_ext val_str_class_ext = VALUE_STRING_EXT_INIT(val_str_class)
 #define OPCODE_P_B_binary_suffix       125
 #define OPCODE_P_B_binary_count        126
 #define OPCODE_P_B_SIPCversion         127
-#define OPCODE_P_A_dflt                128
-#define OPCODE_P_A_shift               129
-#define OPCODE_P_A_alt                 130
 #define OPCODE_P_A_key_ownership       131
 #define OPCODE_P_A_key_eventmode       132
 #define OPCODE_P_A_value               133
@@ -257,7 +239,6 @@ static value_string_ext val_str_class_ext = VALUE_STRING_EXT_INIT(val_str_class)
 #define OPCODE_P_A_action_value        146
 #define OPCODE_P_A_today               147
 #define OPCODE_P_A_tomorrow            148
-#define OPCODE_P_A_action_key          149
 #define OPCODE_P_A_code                150
 #define OPCODE_P_A_data                151
 #define OPCODE_P_A_delay_max_handset   152
@@ -293,6 +274,8 @@ static const value_string val_str_props[] = {
     {OPCODE_P_B_h                   , "h"},
     {OPCODE_P_B_contrast            , "contrast"},
     {OPCODE_P_B_clearscreen         , "clearscreen"},
+    {OPCODE_P_B_system_id           , "system_id"},
+    {OPCODE_P_B_advanced_mode       , "advanced_mode"},
     {OPCODE_P_B_year                , "year"},
     {OPCODE_P_B_month               , "month"},
     {OPCODE_P_B_day                 , "day"},
@@ -300,6 +283,7 @@ static const value_string val_str_props[] = {
     {OPCODE_P_B_s                   , "s"},
     {OPCODE_P_B_enable              , "enable"},
     {OPCODE_P_B_address             , "address"},
+    {OPCODE_P_B_disable             , "disable"},
     {OPCODE_P_B_name                , "name"},
     {OPCODE_P_B_anchorid            , "anchorid"},
     {OPCODE_P_B_grid                , "grid"},
@@ -452,7 +436,6 @@ static value_string_ext val_str_props_ext = VALUE_STRING_EXT_INIT(val_str_props)
 #define OPCODE_EVT_WARNING_SET_PROPERTY  30
 #define OPCODE_EVT_ARP_SPOOFING          31
 #define OPCODE_EVT_CHAR_NOT_FOUND        32
-#define OPCODE_EVT_CHAR_BAD_LENGTH       33
 #define OPCODE_EVT_QOS_TICKET            34
 #define OPCODE_EVT_UA3_ERROR             35
 #define OPCODE_EVT_TABBOX               128
@@ -491,8 +474,6 @@ static value_string_ext val_str_props_ext = VALUE_STRING_EXT_INIT(val_str_props)
 #define OPCODE_EVT_TELEPHONICBOX_EVENT  162
 #define OPCODE_EVT_ACTLISTBOX_TIMEOUT   163
 #define OPCODE_EVT_ACTLISTBOX_DISMISSED 164
-#define OPCODE_EVT_ADTTS_RESPONSE       165
-#define OPCODE_EVT_AP_MAC               166
 
 static const value_string val_str_event[] = {
     {OPCODE_EVT_CONTEXT_SWITCH       , "EVT_CONTEXT_SWITCH"},
@@ -574,47 +555,170 @@ static value_string_ext val_str_event_ext = VALUE_STRING_EXT_INIT(val_str_event)
 #define P_ARRAY         128
 #define P_INVALID       255
 #define P_INVALID_INDEX 255
-
 #define C_STATIC          0
 #define C_DYNAMIC       128
 #define C_INVALID       255
-
 #define E_INVALID       255
 
+static unsigned utf8_properties[] = {
+    ((OPCODE_C_security          << 8) | OPCODE_P_B_login        ),
+    ((OPCODE_C_security          << 8) | OPCODE_P_A_pem_data     ),
+    ((OPCODE_C_security          << 8) | OPCODE_P_A_serial_number),
+    ((OPCODE_C_security          << 8) | OPCODE_P_A_owner_name   ),
+    ((OPCODE_C_security          << 8) | OPCODE_P_A_issuer_name  ),
+    ((OPCODE_C_security          << 8) | OPCODE_P_A_end_date     ),
+    ((OPCODE_C_date              << 8) | OPCODE_P_A_today        ),
+    ((OPCODE_C_date              << 8) | OPCODE_P_A_tomorrow     ),
+    ((OPCODE_C_AOMV              << 8) | OPCODE_P_A_label        ),
+    ((OPCODE_C_AOMV              << 8) | OPCODE_P_A_value        ),
+    ((OPCODE_C_bluetooth         << 8) | OPCODE_P_B_address      ),
+    ((OPCODE_C_bluetooth         << 8) | OPCODE_P_B_name         ),
+    ((OPCODE_C_callstate         << 8) | OPCODE_P_A_name         ),
+    ((OPCODE_C_callstate         << 8) | OPCODE_P_A_number       ),
+    ((OPCODE_C_tabbox            << 8) | OPCODE_P_A_label        ),
+    ((OPCODE_C_tabbox            << 8) | OPCODE_P_A_value        ),
+    ((OPCODE_C_listbox           << 8) | OPCODE_P_A_label        ),
+    ((OPCODE_C_listbox           << 8) | OPCODE_P_A_value        ),
+    ((OPCODE_C_actionlistbox     << 8) | OPCODE_P_A_label        ),
+    ((OPCODE_C_actionlistbox     << 8) | OPCODE_P_A_value        ),
+    ((OPCODE_C_textbox           << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_textbox           << 8) | OPCODE_P_B_append       ),
+    ((OPCODE_C_textbox           << 8) | OPCODE_P_B_overwrite    ),
+    ((OPCODE_C_actionbox         << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_actionbox         << 8) | OPCODE_P_B_value        ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_value        ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_mask         ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_append       ),
+    ((OPCODE_C_checkbox          << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_datebox           << 8) | OPCODE_P_B_format       ),
+    ((OPCODE_C_timerbox          << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_timerbox          << 8) | OPCODE_P_B_format       ),
+    ((OPCODE_C_dialogbox         << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_dialogbox         << 8) | OPCODE_P_A_action_label ),
+    ((OPCODE_C_dialogbox         << 8) | OPCODE_P_A_action_value ),
+    ((OPCODE_C_sliderbar         << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_progressbar       << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_imagebox          << 8) | OPCODE_P_B_URI          ),
+    ((OPCODE_C_AOMEL             << 8) | OPCODE_P_A_label        ),
+    ((OPCODE_C_telephonicboxitem << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_bluetooth_device  << 8) | OPCODE_P_B_address      ),
+    ((OPCODE_C_bluetooth_device  << 8) | OPCODE_P_B_name         ),
+    ((OPCODE_C_bluetooth_device  << 8) | OPCODE_P_B_pin          ),
+    ((OPCODE_C_headerbox         << 8) | OPCODE_P_B_label        ),
+    ((OPCODE_C_ime_context       << 8) | OPCODE_P_A_name         )
+};
+
+#define N_UTF8_PROPERTIES array_length(utf8_properties)
+#define UTF8_PROPERTY_SIZE (sizeof utf8_properties[0])
+
+static unsigned bool_properties[] = {
+    ((OPCODE_C_terminal          << 8) | OPCODE_P_B_negative_ack     ),
+    ((OPCODE_C_terminal          << 8) | OPCODE_P_B_CS_idle_state    ),
+    ((OPCODE_C_terminal          << 8) | OPCODE_P_B_PS_idle_state    ),
+    ((OPCODE_C_terminal          << 8) | OPCODE_P_B_use_customisation),
+    ((OPCODE_C_terminal          << 8) | OPCODE_P_B_ime_lock         ),
+    ((OPCODE_C_audioconfig       << 8) | OPCODE_P_B_enable           ),
+    ((OPCODE_C_audioconfig       << 8) | OPCODE_P_B_qos_ticket       ),
+    ((OPCODE_C_leds              << 8) | OPCODE_P_B_onoff            ),
+    ((OPCODE_C_screen            << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_screen            << 8) | OPCODE_P_B_clearscreen      ),
+    ((OPCODE_C_AOMV              << 8) | OPCODE_P_B_all_icons_off    ),
+    ((OPCODE_C_AOMV              << 8) | OPCODE_P_A_enable           ),
+    ((OPCODE_C_bluetooth         << 8) | OPCODE_P_B_bth_ringing      ),
+    ((OPCODE_C_bluetooth         << 8) | OPCODE_P_B_bonded_devices   ),
+    ((OPCODE_C_callstate         << 8) | OPCODE_P_B_enable           ),
+    ((OPCODE_C_framebox          << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_framebox          << 8) | OPCODE_P_B_autospread       ),
+    ((OPCODE_C_framebox          << 8) | OPCODE_P_B_cycling          ),
+    ((OPCODE_C_tabbox            << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_listbox           << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_listbox           << 8) | OPCODE_P_B_showevent        ),
+    ((OPCODE_C_listbox           << 8) | OPCODE_P_B_showactive       ),
+    ((OPCODE_C_listbox           << 8) | OPCODE_P_B_circular         ),
+    ((OPCODE_C_listbox           << 8) | OPCODE_P_B_disablelongpress ),
+    ((OPCODE_C_actionlistbox     << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_textbox           << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_actionbox         << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_enable           ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_password         ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_focus            ),
+    ((OPCODE_C_inputbox          << 8) | OPCODE_P_B_inputborder      ),
+    ((OPCODE_C_checkbox          << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_checkbox          << 8) | OPCODE_P_B_enable           ),
+    ((OPCODE_C_checkbox          << 8) | OPCODE_P_B_state            ),
+    ((OPCODE_C_datebox           << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_timerbox          << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_popupbox          << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_popupbox          << 8) | OPCODE_P_B_modal            ),
+    ((OPCODE_C_dialogbox         << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_dialogbox         << 8) | OPCODE_P_B_modal            ),
+    ((OPCODE_C_sliderbar         << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_progressbar       << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_imagebox          << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_iconbox           << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_AOMVbox           << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_telephonicbox     << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_telephonicbox     << 8) | OPCODE_P_B_enable           ),
+    ((OPCODE_C_AOMEL             << 8) | OPCODE_P_B_all_icons_off    ),
+    ((OPCODE_C_AOMEL             << 8) | OPCODE_P_B_all_labels_off   ),
+    ((OPCODE_C_AOM10             << 8) | OPCODE_P_B_all_icons_off    ),
+    ((OPCODE_C_AOM40             << 8) | OPCODE_P_B_all_icons_off    ),
+    ((OPCODE_C_telephonicboxitem << 8) | OPCODE_P_B_focus            ),
+    ((OPCODE_C_bluetooth_device  << 8) | OPCODE_P_B_enable           ),
+    ((OPCODE_C_bluetooth_device  << 8) | OPCODE_P_B_bonded           ),
+    ((OPCODE_C_headerbox         << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_ime_context       << 8) | OPCODE_P_B_enable           ),
+    ((OPCODE_C_ime_context       << 8) | OPCODE_P_B_visible          ),
+    ((OPCODE_C_ime_context       << 8) | OPCODE_P_A_mode             ),
+    ((OPCODE_C_ime_context       << 8) | OPCODE_P_A_state            ),
+    ((OPCODE_C_ime_context       << 8) | OPCODE_P_A_enable           )
+};
+
+#define N_BOOL_PROPERTIES array_length(bool_properties)
+#define BOOL_PROPERTY_SIZE (sizeof bool_properties[0])
 
 /*-----------------------------------------------------------------------------
   globals
   ---------------------------------------------------------------------------*/
-static int  proto_noe           = -1;
-static gint ett_noe             = -1;
-static gint ett_body            = -1;
-static gint ett_property        = -1;
-static gint ett_value           = -1;
+static int  proto_noe;
+static int ett_noe;
+static int ett_body;
+static int ett_property;
+static int ett_value;
 
-static int  hf_noe_length               = -1;
-static int  hf_noe_server               = -1;
-static int  hf_noe_method_ack           = -1;
-static int  hf_noe_method               = -1;
-static int  hf_noe_class                = -1;
-static int  hf_noe_event                = -1;
-static int  hf_noe_objectid             = -1;
-static int  hf_noe_method_index         = -1;
-static int  hf_noe_pcode                = -1;
-static int  hf_noe_psize                = -1;
-static int  hf_noe_aindx                = -1;
-static int  hf_noe_errcode              = -1;
-static int  hf_noe_value                = -1;
-static int  hf_noe_message              = -1;
-static int  hf_noe_key_name             = -1;
-static int  hf_noe_bonded               = -1;
-static int  hf_noe_property_item_u8     = -1;
-static int  hf_noe_property_item_u16    = -1;
-static int  hf_noe_property_item_u24    = -1;
-static int  hf_noe_property_item_u32    = -1;
-static int  hf_noe_property_item_bytes  = -1;
-static int  hf_event_value_u8           = -1;
-static int  hf_event_context_switch     = -1;
-static int  hf_event_widget_gc          = -1;
+static int  hf_noe_length;
+static int  hf_noe_server;
+static int  hf_noe_method_ack;
+static int  hf_noe_method;
+static int  hf_noe_class;
+static int  hf_noe_event;
+static int  hf_noe_objectid;
+static int  hf_noe_method_index;
+static int  hf_noe_pcode;
+static int  hf_noe_psize;
+static int  hf_noe_aindx;
+static int  hf_noe_errcode;
+static int  hf_noe_value;
+static int  hf_noe_message;
+static int  hf_noe_key_name;
+static int  hf_noe_bonded;
+static int  hf_noe_property_item_bool;
+static int  hf_noe_property_item_u8;
+static int  hf_noe_property_item_u16;
+static int  hf_noe_property_item_u24;
+static int  hf_noe_property_item_u32;
+static int  hf_noe_property_item_bytes;
+static int  hf_noe_property_item_utf8;
+static int  hf_event_bt_key;
+static int  hf_event_context_switch;
+static int  hf_evt_locappl_enable;
+static int  hf_evt_locappl_interruptible;
+static int  hf_evt_locappl_identifier;
+static int  hf_evt_dev_presence_value;
+static int  hf_evt_dev_presence_state;
+static int  hf_event_widget_gc;
 
 static const value_string servers_vals[] = {
     {0x15,  "Call Server"},
@@ -779,69 +883,94 @@ static const value_string str_key_name[] = {
 };
 static value_string_ext str_key_name_ext = VALUE_STRING_EXT_INIT(str_key_name);
 
-static const value_string noe_event_str_struct[] = {
-    {0x00, "RJ9 Plug"},
-    {0x01, "BT Handset Link"},
+static const value_string noe_evt_context_switch_str_vals[] = {
+    {1, "Call Server"},
+    {2, "Presentation Server"},
     {0, NULL}
-    };
+};
+
+static const value_string noe_evt_devices_str_vals[] = {
+    {0, "RJ9 Plug"},
+    {1, "BT Handset Link"},
+    {2, "BT Headset Link"},
+    {3, "Jack Plug"},
+    {0, NULL}
+};
+
+static const value_string noe_true_false_str_vals[] = {
+    {0, "False"},
+    {1, "True"},
+    {0, NULL}
+};
+
+static const value_string noe_evt_locappl_identifier_str_vals[] = {
+    {1, "UserMenu"},
+    {2, "BTConfig"},
+    {3, "AudioCfg"},
+    {4, "SpkPhone"},
+    {5, "UsbSpCfg"},
+    {6, "BtSpCfg" },
+    {7, "EmnAppl" },
+    {0, NULL}
+};
 
 /*-----------------------------------------------------------------------------
     DECODE UTF8 TO UNICODE
     This function translates an UTF8 vale to an UNICODE one.
     Need to have at least 48 bits value.
     ---------------------------------------------------------------------------*/
-static guint64 decode_utf8(guint64 utf8)
+static uint64_t decode_utf8(uint64_t utf8)
 {
-    static guint64 unicode;
+    static uint64_t unicode;
 
-    if (utf8 <= G_GUINT64_CONSTANT(0xFF))
+    if (utf8 <= UINT64_C(0xFF))
     {
         unicode =
-            utf8 & G_GUINT64_CONSTANT(0x7F);
+            utf8 & UINT64_C(0x7F);
     }
-    else if (utf8 <= G_GUINT64_CONSTANT(0xFFFF))
+    else if (utf8 <= UINT64_C(0xFFFF))
     {
         unicode =
-            ((utf8 & G_GUINT64_CONSTANT(0x1F00) >> 2) +
-             (utf8 & G_GUINT64_CONSTANT(0x3F)));
+            ((utf8 & UINT64_C(0x1F00) >> 2) +
+             (utf8 & UINT64_C(0x3F)));
     }
-    else if (utf8 <= G_GUINT64_CONSTANT(0xFFFFFF))
+    else if (utf8 <= UINT64_C(0xFFFFFF))
     {
         unicode =
-            ((utf8 & G_GUINT64_CONSTANT(0x0F0000)) >> 4) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F00)) >> 2) +
-            (utf8 & G_GUINT64_CONSTANT(0x3F));
+            ((utf8 & UINT64_C(0x0F0000)) >> 4) +
+            ((utf8 & UINT64_C(0x3F00)) >> 2) +
+            (utf8 & UINT64_C(0x3F));
     }
-    else if (utf8 <= G_GUINT64_CONSTANT(0xFFFFFFFF))
+    else if (utf8 <= UINT64_C(0xFFFFFFFF))
     {
         unicode =
-            ((utf8 & G_GUINT64_CONSTANT(0x07000000)) >> 6) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F0000)) >> 4) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F00)) >> 2) +
-            (utf8 & G_GUINT64_CONSTANT(0x3F));
+            ((utf8 & UINT64_C(0x07000000)) >> 6) +
+            ((utf8 & UINT64_C(0x3F0000)) >> 4) +
+            ((utf8 & UINT64_C(0x3F00)) >> 2) +
+            (utf8 & UINT64_C(0x3F));
     }
-    else if (utf8 <= G_GUINT64_CONSTANT(0xFFFFFFFFFF))
+    else if (utf8 <= UINT64_C(0xFFFFFFFFFF))
     {
         unicode =
-            ((utf8 & G_GUINT64_CONSTANT(0x0300000000)) >> 8) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F000000)) >> 6) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F0000)) >> 4) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F00)) >> 2) +
-            (utf8 & G_GUINT64_CONSTANT(0x3F));
+            ((utf8 & UINT64_C(0x0300000000)) >> 8) +
+            ((utf8 & UINT64_C(0x3F000000)) >> 6) +
+            ((utf8 & UINT64_C(0x3F0000)) >> 4) +
+            ((utf8 & UINT64_C(0x3F00)) >> 2) +
+            (utf8 & UINT64_C(0x3F));
     }
-    else if (utf8 <= G_GUINT64_CONSTANT(0xFFFFFFFFFFFF))
+    else if (utf8 <= UINT64_C(0xFFFFFFFFFFFF))
     {
         unicode =
-            ((utf8 & G_GUINT64_CONSTANT(0x010000000000)) >> 10) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F00000000)) >> 8) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F000000)) >> 6) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F0000)) >> 4) +
-            ((utf8 & G_GUINT64_CONSTANT(0x3F00)) >> 2) +
-            (utf8 & G_GUINT64_CONSTANT(0x3F));
+            ((utf8 & UINT64_C(0x010000000000)) >> 10) +
+            ((utf8 & UINT64_C(0x3F00000000)) >> 8) +
+            ((utf8 & UINT64_C(0x3F000000)) >> 6) +
+            ((utf8 & UINT64_C(0x3F0000)) >> 4) +
+            ((utf8 & UINT64_C(0x3F00)) >> 2) +
+            (utf8 & UINT64_C(0x3F));
     }
     else
     {
-        unicode = G_GUINT64_CONSTANT(0);
+        unicode = UINT64_C(0);
     }
     return unicode;
 }
@@ -852,11 +981,9 @@ static guint64 decode_utf8(guint64 utf8)
     This function translates an UNICODE to the name associated.
     Need to have at least 48 bits value.
     ---------------------------------------------------------------------------*/
-static char *decode_key_name(int unicode)
+static const char *decode_key_name(wmem_allocator_t *scope, int unicode)
 {
-    char *key_name;
-
-    key_name = (char *)wmem_alloc(wmem_packet_scope(), 10);
+    const char *key_name;
 
     if ((unicode <= 0x20)
         || (unicode == 0x7F)
@@ -866,16 +993,17 @@ static char *decode_key_name(int unicode)
         || (unicode == 0xE9)
         || (unicode == 0xF9))
     {
-        g_snprintf(key_name, 10, "%s", val_to_str_ext_const(unicode, &str_key_name_ext, "Unknown"));
+        key_name = val_to_str_ext_const(unicode, &str_key_name_ext, "Unknown");
     }
     else if (unicode <= 0xFF)
     {
-        g_snprintf(key_name, 10, "%c", unicode);
+        key_name = format_char(scope, unicode);
     }
     else
     {
-        g_snprintf(key_name, 10, "%s", val_to_str_ext_const(unicode, &str_key_name_ext, "Unknown"));
+        key_name = val_to_str_ext_const(unicode, &str_key_name_ext, "Unknown");
     }
+
     return key_name;
 }
 
@@ -885,8 +1013,8 @@ static char *decode_key_name(int unicode)
     ---------------------------------------------------------------------------*/
 static void decode_evt_error(proto_tree *tree,
                              tvbuff_t   *tvb,
-                             guint       offset,
-                             guint       length)
+                             unsigned    offset,
+                             unsigned    length)
 {
     if (!tree)
         return;
@@ -926,6 +1054,25 @@ static void decode_evt_error(proto_tree *tree,
     proto_tree_add_item(tree, hf_noe_message, tvb, offset, length, ENC_NA);
 }
 
+static int compcp(const void *pcp1, const void *pcp2)
+{
+    unsigned cp1 = *((unsigned *)pcp1);
+    unsigned cp2 = *((unsigned *)pcp2);
+
+    return (cp1 - cp2);
+}
+
+static bool property_is_bool(uint8_t noe_class, uint8_t property_code)
+{
+    unsigned key = ((noe_class << 8) | property_code);
+    return (bsearch(&key, bool_properties, N_BOOL_PROPERTIES, BOOL_PROPERTY_SIZE, compcp) != NULL);
+}
+
+static bool property_is_utf8(uint8_t noe_class, uint8_t property_code)
+{
+    unsigned key = ((noe_class << 8) | property_code);
+    return (bsearch(&key, utf8_properties, N_UTF8_PROPERTIES, UTF8_PROPERTY_SIZE, compcp) != NULL);
+}
 
 /*-----------------------------------------------------------------------------
     MESSAGE BODY DECODER
@@ -933,13 +1080,14 @@ static void decode_evt_error(proto_tree *tree,
     ---------------------------------------------------------------------------*/
 static void decode_tlv(proto_tree *tree,
                        tvbuff_t   *tvb,
-                       guint       offset,
-                       guint       length)
+                       uint8_t     noe_class,
+                       unsigned    offset,
+                       unsigned    length)
 {
     proto_tree *property_tree;
-    guint8      property_type;
-    guint16     property_length;
-/*  guint64     property_index;*/
+    uint8_t     property_code;
+    uint16_t    property_length;
+/*  uint64_t    property_index;*/
 
     /* add text to the frame tree */
     property_tree = proto_tree_add_subtree(tree,
@@ -950,68 +1098,66 @@ static void decode_tlv(proto_tree *tree,
 
     while(length > 0)
     {
-        property_type = tvb_get_guint8(tvb, offset);
+        property_code = tvb_get_uint8(tvb, offset);
         proto_tree_add_item(property_tree, hf_noe_pcode, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         length -= 1;
 
-        if (property_type >= P_ARRAY)
+        if (property_code >= P_ARRAY)
         {
             proto_tree_add_item(property_tree, hf_noe_aindx, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
             length -= 1;
         }
 
-        property_length = tvb_get_guint8(tvb, offset);
+        property_length = tvb_get_uint8(tvb, offset);
         if (property_length & 0x80)
         {
             property_length = tvb_get_ntohs(tvb, offset);
             property_length &= 0x7fff;
-            proto_tree_add_uint(property_tree, hf_noe_psize, tvb, offset, 2,
-                tvb_get_guint8(tvb, offset) * 256 + tvb_get_guint8(tvb, offset+1));
+            proto_tree_add_item(property_tree, hf_noe_psize, tvb, offset, 2, ENC_BIG_ENDIAN);
             offset += 2;
             length -= 2;
         }
         else
         {
-            proto_tree_add_uint(property_tree, hf_noe_psize, tvb, offset, 1,
-                tvb_get_guint8(tvb, offset));
+            proto_tree_add_item(property_tree, hf_noe_psize, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
             length -= 1;
         }
 
-        switch(property_length)
+        if (property_is_utf8(noe_class, property_code))
         {
-        case 0:
-            {
-                break;
-            }
-        case 1:
-            proto_tree_add_item(property_tree, hf_noe_property_item_u8, tvb, offset, 1, ENC_BIG_ENDIAN);
-            offset += 1;
-            length -= 1;
-            break;
-        case 2:
-            proto_tree_add_item(property_tree, hf_noe_property_item_u16, tvb, offset, 2, ENC_BIG_ENDIAN);
-            offset += 2;
-            length -= 2;
-            break;
-        case 3:
-            proto_tree_add_item(property_tree, hf_noe_property_item_u24, tvb, offset, 3, ENC_BIG_ENDIAN);
-            offset += 3;
-            length -= 3;
-            break;
-        case 4:
-            proto_tree_add_item(property_tree, hf_noe_property_item_u32, tvb, offset, 4, ENC_BIG_ENDIAN);
-            offset += 4;
-            length -= 4;
-            break;
-        default:
-            proto_tree_add_item(property_tree, hf_noe_property_item_bytes, tvb, offset, property_length, ENC_NA);
-            offset += property_length;
-            length -= property_length;
-            break;
+            proto_tree_add_item(property_tree, hf_noe_property_item_utf8, tvb, offset, property_length, ENC_STRING);
         }
+        else
+        {
+            switch(property_length)
+            {
+                case 0:
+                    break;
+                case 1:
+                    if (property_is_bool(noe_class, property_code))
+                        proto_tree_add_item(property_tree, hf_noe_property_item_bool, tvb, offset, 1, ENC_BIG_ENDIAN);
+                    else
+                        proto_tree_add_item(property_tree, hf_noe_property_item_u8, tvb, offset, 1, ENC_BIG_ENDIAN);
+                    break;
+                case 2:
+                    proto_tree_add_item(property_tree, hf_noe_property_item_u16, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    break;
+                case 3:
+                    proto_tree_add_item(property_tree, hf_noe_property_item_u24, tvb, offset, 3, ENC_BIG_ENDIAN);
+                    break;
+                case 4:
+                    proto_tree_add_item(property_tree, hf_noe_property_item_u32, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    break;
+                default:
+                    proto_tree_add_item(property_tree, hf_noe_property_item_bytes, tvb, offset, property_length, ENC_NA);
+                    break;
+            }
+        }
+        offset += property_length;
+        length -= property_length;
     }
 }
 
@@ -1023,11 +1169,11 @@ static void decode_tlv(proto_tree *tree,
     ---------------------------------------------------------------------------*/
 static void decode_getproperty_tlv(proto_tree *tree,
                                    tvbuff_t   *tvb,
-                                   guint       offset,
-                                   guint       length)
+                                   unsigned    offset,
+                                   unsigned    length)
 {
     proto_tree *body_tree;
-    guint8      body_type;
+    uint8_t     body_type;
 
     /* add text to the frame tree */
     body_tree = proto_tree_add_subtree(tree,
@@ -1038,7 +1184,7 @@ static void decode_getproperty_tlv(proto_tree *tree,
 
     while(length > 0)
     {
-        body_type = tvb_get_guint8(tvb, offset);
+        body_type = tvb_get_uint8(tvb, offset);
         proto_tree_add_item(body_tree, hf_noe_pcode, tvb, offset, 1, ENC_BIG_ENDIAN);
 
         offset += 1;
@@ -1062,11 +1208,10 @@ static void decode_getproperty_tlv(proto_tree *tree,
 static void decode_evt(proto_tree  *tree,
                        tvbuff_t    *tvb,
                        packet_info *pinfo,
-                       guint        offset,
-                       guint        length)
+                       unsigned     offset,
+                       unsigned     length)
 {
-    proto_item *ti;
-    guint8 event = tvb_get_guint8(tvb, offset);
+    uint8_t event = tvb_get_uint8(tvb, offset);
 
     proto_tree_add_item(tree, hf_noe_event, tvb, offset, 1, ENC_BIG_ENDIAN);
 
@@ -1085,11 +1230,7 @@ static void decode_evt(proto_tree  *tree,
     case OPCODE_EVT_BT_KEY_SHORTPRESS:
     case OPCODE_EVT_BT_KEY_LONGPRESS:
     case OPCODE_EVT_BT_KEY_VERYLONGPRESS:
-    case OPCODE_EVT_KEY_LINE:
-    case OPCODE_EVT_ONHOOK:
-    case OPCODE_EVT_OFFHOOK:
-        ti = proto_tree_add_item(tree, hf_event_value_u8, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_item_set_len(ti, length);
+        proto_tree_add_item(tree, hf_event_bt_key, tvb, offset, 1, ENC_BIG_ENDIAN);
         break;
     case OPCODE_EVT_KEY_PRESS:
     case OPCODE_EVT_KEY_RELEASE:
@@ -1098,35 +1239,33 @@ static void decode_evt(proto_tree  *tree,
     case OPCODE_EVT_HELP:
         {
             /* utf8_value is the utf8 value to translate into Unicode with the decode_uft8 function */
-            guint64  utf8_value = 0;
-            guint64  unicode_value;
-            char    *key_name;
+            uint64_t utf8_value = 0;
+            uint64_t unicode_value;
+            const char *key_name;
             int      pt_length  = length;
             int      pt_offset  = offset;
 
             while(pt_length > 0)
             {
-                utf8_value = (utf8_value << 8) + tvb_get_guint8(tvb, pt_offset);
+                utf8_value = (utf8_value << 8) + tvb_get_uint8(tvb, pt_offset);
                 pt_offset  += 1;
                 pt_length  -= 1;
             }
             unicode_value = decode_utf8(utf8_value);
-            key_name      = (char *)wmem_alloc(wmem_packet_scope(), 30);
-            g_snprintf(key_name, 30, "\"%s\"", decode_key_name((int)unicode_value));
+            key_name  = decode_key_name(pinfo->pool, (int)unicode_value);
 
             /* add text to the frame "INFO" column */
-            col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", key_name);
+            col_append_fstr(pinfo->cinfo, COL_INFO, ": \"%s\"", key_name);
             /* update text of the main proto item */
-            proto_item_append_text(tree, ", %s",
-                key_name);
+            proto_item_append_text(tree, ", \"%s\"", key_name);
 
             proto_tree_add_string_format_value(tree, hf_noe_key_name,
                 tvb,
                 offset,
                 length, key_name,
-                "%s (UTF-8 Value: %s, Unicode Value: 0x%" G_GINT64_MODIFIER "x)",
+                "%s (UTF-8 Value: \"%s\", Unicode Value: 0x%" PRIx64 ")",
                 key_name,
-                tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, length),
+                tvb_bytes_to_str(pinfo->pool, tvb, offset, length),
                 unicode_value);
             break;
         }
@@ -1142,6 +1281,28 @@ static void decode_evt(proto_tree  *tree,
     case OPCODE_EVT_CONTEXT_SWITCH:
         proto_tree_add_item(tree, hf_event_context_switch, tvb, offset, 1, ENC_BIG_ENDIAN);
         break;
+    case OPCODE_EVT_LOCAL_APPLICATION:
+        {
+            proto_tree_add_item(tree, hf_evt_locappl_enable, tvb, offset, 1, ENC_BIG_ENDIAN);
+            offset += 1;
+            proto_tree_add_item(tree, hf_evt_locappl_interruptible, tvb, offset, 1, ENC_BIG_ENDIAN);
+            offset += 1;
+            proto_tree_add_item(tree, hf_evt_locappl_identifier, tvb, offset, 1, ENC_BIG_ENDIAN);
+            break;
+        }
+    case OPCODE_EVT_KEY_LINE:
+    case OPCODE_EVT_ONHOOK:
+    case OPCODE_EVT_OFFHOOK:
+    case OPCODE_EVT_DEVICE_PRESENCE:
+        {
+            proto_tree_add_item(tree, hf_evt_dev_presence_value, tvb, offset, 1, ENC_BIG_ENDIAN);
+            if (OPCODE_EVT_DEVICE_PRESENCE == event)
+            {
+                offset += 1;
+                proto_tree_add_item(tree, hf_evt_dev_presence_state, tvb, offset, 1, ENC_BIG_ENDIAN);
+            }
+            break;
+        }
     case OPCODE_EVT_SUCCESS_CREATE:
     case OPCODE_EVT_SUCCESS_DELETE:
     case OPCODE_EVT_SUCCESS_SET_PROPERTY:
@@ -1176,7 +1337,7 @@ static void decode_evt(proto_tree  *tree,
         length -= 2;
 
         if (length > 0)
-            decode_tlv(tree, tvb, offset, length);
+            decode_tlv(tree, tvb, C_INVALID, offset, length);
         break;
     }
 }
@@ -1190,11 +1351,11 @@ static void decode_evt(proto_tree  *tree,
 static void decode_mtd(proto_tree  *tree,
                        tvbuff_t    *tvb,
                        packet_info *pinfo,
-                       guint8       method,
-                       guint        offset,
-                       guint        length)
+                       uint8_t      method,
+                       unsigned     offset,
+                       unsigned     length)
 {
-    guint8 noe_class = tvb_get_guint8(tvb, offset);
+    uint8_t noe_class = tvb_get_uint8(tvb, offset);
 
     proto_tree_add_item(tree, hf_noe_class, tvb, offset, 1, ENC_BIG_ENDIAN);
 
@@ -1223,7 +1384,7 @@ static void decode_mtd(proto_tree  *tree,
             offset += 1;
             length -= 1;
             if (length > 0)
-                decode_tlv(tree, tvb, offset, length);
+                decode_tlv(tree, tvb, noe_class, offset, length);
             break;
         }
     case METHOD_DELETE_ITEM:
@@ -1239,7 +1400,7 @@ static void decode_mtd(proto_tree  *tree,
     default:
         {
             if (length > 0)
-                decode_tlv(tree, tvb, offset, length);
+                decode_tlv(tree, tvb, noe_class, offset, length);
             break;
         }
     }
@@ -1255,11 +1416,11 @@ static int dissect_noe(tvbuff_t    *tvb,
 {
     proto_item *noe_item;
     proto_tree *noe_tree;
-    gint        length;
-    guint8      server;
-    guint8      method;
-    gboolean    methodack;
-    gint        offset    = 0;
+    int         length;
+    uint8_t     server;
+    uint8_t     method;
+    bool        methodack;
+    int         offset    = 0;
 
     noe_item = proto_tree_add_item(tree, proto_noe, tvb, 0, -1, ENC_NA);
     noe_tree = proto_item_add_subtree(noe_item, ett_noe);
@@ -1274,7 +1435,7 @@ static int dissect_noe(tvbuff_t    *tvb,
         length);
     offset += 2;
 
-    server = tvb_get_guint8(tvb, offset);
+    server = tvb_get_uint8(tvb, offset);
 
     /* add text to the frame "INFO" column */
     col_append_fstr(pinfo->cinfo, COL_INFO, " - NOE Protocol (%s)",
@@ -1293,7 +1454,7 @@ static int dissect_noe(tvbuff_t    *tvb,
     proto_item_append_text(noe_item, ", %s",
         val_to_str_const(server, servers_short_vals, "Unknown"));
 
-    method    = tvb_get_guint8(tvb, offset);
+    method    = tvb_get_uint8(tvb, offset);
     methodack = (method & 0x80) != 0;
     method    = (method & 0x7f);
 
@@ -1517,6 +1678,18 @@ void proto_register_noe(void)
                   HFILL
               }
             },
+            { &hf_noe_property_item_bool,
+              {
+                  "Value",
+                  "noe.property_item.bool",
+                  FT_UINT8,
+                  BASE_DEC,
+                  VALS(noe_true_false_str_vals),
+                  0x0,
+                  NULL,
+                  HFILL
+              }
+            },
             { &hf_noe_property_item_u8,
               {
                   "Value",
@@ -1577,13 +1750,25 @@ void proto_register_noe(void)
                   HFILL
               }
             },
-            { &hf_event_value_u8,
+            { &hf_noe_property_item_utf8,
               {
                   "Value",
-                  "noe.event_value.uint",
+                  "noe.property_item.utf8",
+                  FT_STRING,
+                  BASE_NONE,
+                  NULL,
+                  0x0,
+                  NULL,
+                  HFILL
+              }
+            },
+            { &hf_event_bt_key,
+              {
+                  "Value",
+                  "noe.event_bt_key.value",
                   FT_UINT8,
                   BASE_DEC,
-                  VALS(noe_event_str_struct),
+                  NULL,
                   0x0,
                   NULL,
                   HFILL
@@ -1595,7 +1780,67 @@ void proto_register_noe(void)
                   "noe.event_context_switch",
                   FT_UINT8,
                   BASE_DEC,
-                  VALS(servers_vals),
+                  VALS(noe_evt_context_switch_str_vals),
+                  0x0,
+                  NULL,
+                  HFILL
+              }
+            },
+            { &hf_evt_locappl_enable,
+              {
+                  "Enable",
+                  "noe.event_locappl.enable",
+                  FT_UINT8,
+                  BASE_DEC,
+                  VALS(noe_true_false_str_vals),
+                  0x0,
+                  NULL,
+                  HFILL
+              }
+            },
+            { &hf_evt_locappl_interruptible,
+              {
+                  "Interruptible",
+                  "noe.event_locappl.interruptible",
+                  FT_UINT8,
+                  BASE_DEC,
+                  VALS(noe_true_false_str_vals),
+                  0x0,
+                  NULL,
+                  HFILL
+              }
+            },
+            { &hf_evt_locappl_identifier,
+              {
+                  "Identifier",
+                  "noe.event_locappl.identifier",
+                  FT_UINT8,
+                  BASE_DEC,
+                  VALS(noe_evt_locappl_identifier_str_vals),
+                  0x0,
+                  NULL,
+                  HFILL
+              }
+            },
+            { &hf_evt_dev_presence_value,
+              {
+                  "Value",
+                  "noe.event_device_presence.value",
+                  FT_UINT8,
+                  BASE_DEC,
+                  VALS(noe_evt_devices_str_vals),
+                  0x0,
+                  NULL,
+                  HFILL
+              }
+            },
+            { &hf_evt_dev_presence_state,
+              {
+                  "State",
+                  "noe.event_device_presence.state",
+                  FT_UINT8,
+                  BASE_DEC,
+                  VALS(noe_true_false_str_vals),
                   0x0,
                   NULL,
                   HFILL
@@ -1639,7 +1884,7 @@ void proto_register_noe(void)
             },
         };
 
-    static gint *ett[] =
+    static int *ett[] =
         {
             &ett_noe,
             &ett_body,
@@ -1671,7 +1916,7 @@ void proto_reg_handoff_noe(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

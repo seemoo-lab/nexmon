@@ -1,10 +1,12 @@
 /*
  * Copyright © 2009 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  *
@@ -35,8 +37,8 @@ typedef GFilterInputStreamClass  TestFilterInputStreamClass;
 typedef GFilterOutputStream      TestFilterOutputStream;
 typedef GFilterOutputStreamClass TestFilterOutputStreamClass;
 
-G_DEFINE_TYPE (TestFilterInputStream, test_filter_input_stream, G_TYPE_FILTER_INPUT_STREAM);
-G_DEFINE_TYPE (TestFilterOutputStream, test_filter_output_stream, G_TYPE_FILTER_OUTPUT_STREAM);
+G_DEFINE_TYPE (TestFilterInputStream, test_filter_input_stream, G_TYPE_FILTER_INPUT_STREAM)
+G_DEFINE_TYPE (TestFilterOutputStream, test_filter_output_stream, G_TYPE_FILTER_OUTPUT_STREAM)
 
 static void
 test_filter_input_stream_init (TestFilterInputStream *stream)
@@ -68,7 +70,7 @@ test_input_filter (void)
   gchar buf[1024];
   GError *error = NULL;
 
-  g_test_bug ("568394");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=568394");
   base = g_memory_input_stream_new_from_data ("abcdefghijk", -1, NULL);
   f1 = g_object_new (TEST_TYPE_FILTER_INPUT_STREAM,
                      "base-stream", base,
@@ -381,7 +383,6 @@ int
 main (int argc, char **argv)
 {
   g_test_init (&argc, &argv, NULL);
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/filter-stream/input", test_input_filter);
   g_test_add_func ("/filter-stream/output", test_output_filter);

@@ -17,7 +17,7 @@ assets: \
 	assets/nexmon/aircrack-ng \
 	assets/nexmon/dhdutil \
 	assets/nexmon/nexutil \
-	assets/nexmon/mdk3 \
+	assets/nexmon/mdk4 \
 	assets/nexmon/socat \
 	assets/nexmon/libfakeioctl.so \
 	FORCE
@@ -57,9 +57,9 @@ assets/nexmon/nexutil: FORCE
 	make -C $(UTILITIES_PATH)/nexutil
 	cp $(UTILITIES_PATH)/nexutil/libs/armeabi/nexutil $@
 
-assets/nexmon/mdk3: FORCE
-	make -C $(UTILITIES_PATH)/mdk3
-	cp $(UTILITIES_PATH)/mdk3/libs/armeabi/mdk3 $@
+assets/nexmon/mdk4: FORCE
+	make -C $(UTILITIES_PATH)/mdk4
+	cp $(UTILITIES_PATH)/mdk4/libs/armeabi/mdk4 $@
 
 assets/nexmon/libfakeioctl.so: FORCE
 	make -C $(UTILITIES_PATH)/libfakeioctl

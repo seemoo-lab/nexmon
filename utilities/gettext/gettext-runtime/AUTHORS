@@ -1,2 +1,3 @@
 Ulrich Drepper wrote the intl subdirectory.
-Bruno Haible added the intl-java and libasprintf subdirectories.
+Bruno Haible added the intl-java, intl-csharp, intl-d, intl-modula2, and
+libasprintf subdirectories.

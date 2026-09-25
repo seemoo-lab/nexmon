@@ -15,11 +15,12 @@ It provides support for the encodings:
     Semitic languages
         ISO-8859-{6,8}, CP{1255,1256}, CP862, Mac{Hebrew,Arabic}
     Japanese
-        EUC-JP, SHIFT_JIS, CP932, ISO-2022-JP, ISO-2022-JP-2, ISO-2022-JP-1
+        EUC-JP, SHIFT_JIS, CP932, ISO-2022-JP, ISO-2022-JP-2, ISO-2022-JP-1,
+        ISO-2022-JP-MS
     Chinese
-        EUC-CN, HZ, GBK, CP936, GB18030, EUC-TW, BIG5, CP950, BIG5-HKSCS,
-        BIG5-HKSCS:2004, BIG5-HKSCS:2001, BIG5-HKSCS:1999, ISO-2022-CN,
-        ISO-2022-CN-EXT
+        EUC-CN, HZ, GBK, CP936, GB18030, GB18030:2022, EUC-TW, BIG5, CP950,
+        BIG5-HKSCS, BIG5-HKSCS:2004, BIG5-HKSCS:2001, BIG5-HKSCS:1999,
+        ISO-2022-CN, ISO-2022-CN-EXT
     Korean
         EUC-KR, CP949, ISO-2022-KR, JOHAB
     Armenian
@@ -46,10 +47,10 @@ It provides support for the encodings:
         UTF-32, UTF-32BE, UTF-32LE
         UTF-7
         C99, JAVA
-    Full Unicode, in terms of `uint16_t' or `uint32_t'
+    Full Unicode, in terms of 'uint16_t' or 'uint32_t'
         (with machine dependent endianness and alignment)
         UCS-2-INTERNAL, UCS-4-INTERNAL
-    Locale dependent, in terms of `char' or `wchar_t'
+    Locale dependent, in terms of 'char' or 'wchar_t'
         (with machine dependent endianness and alignment, and with OS and
         locale dependent semantics)
         char, wchar_t
@@ -71,6 +72,24 @@ support for a few extra encodings:
         TDS565
     Platform specifics
         ATARIST, RISCOS-LATIN1
+    EBCDIC compatible (not ASCII compatible, very rarely used)
+        European languages
+            IBM-{037,273,277,278,280,282,284,285,297,423,500,870,871,875,880},
+            IBM-{905,924,1025,1026,1047,1112,1122,1123,1140,1141,1142,1143},
+            IBM-{1144,1145,1146,1147,1148,1149,1153,1154,1155,1156,1157,1158},
+            IBM-{1165,1166,4971}
+        Semitic languages
+            IBM-{424,425,12712,16804}
+        Persian
+            IBM-1097
+        Thai
+            IBM-{838,1160}
+        Laotian
+            IBM-1132
+        Vietnamese
+            IBM-{1130,1164}
+        Indic languages
+            IBM-1137
 
 It can convert from any of these encodings to any other, through Unicode
 conversion.
@@ -89,7 +108,7 @@ Installation
 
 As usual for GNU packages:
 
-    $ ./configure --prefix=/usr/local
+    $ ./configure --prefix=[[PREFIX]]     where [[PREFIX]] is e.g. $HOME/local
     $ make
     $ make install
 
@@ -108,39 +127,20 @@ or (on systems supporting shared libraries, excluding AIX)
 Recall that before building a package for the second time, you need to erase
 the traces of the first build by running "make distclean".
 
-This library can be built and installed in two variants:
+This library installs:
+  - a library 'libiconv.so',
+  - a header file '<iconv.h>'.
 
-  - The library mode. This works on all systems, and uses a library
-    `libiconv.so' and a header file `<iconv.h>'. (Both are installed
-    through "make install".)
+To use it, simply #include <iconv.h> and use the functions.
 
-    To use it, simply #include <iconv.h> and use the functions.
-
-    To use it in an autoconfiguring package:
-    - If you don't use automake, append m4/iconv.m4 to your aclocal.m4
-      file.
-    - If you do use automake, add m4/iconv.m4 to your m4 macro repository.
-    - Add to the link command line of libraries and executables that use
-      the functions the placeholder @LIBICONV@ (or, if using libtool for
-      the link, @LTLIBICONV@). If you use automake, the right place for
-      these additions are the *_LDADD variables.
-    Note that 'iconv.m4' is also part of the GNU gettext package, which
-    installs it in /usr/local/share/aclocal/iconv.m4.
-
-  - The libc plug/override mode. This works on GNU/Linux, Solaris and OSF/1
-    systems only. It is a way to get good iconv support without having
-    glibc-2.1.
-    It installs a library `preloadable_libiconv.so'. This library can be used
-    with LD_PRELOAD, to override the iconv* functions present in the C library.
-
-    On GNU/Linux and Solaris:
-        $ export LD_PRELOAD=/usr/local/lib/preloadable_libiconv.so
-
-    On OSF/1:
-        $ export _RLD_LIST=/usr/local/lib/preloadable_libiconv.so:DEFAULT
-
-    A program's source need not be modified, the program need not even be
-    recompiled. Just set the LD_PRELOAD environment variable, that's it!
+To use it in a package that uses GNU autoconf and GNU automake:
+  - Use gnulib-tool to import the Gnulib module 'iconv'. It consists
+    of a couple of *.m4 files (iconv.m4 and its dependencies) and a
+    file 'build-aux/config.rpath'.
+  - Add to the link command line of libraries and executables that use
+    the functions the placeholder @LIBICONV@ (or, if using libtool for
+    the link, @LTLIBICONV@). In Makefile.am files, the right place for
+    these additions are the *_LDADD variables.
 
 
 Copyright
@@ -155,17 +155,24 @@ The iconv _program_ and the documentation are under GPL, see file COPYING.
 Download
 --------
 
-    http://ftp.gnu.org/gnu/libiconv/libiconv-1.14.tar.gz
+    https://ftp.gnu.org/gnu/libiconv/libiconv-1.19.tar.gz
 
 Homepage
 --------
 
-    http://www.gnu.org/software/libiconv/
+    https://www.gnu.org/software/libiconv/
 
-Bug reports to
---------------
+Bug reports
+-----------
 
-    <bug-gnu-libiconv@gnu.org>
+Report bugs
+  - in the bug tracker at <https://savannah.gnu.org/projects/libiconv>
+  - or by email to <bug-gnu-libiconv@gnu.org>.
+
+Join the GNU project
+--------------------
+
+See file JOIN-GNU.
 
 
 Bruno Haible <bruno@clisp.org>

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,6 +15,8 @@
 #include <epan/expert.h>
 #include <epan/strutil.h>
 #include <epan/asn1.h>
+#include <wsutil/strtoi.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-qsig.h"
@@ -50,6 +40,12 @@
 
 void proto_register_qsig(void);
 void proto_reg_handoff_qsig(void);
+
+static dissector_handle_t qsig_arg_handle;
+static dissector_handle_t qsig_res_handle;
+static dissector_handle_t qsig_err_handle;
+static dissector_handle_t qsig_ie4_handle;
+static dissector_handle_t qsig_ie5_handle;
 
 static const value_string qsig_str_ie_type_cs4[] = {
   { QSIG_IE_TRANSIT_COUNTER , "Transit counter" },
@@ -143,7 +139,7 @@ static const value_string qsig_str_service_name[] = {
 };
 
 #define NO_SRV (-1)
-static const gint32 op2srv_tab[] = {
+static const int32_t op2srv_tab[] = {
   /*   0 */ 13868,
   /*   1 */ 13868,
   /*   2 */ 13868,
@@ -278,17 +274,17 @@ static const value_string qsig_str_error[] = {
 };
 
 /* Initialize the protocol and registered fields */
-static int proto_qsig = -1;
-static int hf_qsig_operation = -1;
-static int hf_qsig_service = -1;
-static int hf_qsig_error = -1;
-static int hf_qsig_ie_type = -1;
-static int hf_qsig_ie_type_cs4 = -1;
-static int hf_qsig_ie_type_cs5 = -1;
-static int hf_qsig_ie_len = -1;
-static int hf_qsig_ie_data = -1;
-static int hf_qsig_tc = -1;
-static int hf_qsig_pc = -1;
+static int proto_qsig;
+static int hf_qsig_operation;
+static int hf_qsig_service;
+static int hf_qsig_error;
+static int hf_qsig_ie_type;
+static int hf_qsig_ie_type_cs4;
+static int hf_qsig_ie_type_cs5;
+static int hf_qsig_ie_len;
+static int hf_qsig_ie_data;
+static int hf_qsig_tc;
+static int hf_qsig_pc;
 #include "packet-qsig-hf.c"
 
 static int *hf_qsig_ie_type_arr[] = {
@@ -303,25 +299,23 @@ static int *hf_qsig_ie_type_arr[] = {
 };
 
 /* Initialize the subtree pointers */
-static gint ett_qsig = -1;
-static gint ett_qsig_ie = -1;
-static gint ett_qsig_unknown_extension = -1;
+static int ett_qsig;
+static int ett_qsig_ie;
+static int ett_qsig_unknown_extension;
 #include "packet-qsig-ett.c"
-static gint ett_cnq_PSS1InformationElement = -1;
+static int ett_cnq_PSS1InformationElement;
 
-/* static expert_field ei_qsig_unsupported_arg_type = EI_INIT; */
-static expert_field ei_qsig_unsupported_result_type = EI_INIT;
-static expert_field ei_qsig_unsupported_error_type = EI_INIT;
+/* static expert_field ei_qsig_unsupported_arg_type; */
+static expert_field ei_qsig_unsupported_result_type;
+static expert_field ei_qsig_unsupported_error_type;
 
 /* Preferences */
 
 /* Subdissectors */
-static dissector_handle_t q931_ie_handle = NULL;
+static dissector_handle_t q931_ie_handle;
 
 /* Global variables */
-static const char *extension_oid = NULL;
-static GHashTable *qsig_opcode2oid_hashtable = NULL;
-static GHashTable *qsig_oid2op_hashtable = NULL;
+static const char *extension_oid;
 
 /* Dissector tables */
 static dissector_table_t extension_dissector_table;
@@ -329,7 +323,7 @@ static dissector_table_t extension_dissector_table;
 #include "packet-qsig-fn.c"
 
 typedef struct _qsig_op_t {
-  gint32 opcode;
+  int32_t opcode;
   dissector_t arg_pdu;
   dissector_t res_pdu;
 } qsig_op_t;
@@ -339,7 +333,7 @@ static const qsig_op_t qsig_op_tab[] = {
 };
 
 typedef struct _qsig_err_t {
-  gint32 errcode;
+  int32_t errcode;
   dissector_t err_pdu;
 } qsig_err_t;
 
@@ -347,7 +341,7 @@ static const qsig_err_t qsig_err_tab[] = {
 #include "packet-qsig-table21.c"
 };
 
-static const qsig_op_t *get_op(gint32 opcode) {
+static const qsig_op_t *get_op(int32_t opcode) {
   int i;
 
   /* search from the end to get the last occurrence if the operation is redefined in some newer specification */
@@ -357,13 +351,13 @@ static const qsig_op_t *get_op(gint32 opcode) {
   return NULL;
 }
 
-static gint32 get_service(gint32 opcode) {
+static int32_t get_service(int32_t opcode) {
   if ((opcode < 0) || (opcode >= (int)array_length(op2srv_tab)))
     return NO_SRV;
   return op2srv_tab[opcode];
 }
 
-static const qsig_err_t *get_err(gint32 errcode) {
+static const qsig_err_t *get_err(int32_t errcode) {
   int i;
 
   /* search from the end to get the last occurrence if the operation is redefined in some newer specification */
@@ -378,9 +372,9 @@ static int
 dissect_qsig_arg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
   int offset = 0;
   rose_ctx_t *rctx;
-  gint32 opcode = 0, service;
-  const qsig_op_t *op_ptr;
-  const gchar *p;
+  int32_t opcode = 0, service, oid_num;
+  const qsig_op_t *op_ptr = NULL;
+  const char *p, *oid;
   proto_item *ti, *ti_tmp;
   proto_tree *qsig_tree;
 
@@ -396,8 +390,13 @@ dissect_qsig_arg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     opcode = rctx->d.code_local;
     op_ptr = get_op(opcode);
   } else if (rctx->d.code == 1) {  /* global */
-    op_ptr = (qsig_op_t *)g_hash_table_lookup(qsig_oid2op_hashtable, rctx->d.code_global);
-    if (op_ptr) opcode = op_ptr->opcode;
+    oid = g_strrstr(rctx->d.code_global, ".");
+    if (oid != NULL) {
+     if (ws_strtou32(oid+1, NULL, &oid_num))
+        op_ptr = get_op(oid_num);
+    }
+    if (op_ptr)
+        opcode = op_ptr->opcode;
   } else {
     return offset;
   }
@@ -435,11 +434,11 @@ dissect_qsig_arg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 /*--- dissect_qsig_res -------------------------------------------------------*/
 static int
 dissect_qsig_res(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
-  gint offset = 0;
+  int offset = 0;
   rose_ctx_t *rctx;
-  gint32 opcode, service;
+  int32_t opcode, service;
   const qsig_op_t *op_ptr;
-  const gchar *p;
+  const char *p;
   proto_item *ti, *ti_tmp;
   proto_tree *qsig_tree;
 
@@ -491,9 +490,9 @@ static int
 dissect_qsig_err(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
   int offset = 0;
   rose_ctx_t *rctx;
-  gint32 errcode;
+  int32_t errcode;
   const qsig_err_t *err_ptr;
-  const gchar *p;
+  const char *p;
   proto_item *ti;
   proto_tree *qsig_tree;
 
@@ -553,25 +552,25 @@ dissect_qsig_party_category_ie(tvbuff_t *tvb, int offset, packet_info *pinfo  _U
 /*--- dissect_qsig_ie -------------------------------------------------------*/
 static void
 dissect_qsig_ie(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int codeset) {
-  gint offset;
+  int offset;
   proto_item *ti, *hidden_item;
   proto_tree *ie_tree;
-  guint8 ie_type, ie_len;
+  uint8_t ie_type, ie_len;
 
   offset = 0;
 
   ti = proto_tree_add_item(tree, proto_qsig, tvb, offset, -1, ENC_NA);
-  PROTO_ITEM_SET_HIDDEN(ti);
+  proto_item_set_hidden(ti);
 
-  ie_type = tvb_get_guint8(tvb, offset);
-  ie_len = tvb_get_guint8(tvb, offset + 1);
+  ie_type = tvb_get_uint8(tvb, offset);
+  ie_len = tvb_get_uint8(tvb, offset + 1);
 
   ie_tree = proto_tree_add_subtree(tree, tvb, offset, -1, ett_qsig_ie, NULL,
-            val_to_str(ie_type, VALS(qsig_str_ie_type[codeset]), "unknown (0x%02X)"));
+            val_to_str(pinfo->pool, ie_type, VALS(qsig_str_ie_type[codeset]), "unknown (0x%02X)"));
 
   proto_tree_add_item(ie_tree, *hf_qsig_ie_type_arr[codeset], tvb, offset, 1, ENC_BIG_ENDIAN);
   hidden_item = proto_tree_add_item(ie_tree, hf_qsig_ie_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-  PROTO_ITEM_SET_HIDDEN(hidden_item);
+  proto_item_set_hidden(hidden_item);
   proto_tree_add_item(ie_tree, hf_qsig_ie_len, tvb, offset + 1, 1, ENC_BIG_ENDIAN);
   offset += 2;
   if (tvb_reported_length_remaining(tvb, offset) <= 0)
@@ -602,32 +601,6 @@ dissect_qsig_ie_cs5(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
   return tvb_captured_length(tvb);
 }
 
-/*--- qsig_init_tables ---------------------------------------------------------*/
-static void qsig_init_tables(void) {
-  guint i;
-  gint opcode, *key;
-  gchar *oid;
-
-  if (qsig_opcode2oid_hashtable)
-    g_hash_table_destroy(qsig_opcode2oid_hashtable);
-  qsig_opcode2oid_hashtable = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, g_free);
-
-  if (qsig_oid2op_hashtable)
-    g_hash_table_destroy(qsig_oid2op_hashtable);
-  qsig_oid2op_hashtable = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-
-  /* fill-in global OIDs */
-  for (i=0; i<array_length(qsig_op_tab); i++) {
-    opcode = qsig_op_tab[i].opcode;
-    oid = g_strdup_printf("1.3.12.9.%d", opcode);
-    key = (gint *)g_malloc(sizeof(gint));
-    *key = opcode;
-    g_hash_table_insert(qsig_opcode2oid_hashtable, key, oid);
-    g_hash_table_insert(qsig_oid2op_hashtable, g_strdup(oid), (gpointer)&qsig_op_tab[i]);
-  }
-
-}
-
 /*--- proto_register_qsig ---------------------------------------------------*/
 void proto_register_qsig(void) {
 
@@ -637,10 +610,10 @@ void proto_register_qsig(void) {
                            FT_UINT8, BASE_DEC, VALS(qsig_str_operation), 0x0,
                            NULL, HFILL }},
     { &hf_qsig_service,   { "Service", "qsig.service",
-                           FT_UINT8, BASE_DEC, VALS(qsig_str_service), 0x0,
+                           FT_UINT16, BASE_DEC, VALS(qsig_str_service), 0x0,
                            "Supplementary Service", HFILL }},
     { &hf_qsig_error,     { "Error", "qsig.error",
-                           FT_UINT8, BASE_DEC, VALS(qsig_str_error), 0x0,
+                           FT_UINT16, BASE_DEC, VALS(qsig_str_error), 0x0,
                            NULL, HFILL }},
     { &hf_qsig_ie_type, { "Type", "qsig.ie.type",
                           FT_UINT8, BASE_HEX, NULL, 0x0,
@@ -667,7 +640,7 @@ void proto_register_qsig(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_qsig,
     &ett_qsig_ie,
     &ett_qsig_unknown_extension,
@@ -694,51 +667,45 @@ void proto_register_qsig(void) {
   expert_qsig = expert_register_protocol(proto_qsig);
   expert_register_field_array(expert_qsig, ei, array_length(ei));
 
-  /* Register dissector tables */
-  extension_dissector_table = register_dissector_table("qsig.ext", "QSIG Extension", proto_qsig, FT_STRING, BASE_NONE);
+  /* Register dissectors */
+  qsig_arg_handle = register_dissector(PFNAME "_arg", dissect_qsig_arg, proto_qsig);
+  qsig_res_handle = register_dissector(PFNAME "_res", dissect_qsig_res, proto_qsig);
+  qsig_err_handle = register_dissector(PFNAME "_err", dissect_qsig_err, proto_qsig);
+  qsig_ie4_handle = register_dissector(PFNAME "_ie_cs4", dissect_qsig_ie_cs4, proto_qsig);
+  qsig_ie5_handle = register_dissector(PFNAME "_ie_cs5", dissect_qsig_ie_cs5, proto_qsig);
 
-  qsig_init_tables();
+  /* Register dissector tables */
+  extension_dissector_table = register_dissector_table("qsig.ext", "QSIG Extension", proto_qsig, FT_STRING, STRING_CASE_SENSITIVE);
 }
 
 
 /*--- proto_reg_handoff_qsig ------------------------------------------------*/
 void proto_reg_handoff_qsig(void) {
   int i;
-  gint key;
-  const gchar *oid;
+  char *oid;
   dissector_handle_t q931_handle;
-  dissector_handle_t qsig_arg_handle;
-  dissector_handle_t qsig_res_handle;
-  dissector_handle_t qsig_err_handle;
-  dissector_handle_t qsig_ie_handle;
 
   q931_handle = find_dissector_add_dependency("q931", proto_qsig);
   q931_ie_handle = find_dissector_add_dependency("q931.ie", proto_qsig);
 
-  qsig_arg_handle = create_dissector_handle(dissect_qsig_arg, proto_qsig);
-  qsig_res_handle = create_dissector_handle(dissect_qsig_res, proto_qsig);
   for (i=0; i<(int)array_length(qsig_op_tab); i++) {
     dissector_add_uint("q932.ros.local.arg", qsig_op_tab[i].opcode, qsig_arg_handle);
     dissector_add_uint("q932.ros.local.res", qsig_op_tab[i].opcode, qsig_res_handle);
-    key = qsig_op_tab[i].opcode;
-    oid = (const gchar *)g_hash_table_lookup(qsig_opcode2oid_hashtable, &key);
-    if (oid) {
-      dissector_add_string("q932.ros.global.arg", oid, qsig_arg_handle);
-      dissector_add_string("q932.ros.global.res", oid, qsig_res_handle);
-    }
+
+    oid = wmem_strdup_printf(NULL, "1.3.12.9.%d", qsig_op_tab[i].opcode);
+    dissector_add_string("q932.ros.global.arg", oid, qsig_arg_handle);
+    dissector_add_string("q932.ros.global.res", oid, qsig_res_handle);
+    wmem_free(NULL, oid);
   }
-  qsig_err_handle = create_dissector_handle(dissect_qsig_err, proto_qsig);
   for (i=0; i<(int)array_length(qsig_err_tab); i++) {
     dissector_add_uint("q932.ros.local.err", qsig_err_tab[i].errcode, qsig_err_handle);
   }
 
-  qsig_ie_handle = create_dissector_handle(dissect_qsig_ie_cs4, proto_qsig);
   /* QSIG-TC - Transit counter */
-  dissector_add_uint("q931.ie", CS4 | QSIG_IE_TRANSIT_COUNTER, qsig_ie_handle);
+  dissector_add_uint("q931.ie", CS4 | QSIG_IE_TRANSIT_COUNTER, qsig_ie4_handle);
 
-  qsig_ie_handle = create_dissector_handle(dissect_qsig_ie_cs5, proto_qsig);
   /* SSIG-BC - Party category */
-  dissector_add_uint("q931.ie", CS5 | QSIG_IE_PARTY_CATEGORY, qsig_ie_handle);
+  dissector_add_uint("q931.ie", CS5 | QSIG_IE_PARTY_CATEGORY, qsig_ie5_handle);
 
   /* RFC 3204, 3.2 QSIG Media Type */
   dissector_add_string("media_type", "application/qsig", q931_handle);

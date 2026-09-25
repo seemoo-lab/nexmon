@@ -33,8 +33,28 @@ main (int argc, char **argv)
 {
   setlocale (LC_ALL, "");
 
-  if (argv[1] == NULL)
-    ;
+  if (argv[1] == NULL || g_str_equal (argv[1], "--help"))
+    g_print ("Usage:\n"
+      "  apps --help\n"
+      "  apps COMMAND [COMMAND_OPTIONS]\n"
+      "\n"
+      "COMMANDS:\n"
+      "  list\n"
+      "  search [--should-show-only] TEXT_TO_SEARCH\n"
+      "  implementations INTERFACE_NAME\n"
+      "  show-info DESKTOP_FILE\n"
+      "  default-for-type MIME_TYPE\n"
+      "  recommended-for-type MIME_TYPE\n"
+      "  all-for-type MIME_TYPE\n"
+      "  fallback-for-type MIME_TYPE\n"
+      "  should-show DESKTOP_FILE\n"
+      "  monitor\n"
+      "\n"
+      "Examples:\n"
+      "  apps search --should-show-only ter\n"
+      "  apps show-info org.gnome.Nautilus.desktop\n"
+      "  apps default-for-type image/png\n"
+      "\n");
   else if (g_str_equal (argv[1], "list"))
     {
       GList *all, *i;
@@ -47,13 +67,31 @@ main (int argc, char **argv)
   else if (g_str_equal (argv[1], "search"))
     {
       gchar ***results;
+      gboolean should_show_only;
       gint i, j;
 
-      results = g_desktop_app_info_search (argv[2]);
+      should_show_only = argc > 3 && g_str_equal (argv[2], "--should-show-only");
+      results = g_desktop_app_info_search (argv[ should_show_only ? 3 : 2 ]);
       for (i = 0; results[i]; i++)
         {
           for (j = 0; results[i][j]; j++)
-            g_print ("%s%s", j ? " " : "", results[i][j]);
+            {
+              if (should_show_only)
+                {
+                  GDesktopAppInfo *info;
+                  gboolean should_show;
+
+                  info = g_desktop_app_info_new (results[i][j]);
+                  if (info)
+                    {
+                      should_show = g_app_info_should_show (G_APP_INFO (info));
+                      g_object_unref (info);
+                      if (!should_show)
+                        continue;
+                    }
+                }
+              g_print ("%s%s", j ? " " : "", results[i][j]);
+            }
           g_print ("\n");
           g_strfreev (results[i]);
         }

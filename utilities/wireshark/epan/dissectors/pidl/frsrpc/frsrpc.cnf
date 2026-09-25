@@ -12,12 +12,12 @@ MANUAL frsrpc_dissect_struct_CommPktChunk
 
 CODE START
 static int
-frsrpc_dissect_element_CommPktChangeOrderCommand_file_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_)
+frsrpc_dissect_element_CommPktChangeOrderCommand_file_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_)
 {
 	int conformant = di->conformant_run;
 
 	if (!conformant) {
-		guint32 soffset = dissect_null_term_wstring(tvb, offset, pinfo, tree, drep, hf_frsrpc_CommPktChangeOrderCommand_file_name, 0);
+		uint32_t soffset = dissect_null_term_wstring(tvb, offset, pinfo, tree, drep, hf_frsrpc_CommPktChangeOrderCommand_file_name, 0);
 		/* The difference has to be 4 due to the uint16 of the length  + null terminator utf16*/
 		DISSECTOR_ASSERT(soffset - offset < 261);
 		offset += 261;
@@ -27,9 +27,9 @@ frsrpc_dissect_element_CommPktChangeOrderCommand_file_name(tvbuff_t *tvb _U_, in
 }
 
 int
-frsrpc_dissect_struct_CommPktChunk(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+frsrpc_dissect_struct_CommPktChunk(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
-	guint1632 type = 0;
+	uint1632_t type = 0;
 	int i = 0;
 	const char *s = NULL;
 	proto_item *item = NULL;
@@ -40,10 +40,10 @@ frsrpc_dissect_struct_CommPktChunk(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	old_offset = offset;
 
 	if (parent_tree) {
-		item = proto_tree_add_item(parent_tree, hf_index, tvb, offset, -1, TRUE);
+		item = proto_tree_add_item(parent_tree, hf_index, tvb, offset, -1, ENC_NA);
 		tree = proto_item_add_subtree(item, ett_frsrpc_frsrpc_CommPktChunk);
 	}
-	
+
 	offset = frsrpc_dissect_element_CommPktChunk_type(tvb, offset, pinfo, tree, di, drep, &type);
 
 	offset = frsrpc_dissect_element_CommPktChunk_data(tvb, offset, pinfo, tree, di, drep, &type);
@@ -67,13 +67,13 @@ frsrpc_dissect_struct_CommPktChunk(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 }
 
 int
-frsrpc_dissect_enum_CommPktCommand(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, guint8 *drep _U_, int hf_index _U_, guint32 *param _U_)
+frsrpc_dissect_enum_CommPktCommand(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di, uint8_t *drep _U_, int hf_index _U_, uint32_t *param _U_)
 {
-	guint32 parameter=0;
+	uint32_t parameter=0;
 	int i = 0;
 	const char *s = NULL;
 	if(param){
-		parameter=(guint32)*param;
+		parameter=(uint32_t)*param;
 	}
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_index, &parameter);
 
@@ -87,24 +87,23 @@ frsrpc_dissect_enum_CommPktCommand(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 				s);
 
 	if(param){
-		*param=(guint32)parameter;
+		*param=(uint32_t)parameter;
 	}
 	return offset;
 }
 
 
 static int
-frsrpc_dissect_struct_frsrpc_CommPktChunkCtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep _U_, int hf_index, guint32 param _U_)
+frsrpc_dissect_struct_frsrpc_CommPktChunkCtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
-	guint32 nb_chunk = 0;
-	guint32 remaining = tvb_reported_length_remaining(tvb, offset);
+	uint32_t remaining = tvb_reported_length_remaining(tvb, offset);
 	int align_status = di->no_align;
 
 	if (remaining > 0) {
-		proto_item *item = proto_tree_add_item(tree, hf_index, tvb, offset, -1, TRUE);
+		proto_item *item = proto_tree_add_item(tree, hf_index, tvb, offset, -1, ENC_NA);
 		proto_tree *subtree = proto_item_add_subtree(item, ett_ChunkCtr);
 		di->no_align = 1;
-		for(nb_chunk = 0; remaining > 0; nb_chunk++) {
+		while (remaining > 0) {
 			offset = frsrpc_dissect_struct_CommPktChunk(tvb, offset, pinfo, subtree, di, drep, hf_CommPktChunk, param);
 			remaining = tvb_reported_length_remaining(tvb, offset);
 		}

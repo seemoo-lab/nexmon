@@ -1,0 +1,108 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
+@pindex spit
+@cindex @code{spit} program, usage
+@example
+spit [@var{option}...]
+@end example
+
+@cindex query a Large Language Model
+@cindex translate through a Large Language Model
+The @code{spit} program
+passes its input to a Large Language Model (LLM) instance
+and prints the response.
+With the @code{--to} option,
+it translates its input to the specified language
+through a Large Language Model (LLM) and prints the translation.
+
+@strong{Warning:} The output might not be what you expect.
+It might be of the wrong form, be of poor quality, or reflect some biases.
+
+@subsection Large Language Model (LLM) options
+
+@table @samp
+@item --species=@var{type}
+@opindex --species@r{, @code{spit} option}
+Specifies the type of Large Language Model execution engine.
+The default and only valid value is @code{ollama}.
+
+@item --url=@var{url}
+@opindex --url@r{, @code{spit} option}
+Specifies the URL of the server that runs Large Language Model execution engine.
+For @code{ollama}, the default is @code{http://localhost:11434}.
+
+@item -m @var{model}
+@itemx --model=@var{model}
+@opindex -m@r{, @code{spit} option}
+@opindex --model@r{, @code{spit} option}
+Specifies the model to use.
+This option is mandatory; no default exists.
+The specified model must
+already be installed in the Large Language Model execution engine.
+
+@item --to=@var{language}
+@opindex --to@r{, @code{spit} option}
+Specifies the target language.
+@var{language} may be specified
+as an ISO 639 language code (such as @code{fr} for French),
+as a combination of an ISO 639 language code and an ISO 3166 country code
+(such as @code{fr_CA} for French in Canada,
+or @code{zh_TW} for traditional Chinese),
+or as the English name of a language (such as @code{French}).
+
+The effect of this option is to
+add a prompt similar to "Translate to @var{language}:".
+
+@item --prompt=@var{text}
+@opindex --prompt@r{, @code{spit} option}
+Specifies the prompt to use before the input that comes from standard input.
+It allows you to specify extra instructions for the LLM.
+
+This option overrides the @code{--to} option.
+
+@item --postprocess=@var{command}
+@opindex --postprocess@r{, @code{spit} option}
+Specifies a command to post-process the output.
+This should be a Bourne shell command
+that reads from standard input and writes to standard output.
+
+For instance, the @code{ministral-3:14b} model
+often emphasizes part of the output with @samp{**} characters.
+To eliminate these markers,
+you could use the command @samp{sed -e 's/[*][*]//g'}.
+
+@end table
+
+@subsection Informative output
+
+@table @samp
+@item -h
+@itemx --help
+@opindex -h@r{, @code{spit} option}
+@opindex --help@r{, @code{spit} option}
+Display this help and exit.
+
+@item -V
+@itemx --version
+@opindex -V@r{, @code{spit} option}
+@opindex --version@r{, @code{spit} option}
+Output version information and exit.
+
+@end table
+
+@subsection Examples
+
+Machine translation of a single sentence:
+
+@smallexample
+$ echo 'Translate into German: "Welcome to the GNU project!"' \
+    | spit --model=ministral-3:14b \
+           --postprocess="sed -e 's/[*][*]//g'"
+"Willkommen zum GNU-Projekt!"
+@end smallexample
+
+@noindent
+The perfect translation would be @code{"Willkommen beim GNU-Projekt!"}.
+You can see: some manual adjustment after the machine translation is needed.

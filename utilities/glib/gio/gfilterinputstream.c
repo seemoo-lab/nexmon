@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,9 +27,7 @@
 
 
 /**
- * SECTION:gfilterinputstream
- * @short_description: Filter Input Stream
- * @include: gio/gio.h
+ * GFilterInputStream:
  *
  * Base class for input stream implementations that perform some
  * kind of filtering operation on a base stream. Typical examples
@@ -89,20 +89,26 @@ g_filter_input_stream_class_init (GFilterInputStreamClass *klass)
   istream_class->skip  = g_filter_input_stream_skip;
   istream_class->close_fn = g_filter_input_stream_close;
 
+  /**
+   * GFilterInputStream:base-stream:
+   *
+   * The underlying base stream on which the I/O ops will be done.
+   */
   g_object_class_install_property (object_class,
                                    PROP_BASE_STREAM,
-                                   g_param_spec_object ("base-stream",
-                                                         P_("The Filter Base Stream"),
-                                                         P_("The underlying base stream on which the io ops will be done."),
+                                   g_param_spec_object ("base-stream", NULL, NULL,
                                                          G_TYPE_INPUT_STREAM,
                                                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | 
                                                          G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 
+  /**
+   * GFilterInputStream:close-base-stream:
+   *
+   * Whether the base stream should be closed when the filter stream is closed.
+   */
   g_object_class_install_property (object_class,
                                    PROP_CLOSE_BASE,
-                                   g_param_spec_boolean ("close-base-stream",
-                                                         P_("Close Base Stream"),
-                                                         P_("If the base stream should be closed when the filter stream is closed."),
+                                   g_param_spec_boolean ("close-base-stream", NULL, NULL,
                                                          TRUE, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
                                                          G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 }

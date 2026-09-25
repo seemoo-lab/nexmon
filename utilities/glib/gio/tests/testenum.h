@@ -13,4 +13,4 @@ typedef enum
   TEST_FLAGS_LAUGHING = (1 << 1),
   TEST_FLAGS_TALKING  = (1 << 2),
   TEST_FLAGS_WALKING  = (1 << 3)
-} TestFlags;
+} G_GNUC_FLAG_ENUM TestFlags;

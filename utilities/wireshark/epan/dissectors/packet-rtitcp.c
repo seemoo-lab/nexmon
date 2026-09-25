@@ -13,32 +13,21 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-#include <glib.h>
 
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/prefs.h>
 #include <epan/addr_resolv.h>
-#include <epan/wmem/wmem.h>
+#include <epan/wmem_scopes.h>
 #include <epan/conversation.h>
-#include <epan/g_int64_hash_routines.h>
-#include <epan/dissectors/packet-tcp.h>
+
+#include <wsutil/ws_padding_to.h>
+
+#include "packet-tcp.h"
 
 #define RTITCP_MAGIC_NUMBER             0xdd54dd55
 #define RTPS_MAGIC_NUMBER               0x52545053
@@ -120,7 +109,7 @@
 #define NDDS_TRANSPORT_TCPV4_CONTROL_PROTOCOL_ERROR_NO_MATCH_COOKIE                           4
 /* fatal internal processing error (caller is not responsible) */
 #define NDDS_TRANSPORT_TCPV4_CONTROL_PROTOCOL_ERROR_INTERNAL                                  5
-/* the operation should be retried at the first occurence */
+/* the operation should be retried at the first occurrence */
 #define NDDS_TRANSPORT_TCPV4_CONTROL_PROTOCOL_ERROR_RETRY                                     6
 #define NDDS_TRANSPORT_TCP_CONTROL_ERROR_CODE_ATTRIBUTE_BAD_REQUEST_ID                        400
 #define NDDS_TRANSPORT_TCP_CONTROL_ERROR_CODE_ATTRIBUTE_UNKNOWN_ATTRIBUTE_ID                  420
@@ -138,38 +127,38 @@ void proto_reg_handoff_rtitcp(void);
 void proto_register_rtitcp(void);
 
 /* Initialize the protocol and registered fields */
-static gint proto_rtitcp                                         = -1;
-static gint hf_rtitcp_header_control_byte                        = -1;
-static gint hf_rtitcp_header_magic_number                        = -1;
-static gint hf_rtitcp_header_message_length                      = -1;
-static gint hf_rtitcp_control_transaction_id                     = -1;
-static gint hf_rtitcp_control_kind                               = -1;
-static gint hf_rtitcp_control_attribute_type                     = -1;
-static gint hf_rtitcp_control_attribute_length                   = -1;
-static gint hf_rtitcp_control_attribute_port                     = -1;
-static gint hf_rtitcp_attributes_list_length                     = -1;
-static gint hf_rtitcp_control_magic_cookie                       = -1;
-static gint hf_rtitcp_control_attribute_connection_cookie        = -1;
-static gint hf_rtitcp_control_attribute_connection_type          = -1;
-static gint hf_rtitcp_control_attribute_session_id               = -1;
-static gint hf_rtitcp_control_attribute_error_code_value         = -1;
-static gint hf_rtitcp_control_attribute_error_code_description   = -1;
-static gint hf_rtitcp_locator_ipv4                               = -1;
-static gint hf_rtitcp_locator_port                               = -1;
-static gint hf_rtitcp_locator_ipv6                               = -1;
-static gint hf_rtitcp_locator_kind                               = -1;
-static gint hf_rtitcp_crc_magic_cookie                           = -1;
-static gint hf_rtitcp_control_crc_value                          = -1;
+static int proto_rtitcp;
+static int hf_rtitcp_header_control_byte;
+static int hf_rtitcp_header_magic_number;
+static int hf_rtitcp_header_message_length;
+static int hf_rtitcp_control_transaction_id;
+static int hf_rtitcp_control_kind;
+static int hf_rtitcp_control_attribute_type;
+static int hf_rtitcp_control_attribute_length;
+static int hf_rtitcp_control_attribute_port;
+static int hf_rtitcp_attributes_list_length;
+static int hf_rtitcp_control_magic_cookie;
+static int hf_rtitcp_control_attribute_connection_cookie;
+static int hf_rtitcp_control_attribute_connection_type;
+static int hf_rtitcp_control_attribute_session_id;
+static int hf_rtitcp_control_attribute_error_code_value;
+static int hf_rtitcp_control_attribute_error_code_description;
+static int hf_rtitcp_locator_ipv4;
+static int hf_rtitcp_locator_port;
+static int hf_rtitcp_locator_ipv6;
+static int hf_rtitcp_locator_kind;
+static int hf_rtitcp_crc_magic_cookie;
+static int hf_rtitcp_control_crc_value;
 
-static gint hf_rtitcp_response_in                                = -1;
-static gint hf_rtitcp_response_to                                = -1;
-static gint hf_rtitcp_response_time                              = -1;
+static int hf_rtitcp_response_in;
+static int hf_rtitcp_response_to;
+static int hf_rtitcp_response_time;
 
 #define RTITCP_FLAG_NOT_REQUEST 0x0100
 
 typedef struct _rtitcp_transaction_t {
-    guint32 req_frame;
-    guint32 rep_frame;
+    uint32_t req_frame;
+    uint32_t rep_frame;
     nstime_t req_time;
 } rtitcp_transaction_t;
 
@@ -178,13 +167,13 @@ typedef struct _rtitcp_conv_info_t {
 } rtitcp_conv_info_t;
 
 /* Subtree pointers */
-static gint ett_rtitcp                              = -1;
-static gint ett_rtitcp_signalling_protocol          = -1;
-static gint ett_rtitcp_message                      = -1;
-static gint ett_rtitcp_attributes_list              = -1;
-static gint ett_rtitcp_attribute                    = -1;
+static int ett_rtitcp;
+static int ett_rtitcp_signalling_protocol;
+static int ett_rtitcp_message;
+static int ett_rtitcp_attributes_list;
+static int ett_rtitcp_attribute;
 
-static header_field_info *hfi_rtitcp                = NULL;
+static header_field_info *hfi_rtitcp;
 static heur_dissector_list_t heur_subdissector_list;
 
 static const value_string ctrl_message_types_vals[] = {
@@ -273,18 +262,18 @@ static const value_string rtitcp_attribute_connection_type_vals[] = {
 };
 
 static void rtitcp_util_add_error_attribute(proto_tree *attribute, tvbuff_t* tvb,
-                             gint offset, guint size) {
+                             int offset, unsigned size) {
     proto_tree_add_item(attribute, hf_rtitcp_control_attribute_error_code_value, tvb, offset, 4, ENC_BIG_ENDIAN);
     proto_tree_add_item(attribute, hf_rtitcp_control_attribute_error_code_description, tvb, offset + 4,
-            size - 4, ENC_ASCII|ENC_NA);
+            size - 4, ENC_ASCII);
 }
 
 static void rtitcp_util_add_locator_t(proto_tree *tree, packet_info *pinfo _U_, tvbuff_t * tvb,
-                             gint offset, gboolean little_endian,
-                             proto_item * rtitcp_message, gboolean * first_attribute) {
-    gint32  kind;
-    guint16 port;
-    kind = tvb_get_guint16(tvb, offset+8, little_endian ? ENC_LITTLE_ENDIAN : ENC_BIG_ENDIAN);
+                             int offset, bool little_endian,
+                             proto_item * rtitcp_message, bool * first_attribute) {
+    int32_t kind;
+    uint16_t port;
+    kind = tvb_get_uint16(tvb, offset+8, little_endian ? ENC_LITTLE_ENDIAN : ENC_BIG_ENDIAN);
 
     if (kind == 0xFFFF) {
         kind = LOCATOR_KIND_IPV4;
@@ -297,15 +286,15 @@ static void rtitcp_util_add_locator_t(proto_tree *tree, packet_info *pinfo _U_, 
         proto_tree_add_item(tree, hf_rtitcp_locator_port, tvb, offset+10, 2, ENC_BIG_ENDIAN);
         proto_tree_add_item(tree, hf_rtitcp_locator_ipv4, tvb, offset+12, 4, ENC_BIG_ENDIAN);
 
-        port = tvb_get_guint16(tvb, offset+10, little_endian ? ENC_LITTLE_ENDIAN : ENC_BIG_ENDIAN);
+        port = tvb_get_uint16(tvb, offset+10, little_endian ? ENC_LITTLE_ENDIAN : ENC_BIG_ENDIAN);
         if (*first_attribute) {
             proto_item_append_text(rtitcp_message," (");
             col_append_str(pinfo->cinfo, COL_INFO, " (");
         }
         proto_item_append_text(rtitcp_message, "%s%s:%u",
-            *first_attribute ? "" : ", ", tvb_ip_to_str(tvb, offset + 12), port);
+            *first_attribute ? "" : ", ", tvb_ip_to_str(pinfo->pool, tvb, offset + 12), port);
         col_append_fstr(pinfo->cinfo, COL_INFO, "%s%s:%u",
-                *first_attribute ? "" : ", ", tvb_ip_to_str(tvb, offset + 12), port);
+                *first_attribute ? "" : ", ", tvb_ip_to_str(pinfo->pool, tvb, offset + 12), port);
     } else {
         proto_tree_add_item(tree, hf_rtitcp_locator_ipv6, tvb, offset, 16, ENC_NA);
         if (*first_attribute) {
@@ -313,22 +302,22 @@ static void rtitcp_util_add_locator_t(proto_tree *tree, packet_info *pinfo _U_, 
             col_append_str(pinfo->cinfo, COL_INFO, " (");
         }
         proto_item_append_text(rtitcp_message, "%s%s",
-            *first_attribute ? "" : ", ", tvb_ip6_to_str(tvb, offset));
+            *first_attribute ? "" : ", ", tvb_ip6_to_str(pinfo->pool, tvb, offset));
         col_append_fstr(pinfo->cinfo, COL_INFO, "%s%s",
-                *first_attribute ? "" : ", ", tvb_ip6_to_str(tvb, offset));
+                *first_attribute ? "" : ", ", tvb_ip6_to_str(pinfo->pool, tvb, offset));
     }
 }
 
-static guint dissect_attribute(tvbuff_t *tvb, packet_info *pinfo,
-        proto_tree *attributes_list, guint offset, guint attributes_list_offset,
-        proto_item * rtitcp_message, gboolean * first_attribute) {
+static unsigned dissect_attribute(tvbuff_t *tvb, packet_info *pinfo,
+        proto_tree *attributes_list, unsigned offset, unsigned attributes_list_offset,
+        proto_item * rtitcp_message, bool * first_attribute) {
 
-    guint16 attribute_length, attribute_type;
-    guint padding;
+    uint16_t attribute_length, attribute_type;
+    unsigned padding;
     proto_item *attribute;
 
-    attribute_type = tvb_get_guint16(tvb, attributes_list_offset+offset, ENC_BIG_ENDIAN);
-    attribute_length = tvb_get_guint16(tvb, attributes_list_offset+offset+2, ENC_BIG_ENDIAN);
+    attribute_type = tvb_get_uint16(tvb, attributes_list_offset+offset, ENC_BIG_ENDIAN);
+    attribute_length = tvb_get_uint16(tvb, attributes_list_offset+offset+2, ENC_BIG_ENDIAN);
 
     attribute = proto_tree_add_subtree_format(attributes_list, tvb,
             attributes_list_offset+offset, attribute_length+4,
@@ -338,12 +327,12 @@ static guint dissect_attribute(tvbuff_t *tvb, packet_info *pinfo,
             attributes_list_offset+offset, 2, ENC_BIG_ENDIAN);
     proto_tree_add_item(attribute, hf_rtitcp_control_attribute_length, tvb,
             attributes_list_offset+offset+2, 2, ENC_BIG_ENDIAN);
-    proto_item_set_text(attribute,"%s", val_to_str(attribute_type, attribute_types_vals, "Unknown attribute"));
+    proto_item_set_text(attribute,"%s", val_to_str_const(attribute_type, attribute_types_vals, "Unknown attribute"));
 
     switch (attribute_type) {
         case RTPS_LOCATOR_PORT_ATTRIBUTE_TYPE: {
-            guint32 port;
-            port = tvb_get_guint32(tvb, attributes_list_offset+offset+4, ENC_BIG_ENDIAN);
+            uint32_t port;
+            port = tvb_get_uint32(tvb, attributes_list_offset+offset+4, ENC_BIG_ENDIAN);
             if (*first_attribute) {
                 proto_item_append_text(rtitcp_message," (");
                 col_append_str(pinfo->cinfo, COL_INFO, " (");
@@ -352,7 +341,7 @@ static guint dissect_attribute(tvbuff_t *tvb, packet_info *pinfo,
                     *first_attribute ? "" : ", ", port);
             col_append_fstr(pinfo->cinfo, COL_INFO, "%s%u",
                     *first_attribute ? "" : ", ", port);
-            (*first_attribute) = FALSE;
+            (*first_attribute) = false;
             proto_item_append_text(attribute, " (Port = %u)", port);
             proto_tree_add_item(attribute, hf_rtitcp_control_attribute_port, tvb,
                     attributes_list_offset+offset+4, attribute_length, ENC_BIG_ENDIAN);
@@ -361,7 +350,7 @@ static guint dissect_attribute(tvbuff_t *tvb, packet_info *pinfo,
         case RTPS_LOCATOR_ADDRESS_ATTRIBUTE_TYPE: {
             rtitcp_util_add_locator_t(attribute, pinfo, tvb, attributes_list_offset+offset+4,
                                 ENC_BIG_ENDIAN, rtitcp_message, first_attribute);
-            (*first_attribute) = FALSE;
+            (*first_attribute) = false;
             break;
         }
 
@@ -374,15 +363,15 @@ static guint dissect_attribute(tvbuff_t *tvb, packet_info *pinfo,
             }
             proto_item_append_text(rtitcp_message, "%s%s",
                 (*first_attribute) ? "" : ", ",
-                tvb_bytes_to_str(wmem_packet_scope(), tvb, attributes_list_offset+offset+4, 16));
+                tvb_bytes_to_str(pinfo->pool, tvb, attributes_list_offset+offset+4, 16));
             col_append_fstr(pinfo->cinfo, COL_INFO, "%s%s",
                 (*first_attribute) ? "" : ", ",
-                tvb_bytes_to_str(wmem_packet_scope(), tvb, attributes_list_offset+offset+4, 16));
-            (*first_attribute) = FALSE;
+                tvb_bytes_to_str(pinfo->pool, tvb, attributes_list_offset+offset+4, 16));
+            (*first_attribute) = false;
             break;
         }
         case CONNECTION_TYPE_ATTRIBUTE_TYPE: {
-            guint8 attribute_connection_type = tvb_get_guint8(tvb, attributes_list_offset+offset+4);
+            uint8_t attribute_connection_type = tvb_get_uint8(tvb, attributes_list_offset+offset+4);
             proto_tree_add_item(attribute, hf_rtitcp_control_attribute_connection_type, tvb,
                     attributes_list_offset+offset+4, attribute_length, ENC_BIG_ENDIAN);
             if (*first_attribute) {
@@ -391,11 +380,11 @@ static guint dissect_attribute(tvbuff_t *tvb, packet_info *pinfo,
             }
             proto_item_append_text(rtitcp_message, "%s%s",
                 (*first_attribute) ? "" : ", ",
-                val_to_str(attribute_connection_type, rtitcp_attribute_connection_type_vals, "Unknown attribute"));
+                val_to_str_const(attribute_connection_type, rtitcp_attribute_connection_type_vals, "Unknown attribute"));
             col_append_fstr(pinfo->cinfo, COL_INFO, "%s%s",
                 (*first_attribute) ? "" : ", ",
-                val_to_str(attribute_connection_type, rtitcp_attribute_connection_type_vals, "Unknown attribute"));
-            (*first_attribute) = FALSE;
+                val_to_str_const(attribute_connection_type, rtitcp_attribute_connection_type_vals, "Unknown attribute"));
+            (*first_attribute) = false;
             break;
         }
         case SESSION_ID_ATTRIBUTE_TYPE: {
@@ -411,11 +400,11 @@ static guint dissect_attribute(tvbuff_t *tvb, packet_info *pinfo,
             break;
     }
 
-    padding = (4 - attribute_length%4)%4;
+    padding = WS_PADDING_TO_4(attribute_length);
     return (attribute_length+padding+4);
 }
-static proto_tree* print_header(proto_tree *tree, proto_tree *rtitcp_message, tvbuff_t *tvb, guint offset,
-                                    guint16 msg_length, gboolean printCRC, gboolean is_data) {
+static proto_tree* print_header(proto_tree *tree, proto_tree *rtitcp_message, tvbuff_t *tvb, unsigned offset,
+                                    uint16_t msg_length, bool printCRC, bool is_data) {
     proto_item *ti;
 
     if (is_data) {
@@ -426,11 +415,11 @@ static proto_tree* print_header(proto_tree *tree, proto_tree *rtitcp_message, tv
             ett_rtitcp_message, NULL, "RTI TCP Control Message");
     }
     if (is_data) {
-        guint32 msg_length32;
+        uint32_t msg_length32;
         proto_tree_add_item(rtitcp_message, hf_rtitcp_header_control_byte, tvb, offset, 1, ENC_BIG_ENDIAN);
         ti = proto_tree_add_item(rtitcp_message, hf_rtitcp_header_message_length,
                 tvb, offset+1, 3, ENC_BIG_ENDIAN);
-        msg_length32 = tvb_get_guint32(tvb, offset, ENC_BIG_ENDIAN);
+        msg_length32 = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
         msg_length32 = msg_length32 % NUMBER_2E30;
         proto_item_set_text(ti,"RTI TCP Message Length: %d", msg_length32);
     } else {
@@ -445,8 +434,8 @@ static proto_tree* print_header(proto_tree *tree, proto_tree *rtitcp_message, tv
 
     return rtitcp_message;
 }
-static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, packet_info *pinfo,
-                                  guint offset) {
+static uint16_t dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, packet_info *pinfo,
+                                  unsigned offset) {
 
    /* 0...2...........7...............15.............23...............31
    * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -470,26 +459,26 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
    * +---------------+---------------+---------------+---------------+   --------------------------------*/
 
     proto_tree  *attributes_list, *rtitcp_message = NULL;
-    guint16 msg_length, control_message_kind, attributes_list_length, header_length;
-    guint attributes_list_offset, attribute_offset, offset_header = offset;
-    guint attributes_count;
-    gboolean is_data = FALSE, printCRC = FALSE, first_attribute;
-    gchar * transaction_id_str;
-    guint64 seq_num;
+    uint16_t msg_length, control_message_kind, attributes_list_length, header_length;
+    unsigned attributes_list_offset, attribute_offset, offset_header = offset;
+    unsigned attributes_count;
+    bool is_data = false, printCRC = false, first_attribute;
+    char * transaction_id_str;
+    uint64_t seq_num;
     conversation_t *conversation;
     rtitcp_conv_info_t *rtitcp_info;
     rtitcp_transaction_t *rtitcp_trans;
-    guint64 * conversation_info_key = NULL;
+    uint64_t * conversation_info_key = NULL;
 
     /* The header length is 8 if it doesn't contain optional fields */
     header_length = 8;
 
-    msg_length = tvb_get_guint16(tvb, offset+2, ENC_BIG_ENDIAN);
+    msg_length = tvb_get_uint16(tvb, offset+2, ENC_BIG_ENDIAN);
     offset += 8;
 
     /* Check if CRC is present */
     if (tvb_get_ntohl(tvb, offset) == RTITCP_CRC_MAGIC_NUMBER) {
-        printCRC = TRUE;
+        printCRC = true;
         header_length += 8;
         offset += 8; /* Because of 0xCRC32 + actual CRC (4 bytes) */
     }
@@ -498,16 +487,16 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
     rtitcp_message = print_header(rtitcp_tree, rtitcp_message, tvb, offset_header, msg_length + header_length, printCRC, is_data);
 
     /* Check the control message kind */
-    control_message_kind = tvb_get_guint16(tvb, offset, ENC_BIG_ENDIAN);
+    control_message_kind = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
     col_append_sep_str(pinfo->cinfo, COL_INFO, ", ",
-                val_to_str(control_message_kind,ctrl_message_types_vals, "Unknown control message"));
+                val_to_str_const(control_message_kind,ctrl_message_types_vals, "Unknown control message"));
     proto_tree_add_uint(rtitcp_message, hf_rtitcp_control_kind, tvb, offset, 2, control_message_kind);
     proto_item_set_text(rtitcp_message,"RTI TCP Control Message , Kind: %s",
-            val_to_str(control_message_kind,ctrl_message_types_vals, "Unknown control message"));
+            val_to_str_const(control_message_kind,ctrl_message_types_vals, "Unknown control message"));
     offset += 2;
 
     /* Take the length in bytes of the attributes list */
-    attributes_list_length = tvb_get_guint16(tvb, offset, ENC_BIG_ENDIAN);
+    attributes_list_length = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
     proto_tree_add_item(rtitcp_message, hf_rtitcp_attributes_list_length, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
@@ -520,7 +509,7 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
 
     /* Now we dissect the transaction id */
     proto_tree_add_item(rtitcp_message, hf_rtitcp_control_transaction_id, tvb, offset, 12, ENC_NA);
-    transaction_id_str = tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 12);
+    transaction_id_str = tvb_bytes_to_str(pinfo->pool, tvb, offset, 12);
 
     /* Get the transaction identifier. Not the whole transaction but the middle part, which
      * shouldn't coincide */
@@ -543,14 +532,14 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
 
         conversation_add_proto_data(conversation, proto_rtitcp, rtitcp_info);
     }
-    if (!pinfo->fd->flags.visited) {
+    if (!pinfo->fd->visited) {
         if (!(control_message_kind & RTITCP_FLAG_NOT_REQUEST)) {
             /* This is a request */
             rtitcp_trans=wmem_new(wmem_file_scope(), rtitcp_transaction_t);
             rtitcp_trans->req_frame = pinfo->num;
             rtitcp_trans->rep_frame = 0;
             rtitcp_trans->req_time = pinfo->abs_ts;
-            conversation_info_key = (guint64*)wmem_alloc0(wmem_file_scope(), sizeof(guint64));
+            conversation_info_key = wmem_new0(wmem_file_scope(), uint64_t);
             *conversation_info_key = seq_num;
             wmem_map_insert(rtitcp_info->pdus, conversation_info_key, (void *)rtitcp_trans);
         } else {
@@ -566,7 +555,7 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
     }
     if (!rtitcp_trans) {
             /* create a "fake" rtitcp_trans structure */
-            rtitcp_trans=wmem_new(wmem_packet_scope(), rtitcp_transaction_t);
+            rtitcp_trans=wmem_new(pinfo->pool, rtitcp_transaction_t);
             rtitcp_trans->req_frame = 0;
             rtitcp_trans->rep_frame = 0;
             rtitcp_trans->req_time = pinfo->abs_ts;
@@ -579,7 +568,7 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
             proto_item *it;
             it = proto_tree_add_uint(rtitcp_message, hf_rtitcp_response_in,
                             tvb, 0, 0, rtitcp_trans->rep_frame);
-            PROTO_ITEM_SET_GENERATED(it);
+            proto_item_set_generated(it);
         }
     } else {
         /* This is a reply */
@@ -588,11 +577,11 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
             nstime_t ns;
             it = proto_tree_add_uint(rtitcp_message, hf_rtitcp_response_to,
                             tvb, 0, 0, rtitcp_trans->req_frame);
-            PROTO_ITEM_SET_GENERATED(it);
+            proto_item_set_generated(it);
 
             nstime_delta(&ns, &pinfo->abs_ts, &rtitcp_trans->req_time);
             it = proto_tree_add_time(rtitcp_message, hf_rtitcp_response_time, tvb, 0, 0, &ns);
-            PROTO_ITEM_SET_GENERATED(it);
+            proto_item_set_generated(it);
         }
     }
 
@@ -606,7 +595,7 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
             ett_rtitcp_attributes_list, NULL, "Attributes List");
 
     attributes_count = 0;
-    first_attribute = TRUE;
+    first_attribute = true;
     while (attributes_list_offset < attributes_list_length) {
         ++attributes_count;
         attribute_offset = dissect_attribute(tvb, pinfo, attributes_list,
@@ -628,26 +617,23 @@ static guint16 dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, p
 }
 
 /* This function dissects all the control messages found */
-static guint dissect_rtitcp_control_protocol(proto_tree *rtitcp_tree, tvbuff_t *tvb, packet_info *pinfo) {
-    guint messages_count, offset;
-    guint16 msg_length;
-    guint32 tvb_len;
+static unsigned dissect_rtitcp_control_protocol(proto_tree *rtitcp_tree, tvbuff_t *tvb, packet_info *pinfo) {
+    unsigned offset;
+    uint16_t msg_length;
+    uint32_t tvb_len;
 
     offset = 0;
     tvb_len = tvb_reported_length(tvb);
 
-    messages_count = 0;
-
     while (offset < tvb_len) {
         msg_length = dissect_control_message(rtitcp_tree, tvb, pinfo, offset);
         offset += msg_length;
-        ++messages_count;
     }
 
     return offset;
 }
 
-static gint dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
+static int dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
                             proto_tree *tree, void *data _U_) {
 
    /*                   FORMAT OF THE CONTROL MESSAGE
@@ -675,10 +661,10 @@ static gint dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
 
     proto_item   *ti;
     proto_tree   *rtitcp_tree, *rtitcp_message = NULL;
-    guint offset, offset_header;
-    guint16 rtitcp_msg_length, header_length;
-    guint32 tvb_len, rtitcp_rtps_msg_length;
-    gboolean printCRC = FALSE, is_data = FALSE;
+    unsigned offset, offset_header;
+    uint16_t rtitcp_msg_length, header_length;
+    uint32_t tvb_len, rtitcp_rtps_msg_length;
+    bool printCRC = false, is_data = false;
     tvbuff_t *next_tvb;
     heur_dtbl_entry_t *hdtbl_entry;
 
@@ -688,7 +674,7 @@ static gint dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
     /* From this point, we can consider that this is a RTI TCP message */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "RTI-TCP");
 
-    rtitcp_msg_length = tvb_get_guint16(tvb, offset+2, ENC_BIG_ENDIAN);
+    rtitcp_msg_length = tvb_get_uint16(tvb, offset+2, ENC_BIG_ENDIAN);
 
     ti = proto_tree_add_item(tree, proto_rtitcp, tvb, offset, -1, ENC_NA);
     rtitcp_tree = proto_item_add_subtree(ti, ett_rtitcp);
@@ -701,7 +687,7 @@ static gint dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
 
     /* if bytes 8 to 12 are RTITCP_CRC_MAGIC_NUMBER, we got a CRC */
     if (tvb_get_ntohl(tvb, offset) == RTITCP_CRC_MAGIC_NUMBER) {
-        printCRC = TRUE; /* To specify later that CRC must be printed */
+        printCRC = true; /* To specify later that CRC must be printed */
         header_length += 8; /* header increases in 8 bytes */
         offset += 8; /* Because of 0xCRC32 + actual CRC (4 bytes) */
     }
@@ -714,16 +700,16 @@ static gint dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
         /* IMPORTANT NOTE: We assume always one RTPS message per RTITCP message */
         /* If the TCP layer has provided us with garbage at the end of the buffer,
            process only the length specified by rtitcp_msg_length */
-        if (tvb_len > (guint32)(rtitcp_msg_length + header_length)) {
+        if (tvb_len > (uint32_t)(rtitcp_msg_length + header_length)) {
             tvb_set_reported_length(tvb, (rtitcp_msg_length + header_length));
         }
 
         /* When we encapsulate RTPS, packet length is given by the 30 less
            significant bits of the first four bytes */
-        rtitcp_rtps_msg_length = tvb_get_guint32(tvb, 0, ENC_BIG_ENDIAN);
+        rtitcp_rtps_msg_length = tvb_get_uint32(tvb, 0, ENC_BIG_ENDIAN);
         rtitcp_rtps_msg_length = rtitcp_rtps_msg_length % NUMBER_2E30;
         /* Add RTI TCP Data Message subtree and print header */
-        is_data = TRUE;
+        is_data = true;
         rtitcp_message = print_header(rtitcp_tree, rtitcp_message, tvb, offset_header,
                                         rtitcp_rtps_msg_length + header_length, printCRC, is_data);
 
@@ -740,14 +726,14 @@ static gint dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
     }
 }
 
-static guint get_rtitcp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
-        gint offset, void * data _U_) {
-    guint16 plen;
-    guint16 header_length = 8;
+static unsigned get_rtitcp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+        int offset, void * data _U_) {
+    uint16_t plen;
+    uint16_t header_length = 8;
     /*
     * Get the length of the RTITCP packet.
     */
-    plen = tvb_get_guint16(tvb, offset+2, ENC_BIG_ENDIAN);
+    plen = tvb_get_uint16(tvb, offset+2, ENC_BIG_ENDIAN);
     /*
     * That length doesn't include the header field itself; add that in.
     */
@@ -760,10 +746,10 @@ static guint get_rtitcp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
 
     return plen + header_length;
 }
-static gint dissect_rtitcp(tvbuff_t *tvb, packet_info *pinfo,
+static int dissect_rtitcp(tvbuff_t *tvb, packet_info *pinfo,
                             proto_tree *tree, void *data _U_) {
 
-    gboolean desegmentation = TRUE;
+    bool desegmentation = true;
 
     if (tvb_captured_length(tvb) < 8)
         return 0;
@@ -781,6 +767,11 @@ static gint dissect_rtitcp(tvbuff_t *tvb, packet_info *pinfo,
 
 }
 
+static bool
+dissect_rtitcp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    return dissect_rtitcp(tvb, pinfo, tree, data) > 0;
+}
 
 /* Register the protocol with Wireshark.
  *
@@ -797,26 +788,26 @@ proto_register_rtitcp(void)
 
         { &hf_rtitcp_header_control_byte, {
             "Control Byte", "rtitcp.header.control_byte",
-            FT_UINT8, BASE_HEX, NULL, 0,
-            0, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0,
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_header_message_length, {
             "Message Length", "rtitcp.header.message_length",
-            FT_UINT16, BASE_DEC, NULL, 0,
-            0, HFILL }
+            FT_UINT24, BASE_DEC, NULL, 0,
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_header_magic_number, {
             "Magic Cookie", "rtitcp.header.magic_cookie",
             FT_UINT32, BASE_HEX, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_crc_magic_cookie, {
             "CRC Magic Cookie", "rtitcp.header.crc_magic_cookie",
             FT_UINT32, BASE_HEX, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_control_kind,
@@ -828,19 +819,19 @@ proto_register_rtitcp(void)
         { &hf_rtitcp_control_magic_cookie, {
             "Control Magic Cookie", "rtitcp.control.magic_cookie",
             FT_UINT32, BASE_HEX, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_control_transaction_id, {
             "Transaction ID", "rtitcp.control.transaction_id",
             FT_BYTES, BASE_NONE, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_control_attribute_session_id, {
             "Session ID", "rtitcp.control.attribute.session_id",
             FT_BYTES, BASE_NONE, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_control_attribute_type,
@@ -858,38 +849,37 @@ proto_register_rtitcp(void)
         { &hf_rtitcp_control_attribute_error_code_description, {
             "Description", "rtitcp.control.attribute.error_code.description",
             FT_STRING, BASE_NONE, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_control_attribute_connection_cookie, {
             "Connection Cookie", "rtitcp.control.attribute.connection_cookie",
             FT_BYTES, BASE_NONE, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_control_attribute_connection_type, {
             "Class ID", "rtitcp.control_attribute.connection_type",
             FT_UINT8, BASE_HEX, VALS(rtitcp_attribute_connection_type_vals), 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_attributes_list_length, {
             "Attributes list length", "rtitcp.attributes_list_length",
             FT_UINT16, BASE_DEC, NULL, 0,
-            0,
-            HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_control_attribute_length, {
             "Attribute Length", "rtitcp.control.attribute.length",
             FT_UINT16, BASE_DEC, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_control_attribute_port, {
             "Port", "rtitcp.control.attribute_port",
             FT_UINT32, BASE_DEC, NULL, 0,
-            0, HFILL }
+            NULL, HFILL }
         },
 
         { &hf_rtitcp_locator_kind,
@@ -916,33 +906,32 @@ proto_register_rtitcp(void)
             NULL, HFILL }
         },
 
-        { &hf_rtitcp_control_crc_value, {
-         "CRC", "rtitcp.control.crc",
-         FT_UINT32, BASE_HEX, NULL, 0,
-         0, HFILL }
+        { &hf_rtitcp_control_crc_value,
+          { "CRC", "rtitcp.control.crc",
+            FT_UINT32, BASE_HEX, NULL, 0,
+            NULL, HFILL }
         },
 
-        { &hf_rtitcp_response_in, {
-         "Response In", "rtitcp.response_in",
-         FT_FRAMENUM, BASE_NONE, NULL, 0x0,
-         "The response to this RTITCP request is in this frame", HFILL }
+        { &hf_rtitcp_response_in,
+          { "Response In", "rtitcp.response_in",
+            FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
+            "The response to this RTITCP request is in this frame", HFILL }
         },
 
-        { &hf_rtitcp_response_to, {
-         "Request In", "rtitcp.response_to",
-         FT_FRAMENUM, BASE_NONE, NULL, 0x0,
-         "This is a response to the RTITCP request in this frame", HFILL }
+        { &hf_rtitcp_response_to,
+          { "Request In", "rtitcp.response_to",
+            FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
+            "This is a response to the RTITCP request in this frame", HFILL }
         },
 
-        { &hf_rtitcp_response_time, {
-         "Response Time", "rtitcp.response_time",
-         FT_RELATIVE_TIME, BASE_NONE, NULL, 0x0,
-         "The time between the Request and the Reply", HFILL }
-        },
-
+        { &hf_rtitcp_response_time,
+          { "Response Time", "rtitcp.response_time",
+            FT_RELATIVE_TIME, BASE_NONE, NULL, 0x0,
+            "The time between the Request and the Reply", HFILL }
+        }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_rtitcp,
         &ett_rtitcp_signalling_protocol,
         &ett_rtitcp_message,
@@ -967,7 +956,7 @@ proto_register_rtitcp(void)
      expert_register_field_array(expert_rtitcp, ei, array_length(ei)); */
 
     register_dissector("rtitcp", dissect_rtitcp, proto_rtitcp);
-    heur_subdissector_list = register_heur_dissector_list("rtitcp", proto_rtitcp);
+    heur_subdissector_list = register_heur_dissector_list_with_description("rtitcp", "RTI TCP signalling message", proto_rtitcp);
 
 }
 
@@ -976,7 +965,7 @@ proto_register_rtitcp(void)
 void
 proto_reg_handoff_rtitcp(void)
 {
-    heur_dissector_add("tcp", dissect_rtitcp, "RTI TCP Layer" , "rtitcp", proto_rtitcp, HEURISTIC_ENABLE);
+    heur_dissector_add("tcp", dissect_rtitcp_heur, "RTI TCP Layer" , "rtitcp", proto_rtitcp, HEURISTIC_ENABLE);
 }
 
 /*

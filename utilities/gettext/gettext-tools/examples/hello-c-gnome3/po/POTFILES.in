@@ -5,4 +5,7 @@
 hello.c
 hello.desktop.in.in
 hello.ui
-hello.gschema.xml
+hello2.c
+hello2.desktop.in.in
+hello2.ui
+hello2.gschema.xml

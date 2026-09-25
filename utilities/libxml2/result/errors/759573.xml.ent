@@ -1,0 +1,18 @@
+./test/errors/759573.xml:1: parser error : Space required after 'DOCTYPE'
+<?h?><!DOCTYPEt[<!ELEMENT t (A)><!ENTITY % xx '&#37;<![INCLUDE[000&#37;&#3000;00
+              ^
+./test/errors/759573.xml:1: parser error : Space required after '<!ENTITY'
+ELEMENT t (A)><!ENTITY % xx '&#37;<![INCLUDE[000&#37;&#3000;000&#37;z;'><!ENTITY
+                                                                               ^
+./test/errors/759573.xml:1: parser error : Space required after the entity name
+LEMENT t (A)><!ENTITY % xx '&#37;<![INCLUDE[000&#37;&#3000;000&#37;z;'><!ENTITYz
+                                                                               ^
+./test/errors/759573.xml:1: parser error : Entity value required
+LEMENT t (A)><!ENTITY % xx '&#37;<![INCLUDE[000&#37;&#3000;000&#37;z;'><!ENTITYz
+                                                                               ^
+./test/errors/759573.xml:1: parser error : Entity 'xx' not defined
+T t (A)><!ENTITY % xx '&#37;<![INCLUDE[000&#37;&#3000;000&#37;z;'><!ENTITYz>%xx;
+                                                                               ^
+./test/errors/759573.xml:1: parser error : Content error in the internal subset
+T t (A)><!ENTITY % xx '&#37;<![INCLUDE[000&#37;&#3000;000&#37;z;'><!ENTITYz>%xx;
+                                                                               ^

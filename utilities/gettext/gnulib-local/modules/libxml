@@ -106,7 +106,7 @@ m4/absolute-header.m4
 
 Depends-on:
 iconv
-stdarg
+stdarg-h
 snprintf
 vsnprintf
 no-c++
@@ -178,6 +178,10 @@ libxml_rpl_la_SOURCES = \
   libxml/xpath.c \
   libxml/xpointer.c
 libxml_rpl_la_CPPFLAGS = $(AM_CPPFLAGS) $(NO_CXX)
+# We need NO_EXPENSIVE_WARN_CFLAGS, because with gcc 13, the compilation of
+# libxml/parser.c requires 1.9 GB of RAM with -fanalyzer, as opposed to
+# 0.09 GB of RAM with -fno-analyzer.
+libxml_rpl_la_CFLAGS = @FOREIGN_WARN_CFLAGS@ @NO_EXPENSIVE_WARN_CFLAGS@
 
 BUILT_SOURCES += $(LIBXML_H)
 
@@ -560,9 +564,7 @@ MOSTLYCLEANFILES += \
   libxml/xpointer.h
 MOSTLYCLEANFILES += libxml/*.h-t
 
-if GL_COND_LIBTOOL
 lib_LDFLAGS += $(LTLIBXML)
-endif
 
 Include:
 #include <libxml/DOCBparser.h>

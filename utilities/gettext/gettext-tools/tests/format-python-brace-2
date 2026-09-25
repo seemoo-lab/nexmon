@@ -10,6 +10,9 @@ msgstr "xyz{date}{time}"
 # Valid: permutation
 msgid  "abc{x3}{x1}{x2}def"
 msgstr "xyz{x2}{x1}{x3}"
+# Valid: permutation
+msgid  "abc{}{}{}def"
+msgstr "xyz{2}{1}{0}"
 # Invalid: missing argument
 msgid  "abc{x2}def{x1}"
 msgstr "xyz{x1}"

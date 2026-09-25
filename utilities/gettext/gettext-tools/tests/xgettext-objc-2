@@ -3,7 +3,7 @@
 
 # Test ObjectiveC support: --add-comments option.
 
-cat <<EOF > xg-ob-2.m
+cat <<\EOF > xg-ob-2.m
 // This comment will not be extracted.
 print (NSLocalizedString (@
 "help"));
@@ -29,7 +29,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-ob-2.tmp xg-ob-2.m || Exit 1
 LC_ALL=C tr -d '\r' < xg-ob-2.tmp.po > xg-ob-2.po || Exit 1
 
-cat <<EOF > xg-ob-2.ok
+cat <<\EOF > xg-ob-2.ok
 msgid "help"
 msgstr ""
 

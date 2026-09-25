@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/errno.h		Error Numbers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2008 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -46,8 +40,15 @@ extern "C" {
 #define NLE_NOACCESS		27
 #define NLE_PERM		28
 #define NLE_PKTLOC_FILE		29
+#define NLE_PARSE_ERR		30
+#define NLE_NODEV		31
+#define NLE_IMMUTABLE		32
+#define NLE_DUMP_INTR		33
+#define NLE_ATTRSIZE		34
+#define NLE_HOSTUNREACH		35
+#define NLE_NETDOWN		36
 
-#define NLE_MAX			NLE_PKTLOC_FILE
+#define NLE_MAX		NLE_NETDOWN
 
 extern const char *	nl_geterror(int);
 extern void		nl_perror(int, const char *);

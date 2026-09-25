@@ -21,6 +21,19 @@ FrequencyInfo/modeSpecificInfo  modeSpecificFrequencyInfo
 FrequencyInfo/modeSpecificInfo/fdd  fdd_fr
 FrequencyInfo/modeSpecificInfo/tdd  tdd_fr
 SETId/min  minsi
+LocationDataLCI/latitude LocationDataLCI_latitude
+LocationDataLCI/longitude LocationDataLCI_longitude
+LocationDataLCI/altitude LocationDataLCI_altitude
+CellGlobalIdEUTRA/cellIdentity eutra_cellIdentity
+
+#.FIELD_ATTR
+SETId/min  ABBREV=minsi
+LocationDataLCI/latitude ABBREV=locationdatalci.latitude
+LocationDataLCI/longitude ABBREV=locationdatalci.longitude
+LocationDataLCI/altitude ABBREV=locationdatalci.altitude
+CellGlobalIdEUTRA/cellIdentity ABBREV=cellglobalideutra.cellIdentity
+
+
 #.END
 
 #.FN_HDR ILP-PDU
@@ -40,11 +53,11 @@ SETId/min  minsi
 
 #.FN_BODY IlpMessage  VAL_PTR = &IlpMessage
 
-guint32 IlpMessage;
+uint32_t IlpMessage;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(%(ACTX)s->pinfo->cinfo, COL_INFO, "%%s ", val_to_str(IlpMessage,ilp_IlpMessage_vals,"Unknown"));
+  col_append_fstr(%(ACTX)s->pinfo->cinfo, COL_INFO, "%%s ", val_to_str_const(IlpMessage,ilp_IlpMessage_vals,"Unknown"));
 
 #.END
 
@@ -73,7 +86,7 @@ guint32 IlpMessage;
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ilp_setid);
-    dissect_e164_msisdn(msisdn_tvb, subtree, 0, 8, E164_ENC_BCD);
+    dissect_e164_msisdn(msisdn_tvb, actx->pinfo, subtree, 0, 8, E164_ENC_BCD);
   }
 
 #.FN_BODY SETId/mdn VAL_PTR=&mdn_tvb
@@ -83,7 +96,7 @@ guint32 IlpMessage;
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ilp_setid);
-    proto_tree_add_string(subtree, hf_ilp_mobile_directory_number, mdn_tvb, 0, 8, tvb_bcd_dig_to_wmem_packet_str(mdn_tvb, 0, 8, NULL, FALSE));
+    proto_tree_add_item(subtree, hf_ilp_mobile_directory_number, mdn_tvb, 0, 8, ENC_BCD_DIGITS_0_9|ENC_LITTLE_ENDIAN);
   }
 
 #.FN_BODY SETId/imsi VAL_PTR=&imsi_tvb
@@ -93,7 +106,7 @@ guint32 IlpMessage;
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_ilp_setid);
-    dissect_e212_imsi(imsi_tvb, actx->pinfo, subtree, 0, 8, FALSE);
+    dissect_e212_imsi(imsi_tvb, actx->pinfo, subtree, 0, 8, false);
   }
 
 #.TYPE_ATTR

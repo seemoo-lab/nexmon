@@ -14,7 +14,7 @@ main (int argc, char *argv[])
       gchar *expected;
       gint pid_from_env;
 
-      expected = g_test_build_filename (G_TEST_DIST, "appinfo-test.desktop", NULL);
+      expected = g_test_build_filename (G_TEST_BUILT, "appinfo-test.desktop", NULL);
       g_assert_cmpstr (envvar, ==, expected);
       g_free (expected);
 
@@ -26,4 +26,3 @@ main (int argc, char *argv[])
 
   return 0;
 }
-

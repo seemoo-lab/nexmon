@@ -3,7 +3,7 @@
 
 # Test handling of format and 'range:' flag.
 
-cat <<EOF > mcomm-test27.in1
+cat <<\EOF > mcomm-test27.in1
 msgid "one day"
 msgid_plural "%d days"
 msgstr[0] ""
@@ -28,7 +28,7 @@ msgstr[0] ""
 msgstr[1] ""
 EOF
 
-cat <<EOF > mcomm-test27.in2
+cat <<\EOF > mcomm-test27.in2
 #, c-format, range: 1..6
 msgid "one day"
 msgid_plural "%d days"

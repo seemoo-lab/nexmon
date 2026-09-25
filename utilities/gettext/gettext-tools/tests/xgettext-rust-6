@@ -1,0 +1,64 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Rust support: function call like syntax in macro invocations.
+
+cat <<\EOF > xg-rs-6.rs
+fn main ()
+{
+  tr! ("Hello {}");
+  tr! (gettext /*x*/ ("Hello1"));
+  tr! [foo(), gettext ("Hello2")];
+  tr! (gettextrs::gettext ("Hello3"));
+  tr ! (tr ! ("Hello4"));
+  tr! (foo(), tr! ("Hello5"));
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-rs-6a.tmp xg-rs-6.rs || Exit 1
+LC_ALL=C tr -d '\r' < xg-rs-6a.tmp.po > xg-rs-6a.po || Exit 1
+
+cat <<\EOF > xg-rs-6a.ok
+msgid "Hello1"
+msgstr ""
+
+msgid "Hello2"
+msgstr ""
+
+msgid "Hello3"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-rs-6a.ok xg-rs-6a.po || exit 1
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -k'tr!' -d xg-rs-6b.tmp xg-rs-6.rs || Exit 1
+LC_ALL=C tr -d '\r' < xg-rs-6b.tmp.po > xg-rs-6b.po || Exit 1
+
+cat <<\EOF > xg-rs-6b.ok
+#, rust-format
+msgid "Hello {}"
+msgstr ""
+
+msgid "Hello1"
+msgstr ""
+
+msgid "Hello2"
+msgstr ""
+
+msgid "Hello3"
+msgstr ""
+
+msgid "Hello4"
+msgstr ""
+
+msgid "Hello5"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-rs-6b.ok xg-rs-6b.po || Exit 1
+
+exit 0

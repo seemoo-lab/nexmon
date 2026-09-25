@@ -7,24 +7,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/expert.h>
 #include <wsutil/crc32.h>
 #include <epan/crc32-tvb.h>
 #include <epan/reassemble.h>
@@ -105,19 +94,23 @@
 void proto_reg_handoff_ts2(void);
 void proto_register_ts2(void);
 
-static int hf_msg_fragments = -1;
-static int hf_msg_fragment = -1;
-static int hf_msg_fragment_overlap = -1;
-static int hf_msg_fragment_overlap_conflicts = -1;
-static int hf_msg_fragment_multiple_tails = -1;
-static int hf_msg_fragment_too_long_fragment = -1;
-static int hf_msg_fragment_error = -1;
-static int hf_msg_fragment_count = -1;
-static int hf_msg_reassembled_in = -1;
-static int hf_msg_reassembled_length = -1;
+static dissector_handle_t ts2_handle;
 
-static gint ett_msg_fragment = -1;
-static gint ett_msg_fragments = -1;
+static int hf_msg_fragments;
+static int hf_msg_fragment;
+static int hf_msg_fragment_overlap;
+static int hf_msg_fragment_overlap_conflicts;
+static int hf_msg_fragment_multiple_tails;
+static int hf_msg_fragment_too_long_fragment;
+static int hf_msg_fragment_error;
+static int hf_msg_fragment_count;
+static int hf_msg_reassembled_in;
+static int hf_msg_reassembled_length;
+
+static int ett_msg_fragment;
+static int ett_msg_fragments;
+
+static expert_field ei_ts2_crc32;
 
 static const fragment_items msg_frag_items = {
     /* Fragment subtrees */
@@ -221,82 +214,83 @@ static const value_string codecnames[] =
     { 0, NULL }
 };
 
-#define TS2_PORT 8767
+#define TS2_PORT 8767 /* Not IANA registered */
 
-static int proto_ts2 = -1;
+static int proto_ts2;
 
-static int hf_ts2_type = -1;
-static int hf_ts2_class = -1;
-static int hf_ts2_clientid = -1;
-static int hf_ts2_sessionkey = -1;
-static int hf_ts2_crc32 = -1;
-static int hf_ts2_ackto = -1;
-static int hf_ts2_seqnum = -1;
-static int hf_ts2_protocol_string = -1;
-/* static int hf_ts2_string = -1; */
-static int hf_ts2_registeredlogin = -1;
-static int hf_ts2_name = -1;
-static int hf_ts2_password = -1;
-static int hf_ts2_nick = -1;
-static int hf_ts2_badlogin = -1;
-static int hf_ts2_unknown = -1;
-static int hf_ts2_channel = -1;
-static int hf_ts2_subchannel = -1;
-static int hf_ts2_channelpassword = -1;
-static int hf_ts2_emptyspace = -1;
-static int hf_ts2_fragmentnumber = -1;
-static int hf_ts2_platform_string = -1;
-static int hf_ts2_server_name = -1;
-static int hf_ts2_server_welcome_message = -1;
-static int hf_ts2_parent_channel_id = -1;
-static int hf_ts2_codec = -1;
-static int hf_ts2_channel_flags = -1;
-static int hf_ts2_channel_id = -1;
-static int hf_ts2_channel_name = -1;
-static int hf_ts2_channel_topic = -1;
-static int hf_ts2_channel_description = -1;
-static int hf_ts2_player_id = -1;
-static int hf_ts2_player_status_flags = -1;
-static int hf_ts2_number_of_players = -1;
-static int hf_ts2_number_of_channels = -1;
-static int hf_ts2_resend_count = -1;
-static int hf_ts2_status_channelcommander = -1;
-static int hf_ts2_status_blockwhispers = -1;
-static int hf_ts2_status_away = -1;
-static int hf_ts2_status_mutemicrophone = -1;
-static int hf_ts2_status_mute = -1;
-static int hf_ts2_channel_unregistered = -1;
-static int hf_ts2_channel_moderated = -1;
-static int hf_ts2_channel_password = -1;
-static int hf_ts2_channel_subchannels = -1;
-static int hf_ts2_channel_default = -1;
-static int hf_ts2_channel_order = -1;
-static int hf_ts2_max_users = -1;
+static int hf_ts2_type;
+static int hf_ts2_class;
+static int hf_ts2_clientid;
+static int hf_ts2_sessionkey;
+static int hf_ts2_crc32;
+static int hf_ts2_crc32_status;
+static int hf_ts2_ackto;
+static int hf_ts2_seqnum;
+static int hf_ts2_protocol_string;
+/* static int hf_ts2_string; */
+static int hf_ts2_registeredlogin;
+static int hf_ts2_name;
+static int hf_ts2_password;
+static int hf_ts2_nick;
+static int hf_ts2_badlogin;
+static int hf_ts2_unknown;
+static int hf_ts2_channel;
+static int hf_ts2_subchannel;
+static int hf_ts2_channelpassword;
+static int hf_ts2_emptyspace;
+static int hf_ts2_fragmentnumber;
+static int hf_ts2_platform_string;
+static int hf_ts2_server_name;
+static int hf_ts2_server_welcome_message;
+static int hf_ts2_parent_channel_id;
+static int hf_ts2_codec;
+static int hf_ts2_channel_flags;
+static int hf_ts2_channel_id;
+static int hf_ts2_channel_name;
+static int hf_ts2_channel_topic;
+static int hf_ts2_channel_description;
+static int hf_ts2_player_id;
+static int hf_ts2_player_status_flags;
+static int hf_ts2_number_of_players;
+static int hf_ts2_number_of_channels;
+static int hf_ts2_resend_count;
+static int hf_ts2_status_channelcommander;
+static int hf_ts2_status_blockwhispers;
+static int hf_ts2_status_away;
+static int hf_ts2_status_mutemicrophone;
+static int hf_ts2_status_mute;
+static int hf_ts2_channel_unregistered;
+static int hf_ts2_channel_moderated;
+static int hf_ts2_channel_password;
+static int hf_ts2_channel_subchannels;
+static int hf_ts2_channel_default;
+static int hf_ts2_channel_order;
+static int hf_ts2_max_users;
 
-static gint ett_ts2 = -1;
-static gint ett_ts2_channel_flags = -1;
+static int ett_ts2;
+static int ett_ts2_channel_flags;
 
 /* Conversation Variables */
 typedef struct
 {
-    guint32 last_inorder_server_frame;
-    guint32 last_inorder_client_frame;
+    uint32_t last_inorder_server_frame;
+    uint32_t last_inorder_client_frame;
     address server_addr;
-    guint32 server_port;
-    guint32 server_frag_size;
-    guint32 server_frag_num;
-    guint32 client_frag_size;
-    guint32 client_frag_num;
+    uint32_t server_port;
+    uint32_t server_frag_size;
+    uint32_t server_frag_num;
+    uint32_t client_frag_size;
+    uint32_t client_frag_num;
 
 } ts2_conversation;
 
 /* Packet Variables */
 typedef struct
 {
-    guint32 frag_num;
-    guint32 frag_size;
-    gboolean fragmented;
-    gboolean outoforder;
+    uint32_t frag_num;
+    uint32_t frag_size;
+    bool fragmented;
+    bool outoforder;
 } ts2_frag;
 
 #define my_init_count 5
@@ -304,31 +298,31 @@ typedef struct
 static reassembly_table msg_reassembly_table;
 
 /* forward reference */
-static void ts2_add_checked_crc32(proto_tree *tree, int hf_item, tvbuff_t *tvb, guint16 offset);
+static void ts2_add_checked_crc32(proto_tree *tree, int hf_item, int hf_item_status, expert_field* ei_item, tvbuff_t *tvb, packet_info *pinfo, uint16_t offset);
 static void ts2_parse_playerlist(tvbuff_t *tvb, proto_tree *ts2_tree);
-static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree);
+static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree, wmem_allocator_t *pool);
 static void ts2_parse_newplayerjoined(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_knownplayerupdate(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_playerleft(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_loginend(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_changestatus(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_switchchannel(tvbuff_t *tvb, proto_tree *ts2_tree);
-static void ts2_add_statusflags(tvbuff_t *tvb, proto_tree *ts2_tree, guint32 offset);
+static void ts2_add_statusflags(tvbuff_t *tvb, proto_tree *ts2_tree, uint32_t offset);
 static void ts2_parse_channelchange(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_loginpart2(tvbuff_t *tvb, proto_tree *ts2_tree);
 
 /*
  * Check if a packet is in order and if it is set its fragmentation details into the passed pointers.
- * Returns TRUE if the packet is fragmented.
+ * Returns true if the packet is fragmented.
  * Must be run sequentially
  * */
-static gboolean ts2_standard_find_fragments(tvbuff_t *tvb, guint32 *last_inorder_frame, guint32 *frag_size, guint32 *frag_num, gboolean *outoforder)
+static bool ts2_standard_find_fragments(tvbuff_t *tvb, uint32_t *last_inorder_frame, uint32_t *frag_size, uint32_t *frag_num, bool *outoforder)
 {
-    guint32 frag_count;
-    gboolean ret;
+    uint32_t frag_count;
+    bool ret;
     frag_count=tvb_get_letohs(tvb, 18);
-    ret=FALSE;
-    *outoforder=FALSE;
+    ret=false;
+    *outoforder=false;
 
     /* if last_inorder_frame is zero, then this is the first reliable packet */
     if(*last_inorder_frame==0)
@@ -337,9 +331,9 @@ static gboolean ts2_standard_find_fragments(tvbuff_t *tvb, guint32 *last_inorder
         *frag_size=tvb_get_letohs(tvb, 18);
         *frag_num=0;
         if(*frag_size>0)
-            ret=TRUE;
+            ret=true;
         else
-            ret=FALSE;
+            ret=false;
     }
     /* This packet is in order */
     else if(*last_inorder_frame==tvb_get_letohl(tvb, 12)-1)
@@ -351,21 +345,21 @@ static gboolean ts2_standard_find_fragments(tvbuff_t *tvb, guint32 *last_inorder
             {
                 *frag_size=0;
             }
-            ret=TRUE;
+            ret=true;
         }
         else
         {
             *frag_size=tvb_get_letohs(tvb, 18);
             *frag_num=*frag_size-frag_count;
             if(*frag_size>0)
-                ret=TRUE;
+                ret=true;
             else
-                ret=FALSE;
+                ret=false;
         }
         *last_inorder_frame=tvb_get_letohl(tvb, 12);
     }
     else /* out of order */
-        *outoforder=TRUE;
+        *outoforder=true;
     return ret;
 }
 
@@ -376,15 +370,15 @@ static gboolean ts2_standard_find_fragments(tvbuff_t *tvb, guint32 *last_inorder
  */
 static void ts2_standard_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ts2_tree, ts2_conversation *conversation_data)
 {
-    guint8 save_fragmented;
+    uint8_t save_fragmented;
     tvbuff_t *new_tvb, *next_tvb;
     fragment_head *frag_msg ;
-    guint16 fragment_number;
+    uint16_t fragment_number;
     ts2_frag *frag;
-    gboolean outoforder;
+    bool outoforder;
 
-    guint16 type = tvb_get_letohs(tvb, 2);
-    /*guint16 klass = tvb_get_letohs(tvb, 0);*/
+    uint16_t type = tvb_get_letohs(tvb, 2);
+    /*uint16_t klass = tvb_get_letohs(tvb, 0);*/
     proto_tree_add_item(ts2_tree, hf_ts2_seqnum, tvb, 12, 4, ENC_LITTLE_ENDIAN);
 
     /* XXX: Following fragmentation stuff should be separate from the GUI stuff ??    */
@@ -397,7 +391,7 @@ static void ts2_standard_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     /* decide if the packet is server to client or client to server
      * then check its fragmentation
      */
-    if(!(pinfo->fd->flags.visited))
+    if(!(pinfo->fd->visited))
     {
         if(conversation_data->server_port == pinfo->srcport)
         {
@@ -421,7 +415,7 @@ static void ts2_standard_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
 
     proto_tree_add_item(ts2_tree, hf_ts2_resend_count, tvb, 16, 2, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(ts2_tree, hf_ts2_fragmentnumber, tvb, 18, 2, ENC_LITTLE_ENDIAN);
-    ts2_add_checked_crc32(ts2_tree, hf_ts2_crc32, tvb, 20);
+    ts2_add_checked_crc32(ts2_tree, hf_ts2_crc32, hf_ts2_crc32_status, &ei_ts2_crc32, tvb, pinfo, 20);
 
     /* Reassemble the packet if it's fragmented */
     new_tvb = NULL;
@@ -429,7 +423,7 @@ static void ts2_standard_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     {
         save_fragmented = pinfo->fragmented;
         frag_msg = NULL;
-        pinfo->fragmented = TRUE;
+        pinfo->fragmented = true;
         fragment_number = tvb_get_letohs(tvb, 18);
         frag_msg = fragment_add_seq_check(&msg_reassembly_table, tvb, 24, pinfo, type, NULL, frag->frag_num, tvb_captured_length_remaining(tvb, 24), fragment_number);
         new_tvb = process_reassembled_data(tvb, 24, pinfo,"Reassembled TeamSpeak2", frag_msg, &msg_frag_items, NULL, ts2_tree);
@@ -459,7 +453,7 @@ static void ts2_standard_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
                 ts2_parse_loginpart2(next_tvb, ts2_tree);
                 break;
             case TS2T_CHANNELLIST:
-                ts2_parse_channellist(next_tvb, ts2_tree);
+                ts2_parse_channellist(next_tvb, ts2_tree, pinfo->pool);
                 break;
             case TS2T_PLAYERLIST:
                 ts2_parse_playerlist(next_tvb, ts2_tree);
@@ -499,7 +493,7 @@ static void ts2_standard_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
 /* Parses a ts2 new player joined (TS2_NEWPLAYERJOINED) packet and adds it to the tree */
 static void ts2_parse_newplayerjoined(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
+    int32_t offset;
     offset=0;
     proto_tree_add_item(ts2_tree, hf_ts2_player_id, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset+=4;
@@ -513,7 +507,7 @@ static void ts2_parse_newplayerjoined(tvbuff_t *tvb, proto_tree *ts2_tree)
 /* Parses TS2_LOGINEND packet and adds it to the tree */
 static void ts2_parse_loginend(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
+    int32_t offset;
     offset=0;
     proto_tree_add_item(ts2_tree, hf_ts2_unknown, tvb, offset, tvb_captured_length_remaining(tvb, offset), ENC_NA);
 }
@@ -521,7 +515,7 @@ static void ts2_parse_loginend(tvbuff_t *tvb, proto_tree *ts2_tree)
 /* Parses a ts2 known player joined (TS2_KNOWNPLAYERUPDATE) packet and adds it to the tree */
 static void ts2_parse_knownplayerupdate(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
+    int32_t offset;
     offset=0;
     proto_tree_add_item(ts2_tree, hf_ts2_player_id, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset+=4;
@@ -532,7 +526,7 @@ static void ts2_parse_knownplayerupdate(tvbuff_t *tvb, proto_tree *ts2_tree)
 /* Parses a ts2 switch channel (TS2_SWITCHCHANNEL) packet and adds it to the tree */
 static void ts2_parse_switchchannel(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
+    int32_t offset;
     offset=0;
     proto_tree_add_item(ts2_tree, hf_ts2_channel_id, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset+=4;
@@ -542,7 +536,7 @@ static void ts2_parse_switchchannel(tvbuff_t *tvb, proto_tree *ts2_tree)
 /* Parses a ts2 channel change (TS2T_CHANNELCHANGE) packet and adds it to the tree */
 static void ts2_parse_channelchange(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
+    int32_t offset;
     offset=0;
     proto_tree_add_item(ts2_tree, hf_ts2_player_id, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset+=4;
@@ -557,7 +551,7 @@ static void ts2_parse_channelchange(tvbuff_t *tvb, proto_tree *ts2_tree)
 /* Parses a ts2 change status (TS2_CHANGESTATUS) packet and adds it to the tree */
 static void ts2_parse_changestatus(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
+    int32_t offset;
     offset=0;
     proto_tree_add_item(ts2_tree, hf_ts2_player_status_flags, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     ts2_add_statusflags(tvb, ts2_tree, offset);
@@ -567,7 +561,7 @@ static void ts2_parse_changestatus(tvbuff_t *tvb, proto_tree *ts2_tree)
 /* Parses a ts2 known player left (TS2_PLAYERLEFT) packet and adds it to the tree */
 static void ts2_parse_playerleft(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
+    int32_t offset;
     offset=0;
     proto_tree_add_item(ts2_tree, hf_ts2_player_id, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset+=4;
@@ -581,7 +575,7 @@ static void ts2_parse_playerleft(tvbuff_t *tvb, proto_tree *ts2_tree)
 /* Parses a ts2 login part 2 (TS2T_LOGINPART2) packet and adds it to the tree */
 static void ts2_parse_loginpart2(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
+    int32_t offset;
     offset=0;
     proto_tree_add_item(ts2_tree, hf_ts2_unknown, tvb, 0, 2, ENC_NA);
     offset+=2;
@@ -595,10 +589,10 @@ static void ts2_parse_loginpart2(tvbuff_t *tvb, proto_tree *ts2_tree)
 
 }
 /* Parses a ts2 channel list (TS2T_CHANNELLIST) and adds it to the tree */
-static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree)
+static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree, wmem_allocator_t *pool)
 {
-    gint32 offset;
-    guint32 string_len;
+    int32_t offset;
+    uint32_t string_len;
     proto_tree    *subtree;
     proto_item    *item;
 
@@ -630,19 +624,19 @@ static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree)
         offset+=2;
         proto_tree_add_item(ts2_tree, hf_ts2_max_users, tvb, offset, 2, ENC_LITTLE_ENDIAN);
         offset+=2;
-        tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &string_len, ENC_ASCII);
-        proto_tree_add_item(ts2_tree, hf_ts2_channel_name, tvb, offset,string_len , ENC_ASCII|ENC_NA);
+        tvb_get_stringz_enc(pool, tvb, offset, &string_len, ENC_ASCII);
+        proto_tree_add_item(ts2_tree, hf_ts2_channel_name, tvb, offset, string_len, ENC_ASCII);
         offset+=string_len;
-        tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &string_len, ENC_ASCII);
-        proto_tree_add_item(ts2_tree, hf_ts2_channel_topic, tvb, offset,string_len ,ENC_ASCII|ENC_NA);
+        tvb_get_stringz_enc(pool, tvb, offset, &string_len, ENC_ASCII);
+        proto_tree_add_item(ts2_tree, hf_ts2_channel_topic, tvb, offset, string_len, ENC_ASCII);
         offset+=string_len;
-        tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &string_len, ENC_ASCII);
-        proto_tree_add_item(ts2_tree, hf_ts2_channel_description, tvb, offset,string_len , ENC_ASCII|ENC_NA);
+        tvb_get_stringz_enc(pool, tvb, offset, &string_len, ENC_ASCII);
+        proto_tree_add_item(ts2_tree, hf_ts2_channel_description, tvb, offset, string_len, ENC_ASCII);
         offset+=string_len;
     }
 }
 
-static void ts2_add_statusflags(tvbuff_t *tvb, proto_tree *ts2_tree, guint32 offset)
+static void ts2_add_statusflags(tvbuff_t *tvb, proto_tree *ts2_tree, uint32_t offset)
 {
     proto_tree_add_item(ts2_tree, hf_ts2_status_channelcommander, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(ts2_tree, hf_ts2_status_blockwhispers, tvb, offset, 2, ENC_LITTLE_ENDIAN);
@@ -655,9 +649,9 @@ static void ts2_add_statusflags(tvbuff_t *tvb, proto_tree *ts2_tree, guint32 off
 /* Parses a ts2 player list (TS2T_PLAYERLIST) and adds it to the tree */
 static void ts2_parse_playerlist(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    gint32 offset;
-    gint32 number_of_players;
-    gint32 x;
+    int32_t offset;
+    int32_t number_of_players;
+    int32_t x;
     offset=0;
     x=0;
     proto_tree_add_item(ts2_tree, hf_ts2_number_of_players, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -714,17 +708,17 @@ static ts2_conversation* ts2_get_conversation(packet_info *pinfo)
 static int dissect_ts2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     ts2_conversation *conversation_data;
-    guint16 type = tvb_get_letohs(tvb, 2);
-    guint16 klass = tvb_get_letohs(tvb, 0);
+    uint16_t type = tvb_get_letohs(tvb, 2);
+    uint16_t klass = tvb_get_letohs(tvb, 0);
 
     conversation_data = ts2_get_conversation(pinfo);
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "TS2");
 
     if(klass==TS2C_ACK)
-        col_add_fstr(pinfo->cinfo, COL_INFO, "Class: %s", val_to_str(klass, classnames, "Unknown (0x%02x)"));
+        col_add_fstr(pinfo->cinfo, COL_INFO, "Class: %s", val_to_str(pinfo->pool, klass, classnames, "Unknown (0x%02x)"));
     else
-        col_add_fstr(pinfo->cinfo, COL_INFO, "Type: %s, Class: %s", val_to_str(type, typenames, "Unknown (0x%02x)"), val_to_str(klass, classnames, "Unknown (0x%02x)"));
+        col_add_fstr(pinfo->cinfo, COL_INFO, "Type: %s, Class: %s", val_to_str(pinfo->pool, type, typenames, "Unknown (0x%02x)"), val_to_str(pinfo->pool, klass, classnames, "Unknown (0x%02x)"));
 
     /* XXX: We need to do all the non GUI stuff whether or not if(tree) */
     /*      Do only once by checking visited ?                          */
@@ -764,7 +758,7 @@ static int dissect_ts2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         {
             case TS2C_CONNECTION:
                 proto_tree_add_item(ts2_tree, hf_ts2_seqnum, tvb, 12, 4, ENC_LITTLE_ENDIAN);
-                ts2_add_checked_crc32(ts2_tree, hf_ts2_crc32, tvb, 16);
+                ts2_add_checked_crc32(ts2_tree, hf_ts2_crc32, hf_ts2_crc32_status, &ei_ts2_crc32, tvb, pinfo, 16);
 
                 switch(type)
                 {
@@ -816,31 +810,20 @@ static int dissect_ts2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 /* Calculates a CRC32 checksum from the tvb zeroing out four bytes at the offset and checks it with the given crc32 and adds the result to the tree
  * Returns true if the calculated CRC32 matches the passed CRC32.
  * */
-static void ts2_add_checked_crc32(proto_tree *tree, int hf_item, tvbuff_t *tvb, guint16 offset)
+static void ts2_add_checked_crc32(proto_tree *tree, int hf_item, int hf_item_status, expert_field* ei_item, tvbuff_t *tvb, packet_info *pinfo, uint16_t offset)
 {
-    guint32  zero = 0;
-    gint     len = tvb_reported_length_remaining(tvb, offset+4);
-    guint32  ocrc32;
+    uint32_t zero = 0;
+    int      len = tvb_reported_length_remaining(tvb, offset+4);
+    uint32_t ocrc32;
 
     if (len<0)
         return;
 
     ocrc32 = crc32_ccitt_tvb(tvb, offset);
-    ocrc32 = crc32_ccitt_seed((guint8*)&zero, 4, 0xffffffff-ocrc32);
-    ocrc32 = crc32_ccitt_tvb_offset_seed(tvb, offset+4, (guint)len, 0xffffffff-ocrc32);
+    ocrc32 = crc32_ccitt_seed((uint8_t*)&zero, 4, 0xffffffff-ocrc32);
+    ocrc32 = crc32_ccitt_tvb_offset_seed(tvb, offset+4, (unsigned)len, 0xffffffff-ocrc32);
 
-    proto_tree_add_checksum(tree, tvb, offset, hf_item, -1, NULL, NULL, ocrc32, ENC_LITTLE_ENDIAN, PROTO_CHECKSUM_VERIFY);
-}
-
-static void ts2_init(void)
-{
-    reassembly_table_init(&msg_reassembly_table,
-            &addresses_reassembly_table_functions);
-}
-
-static void ts2_cleanup(void)
-{
-    reassembly_table_destroy(&msg_reassembly_table);
+    proto_tree_add_checksum(tree, tvb, offset, hf_item, hf_item_status, ei_item, pinfo, ocrc32, ENC_LITTLE_ENDIAN, PROTO_CHECKSUM_VERIFY);
 }
 
 /*
@@ -883,6 +866,12 @@ void proto_register_ts2(void)
             { "CRC32 Checksum", "ts2.crc32",
                 FT_UINT32, BASE_HEX,
                 NULL, 0x0,
+                NULL, HFILL }
+        },
+        { &hf_ts2_crc32_status,
+            { "CRC32 Checksum Status", "ts2.crc32.status",
+                FT_UINT8, BASE_NONE,
+                VALS(proto_checksum_vals), 0x0,
                 NULL, HFILL }
         },
         { &hf_ts2_seqnum,
@@ -1197,24 +1186,29 @@ void proto_register_ts2(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ts2,
         &ett_msg_fragment,
         &ett_msg_fragments,
         &ett_ts2_channel_flags
     };
 
+	static ei_register_info ei[] = {
+		{ &ei_ts2_crc32, { "ts2.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
+	};
+
+	expert_module_t* expert_ts2;
+
     /* Setup protocol subtree array */
-    proto_ts2 = proto_register_protocol (
-            "Teamspeak2 Protocol",    /* name */
-            "TeamSpeak2",        /* short name */
-            "ts2"            /* abbrev */
-            );
+    proto_ts2 = proto_register_protocol ("Teamspeak2 Protocol", "TeamSpeak2", "ts2");
     proto_register_field_array(proto_ts2, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    ts2_handle = register_dissector("ts2", dissect_ts2, proto_ts2);
+    expert_ts2 = expert_register_protocol(proto_ts2);
+    expert_register_field_array(expert_ts2, ei, array_length(ei));
 
-    register_init_routine(ts2_init);
-    register_cleanup_routine(ts2_cleanup);
+    reassembly_table_register(&msg_reassembly_table,
+            &addresses_reassembly_table_functions);
 }
 
 /*
@@ -1222,13 +1216,11 @@ void proto_register_ts2(void)
  * */
 void proto_reg_handoff_ts2(void)
 {
-    dissector_handle_t ts2_handle;
-    ts2_handle = create_dissector_handle(dissect_ts2, proto_ts2);
-    dissector_add_uint("udp.port", TS2_PORT, ts2_handle);
+    dissector_add_uint_with_preference("udp.port", TS2_PORT, ts2_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

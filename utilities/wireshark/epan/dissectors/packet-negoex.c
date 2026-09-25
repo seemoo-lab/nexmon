@@ -1,6 +1,6 @@
 /* packet-negoex.c
  * Dissect the NEGOEX security protocol
- * as described here: http://tools.ietf.org/id/draft-zhu-negoex-04.txt
+ * as described here: https://tools.ietf.org/html/draft-zhu-negoex-04
  * Copyright 2012 Richard Sharpe <realrichardsharpe@gmail.com>
  * Routines for SPNEGO Extended Negotiation Security Mechanism
  *
@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,51 +17,52 @@
 #include <epan/exceptions.h>
 #include <epan/show_exception.h>
 
-#include "packet-dcerpc.h"
 #include "packet-gssapi.h"
 
 void proto_register_negoex(void);
 void proto_reg_handoff_negoex(void);
 
-static int proto_negoex = -1;
-static int hf_negoex_sig = -1;
-static int hf_negoex_message_type = -1;
-static int hf_negoex_sequence_num = -1;
-static int hf_negoex_header_len = -1;
-static int hf_negoex_message_len = -1;
-static int hf_negoex_conversation_id = -1;
-static int hf_negoex_random = -1;
-static int hf_negoex_proto_version = -1;
-static int hf_negoex_authscheme = -1;
-static int hf_negoex_authscheme_vector_offset = -1;
-static int hf_negoex_authscheme_vector_count = -1;
-static int hf_negoex_authscheme_vector_pad = -1;
-static int hf_negoex_extension = -1;
-static int hf_negoex_extension_vector_offset = -1;
-static int hf_negoex_extension_vector_count = -1;
-static int hf_negoex_extension_vector_pad = -1;
-static int hf_negoex_exchange_vector_offset = -1;
-static int hf_negoex_exchange_vector_count = -1;
-static int hf_negoex_exchange_vector_pad = -1;
-static int hf_negoex_exchange = -1;
-static int hf_negoex_checksum_scheme = -1;
-static int hf_negoex_checksum_type = -1;
-static int hf_negoex_checksum_vector_offset = -1;
-static int hf_negoex_checksum_vector_count = -1;
-static int hf_negoex_checksum_vector_pad = -1;
-static int hf_negoex_checksum = -1;
-static int hf_negoex_errorcode = -1;
-static int hf_negoex_data = -1;
+static int proto_negoex;
+static int hf_negoex_sig;
+static int hf_negoex_message_type;
+static int hf_negoex_sequence_num;
+static int hf_negoex_header_len;
+static int hf_negoex_message_len;
+static int hf_negoex_conversation_id;
+static int hf_negoex_random;
+static int hf_negoex_proto_version;
+static int hf_negoex_authscheme;
+static int hf_negoex_authscheme_vector_offset;
+static int hf_negoex_authscheme_vector_count;
+static int hf_negoex_authscheme_vector_pad;
+static int hf_negoex_extension;
+static int hf_negoex_extension_vector_offset;
+static int hf_negoex_extension_vector_count;
+static int hf_negoex_extension_vector_pad;
+static int hf_negoex_exchange_vector_offset;
+static int hf_negoex_exchange_vector_count;
+static int hf_negoex_exchange_vector_pad;
+static int hf_negoex_exchange;
+static int hf_negoex_checksum_scheme;
+static int hf_negoex_checksum_type;
+static int hf_negoex_checksum_vector_offset;
+static int hf_negoex_checksum_vector_count;
+static int hf_negoex_checksum_vector_pad;
+static int hf_negoex_checksum;
+static int hf_negoex_errorcode;
+static int hf_negoex_data;
 
-static gint ett_negoex = -1;
-static gint ett_negoex_msg = -1;
-static gint ett_negoex_hdr = -1;
-static gint ett_negoex_authscheme_vector = -1;
-static gint ett_negoex_extension_vector = -1;
-static gint ett_negoex_exchange = -1;
-static gint ett_negoex_checksum = -1;
-static gint ett_negoex_checksum_vector = -1;
-static gint ett_negoex_byte_vector = -1;
+static int ett_negoex;
+static int ett_negoex_msg;
+static int ett_negoex_hdr;
+static int ett_negoex_authscheme_vector;
+static int ett_negoex_extension_vector;
+static int ett_negoex_exchange;
+static int ett_negoex_checksum;
+static int ett_negoex_checksum_vector;
+static int ett_negoex_byte_vector;
+
+static dissector_handle_t negoex_handle;
 
 /* If you add more message types, add them in sequence and update MAX_MSG */
 #define MESSAGE_TYPE_INITIATOR_NEGO      0
@@ -119,9 +108,9 @@ static void
 dissect_negoex_alert_message(tvbuff_t *tvb,
                              packet_info *pinfo _U_,
                              proto_tree *tree,
-                             guint32 start_off)
+                             uint32_t start_off)
 {
-  guint32 offset;
+  uint32_t offset;
 
   offset = start_off;
 
@@ -143,11 +132,11 @@ static void
 dissect_negoex_verify_message(tvbuff_t *tvb,
                               packet_info *pinfo _U_,
                               proto_tree *tree,
-                              guint32 start_off)
+                              uint32_t start_off)
 {
-  guint32 offset;
-  guint32 checksum_vector_offset;
-  guint32 checksum_vector_count;
+  uint32_t offset;
+  uint32_t checksum_vector_offset;
+  uint32_t checksum_vector_count;
   proto_tree *checksum;
   proto_tree *checksum_vector;
 
@@ -202,11 +191,11 @@ static void
 dissect_negoex_exchange_message(tvbuff_t *tvb,
                                 packet_info *pinfo _U_,
                                 proto_tree *tree,
-                                guint32 start_off)
+                                uint32_t start_off)
 {
-  guint32 offset;
-  guint32 exchange_vector_offset;
-  guint32 exchange_vector_count;
+  uint32_t offset;
+  uint32_t exchange_vector_offset;
+  uint32_t exchange_vector_count;
   proto_tree *exchange_vector;
 
   offset = start_off;
@@ -251,22 +240,22 @@ static void
 dissect_negoex_nego_message(tvbuff_t *tvb,
                             packet_info *pinfo _U_,
                             proto_tree *tree,
-                            guint32 start_off)
+                            uint32_t start_off)
 {
-  volatile guint32 offset;
-  guint32 authscheme_vector_offset;
-  guint16 authscheme_vector_count;
-  guint32 extension_vector_offset;
-  guint32 extension_vector_count;
+  volatile uint32_t offset;
+  uint32_t authscheme_vector_offset;
+  uint16_t authscheme_vector_count;
+  uint32_t extension_vector_offset;
+  uint32_t extension_vector_count;
   proto_tree *authscheme_vector;
   proto_tree *extension_vector;
-  guint32 i;
+  uint32_t i;
 
   offset = start_off;
 
   TRY {
     /* The Random field */
-    proto_tree_add_item(tree, hf_negoex_random, tvb, offset, 32, ENC_ASCII);
+    proto_tree_add_item(tree, hf_negoex_random, tvb, offset, 32, ENC_NA);
     offset += 32;
 
     /* Protocol version */
@@ -318,7 +307,7 @@ dissect_negoex_nego_message(tvbuff_t *tvb,
     offset += 2;
 
     for (i = 0; i < extension_vector_count; i++) {
-      guint32 byte_vector_offset, byte_vector_count;
+      uint32_t byte_vector_offset, byte_vector_count;
       proto_tree *bv_tree;
 
       /*
@@ -345,19 +334,19 @@ dissect_negoex_nego_message(tvbuff_t *tvb,
 static int
 dissect_negoex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  volatile guint32 offset;
+  volatile uint32_t offset;
   proto_tree * volatile negoex_tree;
   proto_item *tf;
-  volatile gboolean done;
-  guint32 payload_len;
-  guint32 message_len;
-  guint32 message_type;
-  guint32 header_len;
+  volatile bool done;
+  uint32_t payload_len;
+  uint32_t message_len;
+  uint32_t message_type;
+  uint32_t header_len;
 
   offset = 0;
   negoex_tree = NULL;
   tf = NULL;
-  done = FALSE;
+  done = false;
   payload_len = tvb_reported_length(tvb);
 
   /* Set up the initial NEGOEX payload */
@@ -376,7 +365,7 @@ dissect_negoex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     proto_tree *negoex_hdr_tree;
     proto_item *msg;
     tvbuff_t *msg_tvb;
-    guint32 start_offset;
+    uint32_t start_offset;
 
     start_offset = offset;
 
@@ -396,10 +385,10 @@ dissect_negoex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 
       /* Signature, NEGOEXTS */
       proto_tree_add_item(negoex_hdr_tree, hf_negoex_sig,
-                          tvb, offset, 8, ENC_ASCII | ENC_NA);
+                          tvb, offset, 8, ENC_ASCII);
       offset += 8;
 
-      col_append_sep_fstr(pinfo->cinfo, COL_INFO, ", ", "%s",
+      col_append_sep_str(pinfo->cinfo, COL_INFO, ", ",
                           val_to_str_const(message_type,
                                            negoex_message_types,
                                            "Unknown NEGOEX message type"));
@@ -446,7 +435,7 @@ dissect_negoex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
        * Construct a new TVB covering just this message and pass to the
        * sub-dissector
        */
-      msg_tvb = tvb_new_subset(tvb,
+      msg_tvb = tvb_new_subset_length_caplen(tvb,
                                start_offset,
                                MIN(message_len, tvb_captured_length(tvb)),
                                message_len);
@@ -496,7 +485,7 @@ dissect_negoex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
         ;
 
     } CATCH_NONFATAL_ERRORS {
-      done = TRUE;
+      done = true;
       show_exception(tvb, pinfo, tree, EXCEPT_CODE, GET_MESSAGE);
     } ENDTRY;
   }
@@ -516,7 +505,7 @@ proto_register_negoex(void)
       { "MessageType", "negoex.message.type", FT_UINT32, BASE_HEX,
          VALS(negoex_message_types), 0x00, NULL, HFILL }},
     { &hf_negoex_sequence_num,
-      { "SequencNum", "negoex.message.seq_num", FT_UINT32, BASE_DEC,
+      { "SequenceNum", "negoex.message.seq_num", FT_UINT32, BASE_DEC,
         NULL, 0x0, NULL, HFILL }},
     { &hf_negoex_header_len,
       { "cbHeaderLength", "negoex.header.len", FT_UINT32, BASE_DEC,
@@ -595,7 +584,7 @@ proto_register_negoex(void)
         NULL, 0x0, NULL, HFILL}},
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_negoex,
     &ett_negoex_msg,
     &ett_negoex_hdr,
@@ -618,17 +607,14 @@ proto_register_negoex(void)
 
   /* negoex_module = prefs_register_protocol(proto_negoex, NULL);*/
 
-  register_dissector("negoex", dissect_negoex, proto_negoex);
+  negoex_handle = register_dissector("negoex", dissect_negoex, proto_negoex);
 }
 
 void
 proto_reg_handoff_negoex(void)
 {
-  dissector_handle_t negoex_handle;
 
   /* Register protocol with the GSS-API module */
-
-  negoex_handle = find_dissector("negoex");
   gssapi_init_oid("1.3.6.1.4.1.311.2.2.30", proto_negoex, ett_negoex,
                   negoex_handle, NULL,
                   "NEGOEX - SPNEGO Extended Negotiation Security Mechanism");
@@ -636,7 +622,7 @@ proto_reg_handoff_negoex(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

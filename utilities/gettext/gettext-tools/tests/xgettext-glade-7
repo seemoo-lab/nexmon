@@ -5,7 +5,7 @@
 # Checks the extraction of a medium size GtkBuilder file, with
 # comments, context and translatable and not translatable content.
 
-cat <<EOF > xg-gl-7-empty.glade
+cat <<\EOF > xg-gl-7-empty.glade
 <?xml version="1.0"?>
 <GTK-Interface/>
 EOF
@@ -17,7 +17,7 @@ test $? = 0 || {
   Exit 77
 }
 
-cat <<EOF > xg-gl-7.ui
+cat <<\EOF > xg-gl-7.ui
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
@@ -184,7 +184,8 @@ cat <<EOF > xg-gl-7.ui
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} -o - xg-gl-7.ui | grep -v 'POT-Creation-Date' > xg-gl-7.pot || Exit 1
+${XGETTEXT} -o xg-gl-7.tmp xg-gl-7.ui || Exit 1
+func_filter_POT_Creation_Date xg-gl-7.tmp xg-gl-7.pot
 
 cat <<\EOF > xg-gl-7.ok
 # SOME DESCRIPTIVE TITLE.

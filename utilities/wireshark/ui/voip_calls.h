@@ -1,4 +1,5 @@
-/* voip_calls.h
+/** @file
+ *
  * VoIP calls summary addition for Wireshark
  *
  * Copyright 2004, Ericsson , Spain
@@ -16,23 +17,22 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation,  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __VOIP_CALLS_H__
 #define __VOIP_CALLS_H__
+
+#include <glib.h>
+
+#include <stdio.h>
+
+#include "epan/address.h"
+#include "epan/packet.h"
+#include "epan/guid-utils.h"
+#include "epan/tap.h"
+#include "epan/tap-voip.h"
+#include "epan/sequence_analysis.h"
 
 /** @file
  *  "VoIP Calls" dialog box common routines.
@@ -42,17 +42,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#include <glib.h>
-#include <stdio.h>
-
-#include "epan/address.h"
-#include "epan/packet.h"
-#include "epan/guid-utils.h"
-#include "epan/tap.h"
-#include "epan/tap-voip.h"
-
-#include "ui/tap-sequence-analysis.h"
 
 /****************************************************************************/
 extern const char *voip_call_state_name[8];
@@ -96,22 +85,22 @@ typedef enum _sip_call_state {
 } sip_call_state;
 
 typedef struct _sip_calls_info {
-    gchar *call_identifier;
-    guint32 invite_cseq;
+    char *call_identifier;
+    uint32_t invite_cseq;
     sip_call_state sip_state;
 } sip_calls_info_t;
 
 /** defines specific ISUP data */
 typedef struct _isup_calls_info {
-    guint16 cic;
-    guint32 opc, dpc;
-    guint8  ni;
+    uint16_t cic;
+    uint32_t opc, dpc;
+    uint8_t ni;
 } isup_calls_info_t;
 
 /* defines specific H245 data */
 typedef struct _h245_address {
     address h245_address;
-    guint16 h245_port;
+    uint16_t h245_port;
 } h245_address_t;
 
 /** defines specific H323 data */
@@ -119,60 +108,58 @@ typedef struct _h323_calls_info {
     e_guid_t *guid;               /* Call ID to identify a H225 */
     GList*    h245_list;          /**< list of H245 Address and ports for tunneling off calls*/
     address   h225SetupAddr;      /**< we use the SETUP H225 IP to determine if packets are forward or reverse */
-    gboolean  is_h245;
-    gboolean  is_faststart_Setup; /**< if faststart field is included in Setup*/
-    gboolean  is_faststart_Proc;  /**< if faststart field is included in Proce, Alerting, Progress or Connect*/
-    gboolean  is_h245Tunneling;
-    gint32    q931_crv;
-    gint32    q931_crv2;
-    guint     requestSeqNum;
+    bool      is_h245;
+    bool      is_faststart_Setup; /**< if faststart field is included in Setup*/
+    bool      is_faststart_Proc;  /**< if faststart field is included in Proce, Alerting, Progress or Connect*/
+    bool      is_h245Tunneling;
+    int32_t   q931_crv;
+    int32_t   q931_crv2;
+    unsigned  requestSeqNum;
 } h323_calls_info_t;
 
 /**< defines specific MGCP data */
 typedef struct _mgcp_calls_info {
-    gchar *endpointId;
-    gboolean fromEndpoint; /**< true if the call was originated from the Endpoint, false for calls from MGC */
+    char *endpointId;
+    bool fromEndpoint; /**< true if the call was originated from the Endpoint, false for calls from MGC */
 } mgcp_calls_info_t;
 
 /** defines specific ACTRACE ISDN data */
 typedef struct _actrace_isdn_calls_info {
-    gint32 crv;
+    int32_t crv;
     int trunk;
 } actrace_isdn_calls_info_t;
 
 /** defines specific ACTRACE CAS data */
 typedef struct _actrace_cas_calls_info {
-    gint32 bchannel;
+    int32_t bchannel;
     int trunk;
 } actrace_cas_calls_info_t;
 
 /** defines specific SKINNY data */
 typedef struct _skinny_calls_info {
-    guint32 callId;
+    uint32_t callId;
 } skinny_calls_info_t;
 
 /** defines a voip call */
 typedef struct _voip_calls_info {
     voip_call_state         call_state;
     voip_call_active_state  call_active_state;
-    gchar                  *call_id;
-    gchar                  *from_identity;
-    gchar                  *to_identity;
-    gpointer                prot_info;
-    void (*free_prot_info)(gpointer);
+    char                   *call_id;
+    char                   *from_identity;
+    char                   *to_identity;
+    void *                  prot_info;
+    void (*free_prot_info)(void *);
     address                 initial_speaker;
-    guint32                 npackets;
+    uint32_t                npackets;
     voip_protocol           protocol;
-    gchar                  *protocol_name;
-    gchar                  *call_comment;
-    guint16                 call_num;
+    char                   *protocol_name;
+    char                   *call_comment;
+    uint16_t                call_num;
     /**> The frame_data struct holds the frame number and timing information needed. */
     frame_data             *start_fd;
     nstime_t                start_rel_ts;
     frame_data             *stop_fd;
     nstime_t                stop_rel_ts;
-    gboolean                selected; /* GTK+ only */
-
 } voip_calls_info_t;
 
 /**
@@ -198,39 +185,38 @@ typedef struct _voip_calls_tapinfo {
     int                   rejected_calls;
     seq_analysis_info_t  *graph_analysis;
     epan_t               *session; /**< epan session */
-    int                   nrtp_streams; /**< number of rtp streams */
-    GList*                rtp_stream_list; /**< list of rtp_stream_info_t */
-    guint32               rtp_evt_frame_num;
-    guint8                rtp_evt;
-    gboolean              rtp_evt_end;
-    gchar                *sdp_summary;
-    guint32               sdp_frame_num;
-    guint32               mtp3_opc;
-    guint32               mtp3_dpc;
-    guint8                mtp3_ni;
-    guint32               mtp3_frame_num;
+    int                   nrtpstreams; /**< number of rtp streams */
+    GList*                rtpstream_list; /**< list of rtpstream_info_t */
+    uint32_t              rtp_evt_frame_num;
+    uint8_t               rtp_evt;
+    bool                  rtp_evt_end;
+    char                 *sdp_summary;
+    uint32_t              sdp_frame_num;
+    uint32_t              mtp3_opc;
+    uint32_t              mtp3_dpc;
+    uint8_t               mtp3_ni;
+    uint32_t              mtp3_frame_num;
     struct _h245_labels  *h245_labels; /**< H.245 labels */
-    gchar                *q931_calling_number;
-    gchar                *q931_called_number;
-    guint8                q931_cause_value;
-    gint32                q931_crv;
-    guint32               q931_frame_num;
-    guint32               h225_frame_num;
-    guint16               h225_call_num;
+    uint8_t               q931_cause_value;
+    int32_t               q931_crv;
+    uint32_t              q931_frame_num;
+    uint32_t              h225_frame_num;
+    uint16_t              h225_call_num;
     int                   h225_cstype; /* XXX actually an enum */
-    gboolean              h225_is_faststart;
-    guint32               sip_frame_num;
-    guint32               actrace_frame_num;
-    gint32                actrace_trunk;
-    gint32                actrace_direction;
+    bool                  h225_is_faststart;
+    uint32_t              sip_frame_num;
+    uint32_t              actrace_frame_num;
+    int32_t               actrace_trunk;
+    int32_t               actrace_direction;
     flow_show_options     fs_option;
-    guint32               redraw;
+    uint32_t              redraw;
+    bool                  apply_display_filter;
 } voip_calls_tapinfo_t;
 
 #if 0
 #define VOIP_CALLS_DEBUG(...) { \
-    char *VOIP_CALLS_DEBUG_MSG = g_strdup_printf(__VA_ARGS__); \
-    g_warning("voip_calls: %s:%d %s", G_STRFUNC, __LINE__, VOIP_CALLS_DEBUG_MSG); \
+    char *VOIP_CALLS_DEBUG_MSG = ws_strdup_printf(__VA_ARGS__); \
+    ws_warning("voip_calls: %s:%d %s", G_STRFUNC, __LINE__, VOIP_CALLS_DEBUG_MSG); \
     g_free(VOIP_CALLS_DEBUG_MSG); \
 }
 #else
@@ -260,21 +246,17 @@ void voip_calls_remove_all_tap_listeners(voip_calls_tapinfo_t *tap_id_base);
  */
 void voip_calls_reset_all_taps(voip_calls_tapinfo_t *tapinfo);
 
+void
+voip_calls_set_apply_display_filter(voip_calls_tapinfo_t *tapinfo, bool apply);
+
+/**
+ * Frees one callsinfo
+ */
+void
+voip_calls_free_callsinfo(voip_calls_info_t *callsinfo);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 #endif /* __VOIP_CALLS_H__ */
-
-/*
- * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

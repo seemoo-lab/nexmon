@@ -1,6 +1,5 @@
 /* Message list header manipulation.
-   Copyright (C) 2007, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2007.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,12 +12,12 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
 
 /* Specification.  */
 #include "msgl-header.h"
@@ -31,51 +30,69 @@
 
 
 void
+header_set_charset (message_ty *header_mp, const char *charsetstr,
+                    const char *value)
+{
+  const char *msgstr = header_mp->msgstr;
+
+  size_t len = strcspn (charsetstr, " \t\n");
+
+  size_t len1 = charsetstr - msgstr;
+  size_t len2 = strlen (value);
+  size_t len3 = (msgstr + strlen (msgstr)) - (charsetstr + len);
+
+  char *new_msgstr = XNMALLOC (len1 + len2 + len3 + 1, char);
+  memcpy (new_msgstr, msgstr, len1);
+  memcpy (new_msgstr + len1, value, len2);
+  memcpy (new_msgstr + len1 + len2, charsetstr + len, len3 + 1);
+
+  header_mp->msgstr = new_msgstr;
+  header_mp->msgstr_len = len1 + len2 + len3 + 1;
+}
+
+
+/* The known fields in their usual order.  */
+static const struct
+{
+  const char *name;
+  size_t len;
+}
+known_fields[] =
+  {
+    { "Project-Id-Version:", sizeof ("Project-Id-Version:") - 1 },
+    { "Report-Msgid-Bugs-To:", sizeof ("Report-Msgid-Bugs-To:") - 1 },
+    { "POT-Creation-Date:", sizeof ("POT-Creation-Date:") - 1 },
+    { "PO-Revision-Date:", sizeof ("PO-Revision-Date:") - 1 },
+    { "Last-Translator:", sizeof ("Last-Translator:") - 1 },
+    { "Language-Team:", sizeof ("Language-Team:") - 1 },
+    { "Language:", sizeof ("Language:") - 1 },
+    { "MIME-Version:", sizeof ("MIME-Version:") - 1 },
+    { "Content-Type:", sizeof ("Content-Type:") - 1 },
+    { "Content-Transfer-Encoding:", sizeof ("Content-Transfer-Encoding:") - 1 }
+  };
+
+
+void
 msgdomain_list_set_header_field (msgdomain_list_ty *mdlp,
                                  const char *field, const char *value)
 {
-  /* The known fields in their usual order.  */
-  static const struct
-    {
-      const char *name;
-      size_t len;
-    }
-  known_fields[] =
-    {
-      { "Project-Id-Version:", sizeof ("Project-Id-Version:") - 1 },
-      { "Report-Msgid-Bugs-To:", sizeof ("Report-Msgid-Bugs-To:") - 1 },
-      { "POT-Creation-Date:", sizeof ("POT-Creation-Date:") - 1 },
-      { "PO-Revision-Date:", sizeof ("PO-Revision-Date:") - 1 },
-      { "Last-Translator:", sizeof ("Last-Translator:") - 1 },
-      { "Language-Team:", sizeof ("Language-Team:") - 1 },
-      { "Language:", sizeof ("Language:") - 1 },
-      { "MIME-Version:", sizeof ("MIME-Version:") - 1 },
-      { "Content-Type:", sizeof ("Content-Type:") - 1 },
-      { "Content-Transfer-Encoding:",
-        sizeof ("Content-Transfer-Encoding:") - 1 }
-    };
-  size_t field_len;
-  int field_index;
-  size_t k, i;
-
-  field_len = strlen (field);
+  size_t field_len = strlen (field);
 
   /* Search the field in known_fields[].  */
-  field_index = -1;
-  for (k = 0; k < SIZEOF (known_fields); k++)
+  int field_index = -1;
+  for (size_t k = 0; k < SIZEOF (known_fields); k++)
     if (strcmp (known_fields[k].name, field) == 0)
       {
         field_index = k;
         break;
       }
 
-  for (i = 0; i < mdlp->nitems; i++)
+  for (size_t i = 0; i < mdlp->nitems; i++)
     {
       message_list_ty *mlp = mdlp->item[i]->messages;
-      size_t j;
 
       /* Search the header entry.  */
-      for (j = 0; j < mlp->nitems; j++)
+      for (size_t j = 0; j < mlp->nitems; j++)
         if (is_header (mlp->item[j]) && !mlp->item[j]->obsolete)
           {
             message_ty *mp = mlp->item[j];
@@ -131,6 +148,7 @@ msgdomain_list_set_header_field (msgdomain_list_ty *mdlp,
                   {
                     /* Test whether h starts with a field name whose index is
                        > field_index.  */
+                    size_t k;
                     for (k = field_index + 1; k < SIZEOF (known_fields); k++)
                       if (strncmp (h, known_fields[k].name, known_fields[k].len)
                           == 0)
@@ -165,6 +183,58 @@ msgdomain_list_set_header_field (msgdomain_list_ty *mdlp,
               }
 
             mp->msgstr = new_header;
+            mp->msgstr_len = strlen (new_header) + 1;
           }
     }
+}
+
+
+void
+message_list_delete_header_field (message_list_ty *mlp,
+                                  const char *field)
+{
+  size_t field_len = strlen (field);
+
+  /* Search the header entry.  */
+  for (size_t j = 0; j < mlp->nitems; j++)
+    if (is_header (mlp->item[j]) && !mlp->item[j]->obsolete)
+      {
+        message_ty *mp = mlp->item[j];
+
+        /* Modify the header entry.  */
+        const char *header = mp->msgstr;
+
+        /* Test whether the field occurs in the header entry.  */
+        const char *h;
+
+        for (h = header; *h != '\0'; )
+          {
+            if (strncmp (h, field, field_len) == 0)
+              break;
+            h = strchr (h, '\n');
+            if (h == NULL)
+              break;
+            h++;
+          }
+        if (h != NULL && *h != '\0')
+          {
+            /* Delete the field.  */
+            char *new_header = XCALLOC (strlen (header) + 1, char);
+
+            char *p = new_header;
+            memcpy (p, header, h - header);
+            p += h - header;
+            h = strchr (h, '\n');
+            if (h != NULL)
+              {
+                h++;
+                strcpy (p, h);
+              }
+            else
+              *p = '\0';
+
+            mp->msgstr = new_header;
+            mp->msgstr_len = strlen (new_header) + 1;
+          }
+      }
 }

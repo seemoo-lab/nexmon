@@ -1,0 +1,226 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlError" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlError</compoundname>
+    <includes local="no">xmlerror.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlError_1a1e8a62bcb89bd75956f39f6d251fd6e4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int domain</definition>
+        <argsstring></argsstring>
+        <name>domain</name>
+        <qualifiedname>_xmlError::domain</qualifiedname>
+        <briefdescription>
+<para>An <ref refid="xmlerror_8h_1abd34713153e12c10b931c4e076e0481a" kindref="member">xmlErrorDomain</ref> value. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="149" column="8" bodyfile="xmlerror.h" bodystart="149" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a45a5b7c00a796a23f01673cef1dbe0a9" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int code</definition>
+        <argsstring></argsstring>
+        <name>code</name>
+        <qualifiedname>_xmlError::code</qualifiedname>
+        <briefdescription>
+<para>The error code, e.g. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref>. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="151" column="8" bodyfile="xmlerror.h" bodystart="151" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a0b2e8c7f76df48129f994ecc46d5c66c" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* message</definition>
+        <argsstring></argsstring>
+        <name>message</name>
+        <qualifiedname>_xmlError::message</qualifiedname>
+        <briefdescription>
+<para>Human-readable error message. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="153" column="16" bodyfile="xmlerror.h" bodystart="153" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1ab67ac7b9f0ac48da984e354bee5ec3d7" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1a99cf79f750085bec4b5c3f2e188f47ae" kindref="member">xmlErrorLevel</ref></type>
+        <definition>xmlErrorLevel level</definition>
+        <argsstring></argsstring>
+        <name>level</name>
+        <qualifiedname>_xmlError::level</qualifiedname>
+        <briefdescription>
+<para>Error level. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="155" column="19" bodyfile="xmlerror.h" bodystart="155" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1adf16cd437526a5c5e0e0af87745acbb8" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* file</definition>
+        <argsstring></argsstring>
+        <name>file</name>
+        <qualifiedname>_xmlError::file</qualifiedname>
+        <briefdescription>
+<para>Filename if available. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="157" column="16" bodyfile="xmlerror.h" bodystart="157" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a41ebd28ef1d7c6ade45642cb6acc1039" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int line</definition>
+        <argsstring></argsstring>
+        <name>line</name>
+        <qualifiedname>_xmlError::line</qualifiedname>
+        <briefdescription>
+<para>Line number if available. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="159" column="8" bodyfile="xmlerror.h" bodystart="159" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a8dae3ddc4d7097d81ee09bdfc82aae85" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* str1</definition>
+        <argsstring></argsstring>
+        <name>str1</name>
+        <qualifiedname>_xmlError::str1</qualifiedname>
+        <briefdescription>
+<para>Extra string information. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="161" column="16" bodyfile="xmlerror.h" bodystart="161" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a80b4835a3b252367b797948c5cbaa46f" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* str2</definition>
+        <argsstring></argsstring>
+        <name>str2</name>
+        <qualifiedname>_xmlError::str2</qualifiedname>
+        <briefdescription>
+<para>Extra string information. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="163" column="16" bodyfile="xmlerror.h" bodystart="163" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a0b402589e6985da27feb696dcb7195ad" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* str3</definition>
+        <argsstring></argsstring>
+        <name>str3</name>
+        <qualifiedname>_xmlError::str3</qualifiedname>
+        <briefdescription>
+<para>Extra string information. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="165" column="16" bodyfile="xmlerror.h" bodystart="165" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1ab3f0d8d2ca21868ebf7de55fd3a246e7" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int int1</definition>
+        <argsstring></argsstring>
+        <name>int1</name>
+        <qualifiedname>_xmlError::int1</qualifiedname>
+        <briefdescription>
+<para>Extra number information. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="167" column="8" bodyfile="xmlerror.h" bodystart="167" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a71832d389ebad2159fad07b2f0083b9b" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int int2</definition>
+        <argsstring></argsstring>
+        <name>int2</name>
+        <qualifiedname>_xmlError::int2</qualifiedname>
+        <briefdescription>
+<para>Column number if available. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="169" column="8" bodyfile="xmlerror.h" bodystart="169" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a20aeb9889c7d23b96f977ed4010ca922" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* ctxt</definition>
+        <argsstring></argsstring>
+        <name>ctxt</name>
+        <qualifiedname>_xmlError::ctxt</qualifiedname>
+        <briefdescription>
+<para>Parser context if available. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="171" column="16" bodyfile="xmlerror.h" bodystart="171" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlError_1a77f6e46cab1968644fb698bf8c4b2876" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>_xmlError::node</qualifiedname>
+        <briefdescription>
+<para>Node if available. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlerror.h" line="173" column="16" bodyfile="xmlerror.h" bodystart="173" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>An object containing information about an error. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="xmlerror.h" line="147" column="1" bodyfile="xmlerror.h" bodystart="147" bodyend="174"/>
+    <listofallmembers>
+      <member refid="struct__xmlError_1a45a5b7c00a796a23f01673cef1dbe0a9" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>code</name></member>
+      <member refid="struct__xmlError_1a20aeb9889c7d23b96f977ed4010ca922" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>ctxt</name></member>
+      <member refid="struct__xmlError_1a1e8a62bcb89bd75956f39f6d251fd6e4" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>domain</name></member>
+      <member refid="struct__xmlError_1adf16cd437526a5c5e0e0af87745acbb8" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>file</name></member>
+      <member refid="struct__xmlError_1ab3f0d8d2ca21868ebf7de55fd3a246e7" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>int1</name></member>
+      <member refid="struct__xmlError_1a71832d389ebad2159fad07b2f0083b9b" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>int2</name></member>
+      <member refid="struct__xmlError_1ab67ac7b9f0ac48da984e354bee5ec3d7" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>level</name></member>
+      <member refid="struct__xmlError_1a41ebd28ef1d7c6ade45642cb6acc1039" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>line</name></member>
+      <member refid="struct__xmlError_1a0b2e8c7f76df48129f994ecc46d5c66c" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>message</name></member>
+      <member refid="struct__xmlError_1a77f6e46cab1968644fb698bf8c4b2876" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>node</name></member>
+      <member refid="struct__xmlError_1a8dae3ddc4d7097d81ee09bdfc82aae85" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>str1</name></member>
+      <member refid="struct__xmlError_1a80b4835a3b252367b797948c5cbaa46f" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>str2</name></member>
+      <member refid="struct__xmlError_1a0b402589e6985da27feb696dcb7195ad" prot="public" virt="non-virtual"><scope>_xmlError</scope><name>str3</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

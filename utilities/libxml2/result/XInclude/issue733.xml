@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<!DOCTYPE reference>
+<reference xmlns:xi="http://www.w3.org/2001/XInclude">
+    <para id="a" xml:base="../ents/issue733-1.xml">Content 1</para>
+    <para id="a" xml:base="../ents/issue733-2.xml">Content 2</para>
+    
+</reference>

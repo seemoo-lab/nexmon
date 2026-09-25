@@ -1,3 +1,7 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
 @pindex gettext
 @cindex @code{gettext} program, usage
 @example
@@ -9,9 +13,16 @@ gettext [@var{option}] -s [@var{msgid}]...
 The @code{gettext} program displays the native language translation of a
 textual message.
 
-@noindent @strong{Arguments}
+@noindent @strong{Options and arguments}
 
 @table @samp
+@item -c @var{context}
+@itemx --context=@var{context}
+@opindex -c@r{, @code{gettext} option}
+@opindex --context@r{, @code{gettext} option}
+Specify the context for the messages to be translated.
+See @ref{Contexts} for details.
+
 @item -d @var{textdomain}
 @itemx --domain=@var{textdomain}
 @opindex -d@r{, @code{gettext} option}
@@ -32,25 +43,30 @@ interpreted like the System V @samp{echo} program did.
 This option is only for compatibility with the @samp{echo} program or shell
 built-in.  It has no effect.
 
+@item -n
+@opindex -n@r{, @code{gettext} option}
+This option has only an effect if the @code{-s} option is given.  It
+suppresses the additional newline at the end.
+
+@item [@var{textdomain}] @var{msgid}
+Retrieve translated message corresponding to @var{msgid} from @var{textdomain}.
+
+@end table
+
+@noindent @strong{Informative output}
+
+@table @samp
 @item -h
 @itemx --help
 @opindex -h@r{, @code{gettext} option}
 @opindex --help@r{, @code{gettext} option}
 Display this help and exit.
 
-@item -n
-@opindex -n@r{, @code{gettext} option}
-Suppress trailing newline.  By default, @code{gettext} adds a newline to
-the output.
-
 @item -V
 @itemx --version
 @opindex -V@r{, @code{gettext} option}
 @opindex --version@r{, @code{gettext} option}
 Output version information and exit.
-
-@item [@var{textdomain}] @var{msgid}
-Retrieve translated message corresponding to @var{msgid} from @var{textdomain}.
 
 @end table
 
@@ -61,4 +77,7 @@ environment variable @code{TEXTDOMAINDIR}.
 
 When used with the @code{-s} option the program behaves like the @samp{echo}
 command.  But it does not simply copy its arguments to stdout.  Instead those
-messages found in the selected catalog are translated.
+messages found in the selected catalog are translated.  Also, a newline is
+added at the end, unless either the option @code{-n} is specified or the
+option @code{-e} is specified and some of the argument strings contains a
+@samp{\c} escape sequence.
