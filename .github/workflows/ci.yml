@@ -1,0 +1,39 @@
+name: Nexmon CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  test-and-build:
+    name: Build & Test Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make libpcap-dev libnl-3-dev libnl-genl-3-dev libcap-dev
+
+      - name: Syntax Check Shell Scripts
+        run: |
+          bash -n monitor-mode.sh
+          bash -n setup_env.sh
+
+      - name: Build Userspace Utilities (nexutil & libnexio)
+        run: |
+          make -C utilities/nexutil
+
+      - name: Run Test Suites & Firmware Validation
+        run: |
+          make check
