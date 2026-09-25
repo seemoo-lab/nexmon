@@ -135,19 +135,19 @@ fw_bcmdhd.complete.bin: $(RAM_FILE) $(FW_PATH)/$(ROM_FILE)
 ###################################################################
 
 gen/ucode1.asm: $(FW_PATH)/ucode1.bin
-	$(NEXMON_ROOT)/buildtools/b43new2/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-	$(NEXMON_ROOT)/buildtools/b43new2/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43new/debug/include > tmp && mv tmp $@
+	$(NEXMON_ROOT)/buildtools/b43-unified/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+	$(NEXMON_ROOT)/buildtools/b43-unified/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-unified/debug/include > tmp && mv tmp $@
 
 gen/ucode2.asm: $(FW_PATH)/ucode2.bin
-	$(NEXMON_ROOT)/buildtools/b43new2/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-	$(NEXMON_ROOT)/buildtools/b43new2/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43new/debug/include > tmp && mv tmp $@
+	$(NEXMON_ROOT)/buildtools/b43-unified/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+	$(NEXMON_ROOT)/buildtools/b43-unified/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-unified/debug/include > tmp && mv tmp $@
 
 ifneq ($(wildcard src/ucode1.asm), )
 gen/ucode1.bin: src/ucode1.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43new2/assembler/b43-asm.bin), )
-	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43new2/assembler $(NEXMON_ROOT)/buildtools/b43new2/assembler/b43-asm $< $@ --format raw-le32
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43-unified/assembler $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm $< $@ --format raw-le32
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif
@@ -162,8 +162,8 @@ ifneq ($(wildcard src/ucode2.asm), )
 gen/ucode2.bin: src/ucode2.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43new2/assembler/b43-asm.bin), )
-	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43new2/assembler $(NEXMON_ROOT)/buildtools/b43new2/assembler/b43-asm $< $@ --format raw-le32
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43-unified/assembler $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm $< $@ --format raw-le32
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif

@@ -226,7 +226,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 int bytes_used = 0;
                 struct inject_frame *frm = (struct inject_frame *) arg;
 
-                while ((frm->hdr.len > 0) && (bytes_used + frm->hdr.len <= len)) {
+                while ((frm->hdr.len >= sizeof(frm->hdr)) && (bytes_used + frm->hdr.len <= len)) {
                     // add a dummy radiotap header if frame does not contain one
                     if (frm->hdr.type == 0) {
                         p = pkt_buf_get_skb(wlc->osh, frm->hdr.len + TXOFF + sizeof(struct ieee80211_radiotap_header) - sizeof(frm->hdr));

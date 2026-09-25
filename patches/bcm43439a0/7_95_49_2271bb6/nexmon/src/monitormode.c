@@ -115,7 +115,7 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
             break;
 
         case MONITOR_IPV4_UDP:
-                printf("%s: udp tunneling not implemented\n");
+                printf("%s: udp tunneling not implemented\n", __FUNCTION__);
                 // not implemented yet
             break;
     }

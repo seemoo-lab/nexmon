@@ -50,15 +50,29 @@ argprintf(const char *format, ...)
     va_list args;
     int rc;
 
+    if (!argprintf_arg || argprintf_len <= 0)
+        return 0;
+
     if (argprintf_first_call) {
         memset(argprintf_arg, 0, argprintf_len);
         argprintf_first_call = 0;
     }
 
+    if (argprintf_written >= argprintf_len)
+        return 0;
+
     va_start(args, format);
     rc = vsnprintf(argprintf_arg + argprintf_written, argprintf_len - argprintf_written, format, args);
-    argprintf_written += rc;
     va_end(args);
+
+    if (rc < 0)
+        return rc;
+
+    if (argprintf_written + rc >= argprintf_len)
+        argprintf_written = argprintf_len;
+    else
+        argprintf_written += rc;
+
     return (rc);
 }
 

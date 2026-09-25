@@ -47,7 +47,7 @@ CFLAGS= \
 	-DTIME_PTR=$(TIME_PTR) \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
-	-Wall -Werror -Wno-unused-variable -Wno-unused-function -Wno-address-of-packed-member -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -fno-align-functions -march=$(NEXMON_ARCH) \
+	-std=gnu11 -Wall -Werror -Wno-unused-variable -Wno-unused-function -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -fno-align-functions -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
 	-MMD -MP \
 	-I$(NEXMON_ROOT)/patches/include \
@@ -76,11 +76,11 @@ ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)mkdir -p log
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) -j4 >log/driver.log
+	$(Q)KBUILD_MODPOST_WARN=1 make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) -j4 >log/driver.log
 else ifeq ($(shell uname -m),$(filter $(shell uname -m), aarch64))
 	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)mkdir -p log
-	$(Q)ARCH="arm64" make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) -j4 >log/driver.log
+	$(Q)ARCH="arm64" KBUILD_MODPOST_WARN=1 make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) -j4 >log/driver.log
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a Raspberry Pi)
 endif
@@ -161,15 +161,15 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 
 gen/ucode.asm: $(FW_PATH)/ucode.bin
 	@printf "\033[0;31m  DISASSEMBLING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)$(NEXMON_ROOT)/buildtools/b43-v3/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-	$(Q)$(NEXMON_ROOT)/buildtools/b43-v3/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-v3/debug/include > tmp && mv tmp $@
+	$(Q)$(NEXMON_ROOT)/buildtools/b43-unified/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+	$(Q)$(NEXMON_ROOT)/buildtools/b43-unified/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-unified/debug/include > tmp && mv tmp $@
 
 ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-v3/assembler/b43-asm.bin), )
-	$(Q)PATH="$(PATH):$(NEXMON_ROOT)/buildtools/b43-v3/assembler" $(NEXMON_ROOT)/buildtools/b43-v3/assembler/b43-asm $< $@ --format raw-le32
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm.bin), )
+	$(Q)PATH="$(PATH):$(NEXMON_ROOT)/buildtools/b43-unified/assembler" $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm $< $@ --format raw-le32
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif

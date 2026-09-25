@@ -148,15 +148,15 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 
 gen/ucode.asm: $(FW_PATH)/ucode.bin
 	@printf "\033[0;31m  DISASSEMBLING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)$(NEXMON_ROOT)/buildtools/b43-v3/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-	$(Q)$(NEXMON_ROOT)/buildtools/b43-v3/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-v3/debug/include > tmp && mv tmp $@
+	$(Q)$(NEXMON_ROOT)/buildtools/b43-unified/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+	$(Q)$(NEXMON_ROOT)/buildtools/b43-unified/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-unified/debug/include > tmp && mv tmp $@
 
 ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-v3/assembler/b43-asm.bin), )
-	$(Q)PATH="$(PATH):$(NEXMON_ROOT)/buildtools/b43-v3/assembler" $(NEXMON_ROOT)/buildtools/b43-v3/assembler/b43-asm $< $@ --format raw-le32
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm.bin), )
+	$(Q)PATH="$(PATH):$(NEXMON_ROOT)/buildtools/b43-unified/assembler" $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm $< $@ --format raw-le32
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif
