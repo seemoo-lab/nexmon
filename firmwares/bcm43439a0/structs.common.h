@@ -65,10 +65,18 @@ struct sk_buff {
         };
         void *freelist;
     };
-    uint32      pkttag[8];          /* 0x018 */
+    uint32      pkttag[4];          /* 0x018 */
+    void       *scb;                /* 0x028 packet scb; wlc_txfifo and wlc_d11hdrs both deref it at +16 via [p+0x28] */
+    uint32      pkttag2[3];         /* 0x02c */
 } __attribute__((packed));
 typedef struct sk_buff sk_buff;
 typedef struct sk_buff lbuf;
+
+/* TX-header scratch filled by wlc_get_txh_info(); opaque 80-byte blob.
+ * Ported verbatim from firmwares/bcm43430a1/structs.common.h. */
+struct wlc_txh_info {
+    uint8 PAD[80];
+} __attribute__((packed));
 
 struct osl_info {
     uint32 PAD;                       /* 0x000 */
@@ -883,9 +891,29 @@ struct wlc_hwband {
     uint16 PAD;                       /* 0x02a */
 } __attribute((packed));
 
+/* Software band (wlc->band).  The classic injection sendframe() reads its
+ * hwrs_scb (hardware rate-set scb) as the TX scb for injected frames.  Modeled
+ * on the sibling firmwares/bcm43430a1/structs.common.h "struct wlcband".
+ * Distinct from the existing "struct wlc_hwband" (the hardware band in wlc_hw). */
+struct wlc_band {
+    uint32 bandtype;                  /* 0x000 */
+    uint32 bandunit;                  /* 0x004 */
+    uint16 phytype;                   /* 0x008 */
+    uint16 phyrev;                    /* 0x00a */
+    uint16 radioid;                   /* 0x00c */
+    uint16 radiorev;                  /* 0x00e */
+    struct phy_info *pi;              /* 0x010 */
+    uint8  abgphy_encore;             /* 0x014 */
+    uint8  gmode;                     /* 0x015 */
+    uint16 PAD;                       /* 0x016 */
+    struct scb *hwrs_scb;             /* 0x018 hardware rate-set scb; ROM 0x82e7c8 default-scb routine derives it as band+0x18, then scb+16 */
+} __attribute__((packed));
+
 struct wlc_hw_info {
     struct wlc_info *wlc;             /* 0x000 */
-    uint32 PAD;                       /* 0x004 */
+    uint16 PAD;                       /* 0x004 */
+    uint8  up;                        /* 0x006 MAC-up flag; the dominant wlc->hw boolean gate in the ROM/RAM dump (23 sites) */
+    uint8  PAD;                       /* 0x007 */
     void *osh;                        /* 0x008 */
     uint32 unit;                      /* 0x00c */
     uint32 PAD;                       /* 0x010 */
@@ -1028,7 +1056,7 @@ struct wlc_info {
     uint32 PAD;                       /* 0x014 */
     uint32 PAD;                       /* 0x018 */
     void *core;                       /* 0x01c */
-    void *band;                       /* 0x020 */
+    struct wlc_band *band;            /* 0x020 */  /* retyped from void*; field offset unchanged */
     void *corestate;                  /* 0x024 */
     void *bandstate[2];               /* 0x028 */
 //    uint32 PAD;                       /* 0x02c */

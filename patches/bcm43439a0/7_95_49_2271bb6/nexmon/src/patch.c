@@ -38,7 +38,10 @@
 #include <patcher.h>
 #include <capabilities.h>      // capabilities included in a nexmon patch
 
-int capabilities = 0;
+// Advertise monitor + radiotap (already implemented in monitormode.c) and the
+// frame injection added by injection.c / sendframe.c / the NEX_INJECT_FRAME
+// ioctl case.  Reported back to the host via NEX_GET_CAPABILITIES.
+int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CAP_FRAME_INJECTION;
 
 // Hook the call to wlc_ucode_write in wlc_ucode_download
 __attribute__((at(WLC_UCODE_WRITE_BL_HOOK_ADDR, "", CHIP_VER_BCM43439a0, FW_VER_7_95_49_2271bb6)))
