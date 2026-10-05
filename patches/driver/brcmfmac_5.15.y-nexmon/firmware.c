@@ -617,6 +617,7 @@ static char *brcm_alt_fw_path(const char *path, const char *board_type)
 {
 	char alt_path[BRCMF_FW_NAME_LEN];
 	char suffix[5];
+	char *ret = NULL;
 
 	strscpy(alt_path, path, BRCMF_FW_NAME_LEN);
 	/* At least one character + suffix */
@@ -629,8 +630,13 @@ static char *brcm_alt_fw_path(const char *path, const char *board_type)
 	strlcat(alt_path, ".", BRCMF_FW_NAME_LEN);
 	strlcat(alt_path, board_type, BRCMF_FW_NAME_LEN);
 	strlcat(alt_path, suffix, BRCMF_FW_NAME_LEN);
-
-	return kstrdup(alt_path, GFP_KERNEL);
+	ret = kstrdup(alt_path, GFP_KERNEL);
+	if (!ret) {
+		brcmf_err("failed to allocate memory for alt_path\n");
+		return NULL;
+	}
+		
+	return ret;
 }
 
 static int brcmf_fw_request_firmware(const struct firmware **fw,
