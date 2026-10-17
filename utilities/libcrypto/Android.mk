@@ -9,12 +9,9 @@ LOCAL_PATH := $(call my-dir)/../boringssl
 include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libcrypto
-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/src/include
+# Modern BoringSSL (0.20260813.0) exports its headers from include/ (was src/include).
+LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
 LOCAL_ADDITIONAL_DEPENDENCIES := $(THIS_LOCAL_PATH)/Android.mk $(LOCAL_PATH)/crypto-sources.mk
-LOCAL_SDK_VERSION := 9
-LOCAL_CFLAGS += -fvisibility=hidden -DBORINGSSL_SHARED_LIBRARY -DBORINGSSL_IMPLEMENTATION -DOPENSSL_SMALL -DOPENSSL_NO_ASM -Wno-unused-parameter
-# sha256-armv4.S does not compile with clang.
-LOCAL_CLANG_ASFLAGS_arm += -no-integrated-as
-LOCAL_CLANG_ASFLAGS_arm64 += -march=armv8-a+crypto
+LOCAL_CFLAGS += -fvisibility=hidden -DBORINGSSL_IMPLEMENTATION -DOPENSSL_SMALL -DOPENSSL_NO_ASM -Wno-unused-parameter
 include $(LOCAL_PATH)/crypto-sources.mk
 include $(BUILD_STATIC_LIBRARY)

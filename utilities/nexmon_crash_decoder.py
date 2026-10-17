@@ -1,0 +1,1 @@
+../nexmon_crash_decoder.py

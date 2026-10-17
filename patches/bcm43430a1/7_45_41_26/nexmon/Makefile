@@ -12,6 +12,14 @@ OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o
 KERNEL_VERSION = $(shell uname -r | sed 's/\([0-9]\+\.[0-9]\+\)\..*/\1/')
 DRIVER_FOLDER_NAME = $(NEXMON_ROOT)/patches/driver/brcmfmac_$(KERNEL_VERSION).y-nexmon
 
+# A kernel tree whose Module.symvers lacks the vmlinux built-in exports makes
+# modpost fail an out-of-tree module with hundreds of "undefined" symbols,
+# module_layout among them, even though every source file compiles. Recover the
+# missing rows from the kernel's own .vmlinux.export.c. This expands to nothing
+# when the tree is healthy, so it costs one grep and changes no other behaviour.
+SYMVERS_SUPPLEMENT = $(shell $(NEXMON_ROOT)/buildtools/scripts/kernel-symvers-supplement.sh /lib/modules/$(shell uname -r)/build 2>/dev/null)
+KBUILD_EXTRA_SYMV = $(if $(SYMVERS_SUPPLEMENT),KBUILD_EXTRA_SYMBOLS=$(SYMVERS_SUPPLEMENT))
+
 CFLAGS= \
 	-fplugin=$(CCPLUGIN) \
 	-fplugin-arg-nexmon-objfile=$@ \
@@ -44,7 +52,7 @@ ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)mkdir -p log
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) -j4 >log/driver.log
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) -j4 >log/driver.log
 else ifeq ($(shell uname -m),$(filter $(shell uname -m), aarch64))
 	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)mkdir -p log
@@ -129,15 +137,15 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 ###################################################################
 
 gen/ucode.asm: $(FW_PATH)/ucode.bin
-	$(NEXMON_ROOT)/buildtools/b43/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-#	$(NEXMON_ROOT)/buildtools/b43/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43/debug/include > tmp && mv tmp $@
+	$(NEXMON_ROOT)/buildtools/b43-unified/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+#	$(NEXMON_ROOT)/buildtools/b43-unified/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-unified/debug/include > tmp && mv tmp $@
 
 ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm.bin), )
-	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43/assembler $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43-unified/assembler $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm $< $@ --format raw-le32
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif

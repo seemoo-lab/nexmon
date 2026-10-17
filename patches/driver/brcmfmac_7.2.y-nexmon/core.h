@@ -128,6 +128,13 @@ struct brcmf_pub {
 	s32 if2bss[BRCMF_MAX_IFS];
 	struct brcmf_if *mon_if;
 
+	bool nexmon_saved_pm_valid;
+	bool nexmon_saved_txpwr_valid;
+	bool nexmon_saved_mpc_valid;
+	u32 nexmon_saved_pm;
+	u32 nexmon_saved_txpwr;
+	u32 nexmon_saved_mpc;
+
 	struct mutex proto_block;
 	unsigned char proto_buf[BRCMF_DCMD_MAXLEN];
 

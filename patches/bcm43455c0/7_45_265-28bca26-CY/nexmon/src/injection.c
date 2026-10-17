@@ -63,6 +63,15 @@ rtap_len_of(struct sk_buff *p)
     return d[2] | (d[3] << 8);
 }
 
+int dbg_hook_calls = 0;
+int dbg_hook_m_zero = 0;
+int dbg_hook_p_null = 0;
+int dbg_hook_len_small = 0;
+int dbg_hook_short_nz = 0;
+int dbg_hook_rtap_bad = 0;
+int dbg_inject_calls = 0;
+int dbg_inject_rate = 0;
+
 int
 inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
     //needed for sending:
@@ -94,6 +103,8 @@ inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
         }
     }
 
+    dbg_inject_rate = data_rate;
+
     //remove radiotap header
     skb_pull(p, rtap_len);
 
@@ -108,6 +119,20 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 {
     struct wl_info *wl = (struct wl_info *) dev->softc;
     struct wlc_info *wlc = wl->wlc;
+
+    dbg_hook_calls++;
+
+    if (!wlc->monitor)
+        dbg_hook_m_zero++;
+
+    if (!p || !p->data)
+        dbg_hook_p_null++;
+
+    if (p && p->len < sizeof(struct ieee80211_radiotap_header))
+        dbg_hook_len_small++;
+
+    if (p && p->data && ((short *) p->data)[0] != 0)
+        dbg_hook_short_nz++;
 
     /*
      * ((short *) p->data)[0] == 0 only says the first two bytes are zero,
@@ -126,7 +151,10 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 
         if (rtap_len >= (int) sizeof(struct ieee80211_radiotap_header) &&
             rtap_len <= (int) p->len) {
+            dbg_inject_calls++;
             return inject_frame(wl, p, rtap_len);
+        } else {
+            dbg_hook_rtap_bad++;
         }
     }
 

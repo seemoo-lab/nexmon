@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #define _XOPEN_SOURCE 700
 #define USE_LIBPCAP
 
@@ -91,9 +92,7 @@ analyse_pcap_file(char *filename)
 	char errbuf[PCAP_ERRBUF_SIZE];
 	const unsigned char *packet;
 	struct pcap_pkthdr header;
-	struct bpf_program fp;
-	char *fct_name;
-	int offset = 0, sock;
+	int sock;
 	struct iovec iov[2];
 
 	struct msghdr msg_hdr = { 0 };
@@ -113,22 +112,24 @@ analyse_pcap_file(char *filename)
 		return;
 	}
 
-	if(!strcmp(filename, "wlan0")) {
-		pcap = pcap_open_live("wlan0", BUFSIZ, 1, 0, errbuf);
-	} else if(!strcmp(filename, "any")) {
+	if(!strcmp(filename, "any")) {
 		pcap = pcap_open_live("any", BUFSIZ, 1, 0, errbuf);
-		offset = 2;
 	} else {
-		pcap = pcap_open_offline(filename, errbuf);	
+		/* Attempt live capture first (e.g. wlan0, mon0, wlan0mon) */
+		pcap = pcap_open_live(filename, BUFSIZ, 1, 0, errbuf);
+		if(!pcap) {
+			/* Fall back to opening as an offline capture file */
+			pcap = pcap_open_offline(filename, errbuf);
+		}
 	}
 
 	if(!pcap) {
 		printf("ERR: %s\n", errbuf);
+		close(sock);
 		return;
 	}
 
 
-	int i = 0;
 	unsigned int p_len;
 	while ((packet = pcap_next(pcap, &header)) != NULL) {
 
@@ -168,6 +169,9 @@ analyse_pcap_file(char *filename)
 		if(sendmsg(sock, &msg_hdr, 0) < 0)
 			printf("ERR: %d\n", errno);
 	}
+
+	pcap_close(pcap);
+	close(sock);
 }
 #endif
 

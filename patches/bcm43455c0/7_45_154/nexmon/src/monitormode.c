@@ -72,6 +72,14 @@ channel2freq(struct wl_info *wl, unsigned int channel)
 static void
 wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     skb_pull(p, PLCP_HDR_LEN);
+    void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
+
+    if (p->data - head < sizeof(struct nexmon_radiotap_header))
+    {
+        printf("%s: no space for header\n", __FUNCTION__);
+        return;
+    }
+
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) skb_push(p, sizeof(struct nexmon_radiotap_header));
 
     memset(frame, 0, sizeof(struct nexmon_radiotap_header));
@@ -115,6 +123,14 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     unsigned char monitor = wl->wlc->monitor & 0xFF;
 
     if (monitor & MONITOR_STS) {
+        void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
+
+        if (p->data - head < sizeof(struct wl_rxsts))
+        {
+            printf("%s: no space for header\n", __FUNCTION__);
+            return;
+        }
+
         skb_push(p, sizeof(struct wl_rxsts));
         memcpy(p->data, sts, sizeof(struct wl_rxsts));
         p->fieldE |= 0x80u;

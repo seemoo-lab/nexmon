@@ -50,6 +50,22 @@ struct nexio *nex_init_vendor_cmd(const char *ifname);
  * callback. Safe on NULL and on a partially-initialised handle. */
 void nex_free(struct nexio *nexio);
 
+#ifndef _bcmwifi_channels_h_
+#ifndef _bcmwifi_channels_types_h_
+typedef unsigned short chanspec_t;
+#endif
+#endif
+
+#ifndef CHANSPEC_STR_LEN
+#define CHANSPEC_STR_LEN 20
+#endif
+
+/* Chanspec parsing and conversion helpers */
+chanspec_t wf_chspec_aton(const char *a);
+char *wf_chspec_ntoa(chanspec_t chspec, char *buf);
+char *wf_chspec_ntoa_ex(chanspec_t chspec, char *buf);
+bool wf_chspec_is_6g_psc(chanspec_t chspec);
+
 #ifdef __cplusplus
 }
 #endif

@@ -99,13 +99,8 @@ static int nexmon_default_ifindex;
  * iovar value (quarter-dBm plus the WL_TXPWR_OVERRIDE bit), not a dBm
  * conversion, so restore is byte-exact and keeps the override state.  The
  * legacy BRCMF_C_{GET,SET}_TXPWR DCMDs (65/66) are not used here: current
- * brcmfmac firmware answers them with -EBADE (-52). */
-static bool nexmon_saved_pm_valid;
-static bool nexmon_saved_txpwr_valid;
-static bool nexmon_saved_mpc_valid;
-static u32 nexmon_saved_pm;
-static u32 nexmon_saved_txpwr;
-static u32 nexmon_saved_mpc;
+ * brcmfmac firmware answers them with -EBADE (-52).
+ * State is stored per-device in drvr->nexmon_saved_* to support multi-adapter setups. */
 
 static const struct net_device_ops brcmf_netdev_ops_pri;
 static const struct net_device_ops brcmf_netdev_ops_mon;
@@ -175,6 +170,7 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         nlmsg_len(nlh) > header_len + BRCMF_DCMD_MAXLEN) {
         pr_err_ratelimited("brcmfmac: NEXMON: invalid request length %u\n",
                            nlmsg_len(nlh));
+        netlink_ack(skb, nlh, -EINVAL, NULL);
         return;
     }
 
@@ -185,11 +181,13 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
 
     if (memcmp(frame->nexudphdr.nex, "NEX", 3)) {
         pr_err_ratelimited("brcmfmac: NEXMON: invalid nexudp_ioctl_header\n");
+        netlink_ack(skb, nlh, -EINVAL, NULL);
         return;
     }
 
     if (frame->nexudphdr.type != NEXUDP_IOCTL || frame->set > 1) {
         pr_err_ratelimited("brcmfmac: NEXMON: invalid frame type\n");
+        netlink_ack(skb, nlh, -EINVAL, NULL);
         return;
     }
 
@@ -201,66 +199,97 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         ifindex = READ_ONCE(nexmon_default_ifindex);
     if (ifindex <= 0) {
         pr_err_ratelimited("brcmfmac: NEXMON: no default interface, bus not ready\n");
+        netlink_ack(skb, nlh, -ENODEV, NULL);
         return;
     }
 
     rtnl_lock();
     ndev = dev_get_by_index(&init_net, ifindex);
     if (!ndev) {
+        rtnl_unlock();
         pr_err_ratelimited("brcmfmac: NEXMON: interface index %d not found\n",
                            ifindex);
-        goto out_unlock;
+        netlink_ack(skb, nlh, -ENODEV, NULL);
+        return;
     }
 
     if (ndev->netdev_ops != &brcmf_netdev_ops_pri &&
         ndev->netdev_ops != &brcmf_netdev_ops_mon) {
+        rtnl_unlock();
         pr_err_ratelimited("brcmfmac: NEXMON: interface index %d is not a brcmfmac device\n",
                            ifindex);
+        netlink_ack(skb, nlh, -ENODEV, NULL);
         goto out_put;
     }
 
     ifp = netdev_priv(ndev);
 
     if (ifp == NULL || ifp->drvr == NULL || ifp->drvr->bus_if == NULL) {
+        rtnl_unlock();
         pr_err_ratelimited("brcmfmac: NEXMON: interface torn down\n");
+        netlink_ack(skb, nlh, -ENODEV, NULL);
         goto out_put;
     }
 
     if (ifp->drvr->bus_if->state != BRCMF_BUS_UP) {
+        rtnl_unlock();
         pr_err_ratelimited("brcmfmac: NEXMON: bus not UP (state=%d), ignoring ioctl\n",
                            ifp->drvr->bus_if->state);
+        netlink_ack(skb, nlh, -ENETDOWN, NULL);
         goto out_put;
     }
 
-    if (frame->set) {
-        err = brcmf_fil_cmd_data_set(ifp, frame->cmd, frame->payload,
-                                     payload_len);
-        if (err)
-            brcmf_err("NEXMON: DCMD set %u failed: %d\n", frame->cmd, err);
+    struct brcmf_if *target_ifp = ifp;
 
-        skb_out = nlmsg_new(4, 0);
-        if (!skb_out)
+    /* Monitor and promiscuous mode commands are chip-global and must be directed to primary BSS */
+    if (frame->cmd == 108 /* WLC_SET_MONITOR */ || frame->cmd == 107 /* WLC_GET_MONITOR */ ||
+        frame->cmd == 30  /* WLC_SET_PROMISC */ || frame->cmd == 29  /* WLC_GET_PROMISC */) {
+        if (ifp->drvr && ifp->drvr->iflist[0])
+            target_ifp = ifp->drvr->iflist[0];
+    }
+    rtnl_unlock();
+
+    if (frame->set) {
+        err = brcmf_fil_cmd_data_set(target_ifp, frame->cmd, frame->payload,
+                                     payload_len);
+        if (err) {
+            brcmf_err("NEXMON: DCMD set %u failed: %d\n", frame->cmd, err);
+            netlink_ack(skb, nlh, err < 0 ? err : -err, NULL);
             goto out_put;
+        }
+
+        skb_out = nlmsg_new(4, GFP_KERNEL);
+        if (!skb_out) {
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
         nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, 4, 0);
         if (!nlh_tx) {
             kfree_skb(skb_out);
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
             goto out_put;
         }
         memcpy(nlmsg_data(nlh_tx), "ACK", 4);
         nlmsg_unicast(nl_sock, skb_out, portid);
     } else {
-        err = brcmf_fil_cmd_data_get(ifp, frame->cmd, frame->payload,
+        err = brcmf_fil_cmd_data_get(target_ifp, frame->cmd, frame->payload,
                                      payload_len);
-        if (err)
+        if (err) {
             brcmf_err("NEXMON: DCMD get %u failed: %d\n", frame->cmd, err);
+            netlink_ack(skb, nlh, err < 0 ? err : -err, NULL);
+            goto out_put;
+        }
 
         reply_len = nlmsg_len(nlh);
-        skb_out = nlmsg_new(reply_len, 0);
-        if (!skb_out)
+        skb_out = nlmsg_new(reply_len, GFP_KERNEL);
+        if (!skb_out) {
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
             goto out_put;
+        }
         nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, reply_len, 0);
         if (!nlh_tx) {
             kfree_skb(skb_out);
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
             goto out_put;
         }
         memcpy(nlmsg_data(nlh_tx), frame, reply_len);
@@ -269,8 +298,6 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
 
 out_put:
     dev_put(ndev);
-out_unlock:
-    rtnl_unlock();
 }
 
 char *brcmf_ifname(struct brcmf_if *ifp)
@@ -306,6 +333,12 @@ void brcmf_configure_arp_nd_offload(struct brcmf_if *ifp, bool enable)
 {
 	s32 err;
 	u32 mode;
+
+	if (enable && ifp->drvr && ifp->drvr->wiphy &&
+	    brcmf_is_apmode_operating(ifp->drvr->wiphy)) {
+		brcmf_dbg(TRACE, "Skip ARP/ND offload enable when soft AP is running\n");
+		return;
+	}
 
 	if (enable)
 		mode = BRCMF_ARP_OL_AGENT | BRCMF_ARP_OL_PEER_AUTO_REPLY;
@@ -776,11 +809,18 @@ void brcmf_txfinalize(struct brcmf_if *ifp, struct sk_buff *txp, bool success)
 	struct ethhdr *eh;
 	u16 type;
 
+	if (!ifp) {
+		brcmu_pkt_buf_free_skb(txp);
+		return;
+	}
+
 	eh = (struct ethhdr *)(txp->data);
 	type = ntohs(eh->h_proto);
 
 	if (type == ETH_P_PAE) {
 		atomic_dec(&ifp->pend_8021x_cnt);
+		/* Order the decrement before waitqueue_active() */
+		smp_mb__after_atomic();
 		if (waitqueue_active(&ifp->pend_8021x_wait))
 			wake_up(&ifp->pend_8021x_wait);
 	}
@@ -974,12 +1014,13 @@ static int brcmf_net_mon_open(struct net_device *ndev)
 {
 	struct brcmf_if *ifp = netdev_priv(ndev);
 	struct brcmf_pub *drvr = ifp->drvr;
+	struct brcmf_if *prim = drvr->iflist[0] ? drvr->iflist[0] : ifp;
 	u32 monitor;
 	int err;
 
 	brcmf_dbg(TRACE, "Enter\n");
 
-	err = brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_MONITOR, &monitor);
+	err = brcmf_fil_cmd_int_get(prim, BRCMF_C_GET_MONITOR, &monitor);
 	if (err) {
 		bphy_err(drvr, "BRCMF_C_GET_MONITOR error (%d)\n", err);
 		return err;
@@ -1000,7 +1041,7 @@ static int brcmf_net_mon_open(struct net_device *ndev)
 			monitor = 0;
 	}
 	
-	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_MONITOR, monitor);
+	err = brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_MONITOR, monitor);
 	if (err) {
 		bphy_err(drvr, "BRCMF_C_SET_MONITOR error (%d)\n", err);
 		return err;
@@ -1009,7 +1050,7 @@ static int brcmf_net_mon_open(struct net_device *ndev)
 	/* NEXMON: monitor mode alone doesn't open the hardware RX filter to
 	 * unassociated/foreign traffic; without promiscuous mode the D11 MAC
 	 * silently drops everything that isn't for our own (nonexistent) BSS. */
-	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PROMISC, 1);
+	err = brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_PROMISC, 1);
 	if (err)
 		bphy_err(drvr, "BRCMF_C_SET_PROMISC error (%d)\n", err);
 
@@ -1019,16 +1060,15 @@ static int brcmf_net_mon_open(struct net_device *ndev)
 	 * restores whatever it managed to read instead of leaving the STA on
 	 * full TX power with PM and mpc disabled after monitor teardown. */
 	{
-		struct brcmf_if *prim = drvr->iflist[0] ? drvr->iflist[0] : ifp;
 		u32 qtxpwr_max = 127 | WL_TXPWR_OVERRIDE;
 
-		nexmon_saved_pm_valid = false;
-		nexmon_saved_txpwr_valid = false;
-		nexmon_saved_mpc_valid = false;
+		drvr->nexmon_saved_pm_valid = false;
+		drvr->nexmon_saved_txpwr_valid = false;
+		drvr->nexmon_saved_mpc_valid = false;
 
 		if (!brcmf_fil_cmd_int_get(prim, BRCMF_C_GET_PM,
-					   &nexmon_saved_pm))
-			nexmon_saved_pm_valid = true;
+					   &drvr->nexmon_saved_pm))
+			drvr->nexmon_saved_pm_valid = true;
 		else
 			brcmf_dbg(INFO, "NEXMON: PM snapshot unsupported\n");
 
@@ -1036,13 +1076,13 @@ static int brcmf_net_mon_open(struct net_device *ndev)
 		 * "qtxpower" iovar; the legacy BRCMF_C_{GET,SET}_TXPWR DCMDs
 		 * (65/66) return -EBADE (-52) on it. */
 		if (!brcmf_fil_iovar_int_get(prim, "qtxpower",
-					     &nexmon_saved_txpwr))
-			nexmon_saved_txpwr_valid = true;
+					     &drvr->nexmon_saved_txpwr))
+			drvr->nexmon_saved_txpwr_valid = true;
 		else
 			brcmf_dbg(INFO, "NEXMON: qtxpower snapshot unsupported\n");
 
-		if (!brcmf_fil_iovar_int_get(prim, "mpc", &nexmon_saved_mpc))
-			nexmon_saved_mpc_valid = true;
+		if (!brcmf_fil_iovar_int_get(prim, "mpc", &drvr->nexmon_saved_mpc))
+			drvr->nexmon_saved_mpc_valid = true;
 		else
 			brcmf_dbg(INFO, "NEXMON: mpc snapshot unsupported\n");
 
@@ -1064,15 +1104,16 @@ static int brcmf_net_mon_stop(struct net_device *ndev)
 {
 	struct brcmf_if *ifp = netdev_priv(ndev);
 	struct brcmf_pub *drvr = ifp->drvr;
+	struct brcmf_if *prim = drvr->iflist[0] ? drvr->iflist[0] : ifp;
 	u32 monitor;
 	int err;
 
 	brcmf_dbg(TRACE, "Enter\n");
 
-	brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PROMISC, 0);
+	brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_PROMISC, 0);
 
 	monitor = 0;
-	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_MONITOR, monitor);
+	err = brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_MONITOR, monitor);
 	if (err)
 		bphy_err(drvr, "BRCMF_C_SET_MONITOR error (%d)\n", err);
 
@@ -1081,25 +1122,24 @@ static int brcmf_net_mon_stop(struct net_device *ndev)
 	 * monitor mode is torn down.  Each field is put back only if its
 	 * snapshot succeeded. */
 	{
-		struct brcmf_if *prim = drvr->iflist[0] ? drvr->iflist[0] : ifp;
 
-		if (nexmon_saved_pm_valid) {
+		if (drvr->nexmon_saved_pm_valid) {
 			if (brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_PM,
-						  nexmon_saved_pm))
+						  drvr->nexmon_saved_pm))
 				bphy_err(drvr, "failed restoring PM\n");
-			nexmon_saved_pm_valid = false;
+			drvr->nexmon_saved_pm_valid = false;
 		}
-		if (nexmon_saved_txpwr_valid) {
+		if (drvr->nexmon_saved_txpwr_valid) {
 			if (brcmf_fil_iovar_int_set(prim, "qtxpower",
-						    nexmon_saved_txpwr))
+						    drvr->nexmon_saved_txpwr))
 				bphy_err(drvr, "failed restoring qtxpower\n");
-			nexmon_saved_txpwr_valid = false;
+			drvr->nexmon_saved_txpwr_valid = false;
 		}
-		if (nexmon_saved_mpc_valid) {
+		if (drvr->nexmon_saved_mpc_valid) {
 			if (brcmf_fil_iovar_int_set(prim, "mpc",
-						    nexmon_saved_mpc))
+						    drvr->nexmon_saved_mpc))
 				bphy_err(drvr, "failed restoring mpc\n");
-			nexmon_saved_mpc_valid = false;
+			drvr->nexmon_saved_mpc_valid = false;
 		}
 	}
 
@@ -1129,12 +1169,16 @@ int brcmf_net_mon_attach(struct brcmf_if *ifp)
 	eth_hw_addr_set(ndev, ifp->mac_addr);
 
 	err = cfg80211_register_netdevice(ndev);
-	if (err)
+	if (err) {
 		bphy_err(drvr, "Failed to register %s device\n", ndev->name);
+		drvr->iflist[ifp->bsscfgidx] = NULL;
+		ndev->netdev_ops = NULL;
+		return err;
+	}
 
 	ndev->priv_destructor = brcmf_cfg80211_free_netdev;
 
-	return err;
+	return 0;
 }
 
 void brcmf_net_setcarrier(struct brcmf_if *ifp, bool on)
@@ -1535,6 +1579,35 @@ static int brcmf_revinfo_read(struct seq_file *s, void *data)
 	return 0;
 }
 
+/*
+ * Serialize arming from debugfs reset and brcmf_fw_crashed() against
+ * teardown.  The remove path sets ->removing and drains the work while
+ * holding bus_reset_lock, so a racing armer is either drained or skips it.
+ */
+static void brcmf_bus_schedule_reset(struct brcmf_bus *bus_if)
+{
+	mutex_lock(&bus_if->bus_reset_lock);
+	if (bus_if->drvr && bus_if->drvr->bus_reset.func && !bus_if->removing)
+		schedule_work(&bus_if->drvr->bus_reset);
+	mutex_unlock(&bus_if->bus_reset_lock);
+}
+
+void brcmf_bus_cancel_reset_work(struct brcmf_bus *bus_if)
+{
+	mutex_lock(&bus_if->bus_reset_lock);
+	bus_if->removing = true;
+	if (bus_if->drvr)
+		cancel_work_sync(&bus_if->drvr->bus_reset);
+	mutex_unlock(&bus_if->bus_reset_lock);
+}
+
+void brcmf_bus_allow_reset_work(struct brcmf_bus *bus_if)
+{
+	mutex_lock(&bus_if->bus_reset_lock);
+	bus_if->removing = false;
+	mutex_unlock(&bus_if->bus_reset_lock);
+}
+
 static void brcmf_core_bus_reset(struct work_struct *work)
 {
 	struct brcmf_pub *drvr = container_of(work, struct brcmf_pub,
@@ -1555,7 +1628,7 @@ static ssize_t bus_reset_write(struct file *file, const char __user *user_buf,
 	if (value != 1)
 		return -EINVAL;
 
-	schedule_work(&drvr->bus_reset);
+	brcmf_bus_schedule_reset(drvr->bus_if);
 
 	return count;
 }
@@ -1777,13 +1850,23 @@ void brcmf_dev_coredump(struct device *dev)
 void brcmf_fw_crashed(struct device *dev)
 {
 	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
-	struct brcmf_pub *drvr = bus_if->drvr;
+	struct brcmf_pub *drvr;
+
+	/* May fire before brcmf_attach() wires up drvr, or after removal
+	 * has cleared it; guard the derefs below (and the arming gate in
+	 * brcmf_bus_schedule_reset() already checks drvr/->removing).
+	 */
+	if (!bus_if)
+		return;
+	drvr = bus_if->drvr;
+	if (!drvr)
+		return;
 
 	bphy_err(drvr, "Firmware has halted or crashed\n");
 
 	brcmf_dev_coredump(dev);
 
-	schedule_work(&drvr->bus_reset);
+	brcmf_bus_schedule_reset(bus_if);
 }
 
 void brcmf_detach(struct device *dev)
@@ -1868,8 +1951,10 @@ int brcmf_netdev_wait_pend8021x(struct brcmf_if *ifp)
 				 !brcmf_get_pend_8021x_cnt(ifp),
 				 MAX_WAIT_FOR_8021X_TX);
 
-	if (!err)
+	if (!err) {
 		bphy_err(drvr, "Timed out waiting for no pending 802.1x packets\n");
+		atomic_set(&ifp->pend_8021x_cnt, 0);
+	}
 
 	return !err;
 }

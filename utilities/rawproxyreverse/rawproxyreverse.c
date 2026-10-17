@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #define _XOPEN_SOURCE 700
 
 
@@ -90,7 +91,7 @@ int
 main(int argc, char **argv)
 {
 	pcap_t *handle;
-	unsigned char packet[1500];
+	unsigned char packet[4096];
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct sockaddr_in si_app;
 	socklen_t si_app_len = sizeof(si_app);
@@ -137,7 +138,7 @@ main(int argc, char **argv)
 		recv_len = recvfrom(sock, packet, sizeof(packet), 0, (struct sockaddr *) &si_app, &si_app_len);
 		/* a negative length must never reach pcap_inject(): its length
 		 * argument is size_t, so -1 would become SIZE_MAX and read far past
-		 * the 1500-byte packet buffer */
+		 * the 4096-byte packet buffer */
 		if(recv_len < 0) {
 			perror("ERR: recvfrom");
 			continue;

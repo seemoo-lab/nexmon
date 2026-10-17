@@ -26,14 +26,14 @@
 # spaces in the package format.
 
 import argparse
+import email.utils
 import os
 import os.path
 import re
 import shlex
 import shutil
-import sys
 import subprocess
-
+import sys
 from enum import Enum
 
 Flavor = Enum('Flavor', ['Wireshark', 'Stratoshark'])
@@ -48,8 +48,8 @@ GIT_ABBREV_LENGTH = 12
 # If the text "$Format" is still present, it means that
 # git archive did not replace the $Format string, which
 # means that this not a git archive.
-GIT_EXPORT_SUBST_H = 'e677bf052328efc1ed897a547fa161836a0e4ff7'
-GIT_EXPORT_SUBST_D = 'HEAD, tag: v4.6.8, refs/pipelines/2754969420'
+GIT_EXPORT_SUBST_H = '5e18c78562bb483295aed034786ce02a5d4220e8'
+GIT_EXPORT_SUBST_D = 'tag: v4.7.4rc0, tag: ssv0.10.4rc0'
 IS_GIT_ARCHIVE = not GIT_EXPORT_SUBST_H.startswith('$Format')
 
 
@@ -105,6 +105,12 @@ def update_debian_changelog(src_dir, repo_data):
     text_replacement = f"wireshark ({repo_data['ws_version_major']}.{repo_data['ws_version_minor']}.{repo_data['ws_version_patch']}{repo_data['ws_package_string']}) UNRELEASED; urgency=low"
     # Note: Only need to replace the first line, so we don't use re.MULTILINE or re.DOTALL
     new_changelog_contents = re.sub(CHANGELOG_PATTERN, text_replacement, changelog_contents)
+
+    # Update the timestamp (last line matching the " -- maintainer  date" pattern)
+    TIMESTAMP_PATTERN = r"(?m)^( -- .+>)  .+$"
+    timestamp = email.utils.formatdate(localtime=True)
+    new_changelog_contents = re.sub(TIMESTAMP_PATTERN, r"\1  " + timestamp, new_changelog_contents)
+
     with open(deb_changelog_filepath, mode='w', encoding='utf-8') as fh:
         fh.write(new_changelog_contents)
         print(deb_changelog_filepath + " has been updated.")
@@ -156,30 +162,6 @@ def update_docinfo_asciidoc(src_dir, repo_data):
             print(doc_path + " has been updated.")
 
 
-def update_cmake_lib_releases(src_dir, repo_data):
-    # Read CMakeLists.txt for each library, then write back out an updated version.
-    dir_paths = []
-    dir_paths += [os.path.join(src_dir, 'epan')]
-    dir_paths += [os.path.join(src_dir, 'wiretap')]
-
-    for dir_path in dir_paths:
-        cmakelists_filepath = os.path.join(dir_path, "CMakeLists.txt")
-        with open(cmakelists_filepath, encoding='utf-8') as fh:
-            cmakelists_contents = fh.read()
-
-        # Sample line (without quotes; note leading tab: "    VERSION "0.0.0" SOVERSION 0")
-        VERSION_PATTERN = r'^(\s*VERSION\s+"\d+\.\d+\.)\d+'
-        replacement_text = f"\\g<1>{repo_data['ws_version_patch']}"
-        new_cmakelists_contents = re.sub(VERSION_PATTERN,
-                                         replacement_text,
-                                         cmakelists_contents,
-                                         flags=re.MULTILINE)
-
-        with open(cmakelists_filepath, mode='w', encoding='utf-8') as fh:
-            fh.write(new_cmakelists_contents)
-            print(cmakelists_filepath + " has been updated.")
-
-
 # Update distributed files that contain any version information
 def update_versioned_files(src_dir, set_version, repo_data):
     update_cmakelists_txt(src_dir, set_version, repo_data)
@@ -187,7 +169,6 @@ def update_versioned_files(src_dir, set_version, repo_data):
     if set_version:
         update_attributes_asciidoc(src_dir, repo_data)
         update_docinfo_asciidoc(src_dir, repo_data)
-        update_cmake_lib_releases(src_dir, repo_data)
 
 
 def generate_version_h(repo_data):
@@ -198,7 +179,7 @@ def generate_version_h(repo_data):
     ws_num_commits_line = '#define WIRESHARK_VCS_NUM_COMMITS "0"'
     ws_commit_id_line = '/* #undef WIRESHARK_VCS_COMMIT_ID */'
 
-    ss_vcs_line = '#define STRATOHARK_VCS_VERSION "Git Rev Unknown from unknown"'
+    ss_vcs_line = '#define STRATOSHARK_VCS_VERSION "Git Rev Unknown from unknown"'
     ss_num_commits_line = '#define STRATOSHARK_VCS_NUM_COMMITS "0"'
     ss_commit_id_line = '/* #undef STRATOSHARK_VCS_COMMIT_ID */'
 
@@ -349,7 +330,7 @@ def read_git_repo(src_dir, tagged_version_extra, untagged_version_extra):
     # Reads metadata from the git repo for generating the version string
     # Returns the data in a dict
 
-    IS_GIT_INSTALLED = shutil.which('git') != ''
+    IS_GIT_INSTALLED = shutil.which('git') is not None
     if not IS_GIT_INSTALLED:
         print("Git unavailable. Git revision will be missing from version string.", file=sys.stderr)
         return {}

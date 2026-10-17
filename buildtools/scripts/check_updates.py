@@ -14,6 +14,7 @@ import subprocess
 import sys
 import urllib.request
 import urllib.error
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Any
 
 # ANSI Colors
@@ -89,6 +90,10 @@ def compare_versions(local_ver: str, upstream_ver: str) -> str:
         return "UNKNOWN"
     if not upstream_ver or upstream_ver in ("UNKNOWN", "LOCAL", "N/A", "[Error]", "[Offline]"):
         return "LOCAL / EMBEDDED" if upstream_ver == "LOCAL" else "UNKNOWN"
+    # Any bracketed sentinel (e.g. "[Offline / Error]", "[Not Found]") means the
+    # upstream lookup did not yield a real version, so it is not comparable.
+    if upstream_ver.strip().startswith("["):
+        return "UNKNOWN"
 
     # Clean versions for comparison
     lv = re.sub(r'^v', '', local_ver.strip(), flags=re.I)
@@ -164,10 +169,32 @@ def fetch_web_regex(url: str, pattern: str, timeout: int = 8) -> Optional[str]:
     return None
 
 
-def extract_best_tag_version(tags: List[str], prefix_filter: Optional[str] = None, exclude_pre: bool = True) -> Optional[str]:
-    """Extract highest semver from a list of git tags."""
+def _numeric_version_parts(v_tuple: Tuple) -> List[int]:
+    """Return integer components of a parse_version_tuple result."""
+    return [part[1] for part in v_tuple if part[0] == 0 and isinstance(part[1], int)]
+
+
+def extract_best_tag_version(
+    tags: List[str],
+    prefix_filter: Optional[str] = None,
+    exclude_pre: bool = True,
+    even_minor: bool = False,
+    contiguous_patch: bool = False,
+    tag_regex: Optional[str] = None,
+) -> Optional[str]:
+    """Extract highest semver from a list of git tags.
+
+    even_minor: keep only X.Y.Z where Y is even (Wireshark stable lines).
+    contiguous_patch: within the highest remaining X.Y series, take the
+        highest patch N such that 0..N are all present. This ignores stray
+        high-patch tags that are not real sequential releases.
+    tag_regex: if set, the original tag name must match this pattern.
+    """
+    tag_re = re.compile(tag_regex) if tag_regex else None
     candidates = []
     for tag in tags:
+        if tag_re and not tag_re.match(tag):
+            continue
         if prefix_filter and not tag.startswith(prefix_filter):
             continue
         t = tag
@@ -189,17 +216,52 @@ def extract_best_tag_version(tags: List[str], prefix_filter: Optional[str] = Non
         if m:
             v_str = m.group(1)
             v_tuple = parse_version_tuple(v_str)
-            if v_tuple:
-                candidates.append((v_tuple, v_str))
+            if not v_tuple:
+                continue
+            nums = _numeric_version_parts(v_tuple)
+            if even_minor and (len(nums) < 2 or nums[1] % 2 != 0):
+                continue
+            candidates.append((v_tuple, v_str, nums))
 
     if not candidates and exclude_pre and tags:
         # Fallback to include pre-releases
-        return extract_best_tag_version(tags, prefix_filter, exclude_pre=False)
+        return extract_best_tag_version(
+            tags,
+            prefix_filter,
+            exclude_pre=False,
+            even_minor=even_minor,
+            contiguous_patch=contiguous_patch,
+            tag_regex=tag_regex,
+        )
 
-    if candidates:
-        candidates.sort(key=lambda x: x[0])
-        return candidates[-1][1]
-    return None
+    if not candidates:
+        return None
+
+    if contiguous_patch:
+        series = defaultdict(set)
+        ver_map = {}
+        for _v_tuple, v_str, nums in candidates:
+            if len(nums) < 2:
+                continue
+            major, minor = nums[0], nums[1]
+            patch = nums[2] if len(nums) > 2 else 0
+            series[(major, minor)].add(patch)
+            ver_map[(major, minor, patch)] = v_str
+        if series:
+            best_series = max(series.keys())
+            patches = series[best_series]
+            n = 0
+            last = None
+            while n in patches:
+                last = n
+                n += 1
+            if last is not None:
+                return ver_map[(best_series[0], best_series[1], last)]
+            max_patch = max(patches)
+            return ver_map[(best_series[0], best_series[1], max_patch)]
+
+    candidates.sort(key=lambda x: x[0])
+    return candidates[-1][1]
 
 
 def safe_read(filepath: str) -> str:
@@ -211,6 +273,21 @@ def safe_read(filepath: str) -> str:
     except Exception:
         pass
     return ""
+
+
+def extract_wireshark_cmake_version(root: str) -> str:
+    """Read PROJECT_{MAJOR,MINOR,PATCH}_VERSION and optional extension from vendored Wireshark CMakeLists."""
+    text = safe_read(os.path.join(root, "utilities/wireshark/CMakeLists.txt"))
+    maj = re.search(r"set\(PROJECT_MAJOR_VERSION\s+(\d+)\)", text)
+    minor = re.search(r"set\(PROJECT_MINOR_VERSION\s+(\d+)\)", text)
+    patch = re.search(r"set\(PROJECT_PATCH_VERSION\s+(\d+)\)", text)
+    ext = re.search(r"set\(PROJECT_VERSION_EXTENSION\s+\"([^\"]*)\"\)", text)
+    if maj and minor and patch:
+        ver = f"{maj.group(1)}.{minor.group(1)}.{patch.group(1)}"
+        if ext and ext.group(1):
+            ver += ext.group(1)
+        return ver
+    return "UNKNOWN"
 
 
 # Component Registry with dynamic local version extractors and upstream sources
@@ -230,9 +307,9 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "boringssl",
         "category": "Library",
         "path": "utilities/boringssl",
-        "extract_local": lambda root: safe_read(os.path.join(root, "utilities/boringssl/BORINGSSL_REVISION"))[:8] or "9d908ba5",
+        "extract_local": lambda root: safe_read(os.path.join(root, "utilities/boringssl/BORINGSSL_REVISION")).strip() or "0.20260813.0",
         "upstream_type": "pinned",
-        "pinned_ref": "pinned (2016 AOSP-layout vendor)",
+        "pinned_ref": "pinned (release 0.20260813.0, C++ gen/ layout)",
         "upstream_url": "https://github.com/google/boringssl.git",
         "website": "https://boringssl.googlesource.com/boringssl"
     },
@@ -306,6 +383,18 @@ COMPONENTS: List[Dict[str, Any]] = [
         "website": "https://sourceforge.net/projects/iperf2/"
     },
     {
+        "name": "iperf3",
+        "category": "Utility",
+        "path": "utilities/iperf3",
+        "extract_local": lambda root: (
+            (re.search(r'AC_INIT\s*\(\s*\[?iperf\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "utilities/iperf3/configure.ac"))) or [None, "3.21"])[1]
+        ),
+        "upstream_type": "git_tags",
+        "upstream_url": "https://github.com/esnet/iperf.git",
+        "tag_prefix": None,
+        "website": "https://github.com/esnet/iperf/tags"
+    },
+    {
         "name": "iw",
         "category": "Utility",
         "path": "utilities/iw",
@@ -321,11 +410,13 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "libargp",
         "category": "Library",
         "path": "utilities/libargp",
-        "extract_local": lambda root: "1.5.0",
-        "upstream_type": "git_tags",
-        "upstream_url": "https://github.com/argp-standalone/argp-standalone.git",
-        "tag_prefix": None,
-        "website": "https://github.com/argp-standalone/argp-standalone"
+        "extract_local": lambda root: (
+            (re.search(r'libargp\s+([0-9]{8})', safe_read(os.path.join(root, "utilities/libargp/config.h"))) or [None, "20260115"])[1]
+        ),
+        "upstream_type": "web_regex",
+        "upstream_url": "https://mirror.yandex.ru/mirrors/msys2/msys/sources/",
+        "pattern": r'libargp-([0-9]+)-\d+\.src\.tar\.zst',
+        "website": "https://www.gnu.org/software/gnulib/"
     },
     {
         "name": "libcrypto",
@@ -472,7 +563,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "libwireshark",
         "category": "Library (Wrapper)",
         "path": "utilities/libwireshark",
-        "extract_local": lambda root: "wireshark-wrapper (4.6.8)",
+        "extract_local": lambda root: f"wireshark-wrapper ({extract_wireshark_cmake_version(root)})",
         "upstream_type": "local",
         "upstream_url": "utilities/wireshark wrapper",
         "website": "utilities/wireshark"
@@ -481,7 +572,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "libwiretap",
         "category": "Library (Wrapper)",
         "path": "utilities/libwiretap",
-        "extract_local": lambda root: "wireshark-wrapper (4.6.8)",
+        "extract_local": lambda root: f"wireshark-wrapper ({extract_wireshark_cmake_version(root)})",
         "upstream_type": "local",
         "upstream_url": "utilities/wireshark wrapper",
         "website": "utilities/wireshark"
@@ -490,7 +581,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "libwsutil",
         "category": "Library (Wrapper)",
         "path": "utilities/libwsutil",
-        "extract_local": lambda root: "wireshark-wrapper (4.6.8)",
+        "extract_local": lambda root: f"wireshark-wrapper ({extract_wireshark_cmake_version(root)})",
         "upstream_type": "local",
         "upstream_url": "utilities/wireshark wrapper",
         "website": "utilities/wireshark"
@@ -521,7 +612,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "netcat",
         "category": "Utility",
         "path": "utilities/netcat",
-        "extract_local": lambda root: "OpenBSD 1.103",
+        "extract_local": lambda root: "OpenBSD 1.238",
         "upstream_type": "local",
         "upstream_url": "OpenBSD netcat",
         "website": "https://www.openbsd.org"
@@ -599,15 +690,14 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "wireshark",
         "category": "Utility / Library",
         "path": "utilities/wireshark",
-        "extract_local": lambda root: "4.6.8",
-        # Pinned to the latest STABLE line. Wireshark ships stable on even
-        # minor versions (4.4, 4.6) and development previews on odd ones
-        # (4.5, 4.7). The raw git tags include 4.7.x dev releases, which we do
-        # not want vendored into a build dependency, so track 4.6.x explicitly.
-        "upstream_type": "fixed",
-        "fixed_version": "4.6.8 (latest stable)",
-        "upstream_url": "https://gitlab.com/wireshark/wireshark.git",
-        "website": "https://www.wireshark.org"
+        "extract_local": extract_wireshark_cmake_version,
+        # Query GitHub tags (https://github.com/wireshark/wireshark/tags).
+        # Tracks active Wireshark releases and release candidates directly from upstream tags.
+        "upstream_type": "git_tags",
+        "upstream_url": "https://github.com/wireshark/wireshark.git",
+        "tag_prefix": "v",
+        "tag_regex": r"^v\d+\.\d+\.\d+(?:rc\d+)?$",
+        "website": "https://github.com/wireshark/wireshark/tags"
     },
     {
         "name": "zlib",
@@ -626,24 +716,23 @@ COMPONENTS: List[Dict[str, Any]] = [
     {
         "name": "isl",
         "category": "Build Tool",
-        "path": "buildtools/isl-0.10",
+        "path": "buildtools/isl-0.28",
         "extract_local": lambda root: (
-            (re.search(r'AC_INIT\s*\(\s*\[?isl\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "buildtools/isl-0.10/configure.ac"))) or [None, "0.10"])[1]
+            (re.search(r'AC_INIT\s*\(\s*\[?isl\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "buildtools/isl-0.28/configure.ac"))) or [None, "UNKNOWN"])[1]
         ),
-        "upstream_type": "pinned",
-        "pinned_ref": "pinned (companion to gcc-arm-none-eabi 5.4-2016q2)",
-        "upstream_url": "https://repo.or.cz/isl.git",
-        "tag_prefix": "isl-",
+        "upstream_type": "web_regex",
+        "upstream_url": "https://libisl.sourceforge.io/",
+        "pattern": r'isl-([0-9]+\.[0-9]+(?:\.[0-9]+)?)\.tar\.xz',
         "website": "https://libisl.sourceforge.io"
     },
     {
         "name": "mpfr",
         "category": "Build Tool",
-        "path": "buildtools/mpfr-3.1.4",
-        "extract_local": lambda root: safe_read(os.path.join(root, "buildtools/mpfr-3.1.4/VERSION")) or "3.1.4",
-        "upstream_type": "pinned",
-        "pinned_ref": "pinned (companion to gcc-arm-none-eabi 5.4-2016q2)",
+        "path": "buildtools/mpfr-4.2.2",
+        "extract_local": lambda root: safe_read(os.path.join(root, "buildtools/mpfr-4.2.2/VERSION")) or "UNKNOWN",
+        "upstream_type": "web_regex",
         "upstream_url": "https://ftp.gnu.org/gnu/mpfr/",
+        "pattern": r'mpfr-([0-9]+\.[0-9]+\.[0-9]+)\.tar\.xz',
         "website": "https://www.mpfr.org"
     },
     {
@@ -737,7 +826,14 @@ def check_component(comp: Dict[str, Any], root_dir: str, timeout: int = 8) -> Di
         tags = fetch_git_tags(comp["upstream_url"], timeout=timeout)
         if tags:
             is_local_pre = bool(re.search(r'(rc|beta|alpha|b\d+|dev|pre|preview)', local_ver, re.I))
-            upstream_ver = extract_best_tag_version(tags, comp.get("tag_prefix"), exclude_pre=(not is_local_pre)) or "UNKNOWN"
+            upstream_ver = extract_best_tag_version(
+                tags,
+                comp.get("tag_prefix"),
+                exclude_pre=(not is_local_pre),
+                even_minor=bool(comp.get("even_minor")),
+                contiguous_patch=bool(comp.get("contiguous_patch")),
+                tag_regex=comp.get("tag_regex"),
+            ) or "UNKNOWN"
         else:
             upstream_ver = "[Offline / Error]"
     elif upstream_type == "git_head":

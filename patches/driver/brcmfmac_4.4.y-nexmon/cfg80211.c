@@ -617,12 +617,22 @@ brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy,struct cfg80211_chan_def *
     s32 err = 0;
     u16 chanspec;
 
-    //brcmf_err("DEBUG NexMon: brcmf_cfg80211_nexmon_set_channel() called!\n");
+    if (!chandef->chan || !wiphy->bands[chandef->chan->band]) {
+        brcmf_err("Set Channel rejected: unsupported band for this chip (chan=%p, band=%d)\n",
+                  chandef->chan, chandef->chan ? chandef->chan->band : -1);
+        return -EINVAL;
+    }
+
     chanspec = chandef_to_chanspec(&cfg->d11inf, chandef);
+    if (chanspec == INVCHANSPEC || chanspec == 0) {
+        brcmf_err("Set Channel rejected: invalid chanspec (0x%04x)\n", chanspec);
+        return -EINVAL;
+    }
     err = brcmf_fil_iovar_int_set(ifp, "chanspec", chanspec);
     if (err < 0) {
         brcmf_err("Set Channel failed: chspec=%d, %d\n",
               chanspec, err);
+        return err;
     }
     return 0;
 }

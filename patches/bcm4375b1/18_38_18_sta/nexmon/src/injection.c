@@ -63,7 +63,22 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
     if(wlc->monitor == 0) {
         pkt_buf_free_skb(wlc->osh, p, 0);
         return 0;
-    }    
+    }
+
+    /*
+     * it_len comes from the frame the host handed us: ioctl.c copies a raw
+     * host frame verbatim when frm->hdr.type != 0, so these two bytes are
+     * host-chosen. Validate before skb_pull - an it_len larger than the
+     * buffer advances p->data past the end and underflows the unsigned
+     * p->len, after which wlc_sendctl DMAs from a bogus pointer and length.
+     * The sizeof() floor also makes the it_len read itself in-bounds.
+     */
+    if (p->len < sizeof(struct ieee80211_radiotap_header) ||
+        rtap_header->it_len < sizeof(struct ieee80211_radiotap_header) ||
+        rtap_header->it_len > p->len) {
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return 0;
+    }
 
     // remove radiotap header
     skb_pull(p, rtap_header->it_len);
