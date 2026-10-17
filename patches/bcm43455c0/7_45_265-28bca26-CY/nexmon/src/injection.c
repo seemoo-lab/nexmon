@@ -103,8 +103,8 @@ inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
     return 0;
 }
 
-int
-wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
+static int
+wl_send_one(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 {
     struct wl_info *wl = (struct wl_info *) dev->softc;
     struct wlc_info *wlc = wl->wlc;
@@ -131,6 +131,31 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
     }
 
     return wl_send(src, dev, p);
+}
+
+/* SDIO may hand wl_send a PKTLINK list, distinct from the PKTNEXT buffer
+ * chain. Stock 7.45.265 wl_send at 0x1A289E looks up the 16-bit link at
+ * packet offset 0x16 in the pktid map rooted at 0x1986C0, clears the link,
+ * and processes every packet. Injecting only the head loses the remaining
+ * pooled buffers and eventually closes the SDPCM receive window. */
+int
+wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
+{
+    struct wl_info *wl = (struct wl_info *) dev->softc;
+    struct sk_buff **pktid_map = *(struct sk_buff ***) 0x1986C0;
+    int result = 0;
+
+    if (!wl->wlc->monitor)
+        return wl_send(src, dev, p);
+
+    while (p) {
+        struct sk_buff *next = pktid_map[p->field16];
+        p->field16 = 0;
+        if (wl_send_one(src, dev, p))
+            result = 1;
+        p = next;
+    }
+    return result;
 }
 
 __attribute__((at(0x200E20, "", CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY)))
